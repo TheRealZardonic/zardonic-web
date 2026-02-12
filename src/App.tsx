@@ -645,7 +645,6 @@ In the end, Zardonic will unite listeners with Superstars.
             >
               <Logo3D />
             </ErrorBoundary>
-          </motion.div>
           
           {editMode && (
             <div className="flex justify-center mb-4">
