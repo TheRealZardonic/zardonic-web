@@ -42,6 +42,8 @@ import {
   ApplePodcastsLogo,
   ArrowsClockwise,
   MusicNote,
+  CaretDown,
+  CaretUp,
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -341,6 +343,7 @@ In the end, Zardonic will unite listeners with Superstars.
   const [iTunesFetching, setITunesFetching] = useState(false)
   const [bandsintownFetching, setBandsintownFetching] = useState(false)
   const [hasAutoLoaded, setHasAutoLoaded] = useState(false)
+  const [showAllReleases, setShowAllReleases] = useState(false)
   
   const audioRef = useRef<HTMLAudioElement>(null)
   const [currentUser, setCurrentUser] = useState<any>(null)
@@ -1116,67 +1119,100 @@ In the end, Zardonic will unite listeners with Superstars.
                 </p>
               </Card>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {[...siteData.releases].sort((a, b) => {
-                  const yearA = a.releaseDate ? new Date(a.releaseDate).getTime() : parseInt(a.year) || 0
-                  const yearB = b.releaseDate ? new Date(b.releaseDate).getTime() : parseInt(b.year) || 0
-                  return yearB - yearA
-                }).map((release, index) => (
-                  <motion.div
-                    key={release.id}
-                    initial={{ opacity: 0, scale: 0.8, rotateX: -20 }}
-                    whileInView={{ opacity: 1, scale: 1, rotateX: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ 
-                      duration: 0.6,
-                      delay: index * 0.08,
-                      ease: [0.25, 0.46, 0.45, 0.94]
-                    }}
-                    whileHover={{ scale: 1.03 }}
-                  >
-                    <Card 
-                      className="overflow-hidden bg-card border-border hover:border-primary/50 transition-all cursor-pointer cyber-card hover-noise relative"
-                      onClick={() => !editMode && setCyberpunkOverlay({ type: 'release', data: release })}
-                    >
-                      <div className="data-label absolute top-2 left-2 z-10">// REL.{release.year}</div>
-                      <div className="aspect-square bg-muted relative">
-                        {release.artwork && (
-                          <img src={release.artwork} alt={release.title} className="w-full h-full object-cover glitch-image" />
-                        )}
-                        {editMode && (
-                          <div className="absolute top-2 right-2 flex gap-1">
-                            <Button variant="destructive" size="sm" onClick={(e) => {
-                              e.stopPropagation()
-                              deleteRelease(release.id)
-                            }}>
-                              <Trash className="w-3 h-3" />
-                            </Button>
+              <>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                  {(() => {
+                    const sorted = [...siteData.releases].sort((a, b) => {
+                      const yearA = a.releaseDate ? new Date(a.releaseDate).getTime() : parseInt(a.year) || 0
+                      const yearB = b.releaseDate ? new Date(b.releaseDate).getTime() : parseInt(b.year) || 0
+                      return yearB - yearA
+                    })
+                    const visible = showAllReleases ? sorted : sorted.slice(0, 6)
+                    return visible.map((release, index) => (
+                      <motion.div
+                        key={release.id}
+                        initial={{ opacity: 0, scale: 0.8, rotateX: -20 }}
+                        whileInView={{ opacity: 1, scale: 1, rotateX: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ 
+                          duration: 0.6,
+                          delay: index * 0.08,
+                          ease: [0.25, 0.46, 0.45, 0.94]
+                        }}
+                        whileHover={{ scale: 1.03 }}
+                      >
+                        <Card 
+                          className="overflow-hidden bg-card border-border hover:border-primary/50 transition-all cursor-pointer cyber-card hover-noise relative"
+                          onClick={() => !editMode && setCyberpunkOverlay({ type: 'release', data: release })}
+                        >
+                          <div className="data-label absolute top-2 left-2 z-10">// REL.{release.year}</div>
+                          <div className="aspect-square bg-muted relative">
+                            {release.artwork && (
+                              <img src={release.artwork} alt={release.title} className="w-full h-full object-cover glitch-image" />
+                            )}
+                            {editMode && (
+                              <div className="absolute top-2 right-2 flex gap-1">
+                                <Button variant="destructive" size="sm" onClick={(e) => {
+                                  e.stopPropagation()
+                                  deleteRelease(release.id)
+                                }}>
+                                  <Trash className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-bold uppercase text-sm mb-1 truncate font-mono hover-chromatic">{release.title}</h3>
-                        <p className="text-xs text-muted-foreground mb-3 font-mono">{release.year}</p>
-                        
-                        {editMode && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full mt-3"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setEditingRelease(release)
-                            }}
-                          >
-                            <Pencil className="w-3 h-3 mr-2" />
-                            Edit
-                          </Button>
-                        )}
-                      </div>
-                    </Card>
+                          <div className="p-4">
+                            <h3 className="font-bold uppercase text-sm mb-1 truncate font-mono hover-chromatic">{release.title}</h3>
+                            <p className="text-xs text-muted-foreground mb-3 font-mono">{release.year}</p>
+                            
+                            {editMode && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full mt-3"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setEditingRelease(release)
+                                }}
+                              >
+                                <Pencil className="w-3 h-3 mr-2" />
+                                Edit
+                              </Button>
+                            )}
+                          </div>
+                        </Card>
+                      </motion.div>
+                    ))
+                  })()}
+                </div>
+                {siteData.releases.length > 6 && (
+                  <motion.div 
+                    className="flex justify-center mt-8"
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    viewport={{ once: true }}
+                  >
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      onClick={() => setShowAllReleases(!showAllReleases)}
+                      className="gap-2 uppercase font-mono cyber-border hover-glitch"
+                    >
+                      {showAllReleases ? (
+                        <>
+                          <CaretUp className="w-4 h-4" />
+                          Show Less
+                        </>
+                      ) : (
+                        <>
+                          <CaretDown className="w-4 h-4" />
+                          Show All ({siteData.releases.length})
+                        </>
+                      )}
+                    </Button>
                   </motion.div>
-                ))}
-              </div>
+                )}
+              </>
             )}
           </motion.div>
         </div>
@@ -1697,10 +1733,10 @@ In the end, Zardonic will unite listeners with Superstars.
                                   animate={{ opacity: 1, x: 0 }}
                                   transition={{ delay: 0.2 }}
                                 >
-                                  <div className="data-label mb-2">Information according to § 5 TMG</div>
+                                  <div className="data-label mb-2">Angaben gemäß § 5 DDG</div>
                                   <div className="space-y-2 font-mono text-sm">
                                     <p>Federico Ágreda Álvarez (ZARDONIC)</p>
-                                    <p>Professional Artist & Music Producer</p>
+                                    <p>Professional Artist &amp; Music Producer</p>
                                   </div>
                                 </motion.div>
 
@@ -1710,9 +1746,9 @@ In the end, Zardonic will unite listeners with Superstars.
                                   animate={{ opacity: 1, x: 0 }}
                                   transition={{ delay: 0.3 }}
                                 >
-                                  <div className="data-label mb-2">Contact</div>
+                                  <div className="data-label mb-2">Kontakt / Contact</div>
                                   <div className="space-y-2 font-mono text-sm">
-                                    <p>Email: info@zardonic.com</p>
+                                    <p>E-Mail: info@zardonic.com</p>
                                     <p>Website: www.zardonic.com</p>
                                   </div>
                                 </motion.div>
@@ -1723,7 +1759,7 @@ In the end, Zardonic will unite listeners with Superstars.
                                   animate={{ opacity: 1, x: 0 }}
                                   transition={{ delay: 0.4 }}
                                 >
-                                  <div className="data-label mb-2">Responsible for content according to § 55 Abs. 2 RStV</div>
+                                  <div className="data-label mb-2">Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</div>
                                   <div className="space-y-2 font-mono text-sm">
                                     <p>Federico Ágreda Álvarez</p>
                                   </div>
@@ -1733,18 +1769,65 @@ In the end, Zardonic will unite listeners with Superstars.
                                   className="cyber-grid p-4"
                                   initial={{ opacity: 0, x: -10 }}
                                   animate={{ opacity: 1, x: 0 }}
+                                  transition={{ delay: 0.45 }}
+                                >
+                                  <div className="data-label mb-2">EU-Streitschlichtung</div>
+                                  <div className="space-y-3 font-mono text-sm leading-relaxed">
+                                    <p>Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit: <a href="https://ec.europa.eu/consumers/odr/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">https://ec.europa.eu/consumers/odr/</a></p>
+                                    <p>The European Commission provides a platform for online dispute resolution (ODR): <a href="https://ec.europa.eu/consumers/odr/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">https://ec.europa.eu/consumers/odr/</a></p>
+                                    <p>Unsere E-Mail-Adresse finden Sie oben im Impressum. / Our e-mail address can be found above in the Impressum.</p>
+                                  </div>
+                                </motion.div>
+
+                                <motion.div 
+                                  className="cyber-grid p-4"
+                                  initial={{ opacity: 0, x: -10 }}
+                                  animate={{ opacity: 1, x: 0 }}
                                   transition={{ delay: 0.5 }}
                                 >
-                                  <div className="data-label mb-2">Disclaimer / Haftungsausschluss</div>
+                                  <div className="data-label mb-2">Verbraucherstreitbeilegung / Universalschlichtungsstelle</div>
                                   <div className="space-y-3 font-mono text-sm leading-relaxed">
-                                    <p className="font-bold text-primary">Liability for content:</p>
-                                    <p>The contents of our pages were created with the greatest care. However, we cannot guarantee the accuracy, completeness and timeliness of the content. As a service provider, we are responsible for our own content on these pages in accordance with general laws. However, we are not obligated to monitor transmitted or stored third-party information or to investigate circumstances that indicate illegal activity.</p>
-                                    
-                                    <p className="font-bold text-primary mt-4">Liability for links:</p>
-                                    <p>Our offer contains links to external websites of third parties, on whose contents we have no influence. Therefore, we cannot assume any liability for these external contents. The respective provider or operator of the pages is always responsible for the contents of the linked pages.</p>
-                                    
-                                    <p className="font-bold text-primary mt-4">Copyright:</p>
-                                    <p>The content and works created by the site operators on these pages are subject to copyright law. All content and works on this website are protected by copyright. Duplication, processing, distribution and any kind of exploitation outside the limits of copyright require the written consent of the respective author or creator.</p>
+                                    <p>Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.</p>
+                                    <p>We are not willing or obliged to participate in dispute resolution proceedings before a consumer arbitration board.</p>
+                                  </div>
+                                </motion.div>
+
+                                <motion.div 
+                                  className="cyber-grid p-4"
+                                  initial={{ opacity: 0, x: -10 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{ delay: 0.55 }}
+                                >
+                                  <div className="data-label mb-2">Haftung für Inhalte / Liability for Content</div>
+                                  <div className="space-y-3 font-mono text-sm leading-relaxed">
+                                    <p>Als Diensteanbieter sind wir gemäß § 7 Abs. 1 DDG für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich. Nach §§ 8 bis 10 DDG sind wir als Diensteanbieter jedoch nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen oder nach Umständen zu forschen, die auf eine rechtswidrige Tätigkeit hinweisen.</p>
+                                    <p>As a service provider, we are responsible for our own content on these pages in accordance with § 7 (1) DDG and general laws. According to §§ 8 to 10 DDG, however, we are not obliged as a service provider to monitor transmitted or stored third-party information or to investigate circumstances that indicate illegal activity.</p>
+                                  </div>
+                                </motion.div>
+
+                                <motion.div 
+                                  className="cyber-grid p-4"
+                                  initial={{ opacity: 0, x: -10 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{ delay: 0.6 }}
+                                >
+                                  <div className="data-label mb-2">Haftung für Links / Liability for Links</div>
+                                  <div className="space-y-3 font-mono text-sm leading-relaxed">
+                                    <p>Unser Angebot enthält Links zu externen Websites Dritter, auf deren Inhalte wir keinen Einfluss haben. Deshalb können wir für diese fremden Inhalte auch keine Gewähr übernehmen. Für die Inhalte der verlinkten Seiten ist stets der jeweilige Anbieter oder Betreiber der Seiten verantwortlich.</p>
+                                    <p>Our website contains links to external third-party websites over whose content we have no control. Therefore, we cannot accept any liability for this third-party content. The respective provider or operator of the linked pages is always responsible for the content of the linked pages.</p>
+                                  </div>
+                                </motion.div>
+
+                                <motion.div 
+                                  className="cyber-grid p-4"
+                                  initial={{ opacity: 0, x: -10 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{ delay: 0.65 }}
+                                >
+                                  <div className="data-label mb-2">Urheberrecht / Copyright</div>
+                                  <div className="space-y-3 font-mono text-sm leading-relaxed">
+                                    <p>Die durch die Seitenbetreiber erstellten Inhalte und Werke auf diesen Seiten unterliegen dem Urheberrecht. Die Vervielfältigung, Bearbeitung, Verbreitung und jede Art der Verwertung außerhalb der Grenzen des Urheberrechtes bedürfen der schriftlichen Zustimmung des jeweiligen Autors bzw. Erstellers. Downloads und Kopien dieser Seite sind nur für den privaten, nicht kommerziellen Gebrauch gestattet.</p>
+                                    <p>The content and works on these pages created by the site operators are subject to copyright law. Duplication, processing, distribution, and any form of exploitation beyond the scope of copyright law require the written consent of the respective author or creator. Downloads and copies of this page are only permitted for private, non-commercial use.</p>
                                   </div>
                                 </motion.div>
                               </div>
@@ -1753,7 +1836,7 @@ In the end, Zardonic will unite listeners with Superstars.
                                 className="pt-6 border-t border-border"
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
-                                transition={{ delay: 0.6 }}
+                                transition={{ delay: 0.7 }}
                               >
                                 <div className="data-label">// SYSTEM.STATUS: [ACTIVE]</div>
                               </motion.div>
@@ -1777,7 +1860,7 @@ In the end, Zardonic will unite listeners with Superstars.
                                 <div>
                                   <div className="data-label mb-2">// PRIVACY.POLICY.STREAM</div>
                                   <h2 className="text-4xl md:text-5xl font-bold uppercase font-mono mb-4 hover-chromatic" data-text="PRIVACY POLICY">
-                                    PRIVACY POLICY
+                                    {language === 'de' ? 'DATENSCHUTZERKLÄRUNG' : 'PRIVACY POLICY'}
                                   </h2>
                                 </div>
                                 <div className="flex gap-2">
@@ -1802,149 +1885,159 @@ In the end, Zardonic will unite listeners with Superstars.
 
                               {language === 'en' ? (
                                 <div className="space-y-6 text-foreground/90">
-                                  <motion.div 
-                                    className="cyber-grid p-4"
-                                    initial={{ opacity: 0, x: -10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: 0.2 }}
-                                  >
+                                  <motion.div className="cyber-grid p-4" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
                                     <div className="data-label mb-2">1. Data Protection at a Glance</div>
                                     <div className="space-y-3 font-mono text-sm leading-relaxed">
                                       <p className="font-bold text-primary">General Information</p>
-                                      <p>The following information provides a simple overview of what happens to your personal data when you visit this website. Personal data is any data that can be used to identify you personally.</p>
-                                    </div>
-                                  </motion.div>
-
-                                  <motion.div 
-                                    className="cyber-grid p-4"
-                                    initial={{ opacity: 0, x: -10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: 0.3 }}
-                                  >
-                                    <div className="data-label mb-2">2. Data Collection on this Website</div>
-                                    <div className="space-y-3 font-mono text-sm leading-relaxed">
-                                      <p className="font-bold text-primary">Who is responsible for data collection on this website?</p>
-                                      <p>Data processing on this website is carried out by the website operator. You can find their contact details in the section "Information about the responsible party" in this privacy policy.</p>
-                                      
-                                      <p className="font-bold text-primary mt-4">How do we collect your data?</p>
-                                      <p>Your data is collected when you provide it to us. This can be data that you enter in a contact form, for example. Other data is collected automatically or with your consent when you visit the website by our IT systems. This is mainly technical data (e.g. internet browser, operating system or time of page view).</p>
-                                      
+                                      <p>The following information provides a simple overview of what happens to your personal data when you visit this website. Personal data is any data that can be used to identify you personally. For detailed information on data protection, please refer to our privacy policy listed below.</p>
+                                      <p className="font-bold text-primary mt-4">Data Collection on this Website</p>
+                                      <p>Data processing on this website is carried out by the website operator: Federico Ágreda Álvarez (ZARDONIC), E-Mail: info@zardonic.com.</p>
+                                      <p>Your data is collected either because you provide it to us or because it is automatically recorded by our IT systems when you visit the website (e.g., technical data such as your internet browser, operating system, or time of access). This data is collected automatically as soon as you enter our website.</p>
                                       <p className="font-bold text-primary mt-4">What do we use your data for?</p>
-                                      <p>Some of the data is collected to ensure error-free provision of the website. Other data may be used to analyze your user behavior.</p>
+                                      <p>Some data is collected to ensure the error-free provision of the website. No data is used for analyzing user behavior or marketing purposes.</p>
                                     </div>
                                   </motion.div>
 
-                                  <motion.div 
-                                    className="cyber-grid p-4"
-                                    initial={{ opacity: 0, x: -10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: 0.4 }}
-                                  >
-                                    <div className="data-label mb-2">3. General Information and Mandatory Information</div>
+                                  <motion.div className="cyber-grid p-4" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
+                                    <div className="data-label mb-2">2. Hosting</div>
+                                    <div className="space-y-3 font-mono text-sm leading-relaxed">
+                                      <p>This website is hosted by Vercel Inc., 440 N Barranca Ave #4133, Covina, CA 91723, USA. When you visit our website, your personal data (e.g., IP address) is processed by Vercel on their servers. This may involve the transfer of data to the USA. For more information, see Vercel&apos;s privacy policy: <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">https://vercel.com/legal/privacy-policy</a></p>
+                                      <p>The use of Vercel is based on Art. 6(1)(f) GDPR. We have a legitimate interest in a reliable presentation of our website.</p>
+                                    </div>
+                                  </motion.div>
+
+                                  <motion.div className="cyber-grid p-4" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.35 }}>
+                                    <div className="data-label mb-2">3. General Information &amp; Mandatory Information</div>
                                     <div className="space-y-3 font-mono text-sm leading-relaxed">
                                       <p className="font-bold text-primary">Data Protection</p>
-                                      <p>The operators of these pages take the protection of your personal data very seriously. We treat your personal data confidentially and in accordance with the statutory data protection regulations and this privacy policy.</p>
-                                      <p>When you use this website, various personal data is collected. Personal data is data with which you can be personally identified. This privacy policy explains what data we collect and what we use it for. It also explains how and for what purpose this is done.</p>
+                                      <p>We take the protection of your personal data very seriously. We treat your personal data confidentially and in accordance with the statutory data protection regulations (GDPR, BDSG) and this privacy policy.</p>
+                                      <p className="font-bold text-primary mt-4">Note on the Responsible Party</p>
+                                      <p>The responsible party for data processing on this website is: Federico Ágreda Álvarez (ZARDONIC), E-Mail: info@zardonic.com.</p>
+                                      <p>The responsible party is the natural person who alone or jointly with others decides on the purposes and means of the processing of personal data.</p>
+                                      <p className="font-bold text-primary mt-4">Storage Duration</p>
+                                      <p>Unless a specific storage period is mentioned within this privacy policy, your personal data will remain with us until the purpose for data processing no longer applies. If you assert a legitimate request for deletion or revoke consent for data processing, your data will be deleted unless we have other legally permissible reasons for storing your personal data; in such cases, deletion will take place after these reasons cease to apply.</p>
+                                      <p className="font-bold text-primary mt-4">Legal Basis for Processing</p>
+                                      <p>Where we obtain consent for processing operations, Art. 6(1)(a) GDPR serves as the legal basis. For processing necessary for the performance of a contract, Art. 6(1)(b) GDPR serves as the legal basis. For processing necessary for compliance with a legal obligation, Art. 6(1)(c) GDPR serves as the legal basis. Where processing is necessary for the purposes of legitimate interests, Art. 6(1)(f) GDPR serves as the legal basis.</p>
+                                      <p className="font-bold text-primary mt-4">SSL/TLS Encryption</p>
+                                      <p>This site uses SSL/TLS encryption for security reasons and to protect the transmission of confidential content. You can recognize an encrypted connection by the lock icon in your browser&apos;s address bar and by the address starting with &quot;https://&quot;.</p>
                                     </div>
                                   </motion.div>
 
-                                  <motion.div 
-                                    className="cyber-grid p-4"
-                                    initial={{ opacity: 0, x: -10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: 0.5 }}
-                                  >
-                                    <div className="data-label mb-2">4. Data Recording on this Website</div>
+                                  <motion.div className="cyber-grid p-4" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }}>
+                                    <div className="data-label mb-2">4. Data Collection on this Website</div>
                                     <div className="space-y-3 font-mono text-sm leading-relaxed">
-                                      <p className="font-bold text-primary">Cookies</p>
-                                      <p>Our website uses cookies. Cookies are small text files that are stored on your device and that store certain settings and data for exchange with our system via your browser. Some cookies remain stored on your device until you delete them. They enable us to recognize your browser on your next visit.</p>
-                                      <p>You can set your browser so that you are informed about the setting of cookies and only allow cookies in individual cases, exclude the acceptance of cookies for certain cases or in general, and activate the automatic deletion of cookies when closing the browser.</p>
+                                      <p className="font-bold text-primary">Server Log Files</p>
+                                      <p>The hosting provider automatically collects and stores information in server log files that your browser transmits to us. These are: browser type and version, operating system, referrer URL, hostname of the accessing computer, time of the server request, and IP address. This data is not merged with other data sources. This data is collected on the basis of Art. 6(1)(f) GDPR.</p>
+                                      <p className="font-bold text-primary mt-4">Local Storage</p>
+                                      <p>This website uses the browser&apos;s local storage to save your preferences (e.g., volume settings, edit mode state). This data is stored exclusively on your device and is not transmitted to us. You can clear this data at any time via your browser settings.</p>
                                     </div>
                                   </motion.div>
 
-                                  <motion.div 
-                                    className="cyber-grid p-4"
-                                    initial={{ opacity: 0, x: -10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: 0.6 }}
-                                  >
-                                    <div className="data-label mb-2">5. Your Rights</div>
+                                  <motion.div className="cyber-grid p-4" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.45 }}>
+                                    <div className="data-label mb-2">5. External APIs &amp; Third-Party Services</div>
                                     <div className="space-y-3 font-mono text-sm leading-relaxed">
-                                      <p>You have the right to receive information about the origin, recipient and purpose of your stored personal data free of charge at any time. You also have the right to request the correction or deletion of this data. If you have given your consent to data processing, you can revoke this consent at any time for the future. You also have the right to request the restriction of the processing of your personal data under certain circumstances.</p>
+                                      <p>This website uses server-side proxies to connect to the following third-party APIs. Your IP address is not directly shared with these services; requests are made from our server:</p>
+                                      <p className="font-bold text-primary mt-4">Apple Music / iTunes API</p>
+                                      <p>We use the Apple iTunes Search API to retrieve music release information and artwork. Provider: Apple Inc., One Apple Park Way, Cupertino, CA 95014, USA. Privacy policy: <a href="https://www.apple.com/legal/privacy/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">https://www.apple.com/legal/privacy/</a></p>
+                                      <p className="font-bold text-primary mt-4">Odesli / song.link API</p>
+                                      <p>We use the Odesli API to generate cross-platform streaming links (Spotify, YouTube, SoundCloud, etc.). Provider: Odesli, Inc. Privacy policy: <a href="https://odesli.co/privacy" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">https://odesli.co/privacy</a></p>
+                                      <p className="font-bold text-primary mt-4">Bandsintown API</p>
+                                      <p>We use the Bandsintown API to display upcoming live events and tour dates. Provider: Bandsintown Inc., 24 W 25th St., New York, NY 10010, USA. Privacy policy: <a href="https://corp.bandsintown.com/privacy" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">https://corp.bandsintown.com/privacy</a></p>
+                                      <p>The use of these services is based on Art. 6(1)(f) GDPR. We have a legitimate interest in displaying accurate and up-to-date music and event information.</p>
+                                    </div>
+                                  </motion.div>
+
+                                  <motion.div className="cyber-grid p-4" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }}>
+                                    <div className="data-label mb-2">6. Your Rights</div>
+                                    <div className="space-y-3 font-mono text-sm leading-relaxed">
+                                      <p>Under the GDPR, you have the following rights:</p>
+                                      <p><span className="text-primary">• Right of Access (Art. 15 GDPR)</span> — You have the right to request information about your personal data processed by us.</p>
+                                      <p><span className="text-primary">• Right to Rectification (Art. 16 GDPR)</span> — You have the right to request the correction of inaccurate personal data.</p>
+                                      <p><span className="text-primary">• Right to Erasure (Art. 17 GDPR)</span> — You have the right to request the deletion of your personal data.</p>
+                                      <p><span className="text-primary">• Right to Restriction (Art. 18 GDPR)</span> — You have the right to request the restriction of the processing of your personal data.</p>
+                                      <p><span className="text-primary">• Right to Data Portability (Art. 20 GDPR)</span> — You have the right to receive your personal data in a structured, commonly used, and machine-readable format.</p>
+                                      <p><span className="text-primary">• Right to Object (Art. 21 GDPR)</span> — You have the right to object to the processing of your personal data at any time.</p>
+                                      <p><span className="text-primary">• Right to Withdraw Consent (Art. 7(3) GDPR)</span> — You have the right to withdraw your consent at any time.</p>
+                                      <p><span className="text-primary">• Right to Lodge a Complaint (Art. 77 GDPR)</span> — You have the right to lodge a complaint with a supervisory authority.</p>
                                     </div>
                                   </motion.div>
                                 </div>
                               ) : (
                                 <div className="space-y-6 text-foreground/90">
-                                  <motion.div 
-                                    className="cyber-grid p-4"
-                                    initial={{ opacity: 0, x: -10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: 0.2 }}
-                                  >
+                                  <motion.div className="cyber-grid p-4" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
                                     <div className="data-label mb-2">1. Datenschutz auf einen Blick</div>
                                     <div className="space-y-3 font-mono text-sm leading-relaxed">
                                       <p className="font-bold text-primary">Allgemeine Hinweise</p>
-                                      <p>Die folgenden Hinweise geben einen einfachen Überblick darüber, was mit Ihren personenbezogenen Daten passiert, wenn Sie diese Website besuchen. Personenbezogene Daten sind alle Daten, mit denen Sie persönlich identifiziert werden können.</p>
-                                    </div>
-                                  </motion.div>
-
-                                  <motion.div 
-                                    className="cyber-grid p-4"
-                                    initial={{ opacity: 0, x: -10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: 0.3 }}
-                                  >
-                                    <div className="data-label mb-2">2. Datenerfassung auf dieser Website</div>
-                                    <div className="space-y-3 font-mono text-sm leading-relaxed">
-                                      <p className="font-bold text-primary">Wer ist verantwortlich für die Datenerfassung auf dieser Website?</p>
-                                      <p>Die Datenverarbeitung auf dieser Website erfolgt durch den Websitebetreiber. Dessen Kontaktdaten können Sie dem Abschnitt „Hinweis zur verantwortlichen Stelle" in dieser Datenschutzerklärung entnehmen.</p>
-                                      
-                                      <p className="font-bold text-primary mt-4">Wie erfassen wir Ihre Daten?</p>
-                                      <p>Ihre Daten werden zum einen dadurch erhoben, dass Sie uns diese mitteilen. Hierbei kann es sich z.B. um Daten handeln, die Sie in ein Kontaktformular eingeben. Andere Daten werden automatisch oder nach Ihrer Einwilligung beim Besuch der Website durch unsere IT-Systeme erfasst. Das sind vor allem technische Daten (z.B. Internetbrowser, Betriebssystem oder Uhrzeit des Seitenaufrufs).</p>
-                                      
+                                      <p>Die folgenden Hinweise geben einen einfachen Überblick darüber, was mit Ihren personenbezogenen Daten passiert, wenn Sie diese Website besuchen. Personenbezogene Daten sind alle Daten, mit denen Sie persönlich identifiziert werden können. Ausführliche Informationen zum Thema Datenschutz entnehmen Sie unserer unter diesem Text aufgeführten Datenschutzerklärung.</p>
+                                      <p className="font-bold text-primary mt-4">Datenerfassung auf dieser Website</p>
+                                      <p>Die Datenverarbeitung auf dieser Website erfolgt durch den Websitebetreiber: Federico Ágreda Álvarez (ZARDONIC), E-Mail: info@zardonic.com.</p>
+                                      <p>Ihre Daten werden zum einen dadurch erhoben, dass Sie uns diese mitteilen. Andere Daten werden automatisch oder nach Ihrer Einwilligung beim Besuch der Website durch unsere IT-Systeme erfasst. Das sind vor allem technische Daten (z.B. Internetbrowser, Betriebssystem oder Uhrzeit des Seitenaufrufs).</p>
                                       <p className="font-bold text-primary mt-4">Wofür nutzen wir Ihre Daten?</p>
-                                      <p>Ein Teil der Daten wird erhoben, um eine fehlerfreie Bereitstellung der Website zu gewährleisten. Andere Daten können zur Analyse Ihres Nutzerverhaltens verwendet werden.</p>
+                                      <p>Ein Teil der Daten wird erhoben, um eine fehlerfreie Bereitstellung der Website zu gewährleisten. Es werden keine Daten zur Analyse des Nutzerverhaltens oder zu Marketingzwecken verwendet.</p>
                                     </div>
                                   </motion.div>
 
-                                  <motion.div 
-                                    className="cyber-grid p-4"
-                                    initial={{ opacity: 0, x: -10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: 0.4 }}
-                                  >
+                                  <motion.div className="cyber-grid p-4" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
+                                    <div className="data-label mb-2">2. Hosting</div>
+                                    <div className="space-y-3 font-mono text-sm leading-relaxed">
+                                      <p>Diese Website wird bei Vercel Inc., 440 N Barranca Ave #4133, Covina, CA 91723, USA gehostet. Wenn Sie unsere Website besuchen, werden Ihre personenbezogenen Daten (z.B. IP-Adresse) auf den Servern von Vercel verarbeitet. Dies kann mit einer Übermittlung von Daten in die USA verbunden sein. Weitere Informationen entnehmen Sie der Datenschutzerklärung von Vercel: <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">https://vercel.com/legal/privacy-policy</a></p>
+                                      <p>Die Verwendung von Vercel erfolgt auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO. Wir haben ein berechtigtes Interesse an einer zuverlässigen Darstellung unserer Website.</p>
+                                    </div>
+                                  </motion.div>
+
+                                  <motion.div className="cyber-grid p-4" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.35 }}>
                                     <div className="data-label mb-2">3. Allgemeine Hinweise und Pflichtinformationen</div>
                                     <div className="space-y-3 font-mono text-sm leading-relaxed">
                                       <p className="font-bold text-primary">Datenschutz</p>
-                                      <p>Die Betreiber dieser Seiten nehmen den Schutz Ihrer persönlichen Daten sehr ernst. Wir behandeln Ihre personenbezogenen Daten vertraulich und entsprechend der gesetzlichen Datenschutzvorschriften sowie dieser Datenschutzerklärung.</p>
-                                      <p>Wenn Sie diese Website benutzen, werden verschiedene personenbezogene Daten erhoben. Personenbezogene Daten sind Daten, mit denen Sie persönlich identifiziert werden können. Die vorliegende Datenschutzerklärung erläutert, welche Daten wir erheben und wofür wir sie nutzen. Sie erläutert auch, wie und zu welchem Zweck das geschieht.</p>
+                                      <p>Wir nehmen den Schutz Ihrer persönlichen Daten sehr ernst. Wir behandeln Ihre personenbezogenen Daten vertraulich und entsprechend der gesetzlichen Datenschutzvorschriften (DSGVO, BDSG) sowie dieser Datenschutzerklärung.</p>
+                                      <p className="font-bold text-primary mt-4">Hinweis zur verantwortlichen Stelle</p>
+                                      <p>Verantwortlich für die Datenverarbeitung auf dieser Website ist: Federico Ágreda Álvarez (ZARDONIC), E-Mail: info@zardonic.com.</p>
+                                      <p>Verantwortliche Stelle ist die natürliche Person, die allein oder gemeinsam mit anderen über die Zwecke und Mittel der Verarbeitung personenbezogener Daten entscheidet.</p>
+                                      <p className="font-bold text-primary mt-4">Speicherdauer</p>
+                                      <p>Soweit innerhalb dieser Datenschutzerklärung keine speziellere Speicherdauer genannt wurde, verbleiben Ihre personenbezogenen Daten bei uns, bis der Zweck für die Datenverarbeitung entfällt. Wenn Sie ein berechtigtes Löschersuchen geltend machen oder eine Einwilligung zur Datenverarbeitung widerrufen, werden Ihre Daten gelöscht, sofern wir keine anderen rechtlich zulässigen Gründe für die Speicherung haben; in einem solchen Fall erfolgt die Löschung nach Fortfall dieser Gründe.</p>
+                                      <p className="font-bold text-primary mt-4">Rechtsgrundlagen der Verarbeitung</p>
+                                      <p>Soweit wir für Verarbeitungsvorgänge eine Einwilligung einholen, dient Art. 6 Abs. 1 lit. a DSGVO als Rechtsgrundlage. Für Verarbeitungen zur Vertragserfüllung dient Art. 6 Abs. 1 lit. b DSGVO. Für Verarbeitungen zur Erfüllung rechtlicher Verpflichtungen dient Art. 6 Abs. 1 lit. c DSGVO. Soweit die Verarbeitung zur Wahrung berechtigter Interessen erforderlich ist, dient Art. 6 Abs. 1 lit. f DSGVO als Rechtsgrundlage.</p>
+                                      <p className="font-bold text-primary mt-4">SSL- bzw. TLS-Verschlüsselung</p>
+                                      <p>Diese Seite nutzt aus Sicherheitsgründen eine SSL- bzw. TLS-Verschlüsselung. Eine verschlüsselte Verbindung erkennen Sie am Schloss-Symbol in der Adresszeile Ihres Browsers und daran, dass die Adresse mit &quot;https://&quot; beginnt.</p>
                                     </div>
                                   </motion.div>
 
-                                  <motion.div 
-                                    className="cyber-grid p-4"
-                                    initial={{ opacity: 0, x: -10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: 0.5 }}
-                                  >
+                                  <motion.div className="cyber-grid p-4" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }}>
                                     <div className="data-label mb-2">4. Datenerfassung auf dieser Website</div>
                                     <div className="space-y-3 font-mono text-sm leading-relaxed">
-                                      <p className="font-bold text-primary">Cookies</p>
-                                      <p>Unsere Internetseiten verwenden Cookies. Cookies sind kleine Textdateien, die auf Ihrem Endgerät abgelegt werden und die bestimmte Einstellungen und Daten zum Austausch mit unserem System über Ihren Browser speichern. Einige Cookies bleiben auf Ihrem Endgerät gespeichert, bis Sie diese löschen. Sie ermöglichen es uns, Ihren Browser beim nächsten Besuch wiederzuerkennen.</p>
-                                      <p>Sie können Ihren Browser so einstellen, dass Sie über das Setzen von Cookies informiert werden und Cookies nur im Einzelfall erlauben, die Annahme von Cookies für bestimmte Fälle oder generell ausschließen sowie das automatische Löschen der Cookies beim Schließen des Browsers aktivieren.</p>
+                                      <p className="font-bold text-primary">Server-Log-Dateien</p>
+                                      <p>Der Provider der Seiten erhebt und speichert automatisch Informationen in sogenannten Server-Log-Dateien, die Ihr Browser automatisch an uns übermittelt. Dies sind: Browsertyp und -version, verwendetes Betriebssystem, Referrer URL, Hostname des zugreifenden Rechners, Uhrzeit der Serveranfrage und IP-Adresse. Eine Zusammenführung dieser Daten mit anderen Datenquellen wird nicht vorgenommen. Die Erfassung erfolgt auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO.</p>
+                                      <p className="font-bold text-primary mt-4">Lokaler Speicher (Local Storage)</p>
+                                      <p>Diese Website nutzt den lokalen Speicher Ihres Browsers, um Ihre Einstellungen zu speichern (z.B. Lautstärke, Bearbeitungsmodus). Diese Daten werden ausschließlich auf Ihrem Gerät gespeichert und nicht an uns übermittelt. Sie können diese Daten jederzeit über Ihre Browsereinstellungen löschen.</p>
                                     </div>
                                   </motion.div>
 
-                                  <motion.div 
-                                    className="cyber-grid p-4"
-                                    initial={{ opacity: 0, x: -10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: 0.6 }}
-                                  >
-                                    <div className="data-label mb-2">5. Ihre Rechte</div>
+                                  <motion.div className="cyber-grid p-4" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.45 }}>
+                                    <div className="data-label mb-2">5. Externe APIs &amp; Drittanbieter-Dienste</div>
                                     <div className="space-y-3 font-mono text-sm leading-relaxed">
-                                      <p>Sie haben jederzeit das Recht, unentgeltlich Auskunft über Herkunft, Empfänger und Zweck Ihrer gespeicherten personenbezogenen Daten zu erhalten. Sie haben außerdem ein Recht, die Berichtigung oder Löschung dieser Daten zu verlangen. Wenn Sie eine Einwilligung zur Datenverarbeitung erteilt haben, können Sie diese Einwilligung jederzeit für die Zukunft widerrufen. Außerdem haben Sie das Recht, unter bestimmten Umständen die Einschränkung der Verarbeitung Ihrer personenbezogenen Daten zu verlangen.</p>
+                                      <p>Diese Website verwendet serverseitige Proxys zur Verbindung mit folgenden Drittanbieter-APIs. Ihre IP-Adresse wird nicht direkt an diese Dienste weitergegeben; die Anfragen werden von unserem Server gestellt:</p>
+                                      <p className="font-bold text-primary mt-4">Apple Music / iTunes API</p>
+                                      <p>Wir nutzen die Apple iTunes Search API zum Abrufen von Musikveröffentlichungen und Artwork. Anbieter: Apple Inc., One Apple Park Way, Cupertino, CA 95014, USA. Datenschutzerklärung: <a href="https://www.apple.com/legal/privacy/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">https://www.apple.com/legal/privacy/</a></p>
+                                      <p className="font-bold text-primary mt-4">Odesli / song.link API</p>
+                                      <p>Wir nutzen die Odesli API zur Erzeugung plattformübergreifender Streaming-Links (Spotify, YouTube, SoundCloud etc.). Anbieter: Odesli, Inc. Datenschutzerklärung: <a href="https://odesli.co/privacy" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">https://odesli.co/privacy</a></p>
+                                      <p className="font-bold text-primary mt-4">Bandsintown API</p>
+                                      <p>Wir nutzen die Bandsintown API zur Anzeige anstehender Live-Events und Tourdaten. Anbieter: Bandsintown Inc., 24 W 25th St., New York, NY 10010, USA. Datenschutzerklärung: <a href="https://corp.bandsintown.com/privacy" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">https://corp.bandsintown.com/privacy</a></p>
+                                      <p>Die Nutzung dieser Dienste erfolgt auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO. Wir haben ein berechtigtes Interesse an der Darstellung aktueller Musik- und Veranstaltungsinformationen.</p>
+                                    </div>
+                                  </motion.div>
+
+                                  <motion.div className="cyber-grid p-4" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }}>
+                                    <div className="data-label mb-2">6. Ihre Rechte</div>
+                                    <div className="space-y-3 font-mono text-sm leading-relaxed">
+                                      <p>Ihnen stehen unter der DSGVO folgende Rechte zu:</p>
+                                      <p><span className="text-primary">• Auskunftsrecht (Art. 15 DSGVO)</span> — Sie haben das Recht, Auskunft über Ihre bei uns gespeicherten personenbezogenen Daten zu erhalten.</p>
+                                      <p><span className="text-primary">• Recht auf Berichtigung (Art. 16 DSGVO)</span> — Sie haben das Recht, die Berichtigung unrichtiger Daten zu verlangen.</p>
+                                      <p><span className="text-primary">• Recht auf Löschung (Art. 17 DSGVO)</span> — Sie haben das Recht, die Löschung Ihrer personenbezogenen Daten zu verlangen.</p>
+                                      <p><span className="text-primary">• Recht auf Einschränkung (Art. 18 DSGVO)</span> — Sie haben das Recht, die Einschränkung der Verarbeitung Ihrer Daten zu verlangen.</p>
+                                      <p><span className="text-primary">• Recht auf Datenübertragbarkeit (Art. 20 DSGVO)</span> — Sie haben das Recht, Ihre Daten in einem strukturierten, gängigen und maschinenlesbaren Format zu erhalten.</p>
+                                      <p><span className="text-primary">• Widerspruchsrecht (Art. 21 DSGVO)</span> — Sie haben das Recht, jederzeit gegen die Verarbeitung Ihrer personenbezogenen Daten Widerspruch einzulegen.</p>
+                                      <p><span className="text-primary">• Recht auf Widerruf (Art. 7 Abs. 3 DSGVO)</span> — Sie haben das Recht, Ihre Einwilligung jederzeit zu widerrufen.</p>
+                                      <p><span className="text-primary">• Beschwerderecht (Art. 77 DSGVO)</span> — Sie haben das Recht, sich bei einer Aufsichtsbehörde zu beschweren.</p>
                                     </div>
                                   </motion.div>
                                 </div>

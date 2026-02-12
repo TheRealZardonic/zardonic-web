@@ -12,11 +12,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const response = await fetch(
-      `https://rest.bandsintown.com/artists/${encodeURIComponent(artist)}/events?${params.toString()}`
+      `https://rest.bandsintown.com/artists/${encodeURIComponent(artist)}/events?${params.toString()}`,
+      {
+        headers: {
+          'Accept': 'application/json',
+        },
+      }
     )
 
-    const data = await response.json()
-    res.status(response.status).json(data)
+    if (!response.ok) {
+      return res.status(response.status).json({ error: `Bandsintown API responded with ${response.status}` })
+    }
+
+    const text = await response.text()
+    try {
+      const data = JSON.parse(text)
+      res.status(200).json(data)
+    } catch {
+      res.status(502).json({ error: 'Invalid JSON response from Bandsintown API' })
+    }
   } catch (error) {
     console.error('Bandsintown proxy error:', error)
     res.status(502).json({ error: 'Failed to fetch from Bandsintown API' })
