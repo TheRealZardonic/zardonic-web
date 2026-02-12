@@ -633,7 +633,6 @@ In the end, Zardonic will unite listeners with Superstars.
             initial={{ opacity: 0, clipPath: 'inset(0 0 100% 0)' }}
             animate={contentLoaded ? { opacity: 1, clipPath: 'inset(0 0 0 0)' } : { opacity: 0, clipPath: 'inset(0 0 100% 0)' }}
             transition={{ duration: 1.2, delay: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
-          >
             <ErrorBoundary
               fallback={
                 <div className="w-full h-[350px] md:h-[450px] relative flex items-center justify-center">
@@ -644,6 +643,7 @@ In the end, Zardonic will unite listeners with Superstars.
               }
             >
               <Logo3D />
+            </ErrorBoundary>
             </ErrorBoundary>
           </motion.div>
           
