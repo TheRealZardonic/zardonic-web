@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
-import { useKV } from '@github/spark/hooks'
+import { useLocalStorage } from '@/hooks/use-local-storage'
 import { useKonami } from '@/hooks/use-konami'
 import { useAnalytics, trackClick } from '@/hooks/use-analytics'
 import { fetchITunesReleases, type ITunesRelease } from '@/lib/itunes'
@@ -161,7 +161,7 @@ function App() {
     }
   }, [loading])
 
-  const [siteData, setSiteData] = useKV<SiteData>('zardonic-site-data', {
+  const [siteData, setSiteData] = useLocalStorage<SiteData>('zardonic-site-data', {
     artistName: 'ZARDONIC',
     heroImage: heroImage,
     bio: `The clash of disparate elements activates innovation, and every generation brings us timeless figures who accidentally spark a new revolutionary sound within the music world. Chuck Berry mixed jazz, blues, gospel and country music to create Rock N Roll. A few decades later, Ozzy Osbourne turned up the gain to create Heavy Metal. And since the early 2000s, Federico Ágreda Álvarez, the masked performer known to the world as DJ and producer Zardonic, has harnessed the power of the nexus between Drum & Bass and Heavy Metal to create the sound that is now known as Metal & Bass.
@@ -271,11 +271,6 @@ In the end, Zardonic will unite listeners with Superstars.
   const [showAllReleases, setShowAllReleases] = useState(false)
   
   const audioRef = useRef<HTMLAudioElement>(null)
-  const [currentUser, setCurrentUser] = useState<any>(null)
-
-  useEffect(() => {
-    window.spark.user().then(setCurrentUser)
-  }, [])
 
   useEffect(() => {
     if (cyberpunkOverlay) {
@@ -638,15 +633,13 @@ In the end, Zardonic will unite listeners with Superstars.
           </div>
 
           <div className="flex items-center gap-4">
-            {currentUser?.isOwner && (
-              <Button
-                size="sm"
-                variant={editMode ? 'default' : 'outline'}
-                onClick={() => setEditMode(!editMode)}
-              >
-                <Pencil className="w-4 h-4" />
-              </Button>
-            )}
+            <Button
+              size="sm"
+              variant={editMode ? 'default' : 'outline'}
+              onClick={() => setEditMode(!editMode)}
+            >
+              <Pencil className="w-4 h-4" />
+            </Button>
             
             <button
               className="md:hidden text-foreground"
@@ -814,7 +807,6 @@ In the end, Zardonic will unite listeners with Superstars.
                   width="100%"
                   height="352"
                   frameBorder="0"
-                  allowFullScreen
                   allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
                   loading="lazy"
                   title="Spotify Player - ZARDONIC"
