@@ -4,6 +4,10 @@ export interface ITunesRelease {
   artwork: string
   releaseDate?: string
   appleMusic?: string
+  spotify?: string
+  soundcloud?: string
+  youtube?: string
+  bandcamp?: string
 }
 
 const ARTIST_NAME = 'Zardonic'
@@ -33,7 +37,8 @@ export async function fetchITunesReleases(): Promise<ITunesRelease[]> {
 
       // Filter to only results where the artist matches Zardonic
       const artistName = (track.artistName || '').toLowerCase()
-      if (!artistName.includes('zardonic')) return
+      const collectionArtist = (track.collectionArtistName || '').toLowerCase()
+      if (!artistName.includes('zardonic') && !collectionArtist.includes('zardonic')) return
 
       const collectionId = track.collectionId.toString()
 

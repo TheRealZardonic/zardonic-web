@@ -416,10 +416,10 @@ In the end, Zardonic will unite listeners with Superstars.
             try {
               const links = await fetchOdesliLinks(release.appleMusic)
               if (links) {
-                if (links.spotify) (release as any)._spotify = links.spotify
-                if (links.soundcloud) (release as any)._soundcloud = links.soundcloud
-                if (links.youtube) (release as any)._youtube = links.youtube
-                if (links.bandcamp) (release as any)._bandcamp = links.bandcamp
+                if (links.spotify) release.spotify = links.spotify
+                if (links.soundcloud) release.soundcloud = links.soundcloud
+                if (links.youtube) release.youtube = links.youtube
+                if (links.bandcamp) release.bandcamp = links.bandcamp
               }
             } catch (e) {
               console.error(`Odesli enrichment failed for ${release.title}:`, e)
@@ -439,10 +439,10 @@ In the end, Zardonic will unite listeners with Superstars.
             artwork: r.artwork,
             year: r.releaseDate ? new Date(r.releaseDate).getFullYear().toString() : '',
             releaseDate: r.releaseDate,
-            spotify: (r as any)._spotify || '',
-            soundcloud: (r as any)._soundcloud || '',
-            youtube: (r as any)._youtube || '',
-            bandcamp: (r as any)._bandcamp || '',
+            spotify: r.spotify || '',
+            soundcloud: r.soundcloud || '',
+            youtube: r.youtube || '',
+            bandcamp: r.bandcamp || '',
             appleMusic: r.appleMusic || '',
           }))
 
@@ -454,10 +454,10 @@ In the end, Zardonic will unite listeners with Superstars.
               ...existing,
               artwork: match.artwork || existing.artwork,
               appleMusic: match.appleMusic || existing.appleMusic,
-              spotify: (match as any)._spotify || existing.spotify,
-              soundcloud: (match as any)._soundcloud || existing.soundcloud,
-              youtube: (match as any)._youtube || existing.youtube,
-              bandcamp: (match as any)._bandcamp || existing.bandcamp,
+              spotify: match.spotify || existing.spotify,
+              soundcloud: match.soundcloud || existing.soundcloud,
+              youtube: match.youtube || existing.youtube,
+              bandcamp: match.bandcamp || existing.bandcamp,
             }
           }
           return existing
