@@ -329,31 +329,31 @@ function App() {
   const currentTrack = siteData?.tracks[currentTrackIndex]
 
   if (!siteData) {
-    return <div className="min-h-screen bg-background flex items-center justify-center crt-effect">
-      <p className="text-foreground glitch-text text-2xl" data-text="LOADING...">LOADING...</p>
+    return <div className="min-h-screen bg-background flex items-center justify-center">
+      <p className="text-foreground text-2xl font-mono">LOADING...</p>
     </div>
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground crt-effect noise-effect">
+    <div className="min-h-screen bg-background text-foreground">
       <Toaster />
       <audio ref={audioRef} src={currentTrack?.url} />
 
       <motion.nav
         initial={{ y: -100 }}
         animate={{ y: 0 }}
-        className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-foreground/20"
+        className="fixed top-0 left-0 right-0 z-50 bg-background/98 backdrop-blur-sm border-b border-border"
       >
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <motion.h1
-            className="text-2xl md:text-3xl font-bold tracking-tighter text-foreground uppercase chromatic-aberration"
-            whileHover={{ scale: 1.05 }}
+            className="text-2xl md:text-3xl font-bold tracking-tighter text-foreground uppercase"
+            whileHover={{ scale: 1.02 }}
           >
             {editMode ? (
               <Input
                 value={siteData.artistName}
                 onChange={(e) => setSiteData((data) => data ? { ...data, artistName: e.target.value } : data!)}
-                className="w-48 bg-transparent border-foreground/30 text-foreground"
+                className="w-48 bg-transparent border-border text-foreground"
               />
             ) : (
               siteData.artistName
@@ -365,7 +365,7 @@ function App() {
               <button
                 key={section}
                 onClick={() => scrollToSection(section)}
-                className="text-sm uppercase tracking-wide hover:text-accent transition-colors font-mono"
+                className="text-sm uppercase tracking-wide hover:text-primary transition-colors font-mono"
               >
                 {section}
               </button>
@@ -398,14 +398,14 @@ function App() {
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="md:hidden bg-card border-t border-foreground/20 overflow-hidden"
+              className="md:hidden bg-card/95 border-t border-border overflow-hidden"
             >
               <div className="container mx-auto px-4 py-4 flex flex-col gap-4">
                 {['bio', 'music', 'gigs', 'releases', 'gallery', 'connect'].map((section) => (
                   <button
                     key={section}
                     onClick={() => scrollToSection(section)}
-                    className="text-left text-sm uppercase tracking-wide hover:text-accent transition-colors font-mono"
+                    className="text-left text-sm uppercase tracking-wide hover:text-primary transition-colors font-mono"
                   >
                     {section}
                   </button>
@@ -416,23 +416,23 @@ function App() {
         </AnimatePresence>
       </motion.nav>
 
-      <section className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
+      <section className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden scanline-effect">
         {siteData.heroImage && (
-          <div className="absolute inset-0 image-glitch">
-            <img src={siteData.heroImage} alt="Hero" className="w-full h-full object-cover opacity-30" />
+          <div className="absolute inset-0">
+            <img src={siteData.heroImage} alt="Hero" className="w-full h-full object-cover opacity-20" />
           </div>
         )}
         
-        <div className="absolute inset-0 bg-gradient-to-b from-background/50 via-background/80 to-background" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/90 to-background" />
         
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
+          initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8 }}
+          transition={{ duration: 0.6 }}
           className="relative z-10 text-center px-4"
         >
-          <h1 className="text-6xl md:text-9xl font-bold tracking-tighter mb-8 uppercase glitch-text" data-text={siteData.artistName}>
-            <span className="text-foreground drop-shadow-[0_0_30px_rgba(255,255,255,0.5)]">
+          <h1 className="text-6xl md:text-9xl font-bold tracking-tighter mb-8 uppercase" data-text={siteData.artistName}>
+            <span className="text-foreground">
               {siteData.artistName}
             </span>
           </h1>
@@ -459,7 +459,7 @@ function App() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 1 }}
+            transition={{ delay: 0.8 }}
             className="mt-12 flex gap-4 justify-center flex-wrap"
           >
             <Button onClick={() => scrollToSection('music')} size="lg" className="uppercase font-mono">
@@ -470,14 +470,9 @@ function App() {
             </Button>
           </motion.div>
         </motion.div>
-
-        <div className="hud-corner top-left" />
-        <div className="hud-corner top-right" />
-        <div className="hud-corner bottom-left" />
-        <div className="hud-corner bottom-right" />
       </section>
 
-      <Separator className="bg-foreground/20" />
+      <Separator className="bg-border" />
 
       <section id="bio" className="py-24 px-4">
         <div className="container mx-auto max-w-4xl">
@@ -487,7 +482,7 @@ function App() {
             viewport={{ once: true }}
             className="relative"
           >
-            <h2 className="text-4xl md:text-6xl font-bold mb-12 uppercase tracking-tighter text-foreground glitch-text font-mono" data-text="BIOGRAPHY">
+            <h2 className="text-4xl md:text-6xl font-bold mb-12 uppercase tracking-tighter text-foreground font-mono" data-text="BIOGRAPHY">
               BIOGRAPHY
             </h2>
             
@@ -499,7 +494,7 @@ function App() {
                     const newBio = e.target.value
                     setSiteData((data) => data ? { ...data, bio: newBio } : data!)
                   }}
-                  className="min-h-[300px] font-mono bg-card border-foreground/30 text-foreground"
+                  className="min-h-[300px] font-mono bg-card border-border text-foreground"
                 />
                 <Button onClick={saveChanges}>
                   <FloppyDisk className="w-4 h-4 mr-2" />
@@ -507,7 +502,7 @@ function App() {
                 </Button>
               </div>
             ) : (
-              <p className="text-lg leading-relaxed text-muted-foreground font-light scanline-effect">
+              <p className="text-lg leading-relaxed text-muted-foreground font-light">
                 {siteData.bio}
               </p>
             )}
@@ -515,23 +510,23 @@ function App() {
         </div>
       </section>
 
-      <Separator className="bg-foreground/20" />
+      <Separator className="bg-border" />
 
-      <section id="music" className="py-24 px-4 bg-card/30">
+      <section id="music" className="py-24 px-4 bg-card/50">
         <div className="container mx-auto max-w-6xl">
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl md:text-6xl font-bold mb-12 uppercase tracking-tighter text-foreground glitch-text font-mono" data-text="MUSIC PLAYER">
+            <h2 className="text-4xl md:text-6xl font-bold mb-12 uppercase tracking-tighter text-foreground font-mono" data-text="MUSIC PLAYER">
               MUSIC PLAYER
             </h2>
 
             {siteData.tracks.length > 0 && (
-              <Card className="p-8 bg-card border-foreground/30 relative scanline-effect">
+              <Card className="p-8 bg-card border-border relative">
                 <div className="grid md:grid-cols-[200px_1fr] gap-8">
-                  <div className="aspect-square bg-muted flex items-center justify-center text-6xl image-glitch">
+                  <div className="aspect-square bg-muted flex items-center justify-center text-6xl">
                     {currentTrack?.artwork ? (
                       <img src={currentTrack.artwork} alt={currentTrack.title} className="w-full h-full object-cover" />
                     ) : (
@@ -541,7 +536,7 @@ function App() {
 
                   <div className="flex flex-col justify-between">
                     <div>
-                      <h3 className="text-2xl font-bold mb-2 uppercase font-mono chromatic-aberration">{currentTrack?.title}</h3>
+                      <h3 className="text-2xl font-bold mb-2 uppercase font-mono">{currentTrack?.title}</h3>
                       <p className="text-muted-foreground mb-4 font-mono">{currentTrack?.artist}</p>
                     </div>
 
@@ -583,18 +578,13 @@ function App() {
                     </div>
                   </div>
                 </div>
-
-                <div className="hud-corner top-left" />
-                <div className="hud-corner top-right" />
-                <div className="hud-corner bottom-left" />
-                <div className="hud-corner bottom-right" />
               </Card>
             )}
           </motion.div>
         </div>
       </section>
 
-      <Separator className="bg-foreground/20" />
+      <Separator className="bg-border" />
 
       <section id="gigs" className="py-24 px-4">
         <div className="container mx-auto max-w-6xl">
@@ -604,7 +594,7 @@ function App() {
             viewport={{ once: true }}
           >
             <div className="flex items-center justify-between mb-12">
-              <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground glitch-text font-mono" data-text="UPCOMING GIGS">
+              <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground font-mono" data-text="UPCOMING GIGS">
                 UPCOMING GIGS
               </h2>
               {editMode && (
@@ -616,7 +606,7 @@ function App() {
             </div>
 
             {siteData.gigs.length === 0 ? (
-              <Card className="p-12 text-center bg-card/50 border-foreground/30 scanline-effect">
+              <Card className="p-12 text-center bg-card/50 border-border">
                 <p className="text-xl text-muted-foreground uppercase tracking-wide font-mono">
                   No upcoming shows - Check back soon
                 </p>
@@ -626,11 +616,11 @@ function App() {
                 {siteData.gigs.map((gig) => (
                   <motion.div
                     key={gig.id}
-                    whileHover={{ scale: 1.02 }}
+                    whileHover={{ scale: 1.01 }}
                     transition={{ duration: 0.2 }}
                   >
                     <Card 
-                      className="p-6 bg-card border-foreground/30 hover:border-foreground/60 transition-colors cursor-pointer"
+                      className="p-6 bg-card border-border hover:border-primary/50 transition-colors cursor-pointer"
                       onClick={() => !editMode && setCyberpunkOverlay({ type: 'gig', data: gig })}
                     >
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -686,9 +676,9 @@ function App() {
         </div>
       </section>
 
-      <Separator className="bg-foreground/20" />
+      <Separator className="bg-border" />
 
-      <section id="releases" className="py-24 px-4 bg-card/30">
+      <section id="releases" className="py-24 px-4 bg-card/50">
         <div className="container mx-auto max-w-6xl">
           <motion.div
             initial={{ opacity: 0, y: 50 }}
@@ -696,7 +686,7 @@ function App() {
             viewport={{ once: true }}
           >
             <div className="flex items-center justify-between mb-12">
-              <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground glitch-text font-mono" data-text="RELEASES">
+              <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground font-mono" data-text="RELEASES">
                 RELEASES
               </h2>
               {editMode && (
@@ -708,7 +698,7 @@ function App() {
             </div>
 
             {siteData.releases.length === 0 ? (
-              <Card className="p-12 text-center bg-card/50 border-foreground/30 scanline-effect">
+              <Card className="p-12 text-center bg-card/50 border-border">
                 <p className="text-xl text-muted-foreground uppercase tracking-wide font-mono">
                   Releases coming soon
                 </p>
@@ -718,14 +708,14 @@ function App() {
                 {siteData.releases.map((release) => (
                   <motion.div
                     key={release.id}
-                    whileHover={{ scale: 1.05 }}
+                    whileHover={{ scale: 1.03 }}
                     transition={{ duration: 0.2 }}
                   >
                     <Card 
-                      className="overflow-hidden bg-card border-foreground/30 hover:border-foreground/60 transition-all scanline-effect cursor-pointer"
+                      className="overflow-hidden bg-card border-border hover:border-primary/50 transition-all cursor-pointer"
                       onClick={() => !editMode && setCyberpunkOverlay({ type: 'release', data: release })}
                     >
-                      <div className="aspect-square bg-muted relative image-glitch">
+                      <div className="aspect-square bg-muted relative">
                         {release.artwork && (
                           <img src={release.artwork} alt={release.title} className="w-full h-full object-cover" />
                         )}
@@ -768,7 +758,7 @@ function App() {
         </div>
       </section>
 
-      <Separator className="bg-foreground/20" />
+      <Separator className="bg-border" />
 
       <section id="gallery" className="py-24 px-4">
         <div className="container mx-auto max-w-6xl">
@@ -778,7 +768,7 @@ function App() {
             viewport={{ once: true }}
           >
             <div className="flex items-center justify-between mb-12">
-              <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground glitch-text font-mono" data-text="GALLERY">
+              <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground font-mono" data-text="GALLERY">
                 GALLERY
               </h2>
               {editMode && (
@@ -800,7 +790,7 @@ function App() {
             </div>
 
             {siteData.gallery.length === 0 ? (
-              <Card className="p-12 text-center bg-card/50 border-foreground/30 scanline-effect">
+              <Card className="p-12 text-center bg-card/50 border-border">
                 <p className="text-xl text-muted-foreground uppercase tracking-wide font-mono">
                   Gallery coming soon
                 </p>
@@ -810,8 +800,8 @@ function App() {
                 {siteData.gallery.map((image, index) => (
                   <motion.div
                     key={index}
-                    whileHover={{ scale: 1.05 }}
-                    className="aspect-square bg-muted overflow-hidden cursor-pointer relative group image-glitch"
+                    whileHover={{ scale: 1.03 }}
+                    className="aspect-square bg-muted overflow-hidden cursor-pointer relative group"
                     onClick={() => setGalleryIndex(index)}
                   >
                     <img src={image} alt={`Gallery ${index + 1}`} className="w-full h-full object-cover" />
@@ -839,9 +829,9 @@ function App() {
         </div>
       </section>
 
-      <Separator className="bg-foreground/20" />
+      <Separator className="bg-border" />
 
-      <section id="connect" className="py-24 px-4 bg-card/30">
+      <section id="connect" className="py-24 px-4 bg-card/50">
         <div className="container mx-auto max-w-4xl">
           <motion.div
             initial={{ opacity: 0, y: 50 }}
@@ -849,7 +839,7 @@ function App() {
             viewport={{ once: true }}
             className="text-center"
           >
-            <h2 className="text-4xl md:text-6xl font-bold mb-12 uppercase tracking-tighter text-foreground glitch-text font-mono" data-text="CONNECT">
+            <h2 className="text-4xl md:text-6xl font-bold mb-12 uppercase tracking-tighter text-foreground font-mono" data-text="CONNECT">
               CONNECT
             </h2>
 
@@ -860,7 +850,7 @@ function App() {
                   <Input
                     value={siteData.social.instagram || ''}
                     onChange={(e) => setSiteData((data) => data ? { ...data, social: { ...data.social, instagram: e.target.value } } : data!)}
-                    className="bg-card border-foreground/30"
+                    className="bg-card border-border"
                   />
                 </div>
                 <div>
@@ -868,7 +858,7 @@ function App() {
                   <Input
                     value={siteData.social.facebook || ''}
                     onChange={(e) => setSiteData((data) => data ? { ...data, social: { ...data.social, facebook: e.target.value } } : data!)}
-                    className="bg-card border-foreground/30"
+                    className="bg-card border-border"
                   />
                 </div>
                 <div>
@@ -876,7 +866,7 @@ function App() {
                   <Input
                     value={siteData.social.spotify || ''}
                     onChange={(e) => setSiteData((data) => data ? { ...data, social: { ...data.social, spotify: e.target.value } } : data!)}
-                    className="bg-card border-foreground/30"
+                    className="bg-card border-border"
                   />
                 </div>
                 <div>
@@ -884,7 +874,7 @@ function App() {
                   <Input
                     value={siteData.social.youtube || ''}
                     onChange={(e) => setSiteData((data) => data ? { ...data, social: { ...data.social, youtube: e.target.value } } : data!)}
-                    className="bg-card border-foreground/30"
+                    className="bg-card border-border"
                   />
                 </div>
               </div>
@@ -896,8 +886,8 @@ function App() {
                   href={siteData.social.instagram}
                   target="_blank"
                   rel="noopener noreferrer"
-                  whileHover={{ scale: 1.2, rotate: 5 }}
-                  className="text-foreground hover:text-accent transition-colors"
+                  whileHover={{ scale: 1.1 }}
+                  className="text-foreground hover:text-primary transition-colors"
                 >
                   <InstagramLogo className="w-12 h-12" weight="fill" />
                 </motion.a>
@@ -907,8 +897,8 @@ function App() {
                   href={siteData.social.facebook}
                   target="_blank"
                   rel="noopener noreferrer"
-                  whileHover={{ scale: 1.2, rotate: 5 }}
-                  className="text-foreground hover:text-accent transition-colors"
+                  whileHover={{ scale: 1.1 }}
+                  className="text-foreground hover:text-primary transition-colors"
                 >
                   <FacebookLogo className="w-12 h-12" weight="fill" />
                 </motion.a>
@@ -918,8 +908,8 @@ function App() {
                   href={siteData.social.spotify}
                   target="_blank"
                   rel="noopener noreferrer"
-                  whileHover={{ scale: 1.2, rotate: 5 }}
-                  className="text-foreground hover:text-accent transition-colors"
+                  whileHover={{ scale: 1.1 }}
+                  className="text-foreground hover:text-primary transition-colors"
                 >
                   <SpotifyLogo className="w-12 h-12" weight="fill" />
                 </motion.a>
@@ -929,8 +919,8 @@ function App() {
                   href={siteData.social.youtube}
                   target="_blank"
                   rel="noopener noreferrer"
-                  whileHover={{ scale: 1.2, rotate: 5 }}
-                  className="text-foreground hover:text-accent transition-colors"
+                  whileHover={{ scale: 1.1 }}
+                  className="text-foreground hover:text-primary transition-colors"
                 >
                   <YoutubeLogo className="w-12 h-12" weight="fill" />
                 </motion.a>
@@ -940,7 +930,7 @@ function App() {
         </div>
       </section>
 
-      <footer className="py-12 px-4 border-t border-foreground/20">
+      <footer className="py-12 px-4 border-t border-border">
         <div className="container mx-auto text-center">
           <p className="text-sm text-muted-foreground uppercase tracking-wide font-mono">
             © {new Date().getFullYear()} {siteData.artistName}
@@ -975,23 +965,23 @@ function App() {
               initial={{ opacity: 0, scale: 0.8, rotateX: -15 }}
               animate={{ opacity: 1, scale: 1, rotateX: 0 }}
               exit={{ opacity: 0, scale: 0.8, rotateX: 15 }}
-              transition={{ type: "spring", damping: 20, stiffness: 300 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
               className="fixed inset-0 z-[101] flex items-center justify-center p-4 md:p-8 pointer-events-none"
             >
               <div 
-                className="relative max-w-4xl w-full bg-background/95 border-2 border-foreground cyberpunk-border-glow pointer-events-auto scanline-effect overflow-y-auto max-h-[90vh]"
+                className="relative max-w-4xl w-full bg-background/98 border border-primary/30 pointer-events-auto overflow-y-auto max-h-[90vh] scanline-effect"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="absolute -top-2 -left-2 w-8 h-8 border-t-4 border-l-4 border-accent animate-pulse" />
-                <div className="absolute -top-2 -right-2 w-8 h-8 border-t-4 border-r-4 border-accent animate-pulse" style={{ animationDelay: '0.2s' }} />
-                <div className="absolute -bottom-2 -left-2 w-8 h-8 border-b-4 border-l-4 border-accent animate-pulse" style={{ animationDelay: '0.4s' }} />
-                <div className="absolute -bottom-2 -right-2 w-8 h-8 border-b-4 border-r-4 border-accent animate-pulse" style={{ animationDelay: '0.6s' }} />
+                <div className="absolute -top-1 -left-1 w-6 h-6 border-t-2 border-l-2 border-primary/50" />
+                <div className="absolute -top-1 -right-1 w-6 h-6 border-t-2 border-r-2 border-primary/50" />
+                <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-2 border-l-2 border-primary/50" />
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-2 border-r-2 border-primary/50" />
 
                 <div className="relative p-8 md:p-12">
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="absolute top-4 right-4 text-foreground hover:text-accent hover:bg-foreground/10 z-10"
+                    className="absolute top-4 right-4 text-foreground hover:text-primary hover:bg-primary/10 z-10"
                     onClick={() => setCyberpunkOverlay(null)}
                   >
                     <X className="w-6 h-6" />
@@ -1001,7 +991,7 @@ function App() {
                     <div className="mt-8 space-y-6">
                       <div className="flex flex-col md:flex-row gap-6">
                         {cyberpunkOverlay.data.image && (
-                          <div className="w-48 h-48 bg-muted relative image-glitch">
+                          <div className="w-48 h-48 bg-muted relative">
                             <img
                               src={cyberpunkOverlay.data.image}
                               alt={cyberpunkOverlay.data.name}
@@ -1010,8 +1000,8 @@ function App() {
                           </div>
                         )}
                         <div className="flex-1">
-                          <div className="text-xs text-accent uppercase tracking-widest font-mono mb-2">// MEMBER.PROFILE</div>
-                          <h2 className="text-4xl font-bold uppercase font-mono mb-2 glitch-text chromatic-aberration" data-text={cyberpunkOverlay.data.name}>
+                          <div className="text-xs text-primary uppercase tracking-widest font-mono mb-2">// MEMBER.PROFILE</div>
+                          <h2 className="text-4xl font-bold uppercase font-mono mb-2" data-text={cyberpunkOverlay.data.name}>
                             {cyberpunkOverlay.data.name}
                           </h2>
                           <p className="text-xl text-muted-foreground font-mono mb-4">{cyberpunkOverlay.data.role}</p>
@@ -1032,8 +1022,8 @@ function App() {
                   {cyberpunkOverlay.type === 'gig' && (
                     <div className="mt-8 space-y-6">
                       <div>
-                        <div className="text-xs text-accent uppercase tracking-widest font-mono mb-2">// EVENT.DATA</div>
-                        <h2 className="text-4xl md:text-5xl font-bold uppercase font-mono mb-4 glitch-text chromatic-aberration" data-text={cyberpunkOverlay.data.venue}>
+                        <div className="text-xs text-primary uppercase tracking-widest font-mono mb-2">// EVENT.DATA</div>
+                        <h2 className="text-4xl md:text-5xl font-bold uppercase font-mono mb-4" data-text={cyberpunkOverlay.data.venue}>
                           {cyberpunkOverlay.data.venue}
                         </h2>
                       </div>
@@ -1042,7 +1032,7 @@ function App() {
                         <div>
                           <div className="text-xs text-muted-foreground uppercase tracking-wide font-mono mb-1">Location</div>
                           <div className="flex items-center gap-2 text-xl font-mono">
-                            <MapPin className="w-5 h-5 text-accent" />
+                            <MapPin className="w-5 h-5 text-primary" />
                             {cyberpunkOverlay.data.location}
                           </div>
                         </div>
@@ -1050,7 +1040,7 @@ function App() {
                         <div>
                           <div className="text-xs text-muted-foreground uppercase tracking-wide font-mono mb-1">Date & Time</div>
                           <div className="flex items-center gap-2 text-xl font-mono">
-                            <CalendarBlank className="w-5 h-5 text-accent" />
+                            <CalendarBlank className="w-5 h-5 text-primary" />
                             {new Date(cyberpunkOverlay.data.date).toLocaleDateString('en-US', { 
                               weekday: 'long', 
                               year: 'numeric', 
@@ -1079,8 +1069,8 @@ function App() {
                         </div>
                       )}
 
-                      <div className="pt-6 border-t border-foreground/20">
-                        <div className="text-xs text-accent font-mono">// SYSTEM.STATUS: ACTIVE</div>
+                      <div className="pt-6 border-t border-border">
+                        <div className="text-xs text-primary font-mono">// SYSTEM.STATUS: ACTIVE</div>
                       </div>
                     </div>
                   )}
@@ -1088,7 +1078,7 @@ function App() {
                   {cyberpunkOverlay.type === 'release' && (
                     <div className="mt-8">
                       <div className="grid md:grid-cols-[300px_1fr] gap-8">
-                        <div className="aspect-square bg-muted relative image-glitch">
+                        <div className="aspect-square bg-muted relative">
                           {cyberpunkOverlay.data.artwork && (
                             <img 
                               src={cyberpunkOverlay.data.artwork} 
@@ -1100,8 +1090,8 @@ function App() {
 
                         <div className="space-y-6">
                           <div>
-                            <div className="text-xs text-accent uppercase tracking-widest font-mono mb-2">// RELEASE.INFO</div>
-                            <h2 className="text-3xl md:text-4xl font-bold uppercase font-mono mb-2 glitch-text chromatic-aberration" data-text={cyberpunkOverlay.data.title}>
+                            <div className="text-xs text-primary uppercase tracking-widest font-mono mb-2">// RELEASE.INFO</div>
+                            <h2 className="text-3xl md:text-4xl font-bold uppercase font-mono mb-2" data-text={cyberpunkOverlay.data.title}>
                               {cyberpunkOverlay.data.title}
                             </h2>
                             <p className="text-xl text-muted-foreground font-mono">{cyberpunkOverlay.data.year}</p>
@@ -1143,8 +1133,8 @@ function App() {
                             </div>
                           </div>
 
-                          <div className="pt-4 border-t border-foreground/20">
-                            <div className="text-xs text-accent font-mono">// MEDIA.STATUS: AVAILABLE</div>
+                          <div className="pt-4 border-t border-border">
+                            <div className="text-xs text-primary font-mono">// MEDIA.STATUS: AVAILABLE</div>
                           </div>
                         </div>
                       </div>
@@ -1158,7 +1148,7 @@ function App() {
       </AnimatePresence>
 
       <Dialog open={editingGig !== null} onOpenChange={() => setEditingGig(null)}>
-        <DialogContent className="bg-background border-foreground/30">
+        <DialogContent className="bg-background border-border">
           <DialogHeader>
             <DialogTitle className="uppercase tracking-wide font-mono">Edit Gig</DialogTitle>
           </DialogHeader>
@@ -1169,7 +1159,7 @@ function App() {
                 <Input
                   value={editingGig.venue}
                   onChange={(e) => setEditingGig({ ...editingGig, venue: e.target.value })}
-                  className="bg-card border-foreground/30"
+                  className="bg-card border-border"
                 />
               </div>
               <div>
@@ -1177,7 +1167,7 @@ function App() {
                 <Input
                   value={editingGig.location}
                   onChange={(e) => setEditingGig({ ...editingGig, location: e.target.value })}
-                  className="bg-card border-foreground/30"
+                  className="bg-card border-border"
                 />
               </div>
               <div>
@@ -1186,7 +1176,7 @@ function App() {
                   type="date"
                   value={editingGig.date}
                   onChange={(e) => setEditingGig({ ...editingGig, date: e.target.value })}
-                  className="bg-card border-foreground/30"
+                  className="bg-card border-border"
                 />
               </div>
               <div>
@@ -1194,7 +1184,7 @@ function App() {
                 <Input
                   value={editingGig.support || ''}
                   onChange={(e) => setEditingGig({ ...editingGig, support: e.target.value })}
-                  className="bg-card border-foreground/30"
+                  className="bg-card border-border"
                 />
               </div>
               <div>
@@ -1202,7 +1192,7 @@ function App() {
                 <Input
                   value={editingGig.ticketUrl || ''}
                   onChange={(e) => setEditingGig({ ...editingGig, ticketUrl: e.target.value })}
-                  className="bg-card border-foreground/30"
+                  className="bg-card border-border"
                 />
               </div>
               <Button onClick={() => saveGig(editingGig)} className="w-full">
@@ -1215,7 +1205,7 @@ function App() {
       </Dialog>
 
       <Dialog open={editingRelease !== null} onOpenChange={() => setEditingRelease(null)}>
-        <DialogContent className="bg-background border-foreground/30">
+        <DialogContent className="bg-background border-border">
           <DialogHeader>
             <DialogTitle className="uppercase tracking-wide font-mono">Edit Release</DialogTitle>
           </DialogHeader>
@@ -1226,7 +1216,7 @@ function App() {
                 <Input
                   value={editingRelease.title}
                   onChange={(e) => setEditingRelease({ ...editingRelease, title: e.target.value })}
-                  className="bg-card border-foreground/30"
+                  className="bg-card border-border"
                 />
               </div>
               <div>
@@ -1234,7 +1224,7 @@ function App() {
                 <Input
                   value={editingRelease.year}
                   onChange={(e) => setEditingRelease({ ...editingRelease, year: e.target.value })}
-                  className="bg-card border-foreground/30"
+                  className="bg-card border-border"
                 />
               </div>
               <div>
@@ -1242,7 +1232,7 @@ function App() {
                 <Input
                   value={editingRelease.artwork}
                   onChange={(e) => setEditingRelease({ ...editingRelease, artwork: e.target.value })}
-                  className="bg-card border-foreground/30"
+                  className="bg-card border-border"
                 />
               </div>
               <div>
@@ -1250,7 +1240,7 @@ function App() {
                 <Input
                   value={editingRelease.spotify || ''}
                   onChange={(e) => setEditingRelease({ ...editingRelease, spotify: e.target.value })}
-                  className="bg-card border-foreground/30"
+                  className="bg-card border-border"
                 />
               </div>
               <div>
@@ -1258,7 +1248,7 @@ function App() {
                 <Input
                   value={editingRelease.youtube || ''}
                   onChange={(e) => setEditingRelease({ ...editingRelease, youtube: e.target.value })}
-                  className="bg-card border-foreground/30"
+                  className="bg-card border-border"
                 />
               </div>
               <Button onClick={() => saveRelease(editingRelease)} className="w-full">
@@ -1274,7 +1264,7 @@ function App() {
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          className="fixed bottom-8 right-8 bg-foreground text-background p-4 shadow-lg scanline-effect"
+          className="fixed bottom-8 right-8 bg-primary text-primary-foreground p-4 shadow-lg"
         >
           <p className="text-sm uppercase font-bold font-mono">Edit Mode Active</p>
         </motion.div>

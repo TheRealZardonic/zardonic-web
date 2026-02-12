@@ -8,35 +8,35 @@
 }
 
 :root {
-  --background: oklch(0 0 0);
-  --foreground: oklch(1 0 0);
+  --background: oklch(0.1 0 0);
+  --foreground: oklch(0.95 0 0);
   
-  --card: oklch(0.08 0 0);
+  --card: oklch(0.15 0 0);
   --card-foreground: oklch(0.95 0 0);
   
-  --popover: oklch(0.05 0 0);
+  --popover: oklch(0.12 0 0);
   --popover-foreground: oklch(0.95 0 0);
   
-  --primary: oklch(0.9 0 0);
-  --primary-foreground: oklch(0 0 0);
+  --primary: oklch(0.45 0.22 25);
+  --primary-foreground: oklch(1 0 0);
   
-  --secondary: oklch(0.15 0 0);
+  --secondary: oklch(0.2 0 0);
   --secondary-foreground: oklch(0.95 0 0);
   
-  --muted: oklch(0.2 0 0);
-  --muted-foreground: oklch(0.5 0 0);
+  --muted: oklch(0.25 0 0);
+  --muted-foreground: oklch(0.6 0 0);
   
-  --accent: oklch(0.85 0 0);
-  --accent-foreground: oklch(0 0 0);
+  --accent: oklch(0.55 0.25 25);
+  --accent-foreground: oklch(1 0 0);
   
-  --destructive: oklch(0.4 0 0);
+  --destructive: oklch(0.45 0.22 25);
   --destructive-foreground: oklch(1 0 0);
   
   --border: oklch(0.25 0 0);
-  --input: oklch(0.2 0 0);
-  --ring: oklch(0.8 0 0);
+  --input: oklch(0.25 0 0);
+  --ring: oklch(0.55 0.25 25);
   
-  --radius: 0rem;
+  --radius: 0.125rem;
 }
 
 @theme {
@@ -105,7 +105,6 @@ h1, h2, h3, h4, h5, h6 {
 
 .scanline-effect {
   position: relative;
-  overflow: hidden;
 }
 
 .scanline-effect::before {
@@ -117,13 +116,13 @@ h1, h2, h3, h4, h5, h6 {
   height: 100%;
   background: repeating-linear-gradient(
     0deg,
-    rgba(255, 255, 255, 0.02) 0px,
-    rgba(0, 0, 0, 0.3) 1px,
-    rgba(0, 0, 0, 0.3) 2px,
-    rgba(255, 255, 255, 0.02) 3px
+    transparent 0px,
+    rgba(255, 255, 255, 0.01) 1px,
+    transparent 2px
   );
   pointer-events: none;
   z-index: 1;
+  opacity: 0.3;
 }
 
 .glitch-text {
@@ -143,38 +142,38 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .glitch-text:hover::before {
-  animation: glitch-anim-1 0.3s ease;
-  color: oklch(1 0 0);
+  animation: glitch-anim-1 0.2s ease;
+  color: oklch(0.95 0 0);
   z-index: -1;
-  text-shadow: 2px 0 oklch(0.8 0 0);
+  text-shadow: 1px 0 oklch(0.55 0.25 25);
   clip: rect(44px, 450px, 56px, 0);
 }
 
 .glitch-text:hover::after {
-  animation: glitch-anim-2 0.3s ease;
-  color: oklch(1 0 0);
+  animation: glitch-anim-2 0.2s ease;
+  color: oklch(0.95 0 0);
   z-index: -2;
-  text-shadow: -2px 0 oklch(0.5 0 0);
+  text-shadow: -1px 0 oklch(0.55 0.25 25 / 0.5);
   clip: rect(44px, 450px, 56px, 0);
 }
 
 @keyframes glitch-anim-1 {
-  0% { clip: rect(42px, 9999px, 44px, 0); opacity: 0.8; }
-  50% { clip: rect(12px, 9999px, 59px, 0); opacity: 0.8; }
+  0% { clip: rect(42px, 9999px, 44px, 0); opacity: 0.6; }
+  50% { clip: rect(12px, 9999px, 59px, 0); opacity: 0.6; }
   100% { clip: rect(48px, 9999px, 29px, 0); opacity: 0; }
 }
 
 @keyframes glitch-anim-2 {
-  0% { clip: rect(65px, 9999px, 119px, 0); opacity: 0.6; }
-  50% { clip: rect(49px, 9999px, 35px, 0); opacity: 0.6; }
+  0% { clip: rect(65px, 9999px, 119px, 0); opacity: 0.4; }
+  50% { clip: rect(49px, 9999px, 35px, 0); opacity: 0.4; }
   100% { clip: rect(89px, 9999px, 16px, 0); opacity: 0; }
 }
 
 .chromatic-aberration {
   position: relative;
   text-shadow: 
-    1px 0 0 rgba(255, 255, 255, 0.3),
-    -1px 0 0 rgba(128, 128, 128, 0.3);
+    0.5px 0 0 rgba(255, 100, 100, 0.15),
+    -0.5px 0 0 rgba(100, 255, 255, 0.15);
 }
 
 .crt-effect {
@@ -187,20 +186,21 @@ h1, h2, h3, h4, h5, h6 {
   inset: 0;
   background: repeating-linear-gradient(
     0deg,
-    rgba(0, 0, 0, 0.1) 0px,
-    rgba(0, 0, 0, 0.1) 1px,
+    rgba(0, 0, 0, 0.03) 0px,
+    rgba(0, 0, 0, 0.03) 1px,
     transparent 1px,
     transparent 2px
   );
   pointer-events: none;
   z-index: 100;
+  opacity: 0.4;
 }
 
 .crt-effect::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.3) 100%);
+  background: radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.15) 100%);
   pointer-events: none;
   z-index: 99;
 }
@@ -213,44 +213,46 @@ h1, h2, h3, h4, h5, h6 {
   content: '';
   position: absolute;
   inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.02'/%3E%3C/svg%3E");
   pointer-events: none;
   z-index: 50;
+  opacity: 0.5;
 }
 
 .hud-corner {
   position: absolute;
-  width: 20px;
-  height: 20px;
-  border-color: oklch(0.9 0 0);
+  width: 16px;
+  height: 16px;
+  border-color: oklch(0.45 0.22 25);
+  opacity: 0.6;
 }
 
 .hud-corner.top-left {
   top: 0;
   left: 0;
-  border-top: 2px solid;
-  border-left: 2px solid;
+  border-top: 1px solid;
+  border-left: 1px solid;
 }
 
 .hud-corner.top-right {
   top: 0;
   right: 0;
-  border-top: 2px solid;
-  border-right: 2px solid;
+  border-top: 1px solid;
+  border-right: 1px solid;
 }
 
 .hud-corner.bottom-left {
   bottom: 0;
   left: 0;
-  border-bottom: 2px solid;
-  border-left: 2px solid;
+  border-bottom: 1px solid;
+  border-left: 1px solid;
 }
 
 .hud-corner.bottom-right {
   bottom: 0;
   right: 0;
-  border-bottom: 2px solid;
-  border-right: 2px solid;
+  border-bottom: 1px solid;
+  border-right: 1px solid;
 }
 
 .glitch-container {
@@ -330,16 +332,16 @@ h1, h2, h3, h4, h5, h6 {
   background: 
     repeating-linear-gradient(
       0deg,
-      rgba(255, 255, 255, 0.03) 0px,
-      rgba(0, 0, 0, 0.4) 1px,
-      rgba(0, 0, 0, 0.4) 2px,
-      rgba(255, 255, 255, 0.03) 3px
+      rgba(255, 255, 255, 0.01) 0px,
+      rgba(0, 0, 0, 0.2) 1px,
+      rgba(0, 0, 0, 0.2) 2px,
+      rgba(255, 255, 255, 0.01) 3px
     ),
-    radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.5) 100%);
+    radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.3) 100%);
 }
 
 .cyberpunk-border-glow {
   box-shadow: 
-    0 0 20px rgba(255, 255, 255, 0.2),
-    inset 0 0 20px rgba(255, 255, 255, 0.05);
+    0 0 10px rgba(180, 50, 50, 0.15),
+    inset 0 0 10px rgba(180, 50, 50, 0.05);
 }
