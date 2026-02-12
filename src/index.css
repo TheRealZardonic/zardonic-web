@@ -320,7 +320,6 @@ h1, h2, h3, h4, h5, h6 {
 
 .hover-glitch {
   position: relative;
-  transition: all 0.1s ease;
 }
 
 .hover-chromatic {
