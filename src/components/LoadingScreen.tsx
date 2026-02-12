@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
-import modelFile from '@/assets/documents/Model_Compressed.glb'
+import modelFile from '@/assets/models/ZARDONICHEAD.glb'
 
 interface LoadingScreenProps {
   onLoadComplete: () => void
