@@ -34,6 +34,7 @@ import { Separator } from '@/components/ui/separator'
 import { Toaster } from '@/components/ui/sonner'
 import { toast } from 'sonner'
 import { Label } from '@/components/ui/label'
+import heroImage from '@/assets/images/meta_eyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ==.webp'
 
 interface Track {
   id: string
@@ -85,7 +86,7 @@ interface SiteData {
 function App() {
   const [siteData, setSiteData] = useKV<SiteData>('zardonic-site-data', {
     artistName: 'ZARDONIC',
-    heroImage: '',
+    heroImage: heroImage,
     bio: `THE CLASH OF DISPARATE ELEMENTS ACTIVATES INNOVATION, AND EVERY GENERATION BRINGS US TIMELESS FIGURES WHO ACCIDENTALLY SPARK A NEW REVOLUTIONARY SOUND WITHIN THE MUSIC WORLD. CHUCK BERRY MIXED JAZZ, BLUES, GOSPEL AND COUNTRY MUSIC TO CREATE ROCK N ROLL. A FEW DECADES LATER, OZZY OSBOURNE TURNED UP THE GAIN TO CREATE HEAVY METAL. AND SINCE THE EARLY 2000S, FEDERICO AGREDA ALVAREZ, THE MASKED PERFORMER KNOWN TO THE WORLD AS DJ AND PRODUCER ZARDONIC, HAS HARNESSED THE POWER OF THE NEXUS BETWEEN DRUM & BASS AND HEAVY METAL TO CREATE THE SOUND THAT IS NOW KNOWN AS METAL & BASS.`,
     tracks: [
       {
@@ -118,6 +119,7 @@ function App() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [editingGig, setEditingGig] = useState<Gig | null>(null)
   const [editingRelease, setEditingRelease] = useState<Release | null>(null)
+  const [cyberpunkOverlay, setCyberpunkOverlay] = useState<{type: 'gig' | 'release' | 'image', data: any} | null>(null)
   
   const audioRef = useRef<HTMLAudioElement>(null)
   const [currentUser, setCurrentUser] = useState<any>(null)
@@ -566,7 +568,10 @@ function App() {
                     whileHover={{ scale: 1.02 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <Card className="p-6 bg-card border-foreground/30 hover:border-foreground/60 transition-colors">
+                    <Card 
+                      className="p-6 bg-card border-foreground/30 hover:border-foreground/60 transition-colors cursor-pointer"
+                      onClick={() => !editMode && setCyberpunkOverlay({ type: 'gig', data: gig })}
+                    >
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="space-y-2">
                           <h3 className="text-xl font-bold uppercase font-mono">{gig.venue}</h3>
@@ -593,20 +598,18 @@ function App() {
                         </div>
 
                         <div className="flex gap-2">
-                          {gig.ticketUrl && (
-                            <Button asChild>
-                              <a href={gig.ticketUrl} target="_blank" rel="noopener noreferrer" className="font-mono">
-                                <Ticket className="w-4 h-4 mr-2" />
-                                Tickets
-                              </a>
-                            </Button>
-                          )}
                           {editMode && (
                             <>
-                              <Button variant="outline" size="sm" onClick={() => setEditingGig(gig)}>
+                              <Button variant="outline" size="sm" onClick={(e) => {
+                                e.stopPropagation()
+                                setEditingGig(gig)
+                              }}>
                                 <Pencil className="w-4 h-4" />
                               </Button>
-                              <Button variant="destructive" size="sm" onClick={() => deleteGig(gig.id)}>
+                              <Button variant="destructive" size="sm" onClick={(e) => {
+                                e.stopPropagation()
+                                deleteGig(gig.id)
+                              }}>
                                 <Trash className="w-4 h-4" />
                               </Button>
                             </>
@@ -657,14 +660,20 @@ function App() {
                     whileHover={{ scale: 1.05 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <Card className="overflow-hidden bg-card border-foreground/30 hover:border-foreground/60 transition-all scanline-effect">
+                    <Card 
+                      className="overflow-hidden bg-card border-foreground/30 hover:border-foreground/60 transition-all scanline-effect cursor-pointer"
+                      onClick={() => !editMode && setCyberpunkOverlay({ type: 'release', data: release })}
+                    >
                       <div className="aspect-square bg-muted relative image-glitch">
                         {release.artwork && (
                           <img src={release.artwork} alt={release.title} className="w-full h-full object-cover" />
                         )}
                         {editMode && (
                           <div className="absolute top-2 right-2 flex gap-1">
-                            <Button variant="destructive" size="sm" onClick={() => deleteRelease(release.id)}>
+                            <Button variant="destructive" size="sm" onClick={(e) => {
+                              e.stopPropagation()
+                              deleteRelease(release.id)
+                            }}>
                               <Trash className="w-3 h-3" />
                             </Button>
                           </div>
@@ -674,24 +683,15 @@ function App() {
                         <h3 className="font-bold uppercase text-sm mb-1 truncate font-mono">{release.title}</h3>
                         <p className="text-xs text-muted-foreground mb-3 font-mono">{release.year}</p>
                         
-                        <div className="flex flex-wrap gap-2">
-                          {release.spotify && (
-                            <a href={release.spotify} target="_blank" rel="noopener noreferrer">
-                              <SpotifyLogo className="w-5 h-5 hover:text-accent transition-colors" />
-                            </a>
-                          )}
-                          {release.youtube && (
-                            <a href={release.youtube} target="_blank" rel="noopener noreferrer">
-                              <YoutubeLogo className="w-5 h-5 hover:text-accent transition-colors" />
-                            </a>
-                          )}
-                        </div>
                         {editMode && (
                           <Button
                             variant="outline"
                             size="sm"
                             className="w-full mt-3"
-                            onClick={() => setEditingRelease(release)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setEditingRelease(release)
+                            }}
                           >
                             <Pencil className="w-3 h-3 mr-2" />
                             Edit
@@ -751,7 +751,7 @@ function App() {
                     key={index}
                     whileHover={{ scale: 1.05 }}
                     className="aspect-square bg-muted overflow-hidden cursor-pointer relative group image-glitch"
-                    onClick={() => setSelectedImage(image)}
+                    onClick={() => setCyberpunkOverlay({ type: 'image', data: image })}
                   >
                     <img src={image} alt={`Gallery ${index + 1}`} className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -897,6 +897,181 @@ function App() {
           )}
         </DialogContent>
       </Dialog>
+
+      <AnimatePresence>
+        {cyberpunkOverlay && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/90 z-[100] backdrop-blur-sm cyberpunk-overlay-bg"
+              onClick={() => setCyberpunkOverlay(null)}
+            />
+            
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8, rotateX: -15 }}
+              animate={{ opacity: 1, scale: 1, rotateX: 0 }}
+              exit={{ opacity: 0, scale: 0.8, rotateX: 15 }}
+              transition={{ type: "spring", damping: 20, stiffness: 300 }}
+              className="fixed inset-0 z-[101] flex items-center justify-center p-4 md:p-8 pointer-events-none"
+            >
+              <div 
+                className="relative max-w-4xl w-full bg-background/95 border-2 border-foreground cyberpunk-border-glow pointer-events-auto scanline-effect overflow-y-auto max-h-[90vh]"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="absolute -top-2 -left-2 w-8 h-8 border-t-4 border-l-4 border-accent animate-pulse" />
+                <div className="absolute -top-2 -right-2 w-8 h-8 border-t-4 border-r-4 border-accent animate-pulse" style={{ animationDelay: '0.2s' }} />
+                <div className="absolute -bottom-2 -left-2 w-8 h-8 border-b-4 border-l-4 border-accent animate-pulse" style={{ animationDelay: '0.4s' }} />
+                <div className="absolute -bottom-2 -right-2 w-8 h-8 border-b-4 border-r-4 border-accent animate-pulse" style={{ animationDelay: '0.6s' }} />
+
+                <div className="relative p-8 md:p-12">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-4 right-4 text-foreground hover:text-accent hover:bg-foreground/10 z-10"
+                    onClick={() => setCyberpunkOverlay(null)}
+                  >
+                    <X className="w-6 h-6" />
+                  </Button>
+
+                  {cyberpunkOverlay.type === 'image' && (
+                    <div className="mt-8">
+                      <img 
+                        src={cyberpunkOverlay.data} 
+                        alt="Gallery" 
+                        className="w-full h-auto max-h-[70vh] object-contain image-glitch" 
+                      />
+                    </div>
+                  )}
+
+                  {cyberpunkOverlay.type === 'gig' && (
+                    <div className="mt-8 space-y-6">
+                      <div>
+                        <div className="text-xs text-accent uppercase tracking-widest font-mono mb-2">// EVENT.DATA</div>
+                        <h2 className="text-4xl md:text-5xl font-bold uppercase font-mono mb-4 glitch-text chromatic-aberration" data-text={cyberpunkOverlay.data.venue}>
+                          {cyberpunkOverlay.data.venue}
+                        </h2>
+                      </div>
+
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <div>
+                          <div className="text-xs text-muted-foreground uppercase tracking-wide font-mono mb-1">Location</div>
+                          <div className="flex items-center gap-2 text-xl font-mono">
+                            <MapPin className="w-5 h-5 text-accent" />
+                            {cyberpunkOverlay.data.location}
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="text-xs text-muted-foreground uppercase tracking-wide font-mono mb-1">Date & Time</div>
+                          <div className="flex items-center gap-2 text-xl font-mono">
+                            <CalendarBlank className="w-5 h-5 text-accent" />
+                            {new Date(cyberpunkOverlay.data.date).toLocaleDateString('en-US', { 
+                              weekday: 'long', 
+                              year: 'numeric', 
+                              month: 'long', 
+                              day: 'numeric' 
+                            })}
+                          </div>
+                        </div>
+                      </div>
+
+                      {cyberpunkOverlay.data.support && (
+                        <div>
+                          <div className="text-xs text-muted-foreground uppercase tracking-wide font-mono mb-1">Support Acts</div>
+                          <p className="text-lg font-mono text-foreground/90">{cyberpunkOverlay.data.support}</p>
+                        </div>
+                      )}
+
+                      {cyberpunkOverlay.data.ticketUrl && (
+                        <div className="pt-4">
+                          <Button asChild size="lg" className="w-full md:w-auto font-mono uppercase tracking-wider">
+                            <a href={cyberpunkOverlay.data.ticketUrl} target="_blank" rel="noopener noreferrer">
+                              <Ticket className="w-5 h-5 mr-2" />
+                              Get Tickets
+                            </a>
+                          </Button>
+                        </div>
+                      )}
+
+                      <div className="pt-6 border-t border-foreground/20">
+                        <div className="text-xs text-accent font-mono">// SYSTEM.STATUS: ACTIVE</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {cyberpunkOverlay.type === 'release' && (
+                    <div className="mt-8">
+                      <div className="grid md:grid-cols-[300px_1fr] gap-8">
+                        <div className="aspect-square bg-muted relative image-glitch">
+                          {cyberpunkOverlay.data.artwork && (
+                            <img 
+                              src={cyberpunkOverlay.data.artwork} 
+                              alt={cyberpunkOverlay.data.title} 
+                              className="w-full h-full object-cover" 
+                            />
+                          )}
+                        </div>
+
+                        <div className="space-y-6">
+                          <div>
+                            <div className="text-xs text-accent uppercase tracking-widest font-mono mb-2">// RELEASE.INFO</div>
+                            <h2 className="text-3xl md:text-4xl font-bold uppercase font-mono mb-2 glitch-text chromatic-aberration" data-text={cyberpunkOverlay.data.title}>
+                              {cyberpunkOverlay.data.title}
+                            </h2>
+                            <p className="text-xl text-muted-foreground font-mono">{cyberpunkOverlay.data.year}</p>
+                          </div>
+
+                          <div>
+                            <div className="text-xs text-muted-foreground uppercase tracking-wide font-mono mb-3">Stream & Download</div>
+                            <div className="flex flex-wrap gap-4">
+                              {cyberpunkOverlay.data.spotify && (
+                                <Button asChild variant="outline" className="font-mono">
+                                  <a href={cyberpunkOverlay.data.spotify} target="_blank" rel="noopener noreferrer">
+                                    <SpotifyLogo className="w-5 h-5 mr-2" weight="fill" />
+                                    Spotify
+                                  </a>
+                                </Button>
+                              )}
+                              {cyberpunkOverlay.data.youtube && (
+                                <Button asChild variant="outline" className="font-mono">
+                                  <a href={cyberpunkOverlay.data.youtube} target="_blank" rel="noopener noreferrer">
+                                    <YoutubeLogo className="w-5 h-5 mr-2" weight="fill" />
+                                    YouTube
+                                  </a>
+                                </Button>
+                              )}
+                              {cyberpunkOverlay.data.soundcloud && (
+                                <Button asChild variant="outline" className="font-mono">
+                                  <a href={cyberpunkOverlay.data.soundcloud} target="_blank" rel="noopener noreferrer">
+                                    SoundCloud
+                                  </a>
+                                </Button>
+                              )}
+                              {cyberpunkOverlay.data.bandcamp && (
+                                <Button asChild variant="outline" className="font-mono">
+                                  <a href={cyberpunkOverlay.data.bandcamp} target="_blank" rel="noopener noreferrer">
+                                    Bandcamp
+                                  </a>
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="pt-4 border-t border-foreground/20">
+                            <div className="text-xs text-accent font-mono">// MEDIA.STATUS: AVAILABLE</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       <Dialog open={editingGig !== null} onOpenChange={() => setEditingGig(null)}>
         <DialogContent className="bg-background border-foreground/30">

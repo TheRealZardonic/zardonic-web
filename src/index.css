@@ -5,6 +5,10 @@
   * {
     @apply border-border
   }
+  
+  html {
+    overflow-y: scroll;
+  }
 }
 
 :root {
@@ -385,4 +389,22 @@ h1, h2, h3, h4, h5, h6 {
   80% { transform: translateX(-5px); clip: rect(23px, 9999px, 98px, 0); }
   90% { transform: translateX(5px); clip: rect(57px, 9999px, 41px, 0); }
   100% { transform: translateX(0); clip: rect(71px, 9999px, 15px, 0); }
+}
+
+.cyberpunk-overlay-bg {
+  background: 
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.03) 0px,
+      rgba(0, 0, 0, 0.4) 1px,
+      rgba(0, 0, 0, 0.4) 2px,
+      rgba(255, 255, 255, 0.03) 3px
+    ),
+    radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.5) 100%);
+}
+
+.cyberpunk-border-glow {
+  box-shadow: 
+    0 0 20px rgba(255, 255, 255, 0.2),
+    inset 0 0 20px rgba(255, 255, 255, 0.05);
 }
