@@ -234,82 +234,7 @@ In the end, Zardonic will unite listeners with Superstars.
         support: 'Evol Intent, Counterstrike'
       }
     ],
-    releases: [
-      {
-        id: '1',
-        title: 'Superstars',
-        artwork: 'https://images.unsplash.com/photo-1619983081563-430f63602796?w=500&h=500&fit=crop',
-        year: '2023',
-        spotify: 'https://open.spotify.com/album/example1',
-        youtube: 'https://youtube.com/playlist/example1',
-        soundcloud: 'https://soundcloud.com/zardonic/sets/superstars',
-        bandcamp: 'https://zardonic.bandcamp.com/album/superstars'
-      },
-      {
-        id: '2',
-        title: 'Become',
-        artwork: 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=500&h=500&fit=crop',
-        year: '2018',
-        spotify: 'https://open.spotify.com/album/example2',
-        youtube: 'https://youtube.com/playlist/example2',
-        soundcloud: 'https://soundcloud.com/zardonic/sets/become',
-        bandcamp: 'https://zardonic.bandcamp.com/album/become'
-      },
-      {
-        id: '3',
-        title: 'Antihero',
-        artwork: 'https://images.unsplash.com/photo-1598387993441-a364f854c3e1?w=500&h=500&fit=crop',
-        year: '2015',
-        spotify: 'https://open.spotify.com/album/example3',
-        youtube: 'https://youtube.com/playlist/example3',
-        soundcloud: 'https://soundcloud.com/zardonic/sets/antihero',
-        bandcamp: 'https://zardonic.bandcamp.com/album/antihero'
-      },
-      {
-        id: '4',
-        title: 'Vulgar Display of Bass',
-        artwork: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=500&h=500&fit=crop',
-        year: '2013',
-        spotify: 'https://open.spotify.com/album/example4',
-        youtube: 'https://youtube.com/playlist/example4',
-        soundcloud: 'https://soundcloud.com/zardonic/sets/vulgar-display-of-bass'
-      },
-      {
-        id: '5',
-        title: 'Black And White',
-        artwork: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=500&h=500&fit=crop',
-        year: '2011',
-        spotify: 'https://open.spotify.com/album/example5',
-        youtube: 'https://youtube.com/playlist/example5',
-        bandcamp: 'https://zardonic.bandcamp.com/album/black-and-white'
-      },
-      {
-        id: '6',
-        title: 'Revelation',
-        artwork: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&h=500&fit=crop',
-        year: '2009',
-        spotify: 'https://open.spotify.com/album/example6',
-        soundcloud: 'https://soundcloud.com/zardonic/sets/revelation',
-        bandcamp: 'https://zardonic.bandcamp.com/album/revelation'
-      },
-      {
-        id: '7',
-        title: 'Before The Dawn',
-        artwork: 'https://images.unsplash.com/photo-1487180144351-b8472da7d491?w=500&h=500&fit=crop',
-        year: '2007',
-        spotify: 'https://open.spotify.com/album/example7',
-        bandcamp: 'https://zardonic.bandcamp.com/album/before-the-dawn'
-      },
-      {
-        id: '8',
-        title: 'Raised On The Streets',
-        artwork: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=500&h=500&fit=crop',
-        year: '2020',
-        spotify: 'https://open.spotify.com/album/example8',
-        youtube: 'https://youtube.com/playlist/example8',
-        soundcloud: 'https://soundcloud.com/zardonic/sets/raised-on-the-streets'
-      }
-    ],
+    releases: [],
     gallery: [],
     instagramFeed: [],
     members: [],
@@ -1069,7 +994,7 @@ In the end, Zardonic will unite listeners with Superstars.
               )}
             </div>
 
-            {iTunesFetching && siteData.releases.length === 0 ? (
+            {(iTunesFetching || !hasAutoLoaded) && siteData.releases.length === 0 ? (
               <Card className="p-12 bg-card/50 border-border relative overflow-hidden">
                 <div className="flex flex-col items-center justify-center space-y-6">
                   <motion.div
