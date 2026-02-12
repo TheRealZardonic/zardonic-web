@@ -120,12 +120,20 @@ h1, h2, h3, h4, h5, h6 {
   background: repeating-linear-gradient(
     0deg,
     transparent 0px,
-    rgba(255, 255, 255, 0.01) 1px,
-    transparent 2px
+    rgba(255, 255, 255, 0.05) 1px,
+    transparent 2px,
+    transparent 3px,
+    rgba(0, 0, 0, 0.1) 4px
   );
   pointer-events: none;
   z-index: 1;
-  opacity: 0.3;
+  opacity: 0.8;
+  animation: scanline-drift 8s linear infinite;
+}
+
+@keyframes scanline-drift {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(4px); }
 }
 
 .glitch-text {
@@ -305,17 +313,28 @@ h1, h2, h3, h4, h5, h6 {
 
 @keyframes data-stream {
   0% { transform: translateY(-100%); opacity: 0; }
-  50% { opacity: 1; }
+  10% { opacity: 0.6; }
+  90% { opacity: 0.6; }
   100% { transform: translateY(100vh); opacity: 0; }
 }
 
 .data-stream {
   position: fixed;
-  width: 1px;
-  height: 100px;
-  background: linear-gradient(to bottom, transparent, oklch(0.55 0.25 25), transparent);
-  animation: data-stream 3s linear infinite;
+  width: 2px;
+  height: 200px;
+  background: linear-gradient(to bottom, transparent, oklch(0.55 0.25 25 / 0.6), oklch(0.55 0.25 25), oklch(0.55 0.25 25 / 0.6), transparent);
+  animation: data-stream 4s linear infinite;
   pointer-events: none;
+  filter: blur(1px);
+  box-shadow: 0 0 10px oklch(0.55 0.25 25 / 0.4);
+}
+
+.data-stream-container {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .hover-glitch {
@@ -482,6 +501,93 @@ h1, h2, h3, h4, h5, h6 {
 
 .logo-glitch {
   position: relative;
+  animation: logo-periodic-glitch 8s ease-in-out infinite;
+}
+
+@keyframes logo-periodic-glitch {
+  0%, 88%, 100% {
+    transform: translate(0);
+    filter: none;
+  }
+  89% {
+    transform: translate(-2px, 2px);
+    filter: hue-rotate(90deg);
+  }
+  90% {
+    transform: translate(2px, -2px);
+    filter: hue-rotate(-90deg);
+  }
+  91% {
+    transform: translate(-2px, -2px);
+    filter: hue-rotate(90deg);
+  }
+  92% {
+    transform: translate(2px, 2px);
+    filter: hue-rotate(-90deg);
+  }
+  93% {
+    transform: translate(0);
+    filter: none;
+  }
+}
+
+.logo-glitch::before,
+.logo-glitch::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: inherit;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.logo-glitch::before {
+  animation: logo-glitch-before 8s ease-in-out infinite;
+  mix-blend-mode: screen;
+  filter: hue-rotate(180deg);
+}
+
+.logo-glitch::after {
+  animation: logo-glitch-after 8s ease-in-out infinite;
+  mix-blend-mode: screen;
+  filter: hue-rotate(-180deg);
+}
+
+@keyframes logo-glitch-before {
+  0%, 88%, 100% {
+    opacity: 0;
+    transform: translate(0);
+  }
+  89%, 93% {
+    opacity: 0.8;
+    transform: translate(-3px, 0);
+    clip-path: polygon(0 0, 100% 0, 100% 35%, 0 40%);
+  }
+  90%, 92% {
+    opacity: 0.8;
+    transform: translate(3px, 0);
+    clip-path: polygon(0 60%, 100% 65%, 100% 100%, 0 100%);
+  }
+}
+
+@keyframes logo-glitch-after {
+  0%, 88%, 100% {
+    opacity: 0;
+    transform: translate(0);
+  }
+  89%, 93% {
+    opacity: 0.8;
+    transform: translate(3px, 0);
+    clip-path: polygon(0 40%, 100% 35%, 100% 60%, 0 65%);
+  }
+  90%, 92% {
+    opacity: 0.8;
+    transform: translate(-3px, 0);
+    clip-path: polygon(0 0, 100% 0, 100% 40%, 0 35%);
+  }
 }
 
 .text-chromatic {

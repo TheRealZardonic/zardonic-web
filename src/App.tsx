@@ -483,14 +483,14 @@ In the end, Zardonic will unite listeners with Superstars.
       <div className="min-h-screen bg-background text-foreground relative">
       <div className="full-page-noise" />
       
-      {[...Array(8)].map((_, i) => (
+      {[...Array(5)].map((_, i) => (
         <div
           key={i}
           className="data-stream"
           style={{
-            left: `${10 + i * 12}%`,
-            animationDelay: `${i * 0.5}s`,
-            opacity: 0.3,
+            left: `${15 + i * 18}%`,
+            animationDelay: `${i * 0.8}s`,
+            opacity: 0.15,
           }}
         />
       ))}
@@ -583,6 +583,21 @@ In the end, Zardonic will unite listeners with Superstars.
         <div className="absolute inset-0 bg-black" />
         
         <div className="absolute inset-0 noise-effect" />
+        
+        <div className="data-stream-container">
+          {[...Array(16)].map((_, i) => (
+            <div
+              key={i}
+              className="data-stream"
+              style={{
+                left: `${5 + i * 6}%`,
+                animationDelay: `${i * 0.3}s`,
+                animationDuration: `${3 + (i % 3)}s`,
+                opacity: 0.3 + (i % 3) * 0.1,
+              }}
+            />
+          ))}
+        </div>
         
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
