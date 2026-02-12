@@ -3,7 +3,6 @@ import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
 import { useKV } from '@github/spark/hooks'
 import { useKonami } from '@/hooks/use-konami'
 import { useAnalytics, trackClick } from '@/hooks/use-analytics'
-import { ErrorBoundary } from 'react-error-boundary'
 import {
   Play,
   Pause,
@@ -56,7 +55,6 @@ import { SwipeableGallery } from '@/components/SwipeableGallery'
 import { Terminal } from '@/components/Terminal'
 import { LoadingScreen } from '@/components/LoadingScreen'
 import { CircuitBackground } from '@/components/CircuitBackground'
-import { Logo3D } from '@/components/Logo3D'
 import heroImage from '@/assets/images/meta_eyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ==.webp'
 import logoImage from '@/assets/images/meta_eyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ==.webp'
 
@@ -630,21 +628,15 @@ In the end, Zardonic will unite listeners with Superstars.
         >
           <motion.div 
             className="mb-8 relative"
-            initial={{ opacity: 0, clipPath: 'inset(0 0 100% 0)' }}
-            animate={contentLoaded ? { opacity: 1, clipPath: 'inset(0 0 0 0)' } : { opacity: 0, clipPath: 'inset(0 0 100% 0)' }}
+            initial={{ opacity: 0, scale: 0.8, y: 30 }}
+            animate={contentLoaded ? { opacity: 1, scale: 1, y: 0 } : { opacity: 0, scale: 0.8, y: 30 }}
             transition={{ duration: 1.2, delay: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
           >
-            <ErrorBoundary
-              fallback={
-                <div className="w-full h-[350px] md:h-[450px] relative flex items-center justify-center">
-                  <div className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground font-mono text-chromatic">
-                    ZARDONIC
-                  </div>
-                </div>
-              }
-            >
-              <Logo3D />
-            </ErrorBoundary>
+            <img 
+              src={logoImage} 
+              alt={siteData.artistName} 
+              className="h-32 md:h-48 lg:h-64 w-auto object-contain logo-glitch brightness-110 mx-auto"
+            />
           </motion.div>
           
           {editMode && (
