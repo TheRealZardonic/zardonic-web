@@ -3,6 +3,9 @@ import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
 import { useKV } from '@github/spark/hooks'
 import { useKonami } from '@/hooks/use-konami'
 import { useAnalytics, trackClick } from '@/hooks/use-analytics'
+import { fetchITunesReleases, type ITunesRelease } from '@/lib/itunes'
+import { fetchOdesliLinks } from '@/lib/odesli'
+import { fetchBandsintownEvents } from '@/lib/bandsintown'
 import {
   Play,
   Pause,
@@ -37,6 +40,8 @@ import {
   SoundcloudLogo,
   TiktokLogo,
   ApplePodcastsLogo,
+  ArrowsClockwise,
+  MusicNote,
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -80,6 +85,7 @@ interface Release {
   title: string
   artwork: string
   year: string
+  releaseDate?: string
   spotify?: string
   soundcloud?: string
   youtube?: string
@@ -307,12 +313,14 @@ In the end, Zardonic will unite listeners with Superstars.
     members: [],
     mediaFiles: [],
     social: {
-      instagram: 'https://instagram.com/zardonic',
-      facebook: 'https://facebook.com/zardonic',
-      spotify: 'https://open.spotify.com/artist/zardonic',
-      youtube: 'https://youtube.com/zardonic',
+      instagram: 'https://instagram.com/zfrederickx',
+      facebook: 'https://facebook.com/ZardonicOfficial',
+      spotify: 'https://open.spotify.com/artist/0hVKeSdrYbJjFqLRnYeHOp',
+      youtube: 'https://youtube.com/@ZardonicOfficial',
       soundcloud: 'https://soundcloud.com/zardonic',
       bandcamp: 'https://zardonic.bandcamp.com',
+      tiktok: 'https://tiktok.com/@zardonic',
+      appleMusic: 'https://music.apple.com/artist/zardonic/271263343',
     },
   })
 
@@ -330,6 +338,9 @@ In the end, Zardonic will unite listeners with Superstars.
   const [overlayLoading, setOverlayLoading] = useState(false)
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [contentReady, setContentReady] = useState(false)
+  const [iTunesFetching, setITunesFetching] = useState(false)
+  const [bandsintownFetching, setBandsintownFetching] = useState(false)
+  const [hasAutoLoaded, setHasAutoLoaded] = useState(false)
   
   const audioRef = useRef<HTMLAudioElement>(null)
   const [currentUser, setCurrentUser] = useState<any>(null)
@@ -376,6 +387,132 @@ In the end, Zardonic will unite listeners with Superstars.
       audioRef.current.volume = volume[0] / 100
     }
   }, [volume])
+
+  // Auto-fetch iTunes releases and Bandsintown events on mount
+  useEffect(() => {
+    if (!hasAutoLoaded && siteData) {
+      setHasAutoLoaded(true)
+      handleFetchITunesReleases(true)
+      handleFetchBandsintownEvents(true)
+    }
+  }, [hasAutoLoaded, siteData])
+
+  const handleFetchITunesReleases = async (isAutoLoad = false) => {
+    setITunesFetching(true)
+    try {
+      const iTunesReleases = await fetchITunesReleases()
+      if (iTunesReleases.length === 0) {
+        if (!isAutoLoad) toast.info('No releases found on iTunes')
+        return
+      }
+
+      // Enrich with Odesli streaming links in batches
+      const BATCH_SIZE = 3
+      for (let i = 0; i < iTunesReleases.length; i += BATCH_SIZE) {
+        const batch = iTunesReleases.slice(i, i + BATCH_SIZE)
+        await Promise.allSettled(
+          batch.map(async (release) => {
+            if (!release.appleMusic) return
+            try {
+              const links = await fetchOdesliLinks(release.appleMusic)
+              if (links) {
+                if (links.spotify) (release as any)._spotify = links.spotify
+                if (links.soundcloud) (release as any)._soundcloud = links.soundcloud
+                if (links.youtube) (release as any)._youtube = links.youtube
+                if (links.bandcamp) (release as any)._bandcamp = links.bandcamp
+              }
+            } catch (e) {
+              console.error(`Odesli enrichment failed for ${release.title}:`, e)
+            }
+          })
+        )
+      }
+
+      setSiteData((data) => {
+        if (!data) return data!
+        const existingIds = new Set(data.releases.map(r => r.id))
+        const newReleases: Release[] = iTunesReleases
+          .filter(r => !existingIds.has(r.id))
+          .map(r => ({
+            id: r.id,
+            title: r.title,
+            artwork: r.artwork,
+            year: r.releaseDate ? new Date(r.releaseDate).getFullYear().toString() : '',
+            releaseDate: r.releaseDate,
+            spotify: (r as any)._spotify || '',
+            soundcloud: (r as any)._soundcloud || '',
+            youtube: (r as any)._youtube || '',
+            bandcamp: (r as any)._bandcamp || '',
+            appleMusic: r.appleMusic || '',
+          }))
+
+        // Update existing releases with better artwork from iTunes
+        const updatedReleases = data.releases.map(existing => {
+          const match = iTunesReleases.find(s => s.id === existing.id)
+          if (match) {
+            return {
+              ...existing,
+              artwork: match.artwork || existing.artwork,
+              appleMusic: match.appleMusic || existing.appleMusic,
+              spotify: (match as any)._spotify || existing.spotify,
+              soundcloud: (match as any)._soundcloud || existing.soundcloud,
+              youtube: (match as any)._youtube || existing.youtube,
+              bandcamp: (match as any)._bandcamp || existing.bandcamp,
+            }
+          }
+          return existing
+        })
+
+        return { ...data, releases: [...updatedReleases, ...newReleases] }
+      })
+
+      if (!isAutoLoad) {
+        toast.success(`Synced releases from iTunes`)
+      }
+    } catch (error) {
+      if (!isAutoLoad) toast.error('Failed to fetch releases from iTunes')
+      console.error(error)
+    } finally {
+      setITunesFetching(false)
+    }
+  }
+
+  const handleFetchBandsintownEvents = async (isAutoLoad = false) => {
+    setBandsintownFetching(true)
+    try {
+      const events = await fetchBandsintownEvents()
+      if (events.length === 0) {
+        if (!isAutoLoad) toast.info('No upcoming events found on Bandsintown')
+        return
+      }
+
+      setSiteData((data) => {
+        if (!data) return data!
+        const existingIds = new Set(data.gigs.map(g => g.id))
+        const newGigs: Gig[] = events
+          .filter(e => !existingIds.has(e.id))
+          .map(e => ({
+            id: e.id,
+            venue: e.venue,
+            location: e.location,
+            date: e.date,
+            ticketUrl: e.ticketUrl,
+            support: e.lineup?.filter(a => a.toLowerCase() !== 'zardonic').join(', ') || '',
+          }))
+
+        return { ...data, gigs: [...data.gigs, ...newGigs] }
+      })
+
+      if (!isAutoLoad) {
+        toast.success(`Synced events from Bandsintown`)
+      }
+    } catch (error) {
+      if (!isAutoLoad) toast.error('Failed to fetch events from Bandsintown')
+      console.error(error)
+    } finally {
+      setBandsintownFetching(false)
+    }
+  }
 
   const togglePlay = () => {
     if (!audioRef.current) return
@@ -733,65 +870,31 @@ In the end, Zardonic will unite listeners with Superstars.
               MUSIC PLAYER
             </h2>
 
-            {siteData.tracks.length > 0 && (
-              <Card className="p-8 bg-card border-border relative cyber-card hover-noise">
-                <div className="scan-line"></div>
-                <div className="data-label mb-2">// PLAYER.INTERFACE</div>
-                <div className="grid md:grid-cols-[200px_1fr] gap-8">
-                  <div className="aspect-square bg-muted flex items-center justify-center text-6xl">
-                    {currentTrack?.artwork ? (
-                      <img src={currentTrack.artwork} alt={currentTrack.title} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="text-foreground/20 font-mono">▶</div>
-                    )}
-                  </div>
-
-                  <div className="flex flex-col justify-between">
-                    <div>
-                      <h3 className="text-2xl font-bold mb-2 uppercase font-mono">{currentTrack?.title}</h3>
-                      <p className="text-muted-foreground mb-4 font-mono">{currentTrack?.artist}</p>
-                    </div>
-
-                    <div className="space-y-4">
-                      <Slider
-                        value={[progress]}
-                        onValueChange={(val) => setProgress(val[0])}
-                        max={100}
-                        step={1}
-                        className="w-full"
-                      />
-
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <Button size="icon" variant="ghost" onClick={playPrevious}>
-                            <SkipBack className="w-5 h-5" />
-                          </Button>
-                          
-                          <Button size="icon" onClick={togglePlay}>
-                            {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
-                          </Button>
-                          
-                          <Button size="icon" variant="ghost" onClick={playNext}>
-                            <SkipForward className="w-5 h-5" />
-                          </Button>
-                        </div>
-
-                        <div className="flex items-center gap-2 w-32">
-                          {volume[0] === 0 ? <SpeakerX className="w-5 h-5" /> : <SpeakerHigh className="w-5 h-5" />}
-                          <Slider
-                            value={volume}
-                            onValueChange={setVolume}
-                            max={100}
-                            step={1}
-                            className="w-full"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            )}
+            <Card className="p-0 bg-card border-border relative cyber-card hover-noise overflow-hidden">
+              <div className="scan-line"></div>
+              <div className="p-4 pb-0">
+                <div className="data-label mb-2">// SPOTIFY.STREAM.INTERFACE</div>
+              </div>
+              <div className="spotify-player-wrapper" style={{ 
+                background: 'linear-gradient(180deg, oklch(0.15 0 0) 0%, oklch(0.1 0 0) 100%)',
+                borderRadius: '0',
+              }}>
+                <iframe
+                  style={{ borderRadius: '0' }}
+                  src="https://open.spotify.com/embed/artist/0hVKeSdrYbJjFqLRnYeHOp?utm_source=generator&theme=0"
+                  width="100%"
+                  height="352"
+                  frameBorder="0"
+                  allowFullScreen
+                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                  loading="lazy"
+                  title="Spotify Player - ZARDONIC"
+                ></iframe>
+              </div>
+              <div className="p-4 pt-2">
+                <div className="data-label">// STATUS: [STREAMING]</div>
+              </div>
+            </Card>
           </motion.div>
         </div>
       </section>
@@ -806,7 +909,7 @@ In the end, Zardonic will unite listeners with Superstars.
             viewport={{ once: true }}
             transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
           >
-            <div className="flex items-center justify-between mb-12">
+            <div className="flex items-center justify-between mb-12 flex-wrap gap-4">
               <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build" data-text="UPCOMING GIGS">
                 UPCOMING GIGS
               </h2>
@@ -818,7 +921,50 @@ In the end, Zardonic will unite listeners with Superstars.
               )}
             </div>
 
-            {siteData.gigs.length === 0 ? (
+            {bandsintownFetching && siteData.gigs.length === 0 ? (
+              <Card className="p-12 bg-card/50 border-border relative overflow-hidden">
+                <div className="flex flex-col items-center justify-center space-y-6">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                  >
+                    <ArrowsClockwise className="w-12 h-12 text-primary" />
+                  </motion.div>
+                  <div className="w-full max-w-md space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="data-label">// LOADING.BANDSINTOWN.EVENTS</span>
+                      <motion.span 
+                        className="font-mono text-sm text-primary"
+                        animate={{ opacity: [0.4, 1, 0.4] }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
+                      >
+                        SYNCING...
+                      </motion.span>
+                    </div>
+                    <div className="h-1 bg-border/30 relative overflow-hidden">
+                      <motion.div
+                        className="absolute inset-0 bg-primary"
+                        initial={{ scaleX: 0 }}
+                        animate={{ scaleX: [0, 0.6, 0.8, 1] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                        style={{ transformOrigin: 'left' }}
+                      />
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-r from-transparent via-primary-foreground/20 to-transparent"
+                        animate={{ x: ['-100%', '200%'] }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      />
+                    </div>
+                    <div className="flex gap-2 font-mono text-xs text-muted-foreground">
+                      <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ duration: 0.8, repeat: Infinity, delay: 0 }}>▸</motion.span>
+                      <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ duration: 0.8, repeat: Infinity, delay: 0.2 }}>▸</motion.span>
+                      <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ duration: 0.8, repeat: Infinity, delay: 0.4 }}>▸</motion.span>
+                      <span className="ml-2">FETCHING LIVE EVENT DATA</span>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ) : siteData.gigs.length === 0 ? (
               <Card className="p-12 text-center bg-card/50 border-border">
                 <p className="text-xl text-muted-foreground uppercase tracking-wide font-mono">
                   No upcoming shows - Check back soon
@@ -908,7 +1054,7 @@ In the end, Zardonic will unite listeners with Superstars.
             viewport={{ once: true }}
             transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
           >
-            <div className="flex items-center justify-between mb-12">
+            <div className="flex items-center justify-between mb-12 flex-wrap gap-4">
               <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build" data-text="RELEASES">
                 RELEASES
               </h2>
@@ -920,7 +1066,50 @@ In the end, Zardonic will unite listeners with Superstars.
               )}
             </div>
 
-            {siteData.releases.length === 0 ? (
+            {iTunesFetching && siteData.releases.length === 0 ? (
+              <Card className="p-12 bg-card/50 border-border relative overflow-hidden">
+                <div className="flex flex-col items-center justify-center space-y-6">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                  >
+                    <MusicNote className="w-12 h-12 text-primary" />
+                  </motion.div>
+                  <div className="w-full max-w-md space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="data-label">// LOADING.ITUNES.RELEASES</span>
+                      <motion.span 
+                        className="font-mono text-sm text-primary"
+                        animate={{ opacity: [0.4, 1, 0.4] }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
+                      >
+                        SYNCING...
+                      </motion.span>
+                    </div>
+                    <div className="h-1 bg-border/30 relative overflow-hidden">
+                      <motion.div
+                        className="absolute inset-0 bg-primary"
+                        initial={{ scaleX: 0 }}
+                        animate={{ scaleX: [0, 0.5, 0.7, 1] }}
+                        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                        style={{ transformOrigin: 'left' }}
+                      />
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-r from-transparent via-primary-foreground/20 to-transparent"
+                        animate={{ x: ['-100%', '200%'] }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      />
+                    </div>
+                    <div className="flex gap-2 font-mono text-xs text-muted-foreground">
+                      <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ duration: 0.8, repeat: Infinity, delay: 0 }}>▸</motion.span>
+                      <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ duration: 0.8, repeat: Infinity, delay: 0.2 }}>▸</motion.span>
+                      <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ duration: 0.8, repeat: Infinity, delay: 0.4 }}>▸</motion.span>
+                      <span className="ml-2">FETCHING DISCOGRAPHY + STREAMING LINKS</span>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ) : siteData.releases.length === 0 ? (
               <Card className="p-12 text-center bg-card/50 border-border">
                 <p className="text-xl text-muted-foreground uppercase tracking-wide font-mono">
                   Releases coming soon
@@ -928,7 +1117,11 @@ In the end, Zardonic will unite listeners with Superstars.
               </Card>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {siteData.releases.map((release, index) => (
+                {[...siteData.releases].sort((a, b) => {
+                  const yearA = a.releaseDate ? new Date(a.releaseDate).getTime() : parseInt(a.year) || 0
+                  const yearB = b.releaseDate ? new Date(b.releaseDate).getTime() : parseInt(b.year) || 0
+                  return yearB - yearA
+                }).map((release, index) => (
                   <motion.div
                     key={release.id}
                     initial={{ opacity: 0, scale: 0.8, rotateX: -20 }}
@@ -1180,6 +1373,36 @@ In the end, Zardonic will unite listeners with Superstars.
                   className="text-foreground hover:text-primary transition-colors hover-glitch relative"
                 >
                   <YoutubeLogo className="w-12 h-12" weight="fill" />
+                </motion.a>
+              )}
+              {siteData.social.soundcloud && (
+                <motion.a
+                  href={siteData.social.soundcloud}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  initial={{ opacity: 0, scale: 0, rotate: -180 }}
+                  whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
+                  whileHover={{ scale: 1.1 }}
+                  className="text-foreground hover:text-primary transition-colors hover-glitch relative"
+                >
+                  <SoundcloudLogo className="w-12 h-12" weight="fill" />
+                </motion.a>
+              )}
+              {siteData.social.tiktok && (
+                <motion.a
+                  href={siteData.social.tiktok}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  initial={{ opacity: 0, scale: 0, rotate: -180 }}
+                  whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+                  whileHover={{ scale: 1.1 }}
+                  className="text-foreground hover:text-primary transition-colors hover-glitch relative"
+                >
+                  <TiktokLogo className="w-12 h-12" weight="fill" />
                 </motion.a>
               )}
             </div>
@@ -1944,6 +2167,14 @@ In the end, Zardonic will unite listeners with Superstars.
                                         <Button asChild variant="outline" className="font-mono">
                                           <a href={cyberpunkOverlay.data.bandcamp} target="_blank" rel="noopener noreferrer">
                                             <span className="hover-chromatic">Bandcamp</span>
+                                          </a>
+                                        </Button>
+                                      )}
+                                      {cyberpunkOverlay.data.appleMusic && (
+                                        <Button asChild variant="outline" className="font-mono">
+                                          <a href={cyberpunkOverlay.data.appleMusic} target="_blank" rel="noopener noreferrer">
+                                            <ApplePodcastsLogo className="w-5 h-5 mr-2" weight="fill" />
+                                            <span className="hover-chromatic">Apple Music</span>
                                           </a>
                                         </Button>
                                       )}
