@@ -3,6 +3,7 @@ import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
 import { useKV } from '@github/spark/hooks'
 import { useKonami } from '@/hooks/use-konami'
 import { useAnalytics, trackClick } from '@/hooks/use-analytics'
+import { ErrorBoundary } from 'react-error-boundary'
 import {
   Play,
   Pause,
@@ -633,7 +634,17 @@ In the end, Zardonic will unite listeners with Superstars.
             animate={contentLoaded ? { opacity: 1, clipPath: 'inset(0 0 0 0)' } : { opacity: 0, clipPath: 'inset(0 0 100% 0)' }}
             transition={{ duration: 1.2, delay: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
           >
-            <Logo3D />
+            <ErrorBoundary
+              fallback={
+                <div className="w-full h-[350px] md:h-[450px] relative flex items-center justify-center">
+                  <div className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground font-mono text-chromatic">
+                    ZARDONIC
+                  </div>
+                </div>
+              }
+            >
+              <Logo3D />
+            </ErrorBoundary>
           </motion.div>
           
           {editMode && (

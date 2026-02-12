@@ -41,13 +41,40 @@ function FallbackLogo({ scrollY }: { scrollY: number }) {
 
 function GLBModel({ scrollY }: { scrollY: number }) {
   const groupRef = useRef<Group>(null)
-  const [model, setModel] = useState<any>(null)
+  const [model, setModel] = useState<THREE.Object3D | null>(null)
   const [error, setError] = useState(false)
-
-  const gltf = useGLTF(modelFile)
+  const [gltf, setGltf] = useState<any>(null)
 
   useEffect(() => {
-    if (gltf && gltf.scene) {
+    let mounted = true
+
+    const loadModel = async () => {
+      try {
+        const loadedGltf = await useGLTF.preload(modelFile)
+        if (mounted) {
+          setGltf(loadedGltf)
+        }
+      } catch (err) {
+        console.error('Failed to load model:', err)
+        if (mounted) {
+          setError(true)
+        }
+      }
+    }
+
+    loadModel()
+
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!gltf?.scene) {
+      return
+    }
+
+    try {
       const clonedScene = gltf.scene.clone()
       
       clonedScene.traverse((child) => {
@@ -77,7 +104,8 @@ function GLBModel({ scrollY }: { scrollY: number }) {
       clonedScene.scale.setScalar(scale)
 
       setModel(clonedScene)
-    } else {
+    } catch (err) {
+      console.error('Failed to process model:', err)
       setError(true)
     }
   }, [gltf])
@@ -132,6 +160,7 @@ function Scene({ scrollY }: { scrollY: number }) {
 
 export function Logo3D() {
   const [scrollY, setScrollY] = useState(0)
+  const [hasError, setHasError] = useState(false)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -142,9 +171,28 @@ export function Logo3D() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  if (hasError) {
+    return (
+      <div className="w-full h-[350px] md:h-[450px] relative flex items-center justify-center">
+        <div className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground font-mono text-chromatic">
+          ZARDONIC
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="w-full h-[350px] md:h-[450px] relative">
-      <Canvas gl={{ antialias: true, alpha: true }}>
+      <Canvas 
+        gl={{ antialias: true, alpha: true }}
+        onCreated={({ gl }) => {
+          gl.setClearColor('#000000', 0)
+        }}
+        onError={(error) => {
+          console.error('Canvas error:', error)
+          setHasError(true)
+        }}
+      >
         <Scene scrollY={scrollY} />
       </Canvas>
     </div>

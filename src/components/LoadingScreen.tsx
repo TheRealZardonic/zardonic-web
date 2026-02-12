@@ -34,16 +34,24 @@ export function LoadingScreen({ onLoadComplete }: LoadingScreenProps) {
   useEffect(() => {
     if (!canvasRef.current) return
 
+    const canvas = canvasRef.current
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000)
-    const renderer = new THREE.WebGLRenderer({
-      canvas: canvasRef.current,
-      alpha: true,
-      antialias: true,
-    })
-
-    renderer.setSize(500, 500)
-    renderer.setPixelRatio(window.devicePixelRatio)
+    
+    let renderer: THREE.WebGLRenderer
+    try {
+      renderer = new THREE.WebGLRenderer({
+        canvas,
+        alpha: true,
+        antialias: true,
+      })
+      renderer.setSize(500, 500)
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    } catch (err) {
+      console.error('Failed to create renderer:', err)
+      setTimeout(() => onLoadComplete(), 1000)
+      return
+    }
 
     camera.position.z = 5
 
@@ -64,38 +72,64 @@ export function LoadingScreen({ onLoadComplete }: LoadingScreenProps) {
 
     let model: THREE.Object3D | null = null
     let animationFrameId: number
+    let hasCompleted = false
 
     const loader = new GLTFLoader()
     loader.load(
       modelFile,
       (gltf) => {
-        model = gltf.scene
-        
-        const box = new THREE.Box3().setFromObject(model)
-        const center = box.getCenter(new THREE.Vector3())
-        model.position.sub(center)
-        
-        const size = box.getSize(new THREE.Vector3())
-        const maxDim = Math.max(size.x, size.y, size.z)
-        const scale = 3 / maxDim
-        model.scale.setScalar(scale)
-        
-        scene.add(model)
-        setLoadingProgress(100)
+        if (!gltf?.scene) {
+          console.error('Invalid GLTF data')
+          if (!hasCompleted) {
+            hasCompleted = true
+            setTimeout(() => onLoadComplete(), 1000)
+          }
+          return
+        }
 
-        setTimeout(() => {
-          onLoadComplete()
-        }, 2000)
+        try {
+          model = gltf.scene
+          
+          const box = new THREE.Box3().setFromObject(model)
+          const center = box.getCenter(new THREE.Vector3())
+          model.position.sub(center)
+          
+          const size = box.getSize(new THREE.Vector3())
+          const maxDim = Math.max(size.x, size.y, size.z)
+          const scale = 3 / maxDim
+          model.scale.setScalar(scale)
+          
+          scene.add(model)
+          setLoadingProgress(100)
+
+          if (!hasCompleted) {
+            hasCompleted = true
+            setTimeout(() => {
+              onLoadComplete()
+            }, 2000)
+          }
+        } catch (err) {
+          console.error('Failed to process model:', err)
+          if (!hasCompleted) {
+            hasCompleted = true
+            setTimeout(() => onLoadComplete(), 1000)
+          }
+        }
       },
       (progress) => {
-        const percent = (progress.loaded / progress.total) * 100
-        setLoadingProgress(percent)
+        if (progress.total > 0) {
+          const percent = Math.min((progress.loaded / progress.total) * 100, 95)
+          setLoadingProgress(percent)
+        }
       },
       (error) => {
         console.error('Error loading model:', error)
-        setTimeout(() => {
-          onLoadComplete()
-        }, 1000)
+        if (!hasCompleted) {
+          hasCompleted = true
+          setTimeout(() => {
+            onLoadComplete()
+          }, 1000)
+        }
       }
     )
 
@@ -103,18 +137,31 @@ export function LoadingScreen({ onLoadComplete }: LoadingScreenProps) {
       animationFrameId = requestAnimationFrame(animate)
 
       if (model) {
-        model.rotation.y += 0.01
-        model.rotation.x = Math.sin(Date.now() * 0.001) * 0.1
+        try {
+          model.rotation.y += 0.01
+          model.rotation.x = Math.sin(Date.now() * 0.001) * 0.1
+        } catch (err) {
+          console.error('Animation error:', err)
+        }
       }
 
-      renderer.render(scene, camera)
+      try {
+        renderer.render(scene, camera)
+      } catch (err) {
+        console.error('Render error:', err)
+      }
     }
 
     animate()
 
     return () => {
-      cancelAnimationFrame(animationFrameId)
-      renderer.dispose()
+      try {
+        cancelAnimationFrame(animationFrameId)
+        renderer.dispose()
+        scene.clear()
+      } catch (err) {
+        console.error('Cleanup error:', err)
+      }
     }
   }, [onLoadComplete])
 
