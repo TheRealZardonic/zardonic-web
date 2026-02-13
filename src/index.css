@@ -378,7 +378,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .image-glitch:hover img {
-  transform: scale(1.05);
+  filter: drop-shadow(2px 0 0 rgba(255, 0, 100, 0.3)) drop-shadow(-2px 0 0 rgba(0, 255, 255, 0.3));
 }
 
 @keyframes data-stream {
@@ -1197,11 +1197,9 @@ h1, h2, h3, h4, h5, h6 {
 
 @keyframes node-pulse {
   0%, 100% { 
-    transform: scale(1);
     opacity: 0.8;
   }
   50% { 
-    transform: scale(1.2);
     opacity: 1;
   }
 }

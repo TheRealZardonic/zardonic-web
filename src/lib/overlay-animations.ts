@@ -3,7 +3,7 @@
  * A random variant is selected each time an overlay opens.
  */
 
-import type { Variants, Transition } from 'framer-motion'
+import type { Transition } from 'framer-motion'
 
 export interface OverlayAnimation {
   name: string
@@ -26,102 +26,7 @@ export interface OverlayAnimation {
 }
 
 const overlayAnimations: OverlayAnimation[] = [
-  // 1. Classic Cyberpunk — 3D perspective flip in from below
-  {
-    name: 'perspectiveFlip',
-    loaderClass: 'overlay-loader-ring',
-    loaderLabel: 'ESTABLISHING LINK',
-    backdrop: {
-      initial: { opacity: 0 },
-      animate: { opacity: 1 },
-      exit: { opacity: 0 },
-      transition: { duration: 0.25 },
-    },
-    modal: {
-      initial: { opacity: 0, y: 80, rotateX: -25, scale: 0.85 },
-      animate: { opacity: 1, y: 0, rotateX: 0, scale: 1 },
-      exit: { opacity: 0, y: -40, rotateX: 15, scale: 0.9 },
-      transition: { type: 'spring', damping: 22, stiffness: 280, opacity: { duration: 0.2 } },
-    },
-  },
-
-  // 2. Glitch Scan — horizontal scan line reveal with jitter
-  {
-    name: 'glitchScan',
-    loaderClass: 'overlay-loader-scan',
-    loaderLabel: 'SCANNING SECTORS',
-    backdrop: {
-      initial: { opacity: 0 },
-      animate: { opacity: 1 },
-      exit: { opacity: 0 },
-      transition: { duration: 0.15 },
-    },
-    modal: {
-      initial: { opacity: 0, scaleY: 0.01, scaleX: 1.1, filter: 'brightness(3) hue-rotate(90deg)' },
-      animate: { opacity: 1, scaleY: 1, scaleX: 1, filter: 'brightness(1) hue-rotate(0deg)' },
-      exit: { opacity: 0, scaleY: 0.01, scaleX: 1.1, filter: 'brightness(3) hue-rotate(-90deg)' },
-      transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
-    },
-  },
-
-  // 3. Data Stream — slide in from the right with digital dissolve
-  {
-    name: 'dataStream',
-    loaderClass: 'overlay-loader-blocks',
-    loaderLabel: 'BUFFERING STREAM',
-    backdrop: {
-      initial: { opacity: 0 },
-      animate: { opacity: 1 },
-      exit: { opacity: 0 },
-      transition: { duration: 0.2 },
-    },
-    modal: {
-      initial: { opacity: 0, x: 300, skewY: -3, filter: 'blur(8px)' },
-      animate: { opacity: 1, x: 0, skewY: 0, filter: 'blur(0px)' },
-      exit: { opacity: 0, x: -200, skewY: 2, filter: 'blur(6px)' },
-      transition: { type: 'spring', damping: 28, stiffness: 260, opacity: { duration: 0.15 } },
-    },
-  },
-
-  // 4. Neural Jack-In — scale from center point with chromatic flash
-  {
-    name: 'neuralJackIn',
-    loaderClass: 'overlay-loader-pulse',
-    loaderLabel: 'NEURAL JACK-IN',
-    backdrop: {
-      initial: { opacity: 0 },
-      animate: { opacity: 1 },
-      exit: { opacity: 0 },
-      transition: { duration: 0.15 },
-    },
-    modal: {
-      initial: { opacity: 0, scale: 0.3, filter: 'brightness(4) saturate(3)' },
-      animate: { opacity: 1, scale: 1, filter: 'brightness(1) saturate(1)' },
-      exit: { opacity: 0, scale: 0.5, filter: 'brightness(2) saturate(2)' },
-      transition: { type: 'spring', damping: 18, stiffness: 350, filter: { duration: 0.4 } },
-    },
-  },
-
-  // 5. Hologram Materialize — fade in from transparent with vertical stretch
-  {
-    name: 'hologramMaterialize',
-    loaderClass: 'overlay-loader-holo',
-    loaderLabel: 'MATERIALIZING',
-    backdrop: {
-      initial: { opacity: 0 },
-      animate: { opacity: 1 },
-      exit: { opacity: 0 },
-      transition: { duration: 0.2 },
-    },
-    modal: {
-      initial: { opacity: 0, scaleY: 0.6, scaleX: 0.95, y: 30, filter: 'blur(4px) brightness(2)' },
-      animate: { opacity: 1, scaleY: 1, scaleX: 1, y: 0, filter: 'blur(0px) brightness(1)' },
-      exit: { opacity: 0, scaleY: 0.7, scaleX: 1.05, y: -20, filter: 'blur(3px) brightness(1.5)' },
-      transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] },
-    },
-  },
-
-  // 6. Circuit Break — clip-path reveal from center line outward
+  // 1. Circuit Break — clip-path reveal from center line outward
   {
     name: 'circuitBreak',
     loaderClass: 'overlay-loader-circuit',
@@ -136,30 +41,11 @@ const overlayAnimations: OverlayAnimation[] = [
       initial: { opacity: 0, clipPath: 'polygon(50% 0%, 50% 0%, 50% 100%, 50% 100%)', filter: 'brightness(2)' },
       animate: { opacity: 1, clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)', filter: 'brightness(1)' },
       exit: { opacity: 0, clipPath: 'polygon(50% 0%, 50% 0%, 50% 100%, 50% 100%)', filter: 'brightness(2)' },
-      transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] },
+      transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
     },
   },
 
-  // 7. Matrix Drop — fall from above with bounce and digital noise
-  {
-    name: 'matrixDrop',
-    loaderClass: 'overlay-loader-matrix',
-    loaderLabel: 'DECODING MATRIX',
-    backdrop: {
-      initial: { opacity: 0 },
-      animate: { opacity: 1 },
-      exit: { opacity: 0 },
-      transition: { duration: 0.2 },
-    },
-    modal: {
-      initial: { opacity: 0, y: -200, rotateZ: -2, filter: 'brightness(3)' },
-      animate: { opacity: 1, y: 0, rotateZ: 0, filter: 'brightness(1)' },
-      exit: { opacity: 0, y: 100, rotateZ: 1, filter: 'brightness(2)' },
-      transition: { type: 'spring', damping: 20, stiffness: 300, opacity: { duration: 0.15 } },
-    },
-  },
-
-  // 8. System Boot — scan lines build from top to bottom
+  // 2. System Boot — clip-path scan from top to bottom
   {
     name: 'systemBoot',
     loaderClass: 'overlay-loader-boot',
@@ -171,10 +57,124 @@ const overlayAnimations: OverlayAnimation[] = [
       transition: { duration: 0.15 },
     },
     modal: {
-      initial: { opacity: 0, clipPath: 'polygon(0 0, 100% 0, 100% 0%, 0 0%)', filter: 'hue-rotate(180deg) brightness(1.5)' },
-      animate: { opacity: 1, clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)', filter: 'hue-rotate(0deg) brightness(1)' },
-      exit: { opacity: 0, clipPath: 'polygon(0 100%, 100% 100%, 100% 100%, 0 100%)', filter: 'hue-rotate(-180deg) brightness(1.5)' },
-      transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] },
+      initial: { opacity: 0, clipPath: 'inset(0 0 100% 0)', filter: 'brightness(1.5)' },
+      animate: { opacity: 1, clipPath: 'inset(0 0 0% 0)', filter: 'brightness(1)' },
+      exit: { opacity: 0, clipPath: 'inset(100% 0 0 0)', filter: 'brightness(1.5)' },
+      transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
+    },
+  },
+
+  // 3. Glitch Scan — horizontal clip-path with hue flash (no movement)
+  {
+    name: 'glitchScan',
+    loaderClass: 'overlay-loader-scan',
+    loaderLabel: 'SCANNING SECTORS',
+    backdrop: {
+      initial: { opacity: 0 },
+      animate: { opacity: 1 },
+      exit: { opacity: 0 },
+      transition: { duration: 0.15 },
+    },
+    modal: {
+      initial: { opacity: 0, clipPath: 'inset(0 100% 0 0)', filter: 'brightness(2) hue-rotate(90deg)' },
+      animate: { opacity: 1, clipPath: 'inset(0 0% 0 0)', filter: 'brightness(1) hue-rotate(0deg)' },
+      exit: { opacity: 0, clipPath: 'inset(0 0 0 100%)', filter: 'brightness(2) hue-rotate(-90deg)' },
+      transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
+    },
+  },
+
+  // 4. Data Stream — clip-path reveal from bottom with brightness flash
+  {
+    name: 'dataStream',
+    loaderClass: 'overlay-loader-blocks',
+    loaderLabel: 'BUFFERING STREAM',
+    backdrop: {
+      initial: { opacity: 0 },
+      animate: { opacity: 1 },
+      exit: { opacity: 0 },
+      transition: { duration: 0.2 },
+    },
+    modal: {
+      initial: { opacity: 0, clipPath: 'inset(100% 0 0 0)', filter: 'brightness(2)' },
+      animate: { opacity: 1, clipPath: 'inset(0 0 0 0)', filter: 'brightness(1)' },
+      exit: { opacity: 0, clipPath: 'inset(0 0 100% 0)', filter: 'brightness(2)' },
+      transition: { duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] },
+    },
+  },
+
+  // 5. Neural Jack-In — opacity flash with chromatic filter
+  {
+    name: 'neuralJackIn',
+    loaderClass: 'overlay-loader-pulse',
+    loaderLabel: 'NEURAL JACK-IN',
+    backdrop: {
+      initial: { opacity: 0 },
+      animate: { opacity: 1 },
+      exit: { opacity: 0 },
+      transition: { duration: 0.15 },
+    },
+    modal: {
+      initial: { opacity: 0, filter: 'brightness(3) saturate(2) hue-rotate(45deg)' },
+      animate: { opacity: 1, filter: 'brightness(1) saturate(1) hue-rotate(0deg)' },
+      exit: { opacity: 0, filter: 'brightness(2) saturate(1.5) hue-rotate(-45deg)' },
+      transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] },
+    },
+  },
+
+  // 6. Hologram Materialize — diagonal clip-path reveal
+  {
+    name: 'hologramMaterialize',
+    loaderClass: 'overlay-loader-holo',
+    loaderLabel: 'MATERIALIZING',
+    backdrop: {
+      initial: { opacity: 0 },
+      animate: { opacity: 1 },
+      exit: { opacity: 0 },
+      transition: { duration: 0.2 },
+    },
+    modal: {
+      initial: { opacity: 0, clipPath: 'polygon(0 0, 0 0, 0 0, 0 0)', filter: 'brightness(2)' },
+      animate: { opacity: 1, clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)', filter: 'brightness(1)' },
+      exit: { opacity: 0, clipPath: 'polygon(100% 100%, 100% 100%, 100% 100%, 100% 100%)', filter: 'brightness(2)' },
+      transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] },
+    },
+  },
+
+  // 7. Matrix Decode — center-out clip-path with hue-rotate
+  {
+    name: 'matrixDecode',
+    loaderClass: 'overlay-loader-matrix',
+    loaderLabel: 'DECODING MATRIX',
+    backdrop: {
+      initial: { opacity: 0 },
+      animate: { opacity: 1 },
+      exit: { opacity: 0 },
+      transition: { duration: 0.2 },
+    },
+    modal: {
+      initial: { opacity: 0, clipPath: 'inset(50% 50% 50% 50%)', filter: 'brightness(2) hue-rotate(180deg)' },
+      animate: { opacity: 1, clipPath: 'inset(0% 0% 0% 0%)', filter: 'brightness(1) hue-rotate(0deg)' },
+      exit: { opacity: 0, clipPath: 'inset(50% 50% 50% 50%)', filter: 'brightness(2) hue-rotate(-180deg)' },
+      transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
+    },
+  },
+
+  // 8. Ring Link — horizontal split reveal from center
+  {
+    name: 'ringLink',
+    loaderClass: 'overlay-loader-ring',
+    loaderLabel: 'ESTABLISHING LINK',
+    backdrop: {
+      initial: { opacity: 0 },
+      animate: { opacity: 1 },
+      exit: { opacity: 0 },
+      transition: { duration: 0.2 },
+    },
+    modal: {
+      initial: { opacity: 0, clipPath: 'inset(50% 0 50% 0)', filter: 'brightness(1.8)' },
+      animate: { opacity: 1, clipPath: 'inset(0% 0 0% 0)', filter: 'brightness(1)' },
+      exit: { opacity: 0, clipPath: 'inset(50% 0 50% 0)', filter: 'brightness(1.8)' },
+      transition: { duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] },
     },
   },
 ]
