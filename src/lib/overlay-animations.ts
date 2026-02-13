@@ -19,12 +19,18 @@ export interface OverlayAnimation {
     exit: Record<string, unknown>
     transition?: Transition
   }
+  /** CSS class name for the unique overlay loading indicator */
+  loaderClass: string
+  /** Label shown next to the loading indicator */
+  loaderLabel: string
 }
 
 const overlayAnimations: OverlayAnimation[] = [
   // 1. Classic Cyberpunk — 3D perspective flip in from below
   {
     name: 'perspectiveFlip',
+    loaderClass: 'overlay-loader-ring',
+    loaderLabel: 'ESTABLISHING LINK',
     backdrop: {
       initial: { opacity: 0 },
       animate: { opacity: 1 },
@@ -42,6 +48,8 @@ const overlayAnimations: OverlayAnimation[] = [
   // 2. Glitch Scan — horizontal scan line reveal with jitter
   {
     name: 'glitchScan',
+    loaderClass: 'overlay-loader-scan',
+    loaderLabel: 'SCANNING SECTORS',
     backdrop: {
       initial: { opacity: 0 },
       animate: { opacity: 1 },
@@ -59,6 +67,8 @@ const overlayAnimations: OverlayAnimation[] = [
   // 3. Data Stream — slide in from the right with digital dissolve
   {
     name: 'dataStream',
+    loaderClass: 'overlay-loader-blocks',
+    loaderLabel: 'BUFFERING STREAM',
     backdrop: {
       initial: { opacity: 0 },
       animate: { opacity: 1 },
@@ -76,6 +86,8 @@ const overlayAnimations: OverlayAnimation[] = [
   // 4. Neural Jack-In — scale from center point with chromatic flash
   {
     name: 'neuralJackIn',
+    loaderClass: 'overlay-loader-pulse',
+    loaderLabel: 'NEURAL JACK-IN',
     backdrop: {
       initial: { opacity: 0 },
       animate: { opacity: 1 },
@@ -93,6 +105,8 @@ const overlayAnimations: OverlayAnimation[] = [
   // 5. Hologram Materialize — fade in from transparent with vertical stretch
   {
     name: 'hologramMaterialize',
+    loaderClass: 'overlay-loader-holo',
+    loaderLabel: 'MATERIALIZING',
     backdrop: {
       initial: { opacity: 0 },
       animate: { opacity: 1 },
@@ -110,6 +124,8 @@ const overlayAnimations: OverlayAnimation[] = [
   // 6. Circuit Break — clip-path reveal from center line outward
   {
     name: 'circuitBreak',
+    loaderClass: 'overlay-loader-circuit',
+    loaderLabel: 'CIRCUIT LINK',
     backdrop: {
       initial: { opacity: 0 },
       animate: { opacity: 1 },
@@ -127,6 +143,8 @@ const overlayAnimations: OverlayAnimation[] = [
   // 7. Matrix Drop — fall from above with bounce and digital noise
   {
     name: 'matrixDrop',
+    loaderClass: 'overlay-loader-matrix',
+    loaderLabel: 'DECODING MATRIX',
     backdrop: {
       initial: { opacity: 0 },
       animate: { opacity: 1 },
@@ -144,6 +162,8 @@ const overlayAnimations: OverlayAnimation[] = [
   // 8. System Boot — scan lines build from top to bottom
   {
     name: 'systemBoot',
+    loaderClass: 'overlay-loader-boot',
+    loaderLabel: 'BOOTING SYSTEM',
     backdrop: {
       initial: { opacity: 0 },
       animate: { opacity: 1 },

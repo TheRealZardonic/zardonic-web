@@ -1903,22 +1903,42 @@ In the end, Zardonic will unite listeners with Superstars.
                         transition={{ type: "spring", damping: 15, stiffness: 200 }}
                         className="mb-8"
                       >
-                        <div className="w-16 h-16 border-2 border-primary/30 border-t-primary relative">
-                          <motion.div
-                            animate={{ rotate: 360 }}
-                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                            className="absolute inset-0"
-                          >
-                            <div className="w-full h-full border-2 border-transparent border-t-primary/60" />
-                          </motion.div>
-                          <motion.div
-                            animate={{ rotate: -360 }}
-                            transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                            className="absolute inset-2"
-                          >
-                            <div className="w-full h-full border-2 border-transparent border-t-primary/40" />
-                          </motion.div>
-                        </div>
+                        {overlayAnimation.loaderClass === 'overlay-loader-ring' && (
+                          <div className="overlay-loader-ring relative">
+                            <div className="overlay-loader-ring-inner" />
+                          </div>
+                        )}
+                        {overlayAnimation.loaderClass === 'overlay-loader-scan' && (
+                          <div className="overlay-loader-scan" />
+                        )}
+                        {overlayAnimation.loaderClass === 'overlay-loader-blocks' && (
+                          <div className="overlay-loader-blocks">
+                            <span /><span /><span /><span /><span />
+                          </div>
+                        )}
+                        {overlayAnimation.loaderClass === 'overlay-loader-pulse' && (
+                          <div className="overlay-loader-pulse relative" />
+                        )}
+                        {overlayAnimation.loaderClass === 'overlay-loader-holo' && (
+                          <div className="overlay-loader-holo">
+                            <span /><span /><span />
+                          </div>
+                        )}
+                        {overlayAnimation.loaderClass === 'overlay-loader-circuit' && (
+                          <div className="overlay-loader-circuit" />
+                        )}
+                        {overlayAnimation.loaderClass === 'overlay-loader-matrix' && (
+                          <div className="overlay-loader-matrix font-mono">
+                            <motion.span animate={{ opacity: [0, 1] }} transition={{ duration: 0.2, repeat: Infinity, repeatType: 'reverse' }}>01001010</motion.span>
+                            <motion.span animate={{ opacity: [0, 1] }} transition={{ duration: 0.3, repeat: Infinity, repeatType: 'reverse', delay: 0.1 }}>11010011</motion.span>
+                            <motion.span animate={{ opacity: [0, 1] }} transition={{ duration: 0.25, repeat: Infinity, repeatType: 'reverse', delay: 0.2 }}>10110100</motion.span>
+                          </div>
+                        )}
+                        {overlayAnimation.loaderClass === 'overlay-loader-boot' && (
+                          <div className="overlay-loader-boot">
+                            <span /><span /><span /><span /><span />
+                          </div>
+                        )}
                       </motion.div>
 
                       <motion.div 
@@ -1933,7 +1953,7 @@ In the end, Zardonic will unite listeners with Superstars.
                             animate={{ opacity: [0.5, 1, 0.5] }}
                             transition={{ duration: 1.5, repeat: Infinity }}
                           >
-                            // LOADING.DATA.STREAM
+                            // {overlayAnimation.loaderLabel}
                           </motion.span>
                           <motion.span 
                             className="font-mono text-sm text-primary"
@@ -1982,7 +2002,7 @@ In the end, Zardonic will unite listeners with Superstars.
                           >
                             ▸
                           </motion.span>
-                          <span className="ml-2">INITIALIZING INTERFACE</span>
+                          <span className="ml-2">{overlayAnimation.loaderLabel}</span>
                         </motion.div>
                       </motion.div>
                     </motion.div>
