@@ -763,7 +763,7 @@ In the end, Zardonic will unite listeners with Superstars.
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <motion.div
             className="text-2xl md:text-3xl font-bold tracking-tighter text-foreground uppercase"
-            whileHover={{ scale: 1.02 }}
+            whileHover={{ filter: 'drop-shadow(2px 0 0 rgba(255,0,100,0.3)) drop-shadow(-2px 0 0 rgba(0,255,255,0.3))' }}
           >
             {editMode ? (
               <Input
@@ -850,15 +850,15 @@ In the end, Zardonic will unite listeners with Superstars.
         <div className="absolute inset-0 noise-effect" />
         
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 30 }}
-          animate={contentLoaded ? { opacity: 1, scale: 1, y: 0 } : { opacity: 0, scale: 0.95, y: 30 }}
-          transition={{ duration: 1, delay: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+          initial={{ opacity: 0 }}
+          animate={contentLoaded ? { opacity: 1 } : { opacity: 0 }}
+          transition={{ duration: 0.15 }}
           className="relative z-10 text-center px-4"
         >
           <motion.div 
             className="mb-8 relative"
-            initial={{ opacity: 1, scale: 1 }}
-            animate={contentLoaded ? { opacity: 1, scale: 1 } : { opacity: 0 }}
+            initial={{ opacity: 1 }}
+            animate={contentLoaded ? { opacity: 1 } : { opacity: 0 }}
           >
             <div className="relative mx-auto w-fit hero-logo-glitch">
               <img 
@@ -960,12 +960,13 @@ In the end, Zardonic will unite listeners with Superstars.
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.8, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-                  className={`text-lg leading-relaxed text-muted-foreground font-light overflow-hidden transition-all duration-500 ${
-                    !bioExpanded ? 'max-h-[280px]' : 'max-h-none'
+                  className={`text-lg leading-relaxed text-muted-foreground font-light overflow-hidden ${
+                    !bioExpanded ? 'max-h-[280px]' : 'max-h-[2000px]'
                   }`}
                   style={{
                     maskImage: !bioExpanded ? 'linear-gradient(to bottom, black 60%, transparent 100%)' : 'none',
                     WebkitMaskImage: !bioExpanded ? 'linear-gradient(to bottom, black 60%, transparent 100%)' : 'none',
+                    transition: 'max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), mask-image 0.3s ease, -webkit-mask-image 0.3s ease',
                   }}
                 >
                   {siteData.bio}
@@ -980,7 +981,7 @@ In the end, Zardonic will unite listeners with Superstars.
                   <Button
                     onClick={() => setBioExpanded(!bioExpanded)}
                     variant="outline"
-                    className="font-mono hover-glitch"
+                    className="font-mono hover-glitch cyber-border"
                   >
                     {bioExpanded ? (
                       <>
@@ -1081,7 +1082,7 @@ In the end, Zardonic will unite listeners with Superstars.
                   whileInView={{ opacity: 0.7, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
-                  whileHover={{ opacity: 1, scale: 1.05 }}
+                  whileHover={{ opacity: 1 }}
                   loading="lazy"
                 />
               ))}
@@ -1216,7 +1217,6 @@ In the end, Zardonic will unite listeners with Superstars.
                       delay: index * 0.1,
                       ease: [0.25, 0.46, 0.45, 0.94]
                     }}
-                    whileHover={{ scale: 1.01 }}
                   >
                     <Card 
                       className="p-6 bg-card border-border hover:border-primary/50 transition-colors cursor-pointer cyber-card hover-scan hover-noise relative"
@@ -1363,15 +1363,14 @@ In the end, Zardonic will unite listeners with Superstars.
                     return visible.map((release, index) => (
                       <motion.div
                         key={release.id}
-                        initial={{ opacity: 0, scale: 0.8, rotateX: -20 }}
-                        whileInView={{ opacity: 1, scale: 1, rotateX: 0 }}
+                        initial={{ opacity: 0, clipPath: 'inset(0 0 100% 0)' }}
+                        whileInView={{ opacity: 1, clipPath: 'inset(0 0 0% 0)' }}
                         viewport={{ once: true }}
                         transition={{ 
                           duration: 0.6,
                           delay: index * 0.08,
                           ease: [0.25, 0.46, 0.45, 0.94]
                         }}
-                        whileHover={{ scale: 1.03 }}
                       >
                         <Card 
                           className="overflow-hidden bg-card border-border hover:border-primary/50 transition-all cursor-pointer cyber-card hover-noise relative"
@@ -1534,15 +1533,14 @@ In the end, Zardonic will unite listeners with Superstars.
                 {siteData.gallery.map((image, index) => (
                   <motion.div
                     key={index}
-                    initial={{ opacity: 0, scale: 0.8, rotateY: -20 }}
-                    whileInView={{ opacity: 1, scale: 1, rotateY: 0 }}
+                    initial={{ opacity: 0, clipPath: 'inset(0 0 100% 0)' }}
+                    whileInView={{ opacity: 1, clipPath: 'inset(0 0 0% 0)' }}
                     viewport={{ once: true }}
                     transition={{ 
                       duration: 0.6,
                       delay: index * 0.08,
                       ease: [0.25, 0.46, 0.45, 0.94]
                     }}
-                    whileHover={{ scale: 1.03 }}
                     className="aspect-square bg-muted overflow-hidden cursor-pointer relative group glitch-image"
                     onClick={() => setGalleryIndex(index)}
                   >
@@ -1636,12 +1634,11 @@ In the end, Zardonic will unite listeners with Superstars.
                   href={siteData.social.instagram}
                   target="_blank"
                   rel="noopener noreferrer"
-                  initial={{ opacity: 0, scale: 0, rotate: -180 }}
-                  whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: 0.1, ease: [0.25, 0.46, 0.45, 0.94] }}
-                  whileHover={{ scale: 1.1 }}
-                  className="text-foreground hover:text-primary transition-colors hover-glitch relative"
+                  transition={{ duration: 0.4, delay: 0.1, ease: [0.25, 0.46, 0.45, 0.94] }}
+                  className="text-foreground hover:text-primary transition-colors hover-glitch hover-chromatic relative"
                 >
                   <InstagramLogo className="w-12 h-12" weight="fill" />
                 </motion.a>
@@ -1651,12 +1648,11 @@ In the end, Zardonic will unite listeners with Superstars.
                   href={siteData.social.facebook}
                   target="_blank"
                   rel="noopener noreferrer"
-                  initial={{ opacity: 0, scale: 0, rotate: -180 }}
-                  whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-                  whileHover={{ scale: 1.1 }}
-                  className="text-foreground hover:text-primary transition-colors hover-glitch relative"
+                  transition={{ duration: 0.4, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
+                  className="text-foreground hover:text-primary transition-colors hover-glitch hover-chromatic relative"
                 >
                   <FacebookLogo className="w-12 h-12" weight="fill" />
                 </motion.a>
@@ -1666,12 +1662,11 @@ In the end, Zardonic will unite listeners with Superstars.
                   href={siteData.social.spotify}
                   target="_blank"
                   rel="noopener noreferrer"
-                  initial={{ opacity: 0, scale: 0, rotate: -180 }}
-                  whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
-                  whileHover={{ scale: 1.1 }}
-                  className="text-foreground hover:text-primary transition-colors hover-glitch relative"
+                  transition={{ duration: 0.4, delay: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+                  className="text-foreground hover:text-primary transition-colors hover-glitch hover-chromatic relative"
                 >
                   <SpotifyLogo className="w-12 h-12" weight="fill" />
                 </motion.a>
@@ -1681,12 +1676,11 @@ In the end, Zardonic will unite listeners with Superstars.
                   href={siteData.social.youtube}
                   target="_blank"
                   rel="noopener noreferrer"
-                  initial={{ opacity: 0, scale: 0, rotate: -180 }}
-                  whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
-                  whileHover={{ scale: 1.1 }}
-                  className="text-foreground hover:text-primary transition-colors hover-glitch relative"
+                  transition={{ duration: 0.4, delay: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+                  className="text-foreground hover:text-primary transition-colors hover-glitch hover-chromatic relative"
                 >
                   <YoutubeLogo className="w-12 h-12" weight="fill" />
                 </motion.a>
@@ -1696,12 +1690,11 @@ In the end, Zardonic will unite listeners with Superstars.
                   href={siteData.social.soundcloud}
                   target="_blank"
                   rel="noopener noreferrer"
-                  initial={{ opacity: 0, scale: 0, rotate: -180 }}
-                  whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
-                  whileHover={{ scale: 1.1 }}
-                  className="text-foreground hover:text-primary transition-colors hover-glitch relative"
+                  transition={{ duration: 0.4, delay: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
+                  className="text-foreground hover:text-primary transition-colors hover-glitch hover-chromatic relative"
                 >
                   <SoundcloudLogo className="w-12 h-12" weight="fill" />
                 </motion.a>
@@ -1711,12 +1704,11 @@ In the end, Zardonic will unite listeners with Superstars.
                   href={siteData.social.tiktok}
                   target="_blank"
                   rel="noopener noreferrer"
-                  initial={{ opacity: 0, scale: 0, rotate: -180 }}
-                  whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
-                  whileHover={{ scale: 1.1 }}
-                  className="text-foreground hover:text-primary transition-colors hover-glitch relative"
+                  transition={{ duration: 0.4, delay: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+                  className="text-foreground hover:text-primary transition-colors hover-glitch hover-chromatic relative"
                 >
                   <TiktokLogo className="w-12 h-12" weight="fill" />
                 </motion.a>
@@ -1902,9 +1894,9 @@ In the end, Zardonic will unite listeners with Superstars.
                       className="absolute inset-0 bg-background/95 z-50 flex flex-col items-center justify-center p-8"
                     >
                       <motion.div
-                        initial={{ scale: 0, rotate: -180 }}
-                        animate={{ scale: 1, rotate: 0 }}
-                        transition={{ type: "spring", damping: 15, stiffness: 200 }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.2 }}
                         className="mb-8"
                       >
                         {overlayAnimation.loaderClass === 'overlay-loader-ring' && (
@@ -2684,8 +2676,8 @@ In the end, Zardonic will unite listeners with Superstars.
                               <div className="grid md:grid-cols-[300px_1fr] gap-8">
                                 <motion.div 
                                   className="aspect-square bg-muted relative cyber-card"
-                                  initial={{ opacity: 0, scale: 0.9 }}
-                                  animate={{ opacity: 1, scale: 1 }}
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
                                   transition={{ delay: 0.1 }}
                                 >
                                   {cyberpunkOverlay.data.artwork && (

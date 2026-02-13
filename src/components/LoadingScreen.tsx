@@ -215,9 +215,9 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
       ))}
 
       <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.15 }}
         className="relative z-10 flex flex-col items-center"
       >
         <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-20">
@@ -239,7 +239,6 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
           <motion.div
             className="absolute inset-0 border-2 border-primary/20"
             animate={{
-              scale: [1, 1.1, 1],
               opacity: [0.2, 0.5, 0.2],
             }}
             transition={{
