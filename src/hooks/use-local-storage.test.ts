@@ -44,4 +44,29 @@ describe('useLocalStorage', () => {
     const { result } = renderHook(() => useLocalStorage('test-key', { name: 'default' }))
     expect(result.current[0]).toEqual({ name: 'default' })
   })
+
+  it('should merge stored data with defaults to fill missing properties', () => {
+    // Simulate stale localStorage missing newer schema fields
+    localStorage.setItem('test-key', JSON.stringify({ name: 'stored' }))
+    const { result } = renderHook(() =>
+      useLocalStorage('test-key', { name: 'default', items: ['a', 'b'], count: 5 })
+    )
+    expect(result.current[0]).toEqual({ name: 'stored', items: ['a', 'b'], count: 5 })
+  })
+
+  it('should preserve stored arrays and not overwrite them with defaults', () => {
+    localStorage.setItem('test-key', JSON.stringify({ items: ['x', 'y'] }))
+    const { result } = renderHook(() =>
+      useLocalStorage('test-key', { items: ['a', 'b', 'c'] })
+    )
+    expect(result.current[0]).toEqual({ items: ['x', 'y'] })
+  })
+
+  it('should deep-merge nested objects with defaults', () => {
+    localStorage.setItem('test-key', JSON.stringify({ social: { instagram: 'foo' } }))
+    const { result } = renderHook(() =>
+      useLocalStorage('test-key', { social: { instagram: '', youtube: '' }, tags: [] })
+    )
+    expect(result.current[0]).toEqual({ social: { instagram: 'foo', youtube: '' }, tags: [] })
+  })
 })

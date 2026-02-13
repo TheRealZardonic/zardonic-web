@@ -64,8 +64,8 @@ export default function AdminLoginDialog({ open, onOpenChange, mode, onLogin, on
     e.preventDefault()
     if (!password.trim()) return
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters')
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters')
       return
     }
 
@@ -125,7 +125,7 @@ export default function AdminLoginDialog({ open, onOpenChange, mode, onLogin, on
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => { setPassword(e.target.value); setError('') }}
-                placeholder={isLoginMode ? 'Enter password...' : 'Choose a password (min. 6 characters)...'}
+                placeholder={isLoginMode ? 'Enter password...' : 'Choose a password (min. 8 characters)...'}
                 className="bg-secondary border-input pr-10"
                 autoFocus
                 autoComplete={isLoginMode ? 'current-password' : 'new-password'}
