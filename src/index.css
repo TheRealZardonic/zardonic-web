@@ -78,9 +78,6 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeSpeed;
-  /* Mobile scroll optimization */
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: none;
 }
 
 /* Enable GPU acceleration for common transforms */
@@ -88,80 +85,6 @@ body {
   will-change: transform;
   transform: translateZ(0);
   backface-visibility: hidden;
-  /* Force GPU layer but prevent over-layering */
-  isolation: isolate;
-}
-
-/* Optimize specific animated elements */
-.hero-logo-glitch,
-.cyber2077-scan-build,
-.hover-chromatic,
-.hover-glitch {
-  will-change: transform, opacity;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-}
-
-/* Remove will-change after animation completes */
-@media (prefers-reduced-motion: no-preference) {
-  .hero-logo-glitch {
-    animation: hero-entrance-jitter 0.35s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards,
-               remove-will-change 0.01s 0.36s forwards;  /* Delay matches animation duration */
-  }
-}
-
-@keyframes remove-will-change {
-  to {
-    will-change: auto;
-  }
-}
-
-/* Mobile scroll performance optimizations */
-section {
-  /* CSS containment for better paint performance */
-  contain: layout style paint;
-  /* Hint browser about content visibility */
-  content-visibility: auto;
-}
-
-/* Optimize scroll-triggered motion divs */
-section > div > div[style*="transform"] {
-  will-change: transform;
-  transform: translateZ(0);
-}
-
-/* Reduce paint complexity on mobile */
-@media (max-width: 768px) {
-  /* Optimize compositing only for animated elements on mobile */
-  /* Target framer-motion elements and Cyberpunk effects */
-  [class*="motion-"],
-  [class*="animate-"],
-  .hero-logo-glitch,
-  .cyber2077-scan-build,
-  .cyber2077-glitch,
-  .cyber2077-border-animate,
-  .hover-chromatic,
-  .hover-glitch {
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
-  }
-  
-  /* Reduce shadow complexity on mobile for better performance */
-  h1, h2, h3, h4, h5, h6 {
-    text-shadow: 
-      0.3px 0 0 rgba(255, 100, 100, 0.15),
-      -0.3px 0 0 rgba(100, 255, 255, 0.15);
-  }
-  
-  /* Disable expensive effects on mobile */
-  .scanline-effect::before {
-    display: none;
-  }
-  
-  /* Simplify blend modes on mobile */
-  [class*="mix-blend"] {
-    mix-blend-mode: normal;
-  }
 }
 
 /* Optimize animations */
@@ -1097,71 +1020,6 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-/* Fast Cyberpunk 2077 scroll reveal with glitch effect */
-.cyber2077-scroll-reveal {
-  position: relative;
-  will-change: transform, opacity, filter;
-}
-
-@keyframes cyber2077-fast-glitch-in {
-  0% { 
-    opacity: 0; 
-    transform: translate(-15px, 0) skewX(-3deg) scale(0.95);
-    filter: blur(5px) brightness(1.5);
-    clip-path: polygon(0 0, 0 0, 0 100%, 0 100%);
-  }
-  15% { 
-    opacity: 0.6; 
-    transform: translate(8px, -3px) skewX(2deg) scale(1.02);
-    filter: blur(3px) brightness(1.3);
-    clip-path: polygon(0 0, 30% 0, 30% 100%, 0 100%);
-  }
-  30% { 
-    opacity: 0.8; 
-    transform: translate(-5px, 2px) skewX(-1.5deg) scale(0.98);
-    filter: blur(2px) brightness(1.1);
-    clip-path: polygon(0 0, 65% 0, 65% 100%, 0 100%);
-  }
-  50% { 
-    opacity: 0.9; 
-    transform: translate(3px, -1px) skewX(1deg) scale(1.01);
-    filter: blur(1px) brightness(1.05);
-    clip-path: polygon(0 0, 85% 0, 85% 100%, 0 100%);
-  }
-  70% { 
-    opacity: 0.95; 
-    transform: translate(-2px, 0px) skewX(-0.5deg) scale(1);
-    filter: blur(0.5px) brightness(1.02);
-    clip-path: polygon(0 0, 95% 0, 95% 100%, 0 100%);
-  }
-  85% { 
-    opacity: 1; 
-    transform: translate(1px, 0px) skewX(0.2deg) scale(1);
-    filter: blur(0px) brightness(1);
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
-  }
-  100% { 
-    opacity: 1; 
-    transform: translate(0, 0) skewX(0deg) scale(1);
-    filter: blur(0px) brightness(1);
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
-  }
-}
-
-/* Fast scan effect for scroll reveals */
-@keyframes cyber2077-fast-scan {
-  0% {
-    top: 0;
-    opacity: 1;
-    height: 4px;
-  }
-  100% {
-    top: 100%;
-    opacity: 0;
-    height: 2px;
-  }
-}
-
 .full-page-noise {
   position: fixed;
   top: 0;
@@ -1525,11 +1383,10 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-/* Hero Logo — Fast Cyberpunk 2077 entrance with aggressive glitch/jitter */
+/* Hero Logo — entrance-only glitch/jitter, then hover chromatic aberration */
 .hero-logo-glitch {
   position: relative;
-  will-change: transform, opacity;
-  animation: hero-entrance-jitter 0.35s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+  animation: hero-entrance-jitter 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
 
 .hero-logo-glitch .hero-logo-r,
@@ -1537,57 +1394,45 @@ h1, h2, h3, h4, h5, h6 {
   mix-blend-mode: screen;
   pointer-events: none;
   opacity: 0;
-  will-change: transform, opacity;
 }
 
-/* Fast, aggressive chromatic layers with stronger RGB split */
+/* Entrance-only chromatic layers — animate once then hide */
 .hero-logo-glitch .hero-logo-r {
-  filter: brightness(1.2);
-  animation: hero-entrance-chromatic-r 0.35s steps(5) forwards;
+  filter: brightness(1.1);
+  animation: hero-entrance-chromatic-r 0.6s steps(3) forwards;
 }
 
 .hero-logo-glitch .hero-logo-b {
-  filter: brightness(1.2) hue-rotate(180deg);
-  animation: hero-entrance-chromatic-b 0.35s steps(5) forwards;
+  filter: brightness(1.1) hue-rotate(180deg);
+  animation: hero-entrance-chromatic-b 0.6s steps(3) forwards;
 }
 
 @keyframes hero-entrance-chromatic-r {
-  0%   { opacity: 0.9; transform: translate(12px, -4px); }
-  12%  { opacity: 0.85; transform: translate(-8px, 6px); }
-  25%  { opacity: 0.8; transform: translate(10px, -2px); }
-  37%  { opacity: 0.65; transform: translate(-6px, 4px); }
-  50%  { opacity: 0.5; transform: translate(4px, -1px); }
-  62%  { opacity: 0.3; transform: translate(-3px, 2px); }
-  75%  { opacity: 0.15; transform: translate(2px, -1px); }
-  87%  { opacity: 0.05; transform: translate(1px, 0px); }
+  0%   { opacity: 0.8; transform: translate(6px, -2px); }
+  20%  { opacity: 0.7; transform: translate(-4px, 3px); }
+  40%  { opacity: 0.6; transform: translate(3px, 1px); }
+  60%  { opacity: 0.4; transform: translate(-2px, -1px); }
+  80%  { opacity: 0.2; transform: translate(1px, 0px); }
   100% { opacity: 0;   transform: translate(0, 0); }
 }
 
 @keyframes hero-entrance-chromatic-b {
-  0%   { opacity: 0.9; transform: translate(-12px, 4px); }
-  12%  { opacity: 0.85; transform: translate(8px, -6px); }
-  25%  { opacity: 0.8; transform: translate(-10px, 2px); }
-  37%  { opacity: 0.65; transform: translate(6px, -4px); }
-  50%  { opacity: 0.5; transform: translate(-4px, 1px); }
-  62%  { opacity: 0.3; transform: translate(3px, -2px); }
-  75%  { opacity: 0.15; transform: translate(-2px, 1px); }
-  87%  { opacity: 0.05; transform: translate(-1px, 0px); }
+  0%   { opacity: 0.8; transform: translate(-6px, 2px); }
+  20%  { opacity: 0.7; transform: translate(4px, -3px); }
+  40%  { opacity: 0.6; transform: translate(-3px, -1px); }
+  60%  { opacity: 0.4; transform: translate(2px, 1px); }
+  80%  { opacity: 0.2; transform: translate(-1px, 0px); }
   100% { opacity: 0;   transform: translate(0, 0); }
 }
 
-/* Fast, aggressive jitter with stronger distortion */
+/* Entrance jitter — plays once then settles */
 @keyframes hero-entrance-jitter {
-  0%   { transform: translate(0, 0) scale(0.85) skewX(0deg); opacity: 0; filter: blur(8px); }
-  8%   { transform: translate(-8px, 5px) scale(1.05) skewX(-4deg); opacity: 0.4; filter: blur(6px); }
-  16%  { transform: translate(6px, -4px) scale(0.95) skewX(3deg); opacity: 0.6; filter: blur(4px); }
-  24%  { transform: translate(-5px, 3px) scale(1.02) skewX(-2deg); opacity: 0.75; filter: blur(2px); }
-  32%  { transform: translate(4px, -3px) scale(0.98) skewX(2deg); opacity: 0.85; filter: blur(1px); }
-  40%  { transform: translate(-3px, 2px) scale(1.01) skewX(-1.5deg); opacity: 0.9; filter: blur(0.5px); }
-  50%  { transform: translate(2px, -1px) scale(1) skewX(1deg); opacity: 0.95; filter: blur(0px); }
-  60%  { transform: translate(-1px, 1px) scale(1) skewX(-0.5deg); opacity: 0.98; filter: blur(0px); }
-  70%  { transform: translate(1px, 0px) scale(1) skewX(0.2deg); opacity: 1; filter: blur(0px); }
-  85%  { transform: translate(0px, 0px) scale(1) skewX(-0.1deg); opacity: 1; filter: blur(0px); }
-  100% { transform: translate(0, 0) scale(1) skewX(0deg); opacity: 1; filter: blur(0px); }
+  0%   { transform: translate(-5px, 3px) skewX(-2deg); opacity: 0; }
+  15%  { transform: translate(4px, -2px) skewX(1.5deg); opacity: 0.7; }
+  30%  { transform: translate(-3px, 1px) skewX(-1deg); opacity: 0.85; }
+  50%  { transform: translate(2px, -1px) skewX(0.5deg); opacity: 0.95; }
+  70%  { transform: translate(-1px, 0px) skewX(-0.2deg); opacity: 1; }
+  100% { transform: translate(0, 0) skewX(0deg); opacity: 1; }
 }
 
 /* Hover chromatic aberration — only effect after entrance */
