@@ -26,6 +26,7 @@ interface DataPulse {
   width: string
   height: string
   horizontal: boolean
+  depth: number
 }
 
 export const CircuitBackground = memo(function CircuitBackground() {
@@ -151,6 +152,7 @@ export const CircuitBackground = memo(function CircuitBackground() {
 
   // Spawn random data pulses along circuit lines
   const spawnPulse = useCallback(() => {
+    if (lines.length === 0) return
     const line = lines[Math.floor(Math.random() * lines.length)]
     const key = ++pulseCounter.current
     setPulses(prev => [...prev, {
@@ -161,6 +163,7 @@ export const CircuitBackground = memo(function CircuitBackground() {
       width: line.horizontal ? (line.width || '10%') : '2px',
       height: line.horizontal ? '2px' : (line.height || '10%'),
       horizontal: line.horizontal,
+      depth: line.depth,
     }])
 
     // Remove pulse after animation completes
@@ -219,7 +222,7 @@ export const CircuitBackground = memo(function CircuitBackground() {
               }}
             />
           ))}
-          {pulses.filter(p => lines.find(l => l.id === p.lineId)?.depth === 3).map((pulse) => (
+          {pulses.filter(p => p.depth === 3).map((pulse) => (
             <div
               key={pulse.key}
               className={`circuit-line-pulse ${pulse.horizontal ? 'horizontal' : 'vertical'}`}
@@ -262,7 +265,7 @@ export const CircuitBackground = memo(function CircuitBackground() {
               }}
             />
           ))}
-          {pulses.filter(p => lines.find(l => l.id === p.lineId)?.depth === 2).map((pulse) => (
+          {pulses.filter(p => p.depth === 2).map((pulse) => (
             <div
               key={pulse.key}
               className={`circuit-line-pulse ${pulse.horizontal ? 'horizontal' : 'vertical'}`}
@@ -305,7 +308,7 @@ export const CircuitBackground = memo(function CircuitBackground() {
               }}
             />
           ))}
-          {pulses.filter(p => lines.find(l => l.id === p.lineId)?.depth === 1).map((pulse) => (
+          {pulses.filter(p => p.depth === 1).map((pulse) => (
             <div
               key={pulse.key}
               className={`circuit-line-pulse ${pulse.horizontal ? 'horizontal' : 'vertical'}`}
