@@ -9,6 +9,7 @@ import { fetchOdesliLinks } from '@/lib/odesli'
 import { fetchBandsintownEvents } from '@/lib/bandsintown'
 import { toDirectImageUrl } from '@/lib/image-cache'
 import { applyConfigOverrides } from '@/lib/config'
+import { getRandomOverlayAnimation } from '@/lib/overlay-animations'
 import type { AdminSettings } from '@/lib/types'
 import {
   Play,
@@ -391,6 +392,15 @@ In the end, Zardonic will unite listeners with Superstars.
   const [hasAutoLoaded, setHasAutoLoaded] = useState(false)
   const [showAllReleases, setShowAllReleases] = useState(false)
   const [bioExpanded, setBioExpanded] = useState(false)
+
+  // Pick a random cyberpunk overlay animation only when opening (not closing)
+  const overlayAnimationRef = useRef(getRandomOverlayAnimation())
+  const prevOverlayRef = useRef(cyberpunkOverlay)
+  if (cyberpunkOverlay && !prevOverlayRef.current) {
+    overlayAnimationRef.current = getRandomOverlayAnimation()
+  }
+  prevOverlayRef.current = cyberpunkOverlay
+  const overlayAnimation = overlayAnimationRef.current
   
   const audioRef = useRef<HTMLAudioElement>(null)
 
@@ -1796,39 +1806,19 @@ In the end, Zardonic will unite listeners with Superstars.
         {cyberpunkOverlay && (
           <>
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              initial={overlayAnimation.backdrop.initial}
+              animate={overlayAnimation.backdrop.animate}
+              exit={overlayAnimation.backdrop.exit}
+              transition={overlayAnimation.backdrop.transition}
               className="fixed inset-0 bg-black/90 z-[100] backdrop-blur-sm cyberpunk-overlay-bg"
               onClick={() => setCyberpunkOverlay(null)}
             />
             
             <motion.div
-              initial={{ 
-                opacity: 0, 
-                y: 50,
-                rotateX: -20,
-                scale: 0.9
-              }}
-              animate={{ 
-                opacity: 1, 
-                y: 0,
-                rotateX: 0,
-                scale: 1
-              }}
-              exit={{ 
-                opacity: 0, 
-                y: -30,
-                rotateX: 10,
-                scale: 0.95
-              }}
-              transition={{ 
-                type: "spring", 
-                damping: 25, 
-                stiffness: 300,
-                opacity: { duration: 0.2 }
-              }}
+              initial={overlayAnimation.modal.initial}
+              animate={overlayAnimation.modal.animate}
+              exit={overlayAnimation.modal.exit}
+              transition={overlayAnimation.modal.transition}
               className="fixed inset-0 z-[101] flex items-center justify-center p-4 md:p-8 pointer-events-none"
               style={{ perspective: '1000px' }}
             >

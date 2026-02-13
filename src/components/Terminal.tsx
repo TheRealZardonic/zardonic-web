@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Terminal as TerminalIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
+import { getRandomOverlayAnimation, type OverlayAnimation } from '@/lib/overlay-animations'
 
 interface TerminalProps {
   isOpen: boolean
@@ -15,6 +16,15 @@ export function Terminal({ isOpen, onClose }: TerminalProps) {
     '> ACCESS GRANTED',
     '> TYPE "HELP" FOR COMMANDS',
   ])
+
+  // Pick a random animation only when transitioning from closed to open
+  const animationRef = useRef<OverlayAnimation>(getRandomOverlayAnimation())
+  const wasOpenRef = useRef(false)
+  if (isOpen && !wasOpenRef.current) {
+    animationRef.current = getRandomOverlayAnimation()
+  }
+  wasOpenRef.current = isOpen
+  const animation = animationRef.current
 
   const handleCommand = (cmd: string) => {
     const command = cmd.toLowerCase().trim()
@@ -56,53 +66,132 @@ export function Terminal({ isOpen, onClose }: TerminalProps) {
       {isOpen && (
         <>
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/90 z-[100] backdrop-blur-sm"
+            initial={animation.backdrop.initial}
+            animate={animation.backdrop.animate}
+            exit={animation.backdrop.exit}
+            transition={animation.backdrop.transition}
+            className="fixed inset-0 bg-black/90 z-[100] backdrop-blur-sm cyberpunk-overlay-bg"
             onClick={onClose}
           />
 
           <motion.div
-            initial={{ opacity: 0, y: 50, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 50, scale: 0.9 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed inset-x-4 top-20 bottom-20 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-[800px] bg-black border-2 border-accent z-[101] scanline-effect"
-            onClick={(e) => e.stopPropagation()}
+            initial={animation.modal.initial}
+            animate={animation.modal.animate}
+            exit={animation.modal.exit}
+            transition={animation.modal.transition}
+            className="fixed inset-0 z-[101] flex items-center justify-center p-4 md:p-8 pointer-events-none"
+            style={{ perspective: '1000px' }}
           >
-            <div className="h-full flex flex-col">
-              <div className="flex items-center justify-between p-4 border-b border-accent/30">
-                <div className="flex items-center gap-3">
-                  <TerminalIcon className="w-6 h-6 text-accent" weight="fill" />
-                  <span className="font-mono text-accent uppercase tracking-wider">TERMINAL v1.0</span>
-                </div>
-                <Button variant="ghost" size="icon" onClick={onClose}>
-                  <X className="w-5 h-5 text-accent" />
-                </Button>
-              </div>
+            <motion.div
+              initial={{ boxShadow: '0 0 0px rgba(180, 50, 50, 0)' }}
+              animate={{
+                boxShadow: [
+                  '0 0 20px rgba(180, 50, 50, 0.3)',
+                  '0 0 40px rgba(180, 50, 50, 0.4)',
+                  '0 0 20px rgba(180, 50, 50, 0.3)',
+                ]
+              }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+              className="relative w-full max-w-3xl max-h-[80vh] bg-black border border-primary/30 pointer-events-auto overflow-hidden scanline-effect cyber-card"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Cyberpunk corner decorations */}
+              <motion.div
+                className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-accent"
+                initial={{ opacity: 0, x: -10, y: -10 }}
+                animate={{ opacity: 1, x: 0, y: 0 }}
+                transition={{ delay: 0.15, duration: 0.3 }}
+              />
+              <motion.div
+                className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-accent"
+                initial={{ opacity: 0, x: 10, y: -10 }}
+                animate={{ opacity: 1, x: 0, y: 0 }}
+                transition={{ delay: 0.2, duration: 0.3 }}
+              />
+              <motion.div
+                className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-accent"
+                initial={{ opacity: 0, x: -10, y: 10 }}
+                animate={{ opacity: 1, x: 0, y: 0 }}
+                transition={{ delay: 0.25, duration: 0.3 }}
+              />
+              <motion.div
+                className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-accent"
+                initial={{ opacity: 0, x: 10, y: 10 }}
+                animate={{ opacity: 1, x: 0, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.3 }}
+              />
 
-              <div className="flex-1 overflow-y-auto p-6 font-mono text-sm text-accent space-y-2">
-                {history.map((line, index) => (
-                  <div key={index} className="whitespace-pre-wrap">
-                    {line}
+              {/* Top/bottom border scan lines */}
+              <motion.div
+                className="absolute top-0 left-0 right-0 h-[1px] bg-accent/40"
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{ duration: 0.4, delay: 0.1 }}
+                style={{ transformOrigin: 'left' }}
+              />
+              <motion.div
+                className="absolute bottom-0 left-0 right-0 h-[1px] bg-accent/40"
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{ duration: 0.4, delay: 0.15 }}
+                style={{ transformOrigin: 'right' }}
+              />
+
+              <div className="h-full flex flex-col max-h-[80vh]">
+                <div className="flex items-center justify-between p-4 border-b border-accent/30">
+                  <div className="flex items-center gap-3">
+                    <TerminalIcon className="w-6 h-6 text-accent" weight="fill" />
+                    <span className="font-mono text-accent uppercase tracking-wider text-sm">
+                      TERMINAL v1.0 // NK-SYS
+                    </span>
                   </div>
-                ))}
-                <div className="flex items-center gap-2">
-                  <span>{'>'}</span>
-                  <input
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    className="flex-1 bg-transparent border-none outline-none text-accent font-mono"
-                    autoFocus
-                    spellCheck={false}
-                  />
-                  <span className="animate-pulse">_</span>
+                  <div className="flex items-center gap-2">
+                    <motion.div
+                      className="w-2 h-2 rounded-full bg-accent"
+                      animate={{ opacity: [1, 0.3, 1] }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                    />
+                    <Button variant="ghost" size="icon" onClick={onClose} className="hover:bg-accent/10">
+                      <X className="w-5 h-5 text-accent" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-6 font-mono text-sm text-accent space-y-2">
+                  {history.map((line, index) => (
+                    <motion.div
+                      key={index}
+                      className="whitespace-pre-wrap"
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.15, delay: index * 0.02 }}
+                    >
+                      {line}
+                    </motion.div>
+                  ))}
+                  <div className="flex items-center gap-2">
+                    <span>{'>'}</span>
+                    <input
+                      type="text"
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      className="flex-1 bg-transparent border-none outline-none text-accent font-mono"
+                      autoFocus
+                      spellCheck={false}
+                    />
+                    <span className="animate-pulse">_</span>
+                  </div>
+                </div>
+
+                <div className="px-4 py-2 border-t border-accent/20">
+                  <div className="flex justify-between font-mono text-[10px] text-accent/40 uppercase tracking-wider">
+                    <span>STATUS: CONNECTED</span>
+                    <span>ACCESS: GRANTED</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </motion.div>
         </>
       )}
