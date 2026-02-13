@@ -2002,7 +2002,11 @@ In the end, Zardonic will unite listeners with Superstars.
                                   <motion.div className="cyber-grid p-4" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.45 }}>
                                     <div className="data-label mb-2">5. External APIs &amp; Third-Party Services</div>
                                     <div className="space-y-3 font-mono text-sm leading-relaxed">
-                                      <p>This website uses server-side proxies to connect to the following third-party APIs. Your IP address is not directly shared with these services; requests are made from our server:</p>
+                                      <p className="font-bold text-primary">Spotify Embed (Client-Side)</p>
+                                      <p>This website uses the Spotify iFrame Embed to provide an integrated music player. When the player loads, a direct connection to Spotify servers is established from your browser. Provider: Spotify AB, Regeringsgatan 19, 111 53 Stockholm, Sweden. Spotify may process your IP address, browser information, and usage data. Privacy policy: <a href="https://www.spotify.com/legal/privacy-policy/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">https://www.spotify.com/legal/privacy-policy/</a></p>
+                                      <p>The use of Spotify Embed is based on Art. 6(1)(f) GDPR. We have a legitimate interest in presenting our music in an interactive and user-friendly manner.</p>
+                                      <p className="font-bold text-primary mt-4">Server-Side APIs</p>
+                                      <p>This website also uses server-side proxies to connect to the following third-party APIs. Your IP address is not directly shared with these services; requests are made from our server:</p>
                                       <p className="font-bold text-primary mt-4">Apple Music / iTunes API</p>
                                       <p>We use the Apple iTunes Search API to retrieve music release information and artwork. Provider: Apple Inc., One Apple Park Way, Cupertino, CA 95014, USA. Privacy policy: <a href="https://www.apple.com/legal/privacy/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">https://www.apple.com/legal/privacy/</a></p>
                                       <p className="font-bold text-primary mt-4">Odesli / song.link API</p>
@@ -2081,7 +2085,11 @@ In the end, Zardonic will unite listeners with Superstars.
                                   <motion.div className="cyber-grid p-4" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.45 }}>
                                     <div className="data-label mb-2">5. Externe APIs &amp; Drittanbieter-Dienste</div>
                                     <div className="space-y-3 font-mono text-sm leading-relaxed">
-                                      <p>Diese Website verwendet serverseitige Proxys zur Verbindung mit folgenden Drittanbieter-APIs. Ihre IP-Adresse wird nicht direkt an diese Dienste weitergegeben; die Anfragen werden von unserem Server gestellt:</p>
+                                      <p className="font-bold text-primary">Spotify Embed (Clientseitig)</p>
+                                      <p>Diese Website nutzt den Spotify iFrame Embed zur Bereitstellung eines integrierten Musikplayers. Beim Laden des Players wird eine direkte Verbindung zu den Servern von Spotify hergestellt. Anbieter: Spotify AB, Regeringsgatan 19, 111 53 Stockholm, Schweden. Spotify kann dabei Ihre IP-Adresse, Browserinformationen und Nutzungsdaten verarbeiten. Datenschutzerklärung: <a href="https://www.spotify.com/legal/privacy-policy/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">https://www.spotify.com/legal/privacy-policy/</a></p>
+                                      <p>Die Nutzung des Spotify Embeds erfolgt auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO. Wir haben ein berechtigtes Interesse an einer interaktiven und nutzerfreundlichen Darstellung unserer Musik.</p>
+                                      <p className="font-bold text-primary mt-4">Serverseitige APIs</p>
+                                      <p>Diese Website verwendet zudem serverseitige Proxys zur Verbindung mit folgenden Drittanbieter-APIs. Ihre IP-Adresse wird nicht direkt an diese Dienste weitergegeben; die Anfragen werden von unserem Server gestellt:</p>
                                       <p className="font-bold text-primary mt-4">Apple Music / iTunes API</p>
                                       <p>Wir nutzen die Apple iTunes Search API zum Abrufen von Musikveröffentlichungen und Artwork. Anbieter: Apple Inc., One Apple Park Way, Cupertino, CA 95014, USA. Datenschutzerklärung: <a href="https://www.apple.com/legal/privacy/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">https://www.apple.com/legal/privacy/</a></p>
                                       <p className="font-bold text-primary mt-4">Odesli / song.link API</p>
