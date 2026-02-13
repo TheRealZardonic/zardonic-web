@@ -1481,3 +1481,30 @@ h1, h2, h3, h4, h5, h6 {
     animation: none;
   }
 }
+
+/* Reduce heavy effects on mobile for better scroll performance */
+@media (max-width: 768px) {
+  .full-page-noise {
+    display: none;
+  }
+
+  .crt-overlay {
+    display: none;
+  }
+
+  .scanline-effect::before {
+    display: none;
+  }
+
+  .noise-effect::before {
+    display: none;
+  }
+
+  .chromatic-aberration {
+    animation: none;
+  }
+
+  .periodic-noise-glitch {
+    animation: none;
+  }
+}

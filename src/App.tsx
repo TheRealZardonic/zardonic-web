@@ -618,11 +618,16 @@ In the end, Zardonic will unite listeners with Superstars.
   }
 
   const scrollToSection = (id: string) => {
-    const element = document.getElementById(id)
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' })
-      setMobileMenuOpen(false)
-    }
+    setMobileMenuOpen(false)
+    // Small delay to let mobile menu close before scrolling
+    setTimeout(() => {
+      const element = document.getElementById(id)
+      if (element) {
+        const navHeight = document.querySelector('nav')?.getBoundingClientRect().height ?? 80
+        const y = element.getBoundingClientRect().top + window.scrollY - navHeight
+        window.scrollTo({ top: y, behavior: 'smooth' })
+      }
+    }, 100)
   }
 
   const saveChanges = () => {
@@ -728,9 +733,7 @@ In the end, Zardonic will unite listeners with Superstars.
   const currentTrack = siteData?.tracks[currentTrackIndex]
 
   if (!siteData) {
-    return <div className="min-h-screen bg-background flex items-center justify-center">
-      <p className="text-foreground text-2xl font-mono">LOADING...</p>
-    </div>
+    return <LoadingScreen onLoadComplete={() => setLoading(false)} precacheUrls={precacheUrls} />
   }
 
   return (
@@ -1767,7 +1770,7 @@ In the end, Zardonic will unite listeners with Superstars.
               }}
               className="text-sm text-muted-foreground hover:text-primary transition-colors uppercase tracking-wide font-mono hover-chromatic cursor-pointer"
             >
-              Privacy Policy / Datenschutzerklärung
+              Privacy Policy / Datenschutz-erklärung
             </button>
             <button
               onClick={() => setCyberpunkOverlay({ type: 'contact' })}
@@ -2452,24 +2455,6 @@ In the end, Zardonic will unite listeners with Superstars.
                                   </div>
                                 </motion.div>
 
-                                <motion.div 
-                                  className="cyber-grid p-4"
-                                  initial={{ opacity: 0, x: -10 }}
-                                  animate={{ opacity: 1, x: 0 }}
-                                  transition={{ delay: 0.4 }}
-                                >
-                                  <div className="data-label mb-3">Social Links</div>
-                                  <div className="space-y-2 font-mono text-sm">
-                                    {siteData.social.instagram && <p><a href={siteData.social.instagram} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Instagram</a></p>}
-                                    {siteData.social.facebook && <p><a href={siteData.social.facebook} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Facebook</a></p>}
-                                    {siteData.social.spotify && <p><a href={siteData.social.spotify} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Spotify</a></p>}
-                                    {siteData.social.youtube && <p><a href={siteData.social.youtube} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">YouTube</a></p>}
-                                    {siteData.social.soundcloud && <p><a href={siteData.social.soundcloud} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">SoundCloud</a></p>}
-                                    {siteData.social.tiktok && <p><a href={siteData.social.tiktok} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">TikTok</a></p>}
-                                    {siteData.social.appleMusic && <p><a href={siteData.social.appleMusic} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Apple Music</a></p>}
-                                    {siteData.social.bandcamp && <p><a href={siteData.social.bandcamp} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Bandcamp</a></p>}
-                                  </div>
-                                </motion.div>
 
                                 <motion.div 
                                   className="cyber-grid p-6"
