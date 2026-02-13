@@ -679,7 +679,7 @@ In the end, Zardonic will unite listeners with Superstars.
               <img 
                 src={logoImage} 
                 alt={siteData.artistName} 
-                className="h-10 md:h-12 w-auto object-contain logo-glitch brightness-110"
+                className="h-10 md:h-12 w-auto object-contain logo-glitch brightness-110 hover-chromatic-image"
               />
             )}
           </motion.div>
@@ -768,7 +768,7 @@ In the end, Zardonic will unite listeners with Superstars.
             <img 
               src={logoImage} 
               alt={siteData.artistName} 
-              className="h-32 md:h-48 lg:h-64 w-auto object-contain logo-glitch brightness-110 mx-auto"
+              className="h-32 md:h-48 lg:h-64 w-auto object-contain logo-glitch brightness-110 mx-auto hover-chromatic-image"
             />
           </motion.div>
 
@@ -909,12 +909,11 @@ In the end, Zardonic will unite listeners with Superstars.
                 borderRadius: '0',
               }}>
                 <iframe
-                  style={{ borderRadius: '0' }}
+                  style={{ borderRadius: '0', border: 'none' }}
                   src="https://open.spotify.com/embed/artist/0hVKeSdrYbJjFqLRnYeHOp?utm_source=generator&theme=0"
                   width="100%"
                   height="352"
-                  frameBorder="0"
-                  allowTransparency={true}
+                  allowFullScreen
                   allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
                   loading="lazy"
                   title="Spotify Player - ZARDONIC"
