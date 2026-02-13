@@ -1142,3 +1142,75 @@ h1, h2, h3, h4, h5, h6 {
     opacity: 0;
   }
 }
+
+/* Hero Logo Chromatic Aberration Glitch */
+.hero-logo-glitch {
+  position: relative;
+}
+
+.hero-logo-glitch .hero-logo-r,
+.hero-logo-glitch .hero-logo-b {
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.hero-logo-glitch .hero-logo-r {
+  filter: brightness(1.1);
+  opacity: 0.7;
+  animation: hero-chromatic-r 0.15s infinite steps(2);
+}
+
+.hero-logo-glitch .hero-logo-b {
+  filter: brightness(1.1) hue-rotate(180deg);
+  opacity: 0.7;
+  animation: hero-chromatic-b 0.15s infinite steps(2);
+}
+
+@keyframes hero-chromatic-r {
+  0% { transform: translate(3px, -1px); }
+  25% { transform: translate(-2px, 2px); }
+  50% { transform: translate(1px, 1px); }
+  75% { transform: translate(-3px, -2px); }
+  100% { transform: translate(2px, 0px); }
+}
+
+@keyframes hero-chromatic-b {
+  0% { transform: translate(-3px, 1px); }
+  25% { transform: translate(2px, -2px); }
+  50% { transform: translate(-1px, -1px); }
+  75% { transform: translate(3px, 2px); }
+  100% { transform: translate(-2px, 0px); }
+}
+
+/* Jitter the whole logo container periodically */
+.hero-logo-glitch {
+  animation: hero-jitter 4s infinite;
+}
+
+@keyframes hero-jitter {
+  0%, 92%, 100% { transform: translate(0, 0) skewX(0deg); }
+  93% { transform: translate(-4px, 2px) skewX(-1deg); }
+  94% { transform: translate(3px, -1px) skewX(0.5deg); }
+  95% { transform: translate(-2px, 0px) skewX(-0.3deg); }
+  96% { transform: translate(0, 0) skewX(0deg); }
+}
+
+/* Hover chromatic aberration for all images */
+.hover-chromatic-image {
+  transition: filter 0.3s ease;
+}
+
+.hover-chromatic-image:hover {
+  filter: drop-shadow(2px 0 0 rgba(255, 0, 0, 0.4)) drop-shadow(-2px 0 0 rgba(0, 255, 255, 0.4));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-logo-glitch .hero-logo-r,
+  .hero-logo-glitch .hero-logo-b {
+    animation: none;
+    opacity: 0;
+  }
+  .hero-logo-glitch {
+    animation: none;
+  }
+}

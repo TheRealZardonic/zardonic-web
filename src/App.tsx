@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
 import { useLocalStorage } from '@/hooks/use-local-storage'
 import { useKV } from '@/hooks/use-kv'
@@ -8,6 +8,8 @@ import { fetchITunesReleases, type ITunesRelease } from '@/lib/itunes'
 import { fetchOdesliLinks } from '@/lib/odesli'
 import { fetchBandsintownEvents } from '@/lib/bandsintown'
 import { toDirectImageUrl } from '@/lib/image-cache'
+import { applyConfigOverrides } from '@/lib/config'
+import type { AdminSettings } from '@/lib/types'
 import {
   Play,
   Pause,
@@ -49,6 +51,7 @@ import {
   Envelope,
   Storefront,
   PaperPlaneTilt,
+  Lock,
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -68,6 +71,8 @@ import { Terminal } from '@/components/Terminal'
 import { LoadingScreen } from '@/components/LoadingScreen'
 import { CircuitBackground } from '@/components/CircuitBackground'
 import AdminLoginDialog, { hashPassword } from '@/components/AdminLoginDialog'
+import EditControls from '@/components/EditControls'
+import ConfigEditorDialog from '@/components/ConfigEditorDialog'
 import { SpotifyEmbed } from '@/components/SpotifyEmbed'
 import heroImage from '@/assets/images/meta_eyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ==.webp'
 import logoImage from '@/assets/images/meta_eyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ==.webp'
@@ -124,7 +129,7 @@ interface CreditHighlight {
   alt: string
 }
 
-interface SiteData {
+export interface SiteData {
   artistName: string
   heroImage: string
   bio: string
@@ -210,7 +215,7 @@ function App() {
     }
   }, [loading])
 
-  const [siteData, setSiteData] = useLocalStorage<SiteData>('zardonic-site-data', {
+  const [siteData, setSiteData] = useKV<SiteData>('zardonic-site-data', {
     artistName: 'ZARDONIC',
     heroImage: heroImage,
     bio: `The clash of disparate elements activates innovation, and every generation brings us timeless figures who accidentally spark a new revolutionary sound within the music world. Chuck Berry mixed jazz, blues, gospel and country music to create Rock N Roll. A few decades later, Ozzy Osbourne turned up the gain to create Heavy Metal. And since the early 2000s, Federico Ágreda Álvarez, the masked performer known to the world as DJ and producer Zardonic, has harnessed the power of the nexus between Drum & Bass and Heavy Metal to create the sound that is now known as Metal & Bass.
@@ -314,6 +319,65 @@ In the end, Zardonic will unite listeners with Superstars.
   const [progress, setProgress] = useState(0)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [editMode, setEditMode] = useState(false)
+  const [showConfigEditor, setShowConfigEditor] = useState(false)
+
+  // Admin settings (persisted in Redis)
+  const [adminSettings, setAdminSettings] = useKV<AdminSettings>('zardonic-admin-settings', {})
+  const vis = adminSettings?.sectionVisibility ?? {}
+  const anim = adminSettings?.animations ?? {}
+
+  // Apply theme customizations to CSS variables
+  useEffect(() => {
+    const t = adminSettings?.theme
+    if (!t) return
+    const root = document.documentElement
+    if (t.primaryColor) root.style.setProperty('--primary', t.primaryColor)
+    if (t.accentColor) root.style.setProperty('--accent', t.accentColor)
+    if (t.backgroundColor) root.style.setProperty('--background', t.backgroundColor)
+    if (t.foregroundColor) root.style.setProperty('--foreground', t.foregroundColor)
+    if (t.fontHeading) root.style.setProperty('--font-heading', t.fontHeading)
+    if (t.fontBody) root.style.setProperty('--font-body', t.fontBody)
+    if (t.fontMono) root.style.setProperty('--font-mono', t.fontMono)
+    return () => {
+      root.style.removeProperty('--primary')
+      root.style.removeProperty('--accent')
+      root.style.removeProperty('--background')
+      root.style.removeProperty('--foreground')
+      root.style.removeProperty('--font-heading')
+      root.style.removeProperty('--font-body')
+      root.style.removeProperty('--font-mono')
+    }
+  }, [adminSettings?.theme])
+
+  // Apply config overrides
+  useEffect(() => {
+    if (adminSettings?.configOverrides) {
+      applyConfigOverrides(adminSettings.configOverrides)
+    }
+  }, [adminSettings?.configOverrides])
+
+  // Apply favicon
+  useEffect(() => {
+    const faviconUrl = adminSettings?.faviconUrl
+    if (!faviconUrl) return
+    let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement | null
+    if (!link) {
+      link = document.createElement('link')
+      link.rel = 'icon'
+      document.head.appendChild(link)
+    }
+    link.href = faviconUrl
+  }, [adminSettings?.faviconUrl])
+
+  // Collect image URLs for precaching during loading screen
+  const precacheUrls = useMemo(() => {
+    if (!siteData) return []
+    const urls: string[] = []
+    siteData.gallery?.forEach(url => { if (url) urls.push(url) })
+    siteData.releases?.forEach(r => { if (r.artwork) urls.push(r.artwork) })
+    siteData.creditHighlights?.forEach(c => { if (c.src) urls.push(c.src) })
+    return urls
+  }, [siteData])
   const [galleryIndex, setGalleryIndex] = useState<number | null>(null)
   const [editingGig, setEditingGig] = useState<Gig | null>(null)
   const [editingRelease, setEditingRelease] = useState<Release | null>(null)
@@ -662,7 +726,7 @@ In the end, Zardonic will unite listeners with Superstars.
     <>
       <AnimatePresence>
         {loading && (
-          <LoadingScreen onLoadComplete={() => setLoading(false)} />
+          <LoadingScreen onLoadComplete={() => setLoading(false)} precacheUrls={precacheUrls} />
         )}
       </AnimatePresence>
 
@@ -779,15 +843,28 @@ In the end, Zardonic will unite listeners with Superstars.
         >
           <motion.div 
             className="mb-8 relative"
-            initial={{ opacity: 0, scale: 0.8, y: 30 }}
-            animate={contentLoaded ? { opacity: 1, scale: 1, y: 0 } : { opacity: 0, scale: 0.8, y: 30 }}
-            transition={{ duration: 1, delay: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+            initial={{ opacity: 1, scale: 1 }}
+            animate={contentLoaded ? { opacity: 1, scale: 1 } : { opacity: 0 }}
           >
-            <img 
-              src={logoImage} 
-              alt={siteData.artistName} 
-              className="h-32 md:h-48 lg:h-64 w-auto object-contain logo-glitch brightness-110 mx-auto hover-chromatic-image"
-            />
+            <div className="relative mx-auto w-fit hero-logo-glitch">
+              <img 
+                src={logoImage} 
+                alt={siteData.artistName} 
+                className="h-32 md:h-48 lg:h-64 w-auto object-contain brightness-110 hover-chromatic-image"
+              />
+              <img 
+                src={logoImage} 
+                alt="" 
+                aria-hidden="true"
+                className="absolute inset-0 h-32 md:h-48 lg:h-64 w-auto object-contain brightness-110 hero-logo-r"
+              />
+              <img 
+                src={logoImage} 
+                alt="" 
+                aria-hidden="true"
+                className="absolute inset-0 h-32 md:h-48 lg:h-64 w-auto object-contain brightness-110 hero-logo-b"
+              />
+            </div>
           </motion.div>
 
           {editMode && (
@@ -833,6 +910,7 @@ In the end, Zardonic will unite listeners with Superstars.
 
       <Separator className="bg-border" />
 
+      {vis.bio !== false && (
       <section id="bio" className="py-24 px-4">
         <div className="container mx-auto max-w-4xl">
           <motion.div
@@ -908,7 +986,9 @@ In the end, Zardonic will unite listeners with Superstars.
           </motion.div>
         </div>
       </section>
+      )}
 
+      {vis.creditHighlights !== false && (
       <section className="py-16 px-4 bg-card/50 noise-effect overflow-hidden">
         <div className="container mx-auto max-w-6xl">
           <motion.div
@@ -982,7 +1062,7 @@ In the end, Zardonic will unite listeners with Superstars.
                   key={`credit-${index}`}
                   src={toDirectImageUrl(logo.src) || logo.src}
                   alt={logo.alt}
-                  className="h-10 md:h-14 w-auto object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity duration-300"
+                  className="h-10 md:h-14 w-auto object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity duration-300 hover-chromatic-image"
                   initial={{ opacity: 0, y: 10 }}
                   whileInView={{ opacity: 0.7, y: 0 }}
                   viewport={{ once: true }}
@@ -995,9 +1075,11 @@ In the end, Zardonic will unite listeners with Superstars.
           </motion.div>
         </div>
       </section>
+      )}
 
       <Separator className="bg-border" />
 
+      {vis.music !== false && (
       <section id="music" className="py-24 px-4 bg-card/50 scanline-effect crt-effect">
         <div className="container mx-auto max-w-6xl">
           <motion.div
@@ -1033,9 +1115,11 @@ In the end, Zardonic will unite listeners with Superstars.
           </motion.div>
         </div>
       </section>
+      )}
 
       <Separator className="bg-border" />
 
+      {vis.gigs !== false && (
       <section id="gigs" className="py-24 px-4 noise-effect crt-effect">
         <div className="container mx-auto max-w-6xl">
           <motion.div
@@ -1178,9 +1262,11 @@ In the end, Zardonic will unite listeners with Superstars.
           </motion.div>
         </div>
       </section>
+      )}
 
       <Separator className="bg-border" />
 
+      {vis.releases !== false && (
       <section id="releases" className="py-24 px-4 bg-card/50 scanline-effect crt-effect">
         <div className="container mx-auto max-w-6xl">
           <motion.div
@@ -1280,7 +1366,7 @@ In the end, Zardonic will unite listeners with Superstars.
                           <div className="data-label absolute top-2 left-2 z-10">// REL.{release.year}</div>
                           <div className="aspect-square bg-muted relative">
                             {release.artwork && (
-                              <img src={release.artwork} alt={release.title} className="w-full h-full object-cover glitch-image" />
+                              <img src={release.artwork} alt={release.title} className="w-full h-full object-cover glitch-image hover-chromatic-image" />
                             )}
                             {editMode && (
                               <div className="absolute top-2 right-2 flex gap-1">
@@ -1349,9 +1435,11 @@ In the end, Zardonic will unite listeners with Superstars.
           </motion.div>
         </div>
       </section>
+      )}
 
       <Separator className="bg-border" />
 
+      {vis.gallery !== false && (
       <section id="gallery" className="py-24 px-4 crt-effect">
         <div className="container mx-auto max-w-6xl">
           <motion.div
@@ -1447,7 +1535,7 @@ In the end, Zardonic will unite listeners with Superstars.
                     <img 
                       src={toDirectImageUrl(image) || image} 
                       alt={`Gallery ${index + 1}`} 
-                      className="w-full h-full object-cover" 
+                      className="w-full h-full object-cover hover-chromatic-image" 
                       crossOrigin="anonymous"
                     />
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -1473,9 +1561,11 @@ In the end, Zardonic will unite listeners with Superstars.
           </motion.div>
         </div>
       </section>
+      )}
 
       <Separator className="bg-border" />
 
+      {vis.connect !== false && (
       <section id="connect" className="py-24 px-4 bg-card/50 scanline-effect crt-effect">
         <div className="container mx-auto max-w-4xl">
           <motion.div
@@ -1645,6 +1735,7 @@ In the end, Zardonic will unite listeners with Superstars.
           </motion.div>
         </div>
       </section>
+      )}
 
       <footer className="py-12 px-4 border-t border-border noise-effect">
         <div className="container mx-auto text-center space-y-4">
@@ -1673,6 +1764,15 @@ In the end, Zardonic will unite listeners with Superstars.
             >
               Contact
             </button>
+            {!isOwner && (
+              <button
+                onClick={() => adminPasswordHash ? setShowLoginDialog(true) : setShowSetupDialog(true)}
+                className="text-sm text-muted-foreground/40 hover:text-primary/60 transition-colors font-mono cursor-pointer"
+                title="Admin"
+              >
+                <Lock size={14} />
+              </button>
+            )}
           </div>
           <p className="text-sm text-muted-foreground uppercase tracking-wide font-mono hover-chromatic">
             © {new Date().getFullYear()} {siteData.artistName}
@@ -2773,15 +2873,27 @@ In the end, Zardonic will unite listeners with Superstars.
         </DialogContent>
       </Dialog>
 
-      {editMode && (
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          className="fixed bottom-8 right-8 bg-primary text-primary-foreground p-4 shadow-lg"
-        >
-          <p className="text-sm uppercase font-bold font-mono">Edit Mode Active</p>
-        </motion.div>
+      {isOwner && (
+        <EditControls
+          editMode={editMode}
+          onToggleEdit={() => setEditMode(!editMode)}
+          hasPassword={!!adminPasswordHash}
+          onChangePassword={handleSetAdminPassword}
+          onSetPassword={handleSetAdminPassword}
+          siteData={siteData}
+          onImportData={(imported) => setSiteData(imported)}
+          adminSettings={adminSettings}
+          onAdminSettingsChange={(settings) => setAdminSettings(settings)}
+          onOpenConfigEditor={() => setShowConfigEditor(true)}
+        />
       )}
+
+      <ConfigEditorDialog
+        open={showConfigEditor}
+        onClose={() => setShowConfigEditor(false)}
+        overrides={adminSettings?.configOverrides || {}}
+        onSave={(configOverrides) => setAdminSettings((prev) => ({ ...(prev || {}), configOverrides }))}
+      />
 
       {/* Admin Login Dialogs */}
       <AdminLoginDialog

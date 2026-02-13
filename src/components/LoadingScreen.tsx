@@ -2,17 +2,20 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useEffect, useRef, useState, useMemo, memo } from 'react'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import { cacheImage } from '@/lib/image-cache'
 import modelFile from '@/assets/models/ZARDONICHEAD.glb'
 
 interface LoadingScreenProps {
   onLoadComplete: () => void
+  precacheUrls?: string[]
 }
 
-export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete }: LoadingScreenProps) {
+export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, precacheUrls = [] }: LoadingScreenProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [loadingStage, setLoadingStage] = useState(0)
   const [glitchActive, setGlitchActive] = useState(false)
+  const [cachingDone, setCachingDone] = useState(precacheUrls.length === 0)
 
   useEffect(() => {
     const glitchInterval = setInterval(() => {
@@ -22,6 +25,19 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete }: Loa
 
     return () => clearInterval(glitchInterval)
   }, [])
+
+  // Background data caching during loading screen
+  useEffect(() => {
+    if (precacheUrls.length === 0) {
+      setCachingDone(true)
+      return
+    }
+    setCachingDone(false)
+    let cancelled = false
+    Promise.allSettled(precacheUrls.map(url => cacheImage(url)))
+      .then(() => { if (!cancelled) setCachingDone(true) })
+    return () => { cancelled = true }
+  }, [precacheUrls])
 
   useEffect(() => {
     if (loadingProgress > 20 && loadingStage < 1) setLoadingStage(1)
@@ -81,7 +97,6 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete }: Loa
 
     let model: THREE.Object3D | null = null
     let animationFrameId: number
-    let hasCompleted = false
 
     const loader = new GLTFLoader()
     loader.load(
@@ -89,10 +104,7 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete }: Loa
       (gltf) => {
         if (!gltf?.scene) {
           console.error('Invalid GLTF data')
-          if (!hasCompleted) {
-            hasCompleted = true
-            setTimeout(() => onLoadComplete(), 1000)
-          }
+          setLoadingProgress(100)
           return
         }
 
@@ -110,19 +122,9 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete }: Loa
           
           scene.add(model)
           setLoadingProgress(100)
-
-          if (!hasCompleted) {
-            hasCompleted = true
-            setTimeout(() => {
-              onLoadComplete()
-            }, 2000)
-          }
         } catch (err) {
           console.error('Failed to process model:', err)
-          if (!hasCompleted) {
-            hasCompleted = true
-            setTimeout(() => onLoadComplete(), 1000)
-          }
+          setLoadingProgress(100)
         }
       },
       (progress) => {
@@ -133,12 +135,7 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete }: Loa
       },
       (error) => {
         console.error('Error loading model:', error)
-        if (!hasCompleted) {
-          hasCompleted = true
-          setTimeout(() => {
-            onLoadComplete()
-          }, 1000)
-        }
+        setLoadingProgress(100)
       }
     )
 
@@ -172,7 +169,15 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete }: Loa
         console.error('Cleanup error:', err)
       }
     }
-  }, [onLoadComplete, messages])
+  }, [messages])
+
+  // Complete when both model progress reaches 100% and background caching is done
+  useEffect(() => {
+    if (loadingProgress >= 100 && cachingDone) {
+      const timeout = setTimeout(() => onLoadComplete(), 2000)
+      return () => clearTimeout(timeout)
+    }
+  }, [loadingProgress, cachingDone, onLoadComplete])
 
   return (
     <motion.div
