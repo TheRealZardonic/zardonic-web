@@ -119,6 +119,11 @@ interface MediaFile {
   size: string
 }
 
+interface CreditHighlight {
+  src: string
+  alt: string
+}
+
 interface SiteData {
   artistName: string
   heroImage: string
@@ -130,6 +135,7 @@ interface SiteData {
   instagramFeed: string[]
   members: Member[]
   mediaFiles: MediaFile[]
+  creditHighlights: CreditHighlight[]
   social: {
     instagram?: string
     facebook?: string
@@ -282,6 +288,14 @@ In the end, Zardonic will unite listeners with Superstars.
     instagramFeed: [],
     members: [],
     mediaFiles: [],
+    creditHighlights: [
+      { src: 'https://images.zoogletools.com/s:bzglfiles/u/154437/0f55903209332a56b6137578b492e543373fdc6c/original/sega-logo.png/!!/b%3AW1sicmVzaXplIiw2NjBdLFsibWF4Il0sWyJ3ZSJdXQ%3D%3D/meta%3AeyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ%3D%3D.png', alt: 'SEGA' },
+      { src: 'https://images.zoogletools.com/s:bzglfiles/u/154437/4b65d0d33e1113b5511272580e87828768cfc2d1/original/7fdd8d8997a41afbdd8381c287d9a984.png/!!/b%3AW1sicmVzaXplIiw2NjBdLFsibWF4Il0sWyJ3ZSJdXQ%3D%3D/meta%3AeyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ%3D%3D.png', alt: 'Sonic Syndicate' },
+      { src: 'https://images.zoogletools.com/s:bzglfiles/u/154437/6eb32362aa0c4fdcce4fa319b7fa721d1fab0989/original/fearfactory-logo-svg.png/!!/b%3AW1sicmVzaXplIiw2NjBdLFsibWF4Il0sWyJ3ZSJdXQ%3D%3D/meta%3AeyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ%3D%3D.png', alt: 'Fear Factory' },
+      { src: 'https://images.zoogletools.com/s:bzglfiles/u/154437/5021ea146b63ef5ffaa3fa82ca588a2abacc85db/original/citypng-com-white-aew-all-elite-wrestling-logo-4000x4000.png/!!/b%3AW1siZXh0cmFjdCIseyJsZWZ0IjoyOSwidG9wIjo4NjIsIndpZHRoIjozOTcxLCJoZWlnaHQiOjIyMzN9XSxbInJlc2l6ZSIsNjYwXSxbIm1heCJdLFsid2UiXV0%3D/meta%3AeyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ%3D%3D.png', alt: 'AEW' },
+      { src: 'https://images.zoogletools.com/s:bzglfiles/u/154437/682412f8e4ef237f862a19771c88a5a24db05ef0/original/pop-evil-5c8c4556e6b4f.png/!!/b%3AW1siZXh0cmFjdCIseyJsZWZ0IjoxOTIsInRvcCI6MCwid2lkdGgiOjQxMywiaGVpZ2h0IjozMTB9XSxbInJlc2l6ZSIsNjYwXSxbIm1heCJdLFsid2UiXV0%3D/meta%3AeyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ%3D%3D.png', alt: 'Pop Evil' },
+      { src: 'https://images.zoogletools.com/s:bzglfiles/u/154437/e43afa6931b42622a32c143ea820b45b4bf22772/original/bfmv.png/!!/b%3AW1siZXh0cmFjdCIseyJsZWZ0IjoxMTksInRvcCI6MjUsIndpZHRoIjo4NjcsImhlaWdodCI6NjgyfV0sWyJyZXNpemUiLDY2MF0sWyJtYXgiXSxbIndlIl1d/meta%3AeyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ%3D%3D.png', alt: 'Bullet For My Valentine' },
+    ],
     social: {
       instagram: 'https://instagram.com/zfrederickx',
       facebook: 'https://facebook.com/ZardonicOfficial',
@@ -905,18 +919,68 @@ In the end, Zardonic will unite listeners with Superstars.
             className="text-center"
           >
             <div className="data-label mb-6">// CREDIT.HIGHLIGHTS</div>
+
+            {editMode && (
+              <div className="mb-8 space-y-3 max-w-xl mx-auto text-left">
+                {siteData.creditHighlights.map((highlight, index) => (
+                  <div key={index} className="flex items-end gap-2">
+                    <div className="flex-1 space-y-1">
+                      <Label className="font-mono text-xs">Image URL</Label>
+                      <Input
+                        value={highlight.src}
+                        onChange={(e) => {
+                          const updated = [...siteData.creditHighlights]
+                          updated[index] = { ...updated[index], src: e.target.value }
+                          setSiteData((data) => data ? { ...data, creditHighlights: updated } : data!)
+                        }}
+                        placeholder="https://drive.google.com/file/d/... or image URL"
+                        className="bg-card border-border font-mono text-xs"
+                      />
+                    </div>
+                    <div className="w-32 space-y-1">
+                      <Label className="font-mono text-xs">Label</Label>
+                      <Input
+                        value={highlight.alt}
+                        onChange={(e) => {
+                          const updated = [...siteData.creditHighlights]
+                          updated[index] = { ...updated[index], alt: e.target.value }
+                          setSiteData((data) => data ? { ...data, creditHighlights: updated } : data!)
+                        }}
+                        placeholder="Name"
+                        className="bg-card border-border font-mono text-xs"
+                      />
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => {
+                        const updated = siteData.creditHighlights.filter((_, i) => i !== index)
+                        setSiteData((data) => data ? { ...data, creditHighlights: updated } : data!)
+                      }}
+                    >
+                      <Trash className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setSiteData((data) => data ? { ...data, creditHighlights: [...data.creditHighlights, { src: '', alt: '' }] } : data!)
+                  }}
+                  className="font-mono"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Logo
+                </Button>
+              </div>
+            )}
+
             <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12 opacity-60 hover:opacity-90 transition-opacity duration-500">
-              {[
-                { src: 'https://images.zoogletools.com/s:bzglfiles/u/154437/0f55903209332a56b6137578b492e543373fdc6c/original/sega-logo.png/!!/b%3AW1sicmVzaXplIiw2NjBdLFsibWF4Il0sWyJ3ZSJdXQ%3D%3D/meta%3AeyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ%3D%3D.png', alt: 'SEGA' },
-                { src: 'https://images.zoogletools.com/s:bzglfiles/u/154437/4b65d0d33e1113b5511272580e87828768cfc2d1/original/7fdd8d8997a41afbdd8381c287d9a984.png/!!/b%3AW1sicmVzaXplIiw2NjBdLFsibWF4Il0sWyJ3ZSJdXQ%3D%3D/meta%3AeyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ%3D%3D.png', alt: 'Sonic Syndicate' },
-                { src: 'https://images.zoogletools.com/s:bzglfiles/u/154437/6eb32362aa0c4fdcce4fa319b7fa721d1fab0989/original/fearfactory-logo-svg.png/!!/b%3AW1sicmVzaXplIiw2NjBdLFsibWF4Il0sWyJ3ZSJdXQ%3D%3D/meta%3AeyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ%3D%3D.png', alt: 'Fear Factory' },
-                { src: 'https://images.zoogletools.com/s:bzglfiles/u/154437/5021ea146b63ef5ffaa3fa82ca588a2abacc85db/original/citypng-com-white-aew-all-elite-wrestling-logo-4000x4000.png/!!/b%3AW1siZXh0cmFjdCIseyJsZWZ0IjoyOSwidG9wIjo4NjIsIndpZHRoIjozOTcxLCJoZWlnaHQiOjIyMzN9XSxbInJlc2l6ZSIsNjYwXSxbIm1heCJdLFsid2UiXV0%3D/meta%3AeyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ%3D%3D.png', alt: 'AEW' },
-                { src: 'https://images.zoogletools.com/s:bzglfiles/u/154437/682412f8e4ef237f862a19771c88a5a24db05ef0/original/pop-evil-5c8c4556e6b4f.png/!!/b%3AW1siZXh0cmFjdCIseyJsZWZ0IjoxOTIsInRvcCI6MCwid2lkdGgiOjQxMywiaGVpZ2h0IjozMTB9XSxbInJlc2l6ZSIsNjYwXSxbIm1heCJdLFsid2UiXV0%3D/meta%3AeyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ%3D%3D.png', alt: 'Pop Evil' },
-                { src: 'https://images.zoogletools.com/s:bzglfiles/u/154437/e43afa6931b42622a32c143ea820b45b4bf22772/original/bfmv.png/!!/b%3AW1siZXh0cmFjdCIseyJsZWZ0IjoxMTksInRvcCI6MjUsIndpZHRoIjo4NjcsImhlaWdodCI6NjgyfV0sWyJyZXNpemUiLDY2MF0sWyJtYXgiXSxbIndlIl1d/meta%3AeyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ%3D%3D.png', alt: 'Bullet For My Valentine' },
-              ].map((logo, index) => (
+              {siteData.creditHighlights.filter(logo => logo.src).map((logo, index) => (
                 <motion.img
-                  key={logo.alt}
-                  src={logo.src}
+                  key={`${logo.alt}-${index}`}
+                  src={toDirectImageUrl(logo.src) || logo.src}
                   alt={logo.alt}
                   className="h-10 md:h-14 w-auto object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity duration-300"
                   initial={{ opacity: 0, y: 10 }}
