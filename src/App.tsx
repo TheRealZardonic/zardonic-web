@@ -65,6 +65,7 @@ import { Terminal } from '@/components/Terminal'
 import { LoadingScreen } from '@/components/LoadingScreen'
 import { CircuitBackground } from '@/components/CircuitBackground'
 import AdminLoginDialog, { hashPassword } from '@/components/AdminLoginDialog'
+import { SpotifyEmbed } from '@/components/SpotifyEmbed'
 import heroImage from '@/assets/images/meta_eyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ==.webp'
 import logoImage from '@/assets/images/meta_eyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ==.webp'
 
@@ -281,7 +282,7 @@ In the end, Zardonic will unite listeners with Superstars.
     social: {
       instagram: 'https://instagram.com/zfrederickx',
       facebook: 'https://facebook.com/ZardonicOfficial',
-      spotify: 'https://open.spotify.com/artist/0hVKeSdrYbJjFqLRnYeHOp',
+      spotify: 'https://open.spotify.com/artist/7BqEidErPMNiUXCRE0dV2n',
       youtube: 'https://youtube.com/@ZardonicOfficial',
       soundcloud: 'https://soundcloud.com/zardonic',
       bandcamp: 'https://zardonic.bandcamp.com',
@@ -908,16 +909,12 @@ In the end, Zardonic will unite listeners with Superstars.
                 background: 'linear-gradient(180deg, oklch(0.15 0 0) 0%, oklch(0.1 0 0) 100%)',
                 borderRadius: '0',
               }}>
-                <iframe
-                  style={{ borderRadius: '0', border: 'none' }}
-                  src="https://open.spotify.com/embed/artist/0hVKeSdrYbJjFqLRnYeHOp?utm_source=generator&theme=0"
+                <SpotifyEmbed
+                  uri="spotify:artist:7BqEidErPMNiUXCRE0dV2n"
                   width="100%"
-                  height="352"
-                  allowFullScreen
-                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                  loading="lazy"
-                  title="Spotify Player - ZARDONIC"
-                ></iframe>
+                  height={352}
+                  theme="0"
+                />
               </div>
               <div className="p-4 pt-2">
                 <div className="data-label">// STATUS: [STREAMING]</div>
