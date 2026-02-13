@@ -9,7 +9,10 @@ const projectRoot = process.env.PROJECT_ROOT || import.meta.dirname
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
-    react(),
+    react({
+      // Enable Fast Refresh
+      fastRefresh: true,
+    }),
     tailwindcss(),
   ],
   resolve: {
@@ -18,6 +21,32 @@ export default defineConfig({
     }
   },
   assetsInclude: ['**/*.glb', '**/*.gltf'],
+  build: {
+    // Optimize chunk splitting for better caching
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-motion': ['framer-motion'],
+          'vendor-three': ['three'],
+          'vendor-icons': ['@phosphor-icons/react'],
+          'vendor-ui': ['@radix-ui/react-dialog', '@radix-ui/react-separator', '@radix-ui/react-slot'],
+        },
+      },
+    },
+    // Increase chunk size warning limit
+    chunkSizeWarningLimit: 600,
+    // Use esbuild for faster minification
+    minify: 'esbuild',
+  },
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'framer-motion',
+      '@phosphor-icons/react',
+    ],
+  },
   server: {
     proxy: {
       '/api/odesli': {

@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useMemo, memo } from 'react'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import modelFile from '@/assets/models/ZARDONICHEAD.glb'
@@ -8,7 +8,7 @@ interface LoadingScreenProps {
   onLoadComplete: () => void
 }
 
-export function LoadingScreen({ onLoadComplete }: LoadingScreenProps) {
+export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete }: LoadingScreenProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [loadingStage, setLoadingStage] = useState(0)
@@ -30,6 +30,15 @@ export function LoadingScreen({ onLoadComplete }: LoadingScreenProps) {
     if (loadingProgress > 80 && loadingStage < 4) setLoadingStage(4)
     if (loadingProgress === 100 && loadingStage < 5) setLoadingStage(5)
   }, [loadingProgress, loadingStage])
+
+  // Memoize messages to prevent recreation
+  const messages = useMemo(() => [
+    'INITIALIZING NEURAL INTERFACE',
+    'LOADING CORE SYSTEMS',
+    'SYNCHRONIZING WETWARE',
+    'ESTABLISHING CONNECTION',
+    'SYSTEM READY'
+  ], [])
 
   useEffect(() => {
     if (!canvasRef.current) return
@@ -163,15 +172,7 @@ export function LoadingScreen({ onLoadComplete }: LoadingScreenProps) {
         console.error('Cleanup error:', err)
       }
     }
-  }, [onLoadComplete])
-
-  const messages = [
-    'INITIALIZING NEURAL INTERFACE',
-    'LOADING CORE SYSTEMS',
-    'SYNCHRONIZING WETWARE',
-    'ESTABLISHING CONNECTION',
-    'SYSTEM READY'
-  ]
+  }, [onLoadComplete, messages])
 
   return (
     <motion.div
@@ -446,4 +447,4 @@ export function LoadingScreen({ onLoadComplete }: LoadingScreenProps) {
       </div>
     </motion.div>
   )
-}
+})

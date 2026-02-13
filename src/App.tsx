@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
 import { useLocalStorage } from '@/hooks/use-local-storage'
+import { useKV } from '@/hooks/use-kv'
 import { useKonami } from '@/hooks/use-konami'
 import { useAnalytics, trackClick } from '@/hooks/use-analytics'
 import { fetchITunesReleases, type ITunesRelease } from '@/lib/itunes'
 import { fetchOdesliLinks } from '@/lib/odesli'
 import { fetchBandsintownEvents } from '@/lib/bandsintown'
+import { toDirectImageUrl } from '@/lib/image-cache'
 import {
   Play,
   Pause,
@@ -47,7 +49,7 @@ import {
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Slider } from '@/components/ui/slider'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -62,6 +64,7 @@ import { SwipeableGallery } from '@/components/SwipeableGallery'
 import { Terminal } from '@/components/Terminal'
 import { LoadingScreen } from '@/components/LoadingScreen'
 import { CircuitBackground } from '@/components/CircuitBackground'
+import AdminLoginDialog, { hashPassword } from '@/components/AdminLoginDialog'
 import heroImage from '@/assets/images/meta_eyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ==.webp'
 import logoImage from '@/assets/images/meta_eyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ==.webp'
 
@@ -147,6 +150,13 @@ function App() {
   const [terminalOpen, setTerminalOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [contentLoaded, setContentLoaded] = useState(false)
+
+  // Admin authentication
+  const [adminPasswordHash, setAdminPasswordHash] = useKV<string>('admin-password-hash', '')
+  const [isOwner, setIsOwner] = useState(false)
+  const [showLoginDialog, setShowLoginDialog] = useState(false)
+  const [showSetupDialog, setShowSetupDialog] = useState(false)
+  const wantsSetup = useRef(false)
   
   useEffect(() => {
     if (konamiActivated) {
@@ -154,6 +164,35 @@ function App() {
       toast.success('Terminal activated!')
     }
   }, [konamiActivated])
+
+  // Check for ?admin-setup URL parameter on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.has('admin-setup')) {
+      wantsSetup.current = true
+      // Clean up URL
+      const url = new URL(window.location.href)
+      url.searchParams.delete('admin-setup')
+      window.history.replaceState({}, '', url.toString())
+    }
+  }, [])
+
+  // Restore admin session from localStorage
+  useEffect(() => {
+    if (!adminPasswordHash) return
+    const storedToken = localStorage.getItem('admin-token')
+    if (storedToken && storedToken === adminPasswordHash) {
+      setIsOwner(true)
+    }
+  }, [adminPasswordHash])
+
+  // Open setup dialog once KV data has loaded and confirms no password exists
+  useEffect(() => {
+    if (wantsSetup.current && adminPasswordHash !== undefined && !adminPasswordHash) {
+      wantsSetup.current = false
+      setShowSetupDialog(true)
+    }
+  }, [adminPasswordHash])
 
   useEffect(() => {
     if (!loading) {
@@ -269,6 +308,7 @@ In the end, Zardonic will unite listeners with Superstars.
   const [bandsintownFetching, setBandsintownFetching] = useState(false)
   const [hasAutoLoaded, setHasAutoLoaded] = useState(false)
   const [showAllReleases, setShowAllReleases] = useState(false)
+  const [bioExpanded, setBioExpanded] = useState(false)
   
   const audioRef = useRef<HTMLAudioElement>(null)
 
@@ -310,6 +350,30 @@ In the end, Zardonic will unite listeners with Superstars.
       audioRef.current.volume = volume[0] / 100
     }
   }, [volume])
+
+  // Admin authentication handlers
+  const handleAdminLogin = async (password: string): Promise<boolean> => {
+    const hash = await hashPassword(password)
+    if (hash === adminPasswordHash) {
+      localStorage.setItem('admin-token', hash)
+      setIsOwner(true)
+      return true
+    }
+    return false
+  }
+
+  const handleSetupAdminPassword = async (password: string): Promise<void> => {
+    const hash = await hashPassword(password)
+    localStorage.setItem('admin-token', hash)
+    setAdminPasswordHash(hash)
+    setIsOwner(true)
+  }
+
+  const handleSetAdminPassword = async (password: string): Promise<void> => {
+    const hash = await hashPassword(password)
+    localStorage.setItem('admin-token', hash)
+    setAdminPasswordHash(hash)
+  }
 
   // Auto-fetch iTunes releases and Bandsintown events on mount
   useEffect(() => {
@@ -633,13 +697,23 @@ In the end, Zardonic will unite listeners with Superstars.
           </div>
 
           <div className="flex items-center gap-4">
-            <Button
-              size="sm"
-              variant={editMode ? 'default' : 'outline'}
-              onClick={() => setEditMode(!editMode)}
-            >
-              <Pencil className="w-4 h-4" />
-            </Button>
+            {isOwner ? (
+              <Button
+                size="sm"
+                variant={editMode ? 'default' : 'outline'}
+                onClick={() => setEditMode(!editMode)}
+              >
+                <Pencil className="w-4 h-4" />
+              </Button>
+            ) : adminPasswordHash ? (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowLoginDialog(true)}
+              >
+                Login
+              </Button>
+            ) : null}
             
             <button
               className="md:hidden text-foreground"
@@ -764,15 +838,48 @@ In the end, Zardonic will unite listeners with Superstars.
                 </Button>
               </div>
             ) : (
-              <motion.p 
-                initial={{ opacity: 0, x: -30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.8, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-                className="text-lg leading-relaxed text-muted-foreground font-light"
-              >
-                {siteData.bio}
-              </motion.p>
+              <div>
+                <motion.div
+                  initial={{ opacity: 0, x: -30 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.8, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
+                  className={`text-lg leading-relaxed text-muted-foreground font-light overflow-hidden transition-all duration-500 ${
+                    !bioExpanded ? 'max-h-[280px]' : 'max-h-none'
+                  }`}
+                  style={{
+                    maskImage: !bioExpanded ? 'linear-gradient(to bottom, black 60%, transparent 100%)' : 'none',
+                    WebkitMaskImage: !bioExpanded ? 'linear-gradient(to bottom, black 60%, transparent 100%)' : 'none',
+                  }}
+                >
+                  {siteData.bio}
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                  className="mt-6"
+                >
+                  <Button
+                    onClick={() => setBioExpanded(!bioExpanded)}
+                    variant="outline"
+                    className="font-mono hover-glitch"
+                  >
+                    {bioExpanded ? (
+                      <>
+                        <CaretUp className="w-4 h-4 mr-2" />
+                        Show Less
+                      </>
+                    ) : (
+                      <>
+                        <CaretDown className="w-4 h-4 mr-2" />
+                        Read More
+                      </>
+                    )}
+                  </Button>
+                </motion.div>
+              </div>
             )}
           </motion.div>
         </div>
@@ -807,6 +914,7 @@ In the end, Zardonic will unite listeners with Superstars.
                   width="100%"
                   height="352"
                   frameBorder="0"
+                  allowTransparency={true}
                   allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
                   loading="lazy"
                   title="Spotify Player - ZARDONIC"
@@ -1151,20 +1259,59 @@ In the end, Zardonic will unite listeners with Superstars.
                 GALLERY
               </h2>
               {editMode && (
-                <label className="cursor-pointer">
-                  <Button className="gap-2" asChild>
-                    <span>
-                      <Upload className="w-4 h-4" />
-                      Add Image
-                    </span>
-                  </Button>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => handleImageUpload(e, 'gallery')}
-                  />
-                </label>
+                <div className="flex gap-2">
+                  <label className="cursor-pointer">
+                    <Button className="gap-2" asChild>
+                      <span>
+                        <Upload className="w-4 h-4" />
+                        Add Image
+                      </span>
+                    </Button>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleImageUpload(e, 'gallery')}
+                    />
+                  </label>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button className="gap-2" variant="outline">
+                        <Plus className="w-4 h-4" />
+                        Add URL
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add Image from URL</DialogTitle>
+                      </DialogHeader>
+                      <form onSubmit={(e) => {
+                        e.preventDefault()
+                        const formData = new FormData(e.currentTarget)
+                        const url = formData.get('imageUrl') as string
+                        if (url && siteData) {
+                          setSiteData({ ...siteData, gallery: [...siteData.gallery, url] })
+                          toast.success('Image URL added to gallery')
+                          e.currentTarget.reset()
+                        }
+                      }}>
+                        <div className="space-y-4">
+                          <div>
+                            <Label htmlFor="imageUrl">Image URL (supports Google Drive links)</Label>
+                            <Input
+                              id="imageUrl"
+                              name="imageUrl"
+                              type="url"
+                              placeholder="https://drive.google.com/file/d/..."
+                              className="mt-2"
+                            />
+                          </div>
+                          <Button type="submit">Add Image</Button>
+                        </div>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               )}
             </div>
 
@@ -1191,7 +1338,12 @@ In the end, Zardonic will unite listeners with Superstars.
                     className="aspect-square bg-muted overflow-hidden cursor-pointer relative group glitch-image"
                     onClick={() => setGalleryIndex(index)}
                   >
-                    <img src={image} alt={`Gallery ${index + 1}`} className="w-full h-full object-cover" />
+                    <img 
+                      src={toDirectImageUrl(image) || image} 
+                      alt={`Gallery ${index + 1}`} 
+                      className="w-full h-full object-cover" 
+                      crossOrigin="anonymous"
+                    />
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <MagnifyingGlassPlus className="w-8 h-8 text-foreground" />
                     </div>
@@ -2337,6 +2489,22 @@ In the end, Zardonic will unite listeners with Superstars.
           <p className="text-sm uppercase font-bold font-mono">Edit Mode Active</p>
         </motion.div>
       )}
+
+      {/* Admin Login Dialogs */}
+      <AdminLoginDialog
+        open={showLoginDialog}
+        onOpenChange={setShowLoginDialog}
+        mode="login"
+        onLogin={handleAdminLogin}
+        onSetPassword={handleSetAdminPassword}
+      />
+
+      <AdminLoginDialog
+        open={showSetupDialog}
+        onOpenChange={setShowSetupDialog}
+        mode="setup"
+        onSetPassword={handleSetupAdminPassword}
+      />
     </div>
     </>
   )
