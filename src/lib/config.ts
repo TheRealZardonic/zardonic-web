@@ -146,7 +146,9 @@ export function getConfigValues(): Record<ConfigKey, number> {
   return { ...DEFAULTS, ...overrides }
 }
 
-// Named exports for backward compatibility
+// Named exports for backward compatibility.
+// These are compile-time default values. To read a runtime-overridden value
+// use getConfigValues() which merges defaults with any admin-applied overrides.
 export const LOGO_GLITCH_PROBABILITY = DEFAULTS.LOGO_GLITCH_PROBABILITY
 export const LOGO_GLITCH_DURATION_MS = DEFAULTS.LOGO_GLITCH_DURATION_MS
 export const LOGO_GLITCH_INTERVAL_MS = DEFAULTS.LOGO_GLITCH_INTERVAL_MS
