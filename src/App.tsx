@@ -9,6 +9,7 @@ import { fetchOdesliLinks } from '@/lib/odesli'
 import { fetchBandsintownEvents } from '@/lib/bandsintown'
 import { toDirectImageUrl } from '@/lib/image-cache'
 import { applyConfigOverrides } from '@/lib/config'
+import { submitContactForm, contactFormSchema } from '@/lib/contact'
 import { getRandomOverlayAnimation } from '@/lib/overlay-animations'
 import type { AdminSettings } from '@/lib/types'
 import {
@@ -2478,35 +2479,61 @@ In the end, Zardonic will unite listeners with Superstars.
                                 >
                                   <div className="data-label mb-4">// CONTACT.FORM</div>
                                   <form
-                                    onSubmit={(e) => {
+                                    onSubmit={async (e) => {
                                       e.preventDefault()
-                                      const formData = new FormData(e.currentTarget)
-                                      const name = formData.get('name') as string
-                                      const email = formData.get('email') as string
-                                      const subject = formData.get('subject') as string
-                                      const message = formData.get('message') as string
-                                      window.location.href = `mailto:info@zardonic.net?subject=${encodeURIComponent(subject || 'Contact from Website')}&body=${encodeURIComponent(`Name: ${name}\nEmail: ${email}\n\n${message}`)}`
-                                      toast.success('Opening email client...')
+                                      const form = e.currentTarget
+                                      const formData = new FormData(form)
+                                      const data = {
+                                        name: formData.get('name') as string,
+                                        email: formData.get('email') as string,
+                                        subject: formData.get('subject') as string,
+                                        message: formData.get('message') as string,
+                                        _hp: formData.get('_hp') as string || '',
+                                      }
+
+                                      const validation = contactFormSchema.safeParse(data)
+                                      if (!validation.success) {
+                                        toast.error(validation.error.issues[0]?.message || 'Please check your input')
+                                        return
+                                      }
+
+                                      const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement | null
+                                      if (submitBtn) submitBtn.disabled = true
+
+                                      toast.loading('Sending message...', { id: 'contact-submit' })
+
+                                      const result = await submitContactForm(data)
+
+                                      if (result.success) {
+                                        toast.success('Message sent successfully!', { id: 'contact-submit' })
+                                        form.reset()
+                                      } else {
+                                        toast.error(result.error || 'Failed to send message', { id: 'contact-submit' })
+                                      }
+
+                                      if (submitBtn) submitBtn.disabled = false
                                     }}
                                     className="space-y-4"
                                   >
+                                    {/* Honeypot field — hidden from real users */}
+                                    <input type="text" name="_hp" tabIndex={-1} autoComplete="off" aria-hidden="true" className="absolute opacity-0 h-0 w-0 overflow-hidden pointer-events-none" />
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                       <div>
                                         <Label className="font-mono text-xs uppercase tracking-wide">Name</Label>
-                                        <Input name="name" required placeholder="Your name" className="bg-card border-border font-mono mt-1" />
+                                        <Input name="name" required maxLength={100} placeholder="Your name" className="bg-card border-border font-mono mt-1" />
                                       </div>
                                       <div>
                                         <Label className="font-mono text-xs uppercase tracking-wide">Email</Label>
-                                        <Input name="email" type="email" required placeholder="your@email.com" className="bg-card border-border font-mono mt-1" />
+                                        <Input name="email" type="email" required maxLength={254} placeholder="your@email.com" className="bg-card border-border font-mono mt-1" />
                                       </div>
                                     </div>
                                     <div>
                                       <Label className="font-mono text-xs uppercase tracking-wide">Subject</Label>
-                                      <Input name="subject" required placeholder="Subject" className="bg-card border-border font-mono mt-1" />
+                                      <Input name="subject" required maxLength={200} placeholder="Subject" className="bg-card border-border font-mono mt-1" />
                                     </div>
                                     <div>
                                       <Label className="font-mono text-xs uppercase tracking-wide">Message</Label>
-                                      <Textarea name="message" required placeholder="Your message..." className="bg-card border-border font-mono mt-1 min-h-[120px]" />
+                                      <Textarea name="message" required maxLength={5000} placeholder="Your message..." className="bg-card border-border font-mono mt-1 min-h-[120px]" />
                                     </div>
                                     <Button type="submit" className="w-full uppercase font-mono hover-glitch cyber-border">
                                       <PaperPlaneTilt className="w-5 h-5 mr-2" />
