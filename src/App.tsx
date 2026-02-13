@@ -150,6 +150,13 @@ function App() {
   const [terminalOpen, setTerminalOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [contentLoaded, setContentLoaded] = useState(false)
+
+  // Admin authentication
+  const [adminPasswordHash, setAdminPasswordHash] = useKV<string>('admin-password-hash', '')
+  const [isOwner, setIsOwner] = useState(false)
+  const [showLoginDialog, setShowLoginDialog] = useState(false)
+  const [showSetupDialog, setShowSetupDialog] = useState(false)
+  const wantsSetup = useRef(false)
   
   useEffect(() => {
     if (konamiActivated) {
@@ -192,13 +199,6 @@ function App() {
       setTimeout(() => setContentLoaded(true), 100)
     }
   }, [loading])
-
-  // Admin authentication
-  const [adminPasswordHash, setAdminPasswordHash] = useKV<string>('admin-password-hash', '')
-  const [isOwner, setIsOwner] = useState(false)
-  const [showLoginDialog, setShowLoginDialog] = useState(false)
-  const [showSetupDialog, setShowSetupDialog] = useState(false)
-  const wantsSetup = useRef(false)
 
   const [siteData, setSiteData] = useLocalStorage<SiteData>('zardonic-site-data', {
     artistName: 'ZARDONIC',
