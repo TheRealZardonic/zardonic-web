@@ -108,7 +108,7 @@ describe('KV API handler', () => {
         body: { key: 'site-data', value: { name: 'test' } },
         headers: {},
       }, res)
-      expect(mockKvSet).toHaveBeenCalledWith('site-data', { name: 'test' })
+      expect(mockKvSet).toHaveBeenCalledWith('site-data', { name: 'test' }, { ex: 86400 })
       expect(res.json).toHaveBeenCalledWith({ success: true })
     })
 
@@ -123,7 +123,7 @@ describe('KV API handler', () => {
         body: { key: 'site-data', value: { name: 'updated' } },
         headers: { 'x-admin-token': hash },
       }, res)
-      expect(mockKvSet).toHaveBeenCalledWith('site-data', { name: 'updated' })
+      expect(mockKvSet).toHaveBeenCalledWith('site-data', { name: 'updated' }, { ex: 86400 })
       expect(res.json).toHaveBeenCalledWith({ success: true })
     })
 

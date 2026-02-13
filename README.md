@@ -1,23 +1,70 @@
-# ✨ Welcome to Your Spark Template!
-You've just launched your brand-new Spark Template Codespace — everything’s fired up and ready for you to explore, build, and create with Spark!
+# ZARDONIC — Industrial Cyberpunk Artist Website
 
-This template is your blank canvas. It comes with a minimal setup to help you get started quickly with Spark development.
+A fully customizable cyberpunk-themed artist website for **ZARDONIC**, built with React, TypeScript, Vite, and Framer Motion. Features a 3D loading screen, chromatic aberration glitch effects, and a full admin CMS.
 
-🚀 What's Inside?
-- A clean, minimal Spark environment
-- Pre-configured for local development
-- Ready to scale with your ideas
-  
-🧠 What Can You Do?
+## Features
 
-Right now, this is just a starting point — the perfect place to begin building and testing your Spark applications.
+### Public Site
+- **3D Loading Screen** — Three.js model loading with real progress tracking and background image caching
+- **Chromatic Aberration Glitch Logo** — Hero logo with animated RGB channel separation and jitter effects
+- **Cyberpunk UI** — Scanline overlays, CRT effects, noise grain, circuit board background
+- **Spotify Integration** — Embedded Spotify player for artist streaming
+- **iTunes & Bandsintown Sync** — Automatic release and event fetching with Odesli cross-platform links
+- **Responsive Gallery** — Swipeable image gallery with lightbox and Google Drive URL support
+- **Social Connect** — Links to Instagram, Facebook, Spotify, YouTube, SoundCloud, TikTok, etc.
+- **Impressum & Privacy** — Built-in legal pages with EN/DE support
+- **Secret Terminal** — Konami code activated terminal interface
 
-🧹 Just Exploring?
-No problem! If you were just checking things out and don’t need to keep this code:
+### Admin CMS
+Access via the lock icon in the footer, or by navigating to `?admin-setup` for first-time setup.
 
-- Simply delete your Spark.
-- Everything will be cleaned up — no traces left behind.
+- **Section Visibility** — Show/hide any section (Bio, Music, Gigs, Releases, Gallery, Connect, Credits)
+- **Theme Customization** — Customize primary/accent/background/foreground colors and heading/body/mono fonts
+- **Animation Controls** — Toggle glitch, scanline, chromatic, CRT, noise, and circuit background effects
+- **Config Editor** — Fine-tune all animation parameters (durations, probabilities, intervals, offsets)
+- **Data Export/Import** — Export site data as JSON, import from file
+- **Password Protection** — SHA-256 hashed admin password with timing-safe comparison
+- **Favicon Customization** — Set a custom favicon URL from the theme panel
 
-📄 License For Spark Template Resources 
+### Data Persistence
+- **Upstash Redis** — All site data and admin settings are persisted via Upstash Redis with 24-hour TTL
+- **localStorage Fallback** — Graceful fallback to localStorage when Redis is unavailable
+- **Background Caching** — Images are pre-cached in IndexedDB during the loading screen
 
-The Spark Template files and resources from GitHub are licensed under the terms of the MIT license, Copyright GitHub, Inc.
+## Tech Stack
+
+- **Frontend**: React 19, TypeScript, Vite 7, Tailwind CSS 4
+- **Animation**: Framer Motion, Three.js
+- **Storage**: Upstash Redis, IndexedDB, localStorage
+- **UI**: Radix UI, Phosphor Icons, Sonner
+- **APIs**: iTunes Search, Bandsintown, Odesli/song.link
+
+## Development
+
+```bash
+npm install
+npm run dev
+```
+
+### Environment Variables
+
+For Redis persistence, set these in your `.env` or deployment environment:
+
+```
+UPSTASH_REDIS_REST_URL=https://your-redis-url.upstash.io
+UPSTASH_REDIS_REST_TOKEN=your-token-here
+```
+
+### Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | TypeScript check + Vite build |
+| `npm run test` | Run Vitest test suite |
+| `npm run lint` | Run ESLint |
+| `npm run preview` | Preview production build |
+
+## License
+
+MIT License — see [LICENSE](LICENSE) for details.

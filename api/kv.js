@@ -78,7 +78,12 @@ export default async function handler(req, res) {
         }
       }
 
-      await kv.set(key, value)
+      // Use 24h TTL for cached data keys, no TTL for admin-password-hash
+      if (key === 'admin-password-hash') {
+        await kv.set(key, value)
+      } else {
+        await kv.set(key, value, { ex: 86400 }) // 24 hours
+      }
       return res.json({ success: true })
     }
 
