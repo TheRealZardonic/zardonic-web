@@ -979,7 +979,7 @@ In the end, Zardonic will unite listeners with Superstars.
             <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12 opacity-60 hover:opacity-90 transition-opacity duration-500">
               {siteData.creditHighlights.filter(logo => logo.src).map((logo, index) => (
                 <motion.img
-                  key={`${logo.alt}-${index}`}
+                  key={`credit-${index}`}
                   src={toDirectImageUrl(logo.src) || logo.src}
                   alt={logo.alt}
                   className="h-10 md:h-14 w-auto object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity duration-300"
