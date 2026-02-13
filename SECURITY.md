@@ -1,31 +1,44 @@
-Thanks for helping make GitHub safe for everyone.
+# Security Policy
 
-# Security
+## Supported Versions
 
-GitHub takes the security of our software products and services seriously, including all of the open source code repositories managed through our GitHub organizations, such as [GitHub](https://github.com/GitHub).
+| Version | Supported |
+|---------|-----------|
+| latest  | Yes       |
 
-Even though [open source repositories are outside of the scope of our bug bounty program](https://bounty.github.com/index.html#scope) and therefore not eligible for bounty rewards, we will ensure that your finding gets passed along to the appropriate maintainers for remediation. 
+## Security Considerations
+
+### Admin Authentication
+- Admin passwords are hashed using SHA-256 before storage
+- Password comparison uses constant-time string comparison to prevent timing attacks
+- Admin tokens are stored in localStorage and validated against the server-side hash
+- All write operations to the KV store require a valid admin token
+
+### Data Storage
+- Site data and admin settings are stored in Upstash Redis with 24-hour TTL
+- The admin password hash is stored without TTL (persistent)
+- localStorage is used as a fallback when Redis is unavailable
+- Images are cached in IndexedDB (client-side only)
+
+### API Security
+- The KV API endpoint validates admin tokens on all write operations
+- CORS headers are handled at the deployment platform level
+- No sensitive data is exposed through GET requests beyond stored site content
 
 ## Reporting Security Issues
 
-If you believe you have found a security vulnerability in any GitHub-owned repository, please report it to us through coordinated disclosure.
+If you discover a security vulnerability, please report it responsibly:
 
-**Please do not report security vulnerabilities through public GitHub issues, discussions, or pull requests.**
+1. **Do not** open a public GitHub issue
+2. Email the maintainers or use GitHub's private vulnerability reporting feature
+3. Include steps to reproduce the vulnerability
+4. Allow reasonable time for a fix before public disclosure
 
-Instead, please send an email to opensource-security[@]github.com.
+## Environment Variables
 
-Please include as much of the information listed below as you can to help us better understand and resolve the issue:
+The following environment variables contain sensitive values and should never be committed to source control:
 
-  * The type of issue (e.g., buffer overflow, SQL injection, or cross-site scripting)
-  * Full paths of source file(s) related to the manifestation of the issue
-  * The location of the affected source code (tag/branch/commit or direct URL)
-  * Any special configuration required to reproduce the issue
-  * Step-by-step instructions to reproduce the issue
-  * Proof-of-concept or exploit code (if possible)
-  * Impact of the issue, including how an attacker might exploit the issue
+- `UPSTASH_REDIS_REST_URL` — Redis connection URL
+- `UPSTASH_REDIS_REST_TOKEN` — Redis authentication token
 
-This information will help us triage your report more quickly.
-
-## Policy
-
-See [GitHub's Safe Harbor Policy](https://docs.github.com/en/site-policy/security-policies/github-bug-bounty-program-legal-safe-harbor#1-safe-harbor-terms)
+These should be configured through your deployment platform's environment variable settings.
