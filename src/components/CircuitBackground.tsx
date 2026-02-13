@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useMemo, memo } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 
 interface CircuitLine {
@@ -18,15 +18,17 @@ interface CircuitNode {
   depth: number
 }
 
-export function CircuitBackground() {
+export const CircuitBackground = memo(function CircuitBackground() {
   const containerRef = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll()
   
+  // Optimize transforms with reduced motion sensitivity
   const layer1Y = useTransform(scrollYProgress, [0, 1], ['0%', '10%'])
   const layer2Y = useTransform(scrollYProgress, [0, 1], ['0%', '25%'])
   const layer3Y = useTransform(scrollYProgress, [0, 1], ['0%', '40%'])
 
-  const lines: CircuitLine[] = [
+  // Memoize line and node arrays to prevent recreation on every render
+  const lines: CircuitLine[] = useMemo(() => [
     { id: 1, x: '5%', y: '8%', width: '15%', horizontal: true, depth: 1 },
     { id: 2, x: '20%', y: '8%', height: '12%', horizontal: false, depth: 1 },
     { id: 3, x: '20%', y: '20%', width: '25%', horizontal: true, depth: 1 },
@@ -64,9 +66,9 @@ export function CircuitBackground() {
     { id: 33, x: '85%', y: '82%', height: '8%', horizontal: false, depth: 3 },
     { id: 34, x: '92%', y: '25%', height: '15%', horizontal: false, depth: 3 },
     { id: 35, x: '5%', y: '75%', width: '8%', horizontal: true, depth: 3 },
-  ]
+  ], [])
 
-  const nodes: CircuitNode[] = [
+  const nodes: CircuitNode[] = useMemo(() => [
     { id: 1, x: '5%', y: '8%', depth: 1 },
     { id: 2, x: '20%', y: '8%', depth: 1 },
     { id: 3, x: '20%', y: '20%', depth: 1 },
@@ -125,17 +127,25 @@ export function CircuitBackground() {
     { id: 54, x: '92%', y: '40%', depth: 3 },
     { id: 55, x: '5%', y: '75%', depth: 3 },
     { id: 56, x: '13%', y: '75%', depth: 3 },
-  ]
+  ], [])
+
+  // Memoize filtered arrays
+  const depth3Lines = useMemo(() => lines.filter(l => l.depth === 3), [lines])
+  const depth3Nodes = useMemo(() => nodes.filter(n => n.depth === 3), [nodes])
+  const depth2Lines = useMemo(() => lines.filter(l => l.depth === 2), [lines])
+  const depth2Nodes = useMemo(() => nodes.filter(n => n.depth === 2), [nodes])
+  const depth1Lines = useMemo(() => lines.filter(l => l.depth === 1), [lines])
+  const depth1Nodes = useMemo(() => nodes.filter(n => n.depth === 1), [nodes])
 
   return (
     <>
       <motion.div 
         ref={containerRef}
         className="fixed inset-0 overflow-hidden pointer-events-none z-0"
-        style={{ y: layer3Y }}
+        style={{ y: layer3Y, willChange: 'transform' }}
       >
         <div className="absolute inset-0 opacity-[0.15]">
-          {lines.filter(l => l.depth === 3).map((line) => (
+          {depth3Lines.map((line) => (
             <div
               key={line.id}
               className="circuit-line"
@@ -144,17 +154,19 @@ export function CircuitBackground() {
                 top: line.y,
                 width: line.horizontal ? line.width : '2px',
                 height: line.horizontal ? '2px' : line.height,
+                willChange: 'auto'
               }}
             />
           ))}
-          {nodes.filter(n => n.depth === 3).map((node) => (
+          {depth3Nodes.map((node) => (
             <div
               key={node.id}
               className="circuit-node"
               style={{
                 left: node.x,
                 top: node.y,
-                animationDelay: `${node.id * 0.15}s`
+                animationDelay: `${node.id * 0.15}s`,
+                willChange: 'auto'
               }}
             />
           ))}
@@ -163,10 +175,10 @@ export function CircuitBackground() {
 
       <motion.div 
         className="fixed inset-0 overflow-hidden pointer-events-none z-0"
-        style={{ y: layer2Y }}
+        style={{ y: layer2Y, willChange: 'transform' }}
       >
         <div className="absolute inset-0 opacity-[0.25]">
-          {lines.filter(l => l.depth === 2).map((line) => (
+          {depth2Lines.map((line) => (
             <div
               key={line.id}
               className="circuit-line"
@@ -175,17 +187,19 @@ export function CircuitBackground() {
                 top: line.y,
                 width: line.horizontal ? line.width : '2px',
                 height: line.horizontal ? '2px' : line.height,
+                willChange: 'auto'
               }}
             />
           ))}
-          {nodes.filter(n => n.depth === 2).map((node) => (
+          {depth2Nodes.map((node) => (
             <div
               key={node.id}
               className="circuit-node"
               style={{
                 left: node.x,
                 top: node.y,
-                animationDelay: `${node.id * 0.1}s`
+                animationDelay: `${node.id * 0.1}s`,
+                willChange: 'auto'
               }}
             />
           ))}
@@ -194,10 +208,10 @@ export function CircuitBackground() {
 
       <motion.div 
         className="fixed inset-0 overflow-hidden pointer-events-none z-0"
-        style={{ y: layer1Y }}
+        style={{ y: layer1Y, willChange: 'transform' }}
       >
         <div className="absolute inset-0 opacity-[0.35]">
-          {lines.filter(l => l.depth === 1).map((line) => (
+          {depth1Lines.map((line) => (
             <div
               key={line.id}
               className="circuit-line"
@@ -206,17 +220,19 @@ export function CircuitBackground() {
                 top: line.y,
                 width: line.horizontal ? line.width : '2px',
                 height: line.horizontal ? '2px' : line.height,
+                willChange: 'auto'
               }}
             />
           ))}
-          {nodes.filter(n => n.depth === 1).map((node) => (
+          {depth1Nodes.map((node) => (
             <div
               key={node.id}
               className="circuit-node"
               style={{
                 left: node.x,
                 top: node.y,
-                animationDelay: `${node.id * 0.08}s`
+                animationDelay: `${node.id * 0.08}s`,
+                willChange: 'auto'
               }}
             />
           ))}
@@ -224,4 +240,4 @@ export function CircuitBackground() {
       </motion.div>
     </>
   )
-}
+})

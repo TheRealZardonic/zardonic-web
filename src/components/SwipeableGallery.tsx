@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback, memo } from 'react'
 import { motion, AnimatePresence, PanInfo } from 'framer-motion'
 import { CaretLeft, CaretRight, X } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
@@ -9,17 +9,17 @@ interface SwipeableGalleryProps {
   onClose: () => void
 }
 
-export function SwipeableGallery({ images, initialIndex, onClose }: SwipeableGalleryProps) {
+export const SwipeableGallery = memo(function SwipeableGallery({ images, initialIndex, onClose }: SwipeableGalleryProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex)
   const [[page, direction], setPage] = useState([initialIndex, 0])
 
-  const paginate = (newDirection: number) => {
+  const paginate = useCallback((newDirection: number) => {
     const newIndex = (currentIndex + newDirection + images.length) % images.length
     setCurrentIndex(newIndex)
     setPage([newIndex, newDirection])
-  }
+  }, [currentIndex, images.length])
 
-  const handleDragEnd = (_e: any, { offset, velocity }: PanInfo) => {
+  const handleDragEnd = useCallback((_e: any, { offset, velocity }: PanInfo) => {
     const swipe = swipeConfidenceThreshold(offset.x, velocity.x)
 
     if (swipe < -swipeConfidenceTolerance) {
@@ -27,7 +27,13 @@ export function SwipeableGallery({ images, initialIndex, onClose }: SwipeableGal
     } else if (swipe > swipeConfidenceTolerance) {
       paginate(-1)
     }
-  }
+  }, [paginate])
+
+  const handleDotClick = useCallback((index: number) => {
+    const newDirection = index > currentIndex ? 1 : -1
+    setCurrentIndex(index)
+    setPage([index, newDirection])
+  }, [currentIndex])
 
   return (
     <>
@@ -95,18 +101,14 @@ export function SwipeableGallery({ images, initialIndex, onClose }: SwipeableGal
             <div
               key={index}
               className={`swipe-dot ${index === currentIndex ? 'active' : ''}`}
-              onClick={() => {
-                const newDirection = index > currentIndex ? 1 : -1
-                setCurrentIndex(index)
-                setPage([index, newDirection])
-              }}
+              onClick={() => handleDotClick(index)}
             />
           ))}
         </div>
       </div>
     </>
   )
-}
+})
 
 const swipeConfidenceTolerance = 10000
 const swipeConfidenceThreshold = (offset: number, velocity: number) => {
