@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
 import { useLocalStorage } from '@/hooks/use-local-storage'
+import { useKV } from '@/hooks/use-kv'
 import { useKonami } from '@/hooks/use-konami'
 import { useAnalytics, trackClick } from '@/hooks/use-analytics'
 import { fetchITunesReleases, type ITunesRelease } from '@/lib/itunes'
@@ -62,6 +63,7 @@ import { SwipeableGallery } from '@/components/SwipeableGallery'
 import { Terminal } from '@/components/Terminal'
 import { LoadingScreen } from '@/components/LoadingScreen'
 import { CircuitBackground } from '@/components/CircuitBackground'
+import AdminLoginDialog, { hashPassword } from '@/components/AdminLoginDialog'
 import heroImage from '@/assets/images/meta_eyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ==.webp'
 import logoImage from '@/assets/images/meta_eyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ==.webp'
 
@@ -155,11 +157,47 @@ function App() {
     }
   }, [konamiActivated])
 
+  // Check for ?admin-setup URL parameter on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.has('admin-setup')) {
+      wantsSetup.current = true
+      // Clean up URL
+      const url = new URL(window.location.href)
+      url.searchParams.delete('admin-setup')
+      window.history.replaceState({}, '', url.toString())
+    }
+  }, [])
+
+  // Restore admin session from localStorage
+  useEffect(() => {
+    if (!adminPasswordHash) return
+    const storedToken = localStorage.getItem('admin-token')
+    if (storedToken && storedToken === adminPasswordHash) {
+      setIsOwner(true)
+    }
+  }, [adminPasswordHash])
+
+  // Open setup dialog once KV data has loaded and confirms no password exists
+  useEffect(() => {
+    if (wantsSetup.current && adminPasswordHash !== undefined && !adminPasswordHash) {
+      wantsSetup.current = false
+      setShowSetupDialog(true)
+    }
+  }, [adminPasswordHash])
+
   useEffect(() => {
     if (!loading) {
       setTimeout(() => setContentLoaded(true), 100)
     }
   }, [loading])
+
+  // Admin authentication
+  const [adminPasswordHash, setAdminPasswordHash] = useKV<string>('admin-password-hash', '')
+  const [isOwner, setIsOwner] = useState(false)
+  const [showLoginDialog, setShowLoginDialog] = useState(false)
+  const [showSetupDialog, setShowSetupDialog] = useState(false)
+  const wantsSetup = useRef(false)
 
   const [siteData, setSiteData] = useLocalStorage<SiteData>('zardonic-site-data', {
     artistName: 'ZARDONIC',
@@ -310,6 +348,30 @@ In the end, Zardonic will unite listeners with Superstars.
       audioRef.current.volume = volume[0] / 100
     }
   }, [volume])
+
+  // Admin authentication handlers
+  const handleAdminLogin = async (password: string): Promise<boolean> => {
+    const hash = await hashPassword(password)
+    if (hash === adminPasswordHash) {
+      localStorage.setItem('admin-token', hash)
+      setIsOwner(true)
+      return true
+    }
+    return false
+  }
+
+  const handleSetupAdminPassword = async (password: string): Promise<void> => {
+    const hash = await hashPassword(password)
+    localStorage.setItem('admin-token', hash)
+    setAdminPasswordHash(hash)
+    setIsOwner(true)
+  }
+
+  const handleSetAdminPassword = async (password: string): Promise<void> => {
+    const hash = await hashPassword(password)
+    localStorage.setItem('admin-token', hash)
+    setAdminPasswordHash(hash)
+  }
 
   // Auto-fetch iTunes releases and Bandsintown events on mount
   useEffect(() => {
@@ -633,13 +695,23 @@ In the end, Zardonic will unite listeners with Superstars.
           </div>
 
           <div className="flex items-center gap-4">
-            <Button
-              size="sm"
-              variant={editMode ? 'default' : 'outline'}
-              onClick={() => setEditMode(!editMode)}
-            >
-              <Pencil className="w-4 h-4" />
-            </Button>
+            {isOwner ? (
+              <Button
+                size="sm"
+                variant={editMode ? 'default' : 'outline'}
+                onClick={() => setEditMode(!editMode)}
+              >
+                <Pencil className="w-4 h-4" />
+              </Button>
+            ) : adminPasswordHash ? (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowLoginDialog(true)}
+              >
+                Login
+              </Button>
+            ) : null}
             
             <button
               className="md:hidden text-foreground"
@@ -2337,6 +2409,22 @@ In the end, Zardonic will unite listeners with Superstars.
           <p className="text-sm uppercase font-bold font-mono">Edit Mode Active</p>
         </motion.div>
       )}
+
+      {/* Admin Login Dialogs */}
+      <AdminLoginDialog
+        open={showLoginDialog}
+        onOpenChange={setShowLoginDialog}
+        mode="login"
+        onLogin={handleAdminLogin}
+        onSetPassword={handleSetAdminPassword}
+      />
+
+      <AdminLoginDialog
+        open={showSetupDialog}
+        onOpenChange={setShowSetupDialog}
+        mode="setup"
+        onSetPassword={handleSetupAdminPassword}
+      />
     </div>
     </>
   )
