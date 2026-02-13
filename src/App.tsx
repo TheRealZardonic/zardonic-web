@@ -726,7 +726,7 @@ In the end, Zardonic will unite listeners with Superstars.
 
   const currentTrack = useMemo(() => 
     siteData?.tracks[currentTrackIndex],
-    [siteData?.tracks, currentTrackIndex]
+    [siteData, currentTrackIndex]
   )
   
   // Memoize sorted and filtered releases
@@ -737,7 +737,7 @@ In the end, Zardonic will unite listeners with Superstars.
       const yearB = b.releaseDate ? new Date(b.releaseDate).getTime() : parseInt(b.year) || 0
       return yearB - yearA
     })
-  }, [siteData?.releases])
+  }, [siteData])
   
   const visibleReleases = useMemo(() => 
     showAllReleases ? sortedReleases : sortedReleases.slice(0, 6),

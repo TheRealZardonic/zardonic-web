@@ -132,8 +132,11 @@ section > div > div[style*="transform"] {
 
 /* Reduce paint complexity on mobile */
 @media (max-width: 768px) {
-  /* Optimize compositing on mobile */
-  * {
+  /* Optimize compositing only for animated elements on mobile */
+  [class*="motion-"],
+  [class*="animate-"],
+  [class*="hero-"],
+  [class*="cyber2077-"] {
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
   }
