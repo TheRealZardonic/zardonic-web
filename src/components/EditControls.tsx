@@ -17,7 +17,7 @@ import { Switch } from '@/components/ui/switch'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRef, useState, useCallback } from 'react'
 import AdminLoginDialog from '@/components/AdminLoginDialog'
-import type { AdminSettings, SectionVisibility, ThemeCustomization, AnimationSettings } from '@/lib/types'
+import type { AdminSettings, SectionVisibility, ThemeCustomization, AnimationSettings, ProgressiveOverlayModes } from '@/lib/types'
 import type { SiteData } from '@/App'
 import { toast } from 'sonner'
 
@@ -50,6 +50,7 @@ export default function EditControls({
   const [showVisibilityPanel, setShowVisibilityPanel] = useState(false)
   const [showThemePanel, setShowThemePanel] = useState(false)
   const [showAnimationPanel, setShowAnimationPanel] = useState(false)
+  const [showProgressiveModesPanel, setShowProgressiveModesPanel] = useState(false)
   const importInputRef = useRef<HTMLInputElement>(null)
 
   const handleExport = () => {
@@ -130,9 +131,24 @@ export default function EditControls({
     [adminSettings, onAdminSettingsChange],
   )
 
+  const updateProgressiveMode = useCallback(
+    (key: keyof ProgressiveOverlayModes, value: boolean) => {
+      if (!onAdminSettingsChange) return
+      onAdminSettingsChange({
+        ...adminSettings,
+        progressiveOverlayModes: {
+          ...adminSettings?.progressiveOverlayModes,
+          [key]: value,
+        },
+      })
+    },
+    [adminSettings, onAdminSettingsChange],
+  )
+
   const vis = adminSettings?.sectionVisibility ?? {}
   const theme = adminSettings?.theme ?? {}
   const anim = adminSettings?.animations ?? {}
+  const progModes = adminSettings?.progressiveOverlayModes ?? {}
 
   const sectionItems: { key: keyof SectionVisibility; label: string }[] = [
     { key: 'bio', label: 'Biography' },
@@ -151,6 +167,13 @@ export default function EditControls({
     { key: 'crtEnabled', label: 'CRT Effect' },
     { key: 'noiseEnabled', label: 'Noise / Grain' },
     { key: 'circuitBackgroundEnabled', label: 'Circuit Background' },
+  ]
+
+  const progressiveModeItems: { key: keyof ProgressiveOverlayModes; label: string }[] = [
+    { key: 'progressiveReveal', label: 'Progressive Content Reveal' },
+    { key: 'dataStream', label: 'Data Stream Loading' },
+    { key: 'sectorAssembly', label: 'Sector-by-Sector Assembly' },
+    { key: 'holographicMaterialization', label: 'Holographic Materialization' },
   ]
 
   return (
@@ -337,6 +360,48 @@ export default function EditControls({
         )}
       </AnimatePresence>
 
+      {/* Progressive Overlay Modes Panel */}
+      <AnimatePresence>
+        {showProgressiveModesPanel && (
+          <motion.div
+            className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowProgressiveModesPanel(false)}
+          >
+            <motion.div
+              className="bg-card border border-border p-6 w-full max-w-md space-y-4 relative"
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold font-mono uppercase">Progressive Overlay Modes</h3>
+                <button onClick={() => setShowProgressiveModesPanel(false)} className="text-muted-foreground hover:text-foreground">
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="space-y-3">
+                {progressiveModeItems.map(({ key, label }) => (
+                  <div key={key} className="flex items-center justify-between">
+                    <Label className="font-mono text-sm">{label}</Label>
+                    <Switch
+                      checked={progModes[key] !== false}
+                      onCheckedChange={(checked) => updateProgressiveMode(key, checked)}
+                    />
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground font-mono">
+                When multiple modes are selected, one will be chosen randomly each time an overlay opens.
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <motion.div
         className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50 flex flex-col items-end gap-3"
         initial={{ scale: 0, opacity: 0 }}
@@ -395,6 +460,14 @@ export default function EditControls({
                 title="Animation settings"
               >
                 <GearSix size={18} weight="bold" />
+              </Button>
+              <Button
+                onClick={() => setShowProgressiveModesPanel(true)}
+                className="bg-secondary hover:bg-secondary/80 active:scale-90 w-10 h-10 md:w-12 md:h-12 rounded-full shadow-lg transition-all touch-manipulation"
+                size="icon"
+                title="Progressive overlay loading modes"
+              >
+                <Sliders size={18} weight="bold" />
               </Button>
             </motion.div>
             <motion.div

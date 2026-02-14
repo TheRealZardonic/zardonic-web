@@ -27,10 +27,18 @@ export interface AnimationSettings {
   circuitBackgroundEnabled?: boolean
 }
 
+export interface ProgressiveOverlayModes {
+  progressiveReveal?: boolean
+  dataStream?: boolean
+  sectorAssembly?: boolean
+  holographicMaterialization?: boolean
+}
+
 export interface AdminSettings {
   sectionVisibility?: SectionVisibility
   theme?: ThemeCustomization
   animations?: AnimationSettings
+  progressiveOverlayModes?: ProgressiveOverlayModes
   configOverrides?: Record<string, unknown>
   faviconUrl?: string
 }

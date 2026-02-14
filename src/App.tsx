@@ -11,6 +11,7 @@ import { toDirectImageUrl } from '@/lib/image-cache'
 import { applyConfigOverrides } from '@/lib/config'
 import { submitContactForm, contactFormSchema } from '@/lib/contact'
 import { getRandomOverlayAnimation } from '@/lib/overlay-animations'
+import { getRandomProgressiveMode, type ProgressiveMode } from '@/lib/progressive-overlay-modes'
 import type { AdminSettings } from '@/lib/types'
 import {
   Play,
@@ -385,8 +386,6 @@ In the end, Zardonic will unite listeners with Superstars.
   const [editingRelease, setEditingRelease] = useState<Release | null>(null)
   const [cyberpunkOverlay, setCyberpunkOverlay] = useState<{type: 'gig' | 'release' | 'member' | 'impressum' | 'privacy' | 'contact', data?: any} | null>(null)
   const [language, setLanguage] = useState<'en' | 'de'>('en')
-  const [overlayLoading, setOverlayLoading] = useState(false)
-  const [loadingProgress, setLoadingProgress] = useState(0)
   const [contentReady, setContentReady] = useState(false)
   const [iTunesFetching, setITunesFetching] = useState(false)
   const [bandsintownFetching, setBandsintownFetching] = useState(false)
@@ -394,46 +393,30 @@ In the end, Zardonic will unite listeners with Superstars.
   const [showAllReleases, setShowAllReleases] = useState(false)
   const [bioExpanded, setBioExpanded] = useState(false)
 
-  // Pick a random cyberpunk overlay animation only when opening (not closing)
+  // Pick a random cyberpunk overlay animation and progressive mode only when opening (not closing)
   const overlayAnimationRef = useRef(getRandomOverlayAnimation())
+  const progressiveModeRef = useRef<ProgressiveMode>(getRandomProgressiveMode(adminSettings?.progressiveOverlayModes))
   const prevOverlayRef = useRef(cyberpunkOverlay)
   if (cyberpunkOverlay && !prevOverlayRef.current) {
     overlayAnimationRef.current = getRandomOverlayAnimation()
+    progressiveModeRef.current = getRandomProgressiveMode(adminSettings?.progressiveOverlayModes)
   }
   prevOverlayRef.current = cyberpunkOverlay
   const overlayAnimation = overlayAnimationRef.current
+  const progressiveMode = progressiveModeRef.current
   
   const audioRef = useRef<HTMLAudioElement>(null)
 
   useEffect(() => {
     if (cyberpunkOverlay) {
-      setOverlayLoading(true)
       setContentReady(false)
-      setLoadingProgress(0)
-
-      const progressInterval = setInterval(() => {
-        setLoadingProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(progressInterval)
-            return 100
-          }
-          return prev + Math.random() * 30
-        })
-      }, 50)
 
       const contentTimer = setTimeout(() => {
         setContentReady(true)
-      }, 400)
-
-      const loadingTimer = setTimeout(() => {
-        setOverlayLoading(false)
-        clearInterval(progressInterval)
       }, 600)
 
       return () => {
-        clearInterval(progressInterval)
         clearTimeout(contentTimer)
-        clearTimeout(loadingTimer)
       }
     }
   }, [cyberpunkOverlay])
@@ -1796,7 +1779,11 @@ In the end, Zardonic will unite listeners with Superstars.
         )}
       </AnimatePresence>
 
-      <Terminal isOpen={terminalOpen} onClose={() => setTerminalOpen(false)} />
+      <Terminal 
+        isOpen={terminalOpen} 
+        onClose={() => setTerminalOpen(false)}
+        progressiveModesSettings={adminSettings?.progressiveOverlayModes}
+      />
 
       <AnimatePresence>
         {cyberpunkOverlay && (
@@ -1884,129 +1871,25 @@ In the end, Zardonic will unite listeners with Superstars.
                   style={{ transformOrigin: 'right' }}
                 />
 
-                <AnimatePresence mode="wait">
-                  {overlayLoading && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="absolute inset-0 bg-background/95 z-50 flex flex-col items-center justify-center p-8"
-                    >
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.2 }}
-                        className="mb-8"
-                      >
-                        {overlayAnimation.loaderClass === 'overlay-loader-ring' && (
-                          <div className="overlay-loader-ring relative">
-                            <div className="overlay-loader-ring-inner" />
-                          </div>
-                        )}
-                        {overlayAnimation.loaderClass === 'overlay-loader-scan' && (
-                          <div className="overlay-loader-scan" />
-                        )}
-                        {overlayAnimation.loaderClass === 'overlay-loader-blocks' && (
-                          <div className="overlay-loader-blocks">
-                            <span /><span /><span /><span /><span />
-                          </div>
-                        )}
-                        {overlayAnimation.loaderClass === 'overlay-loader-pulse' && (
-                          <div className="overlay-loader-pulse relative" />
-                        )}
-                        {overlayAnimation.loaderClass === 'overlay-loader-holo' && (
-                          <div className="overlay-loader-holo">
-                            <span /><span /><span />
-                          </div>
-                        )}
-                        {overlayAnimation.loaderClass === 'overlay-loader-circuit' && (
-                          <div className="overlay-loader-circuit" />
-                        )}
-                        {overlayAnimation.loaderClass === 'overlay-loader-matrix' && (
-                          <div className="overlay-loader-matrix font-mono">
-                            <motion.span animate={{ opacity: [0, 1] }} transition={{ duration: 0.2, repeat: Infinity, repeatType: 'reverse' }}>01001010</motion.span>
-                            <motion.span animate={{ opacity: [0, 1] }} transition={{ duration: 0.3, repeat: Infinity, repeatType: 'reverse', delay: 0.1 }}>11010011</motion.span>
-                            <motion.span animate={{ opacity: [0, 1] }} transition={{ duration: 0.25, repeat: Infinity, repeatType: 'reverse', delay: 0.2 }}>10110100</motion.span>
-                          </div>
-                        )}
-                        {overlayAnimation.loaderClass === 'overlay-loader-boot' && (
-                          <div className="overlay-loader-boot">
-                            <span /><span /><span /><span /><span />
-                          </div>
-                        )}
-                      </motion.div>
-
-                      <motion.div 
-                        className="w-full max-w-md space-y-3"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                      >
-                        <div className="flex justify-between items-center mb-2">
-                          <motion.span 
-                            className="data-label"
-                            animate={{ opacity: [0.5, 1, 0.5] }}
-                            transition={{ duration: 1.5, repeat: Infinity }}
-                          >
-                            // {overlayAnimation.loaderLabel}
-                          </motion.span>
-                          <motion.span 
-                            className="font-mono text-sm text-primary"
-                            key={Math.floor(loadingProgress)}
-                          >
-                            {Math.floor(loadingProgress)}%
-                          </motion.span>
-                        </div>
-                        
-                        <div className="h-1 bg-border/30 relative overflow-hidden">
-                          <motion.div
-                            className="absolute inset-0 bg-primary"
-                            initial={{ scaleX: 0 }}
-                            animate={{ scaleX: loadingProgress / 100 }}
-                            style={{ transformOrigin: 'left' }}
-                            transition={{ duration: 0.1 }}
-                          />
-                          <motion.div
-                            className="absolute inset-0 bg-gradient-to-r from-transparent via-primary-foreground/20 to-transparent"
-                            animate={{ x: ['-100%', '200%'] }}
-                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                          />
-                        </div>
-
-                        <motion.div 
-                          className="flex gap-2 font-mono text-xs text-muted-foreground"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ delay: 0.3 }}
-                        >
-                          <motion.span
-                            animate={{ opacity: [0, 1, 0] }}
-                            transition={{ duration: 0.8, repeat: Infinity, delay: 0 }}
-                          >
-                            ▸
-                          </motion.span>
-                          <motion.span
-                            animate={{ opacity: [0, 1, 0] }}
-                            transition={{ duration: 0.8, repeat: Infinity, delay: 0.2 }}
-                          >
-                            ▸
-                          </motion.span>
-                          <motion.span
-                            animate={{ opacity: [0, 1, 0] }}
-                            transition={{ duration: 0.8, repeat: Infinity, delay: 0.4 }}
-                          >
-                            ▸
-                          </motion.span>
-                          <span className="ml-2">{overlayAnimation.loaderLabel}</span>
-                        </motion.div>
-                      </motion.div>
-                    </motion.div>
+                {/* Progressive content loading wrapper */}
+                <motion.div 
+                  className={`relative overflow-y-auto max-h-[90vh] ${progressiveMode.className}`}
+                  initial={progressiveMode.containerVariants.loading}
+                  animate={contentReady ? progressiveMode.containerVariants.loaded : progressiveMode.containerVariants.loading}
+                  transition={progressiveMode.transition}
+                >
+                  {/* Loading state */}
+                  {!contentReady && (
+                    <div className="flex items-center justify-center min-h-[400px]">
+                      <span className="progressive-loading-label">
+                        {progressiveMode.getLabel(cyberpunkOverlay.type)}
+                      </span>
+                    </div>
                   )}
-                </AnimatePresence>
 
-                <div className="relative overflow-y-auto max-h-[90vh]">
-                  <div className="p-8 md:p-12 pt-12">
+                  {/* Content state */}
+                  {contentReady && (
+                    <div className="p-8 md:p-12 pt-12">
                     <Button
                       variant="ghost"
                       size="icon"
@@ -2766,8 +2649,9 @@ In the end, Zardonic will unite listeners with Superstars.
                         </>
                       )}
                     </AnimatePresence>
-                  </div>
-                </div>
+                    </div>
+                  )}
+                </motion.div>
               </motion.div>
             </motion.div>
           </>
