@@ -414,7 +414,7 @@ In the end, Zardonic will unite listeners with Superstars.
     let idx = 0
     const txtInterval = setInterval(() => {
       idx += 1
-      if (idx < PROFILE_LOADING_TEXTS.length) {
+      if (idx <= PROFILE_LOADING_TEXTS.length - 1) {
         setLoadingText(PROFILE_LOADING_TEXTS[idx])
       }
     }, PROFILE_LOADING_TEXT_INTERVAL_MS)

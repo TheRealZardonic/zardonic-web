@@ -40,7 +40,7 @@ export function Terminal({ isOpen, onClose }: TerminalProps) {
     let idx = 0
     const txtInterval = setInterval(() => {
       idx += 1
-      if (idx < TERMINAL_LOADING_TEXTS.length) {
+      if (idx <= TERMINAL_LOADING_TEXTS.length - 1) {
         setLoadingText(TERMINAL_LOADING_TEXTS[idx])
       }
     }, PROFILE_LOADING_TEXT_INTERVAL_MS)
