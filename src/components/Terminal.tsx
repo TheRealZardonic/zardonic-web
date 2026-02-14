@@ -3,28 +3,40 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Terminal as TerminalIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { getRandomOverlayAnimation, type OverlayAnimation } from '@/lib/overlay-animations'
+import { getRandomProgressiveMode, type ProgressiveMode } from '@/lib/progressive-overlay-modes'
+import type { ProgressiveOverlayModes } from '@/lib/types'
 
 interface TerminalProps {
   isOpen: boolean
   onClose: () => void
+  progressiveModesSettings?: ProgressiveOverlayModes
 }
 
-export function Terminal({ isOpen, onClose }: TerminalProps) {
+export function Terminal({ isOpen, onClose, progressiveModesSettings }: TerminalProps) {
   const [input, setInput] = useState('')
   const [history, setHistory] = useState<string[]>([
     '> SYSTEM INITIALIZED',
     '> ACCESS GRANTED',
     '> TYPE "HELP" FOR COMMANDS',
   ])
+  const [contentLoaded, setContentLoaded] = useState(false)
 
   // Pick a random animation only when transitioning from closed to open
   const animationRef = useRef<OverlayAnimation>(getRandomOverlayAnimation())
+  const progressiveModeRef = useRef<ProgressiveMode>(getRandomProgressiveMode(progressiveModesSettings))
   const wasOpenRef = useRef(false)
+  
   if (isOpen && !wasOpenRef.current) {
     animationRef.current = getRandomOverlayAnimation()
+    progressiveModeRef.current = getRandomProgressiveMode(progressiveModesSettings)
+    setContentLoaded(false)
+    // Simulate content loading
+    setTimeout(() => setContentLoaded(true), 600)
   }
   wasOpenRef.current = isOpen
+  
   const animation = animationRef.current
+  const progressiveMode = progressiveModeRef.current
 
   const handleCommand = (cmd: string) => {
     const command = cmd.toLowerCase().trim()
@@ -157,32 +169,49 @@ export function Terminal({ isOpen, onClose }: TerminalProps) {
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-6 font-mono text-sm text-accent space-y-2">
-                  {history.map((line, index) => (
-                    <motion.div
-                      key={index}
-                      className="whitespace-pre-wrap"
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.15, delay: index * 0.02 }}
-                    >
-                      {line}
-                    </motion.div>
-                  ))}
-                  <div className="flex items-center gap-2">
-                    <span>{'>'}</span>
-                    <input
-                      type="text"
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      className="flex-1 bg-transparent border-none outline-none text-accent font-mono"
-                      autoFocus
-                      spellCheck={false}
-                    />
-                    <span className="animate-pulse">_</span>
-                  </div>
-                </div>
+                {/* Progressive content loading */}
+                <motion.div
+                  className={`flex-1 overflow-y-auto p-6 font-mono text-sm text-accent space-y-2 ${progressiveMode.className}`}
+                  initial={progressiveMode.containerVariants.loading}
+                  animate={contentLoaded ? progressiveMode.containerVariants.loaded : progressiveMode.containerVariants.loading}
+                  transition={progressiveMode.transition}
+                >
+                  {!contentLoaded && (
+                    <div className="flex items-center justify-center h-full">
+                      <span className="progressive-loading-label">
+                        {progressiveMode.getLabel('terminal')}
+                      </span>
+                    </div>
+                  )}
+                  {contentLoaded && (
+                    <>
+                      {history.map((line, index) => (
+                        <motion.div
+                          key={index}
+                          className="whitespace-pre-wrap"
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.15, delay: index * 0.02 }}
+                        >
+                          {line}
+                        </motion.div>
+                      ))}
+                      <div className="flex items-center gap-2">
+                        <span>{'>'}</span>
+                        <input
+                          type="text"
+                          value={input}
+                          onChange={(e) => setInput(e.target.value)}
+                          onKeyDown={handleKeyDown}
+                          className="flex-1 bg-transparent border-none outline-none text-accent font-mono"
+                          autoFocus
+                          spellCheck={false}
+                        />
+                        <span className="animate-pulse">_</span>
+                      </div>
+                    </>
+                  )}
+                </motion.div>
 
                 <div className="px-4 py-2 border-t border-accent/20">
                   <div className="flex justify-between font-mono text-[10px] text-accent/40 uppercase tracking-wider">
