@@ -1,42 +1,60 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Terminal as TerminalIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
-import { getRandomOverlayAnimation, type OverlayAnimation } from '@/lib/overlay-animations'
-import { getRandomProgressiveMode, type ProgressiveMode } from '@/lib/progressive-overlay-modes'
-import type { ProgressiveOverlayModes } from '@/lib/types'
 
 interface TerminalProps {
   isOpen: boolean
   onClose: () => void
-  progressiveModesSettings?: ProgressiveOverlayModes
 }
 
-export function Terminal({ isOpen, onClose, progressiveModesSettings }: TerminalProps) {
+export function Terminal({ isOpen, onClose }: TerminalProps) {
   const [input, setInput] = useState('')
   const [history, setHistory] = useState<string[]>([
     '> SYSTEM INITIALIZED',
     '> ACCESS GRANTED',
     '> TYPE "HELP" FOR COMMANDS',
   ])
-  const [contentLoaded, setContentLoaded] = useState(false)
 
-  // Pick a random animation only when transitioning from closed to open
-  const animationRef = useRef<OverlayAnimation>(getRandomOverlayAnimation())
-  const progressiveModeRef = useRef<ProgressiveMode>(getRandomProgressiveMode(progressiveModesSettings))
-  const wasOpenRef = useRef(false)
-  
-  if (isOpen && !wasOpenRef.current) {
-    animationRef.current = getRandomOverlayAnimation()
-    progressiveModeRef.current = getRandomProgressiveMode(progressiveModesSettings)
-    setContentLoaded(false)
-    // Simulate content loading
-    setTimeout(() => setContentLoaded(true), 600)
-  }
-  wasOpenRef.current = isOpen
-  
-  const animation = animationRef.current
-  const progressiveMode = progressiveModeRef.current
+  // 3-phase terminal loading state
+  const [phase, setPhase] = useState<'loading' | 'glitch' | 'revealed'>('loading')
+  const [loadingText, setLoadingText] = useState('> ACCESSING TERMINAL...')
+
+  const loadingTexts = [
+    '> ACCESSING TERMINAL...',
+    '> DECRYPTING DATA...',
+    '> IDENTITY VERIFIED',
+  ]
+
+  useEffect(() => {
+    if (!isOpen) return
+    
+    setPhase('loading')
+    setLoadingText(loadingTexts[0])
+    
+    let idx = 0
+    const txtInterval = setInterval(() => {
+      idx += 1
+      if (idx < loadingTexts.length) {
+        setLoadingText(loadingTexts[idx])
+      }
+    }, 600)
+
+    const glitchTimer = setTimeout(() => {
+      clearInterval(txtInterval)
+      setPhase('glitch')
+    }, 1800)
+
+    const revealTimer = setTimeout(() => {
+      setPhase('revealed')
+    }, 2200)
+
+    return () => {
+      clearInterval(txtInterval)
+      clearTimeout(glitchTimer)
+      clearTimeout(revealTimer)
+    }
+  }, [isOpen])
 
   const handleCommand = (cmd: string) => {
     const command = cmd.toLowerCase().trim()
@@ -78,19 +96,19 @@ export function Terminal({ isOpen, onClose, progressiveModesSettings }: Terminal
       {isOpen && (
         <>
           <motion.div
-            initial={animation.backdrop.initial}
-            animate={animation.backdrop.animate}
-            exit={animation.backdrop.exit}
-            transition={animation.backdrop.transition}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
             className="fixed inset-0 bg-black/90 z-[100] backdrop-blur-sm cyberpunk-overlay-bg"
             onClick={onClose}
           />
 
           <motion.div
-            initial={animation.modal.initial}
-            animate={animation.modal.animate}
-            exit={animation.modal.exit}
-            transition={animation.modal.transition}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.3 }}
             className="fixed inset-0 z-[101] flex items-center justify-center p-4 md:p-8 pointer-events-none"
             style={{ perspective: '1000px' }}
           >
@@ -169,21 +187,33 @@ export function Terminal({ isOpen, onClose, progressiveModesSettings }: Terminal
                   </div>
                 </div>
 
-                {/* Progressive content loading */}
-                <motion.div
-                  className={`flex-1 overflow-y-auto p-6 font-mono text-sm text-accent space-y-2 ${progressiveMode.className}`}
-                  initial={progressiveMode.containerVariants.loading}
-                  animate={contentLoaded ? progressiveMode.containerVariants.loaded : progressiveMode.containerVariants.loading}
-                  transition={progressiveMode.transition}
-                >
-                  {!contentLoaded && (
+                {/* 3-phase content loading */}
+                <div className="flex-1 overflow-y-auto p-6 font-mono text-sm text-accent space-y-2">
+                  {phase === 'loading' && (
                     <div className="flex items-center justify-center h-full">
-                      <span className="progressive-loading-label">
-                        {progressiveMode.getLabel('terminal')}
-                      </span>
+                      <motion.span 
+                        className="text-accent font-mono text-base"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                      >
+                        {loadingText}
+                      </motion.span>
                     </div>
                   )}
-                  {contentLoaded && (
+                  {phase === 'glitch' && (
+                    <div className="flex items-center justify-center h-full">
+                      <motion.div
+                        className="glitch-effect text-accent font-mono text-base"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: [0, 1, 0, 1, 0, 1] }}
+                        transition={{ duration: 0.4 }}
+                      >
+                        {loadingText}
+                      </motion.div>
+                    </div>
+                  )}
+                  {phase === 'revealed' && (
                     <>
                       {history.map((line, index) => (
                         <motion.div
@@ -211,7 +241,7 @@ export function Terminal({ isOpen, onClose, progressiveModesSettings }: Terminal
                       </div>
                     </>
                   )}
-                </motion.div>
+                </div>
 
                 <div className="px-4 py-2 border-t border-accent/20">
                   <div className="flex justify-between font-mono text-[10px] text-accent/40 uppercase tracking-wider">
