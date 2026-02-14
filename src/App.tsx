@@ -8,10 +8,13 @@ import { fetchITunesReleases, type ITunesRelease } from '@/lib/itunes'
 import { fetchOdesliLinks } from '@/lib/odesli'
 import { fetchBandsintownEvents } from '@/lib/bandsintown'
 import { toDirectImageUrl } from '@/lib/image-cache'
-import { applyConfigOverrides } from '@/lib/config'
+import { 
+  applyConfigOverrides,
+  OVERLAY_LOADING_TEXT_INTERVAL_MS,
+  OVERLAY_GLITCH_PHASE_DELAY_MS,
+  OVERLAY_REVEAL_PHASE_DELAY_MS,
+} from '@/lib/config'
 import { submitContactForm, contactFormSchema } from '@/lib/contact'
-import { getRandomOverlayAnimation } from '@/lib/overlay-animations'
-import { getRandomProgressiveMode, type ProgressiveMode } from '@/lib/progressive-overlay-modes'
 import type { AdminSettings } from '@/lib/types'
 import {
   Play,
@@ -162,6 +165,12 @@ interface AnalyticsData {
   clicks: { [key: string]: number }
   visitors: { date: string; count: number }[]
 }
+
+const OVERLAY_LOADING_TEXTS = [
+  '> ACCESSING PROFILE...',
+  '> DECRYPTING DATA...',
+  '> IDENTITY VERIFIED',
+]
 
 function App() {
   const konamiActivated = useKonami()
@@ -386,40 +395,47 @@ In the end, Zardonic will unite listeners with Superstars.
   const [editingRelease, setEditingRelease] = useState<Release | null>(null)
   const [cyberpunkOverlay, setCyberpunkOverlay] = useState<{type: 'gig' | 'release' | 'member' | 'impressum' | 'privacy' | 'contact', data?: any} | null>(null)
   const [language, setLanguage] = useState<'en' | 'de'>('en')
-  const [contentReady, setContentReady] = useState(false)
   const [iTunesFetching, setITunesFetching] = useState(false)
   const [bandsintownFetching, setBandsintownFetching] = useState(false)
   const [hasAutoLoaded, setHasAutoLoaded] = useState(false)
   const [showAllReleases, setShowAllReleases] = useState(false)
   const [bioExpanded, setBioExpanded] = useState(false)
 
-  // Pick a random cyberpunk overlay animation and progressive mode only when opening (not closing)
-  const overlayAnimationRef = useRef(getRandomOverlayAnimation())
-  const progressiveModeRef = useRef<ProgressiveMode>(getRandomProgressiveMode(adminSettings?.progressiveOverlayModes))
-  const prevOverlayRef = useRef(cyberpunkOverlay)
-  if (cyberpunkOverlay && !prevOverlayRef.current) {
-    overlayAnimationRef.current = getRandomOverlayAnimation()
-    progressiveModeRef.current = getRandomProgressiveMode(adminSettings?.progressiveOverlayModes)
-  }
-  prevOverlayRef.current = cyberpunkOverlay
-  const overlayAnimation = overlayAnimationRef.current
-  const progressiveMode = progressiveModeRef.current
-  
-  const audioRef = useRef<HTMLAudioElement>(null)
+  // 3-phase overlay loading state
+  const [overlayPhase, setOverlayPhase] = useState<'loading' | 'glitch' | 'revealed'>('loading')
+  const [loadingText, setLoadingText] = useState(OVERLAY_LOADING_TEXTS[0])
 
   useEffect(() => {
-    if (cyberpunkOverlay) {
-      setContentReady(false)
-
-      const contentTimer = setTimeout(() => {
-        setContentReady(true)
-      }, 600)
-
-      return () => {
-        clearTimeout(contentTimer)
+    if (!cyberpunkOverlay) return
+    
+    setOverlayPhase('loading')
+    setLoadingText(OVERLAY_LOADING_TEXTS[0])
+    
+    let idx = 0
+    const txtInterval = setInterval(() => {
+      idx += 1
+      if (idx <= OVERLAY_LOADING_TEXTS.length - 1) {
+        setLoadingText(OVERLAY_LOADING_TEXTS[idx])
       }
+    }, OVERLAY_LOADING_TEXT_INTERVAL_MS)
+
+    const glitchTimer = setTimeout(() => {
+      clearInterval(txtInterval)
+      setOverlayPhase('glitch')
+    }, OVERLAY_GLITCH_PHASE_DELAY_MS)
+
+    const revealTimer = setTimeout(() => {
+      setOverlayPhase('revealed')
+    }, OVERLAY_REVEAL_PHASE_DELAY_MS)
+
+    return () => {
+      clearInterval(txtInterval)
+      clearTimeout(glitchTimer)
+      clearTimeout(revealTimer)
     }
   }, [cyberpunkOverlay])
+  
+  const audioRef = useRef<HTMLAudioElement>(null)
 
   useEffect(() => {
     if (audioRef.current) {
@@ -1782,26 +1798,25 @@ In the end, Zardonic will unite listeners with Superstars.
       <Terminal 
         isOpen={terminalOpen} 
         onClose={() => setTerminalOpen(false)}
-        progressiveModesSettings={adminSettings?.progressiveOverlayModes}
       />
 
       <AnimatePresence>
         {cyberpunkOverlay && (
           <>
             <motion.div
-              initial={overlayAnimation.backdrop.initial}
-              animate={overlayAnimation.backdrop.animate}
-              exit={overlayAnimation.backdrop.exit}
-              transition={overlayAnimation.backdrop.transition}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
               className="fixed inset-0 bg-black/90 z-[100] backdrop-blur-sm cyberpunk-overlay-bg"
               onClick={() => setCyberpunkOverlay(null)}
             />
             
             <motion.div
-              initial={overlayAnimation.modal.initial}
-              animate={overlayAnimation.modal.animate}
-              exit={overlayAnimation.modal.exit}
-              transition={overlayAnimation.modal.transition}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3 }}
               className="fixed inset-0 z-[101] flex items-center justify-center p-4 md:p-8 pointer-events-none"
               style={{ perspective: '1000px' }}
             >
@@ -1871,24 +1886,38 @@ In the end, Zardonic will unite listeners with Superstars.
                   style={{ transformOrigin: 'right' }}
                 />
 
-                {/* Progressive content loading wrapper */}
-                <motion.div 
-                  className={`relative overflow-y-auto max-h-[90vh] ${progressiveMode.className}`}
-                  initial={progressiveMode.containerVariants.loading}
-                  animate={contentReady ? progressiveMode.containerVariants.loaded : progressiveMode.containerVariants.loading}
-                  transition={progressiveMode.transition}
-                >
-                  {/* Loading state */}
-                  {!contentReady && (
+                {/* 3-phase content loading wrapper */}
+                <div className="relative overflow-y-auto max-h-[90vh]">
+                  {/* Loading phase */}
+                  {overlayPhase === 'loading' && (
                     <div className="flex items-center justify-center min-h-[400px]">
-                      <span className="progressive-loading-label">
-                        {progressiveMode.getLabel(cyberpunkOverlay.type)}
-                      </span>
+                      <motion.span 
+                        className="progressive-loading-label text-primary font-mono text-lg"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                      >
+                        {loadingText}
+                      </motion.span>
                     </div>
                   )}
 
-                  {/* Content state */}
-                  {contentReady && (
+                  {/* Glitch phase */}
+                  {overlayPhase === 'glitch' && (
+                    <div className="flex items-center justify-center min-h-[400px]">
+                      <motion.div
+                        className="glitch-effect text-primary font-mono text-lg"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: [0, 1, 0, 1, 0, 1] }}
+                        transition={{ duration: 0.4 }}
+                      >
+                        {loadingText}
+                      </motion.div>
+                    </div>
+                  )}
+
+                  {/* Revealed phase */}
+                  {overlayPhase === 'revealed' && (
                     <div className="p-8 md:p-12 pt-12">
                     <Button
                       variant="ghost"
@@ -1900,7 +1929,7 @@ In the end, Zardonic will unite listeners with Superstars.
                     </Button>
 
                     <AnimatePresence mode="wait">
-                      {contentReady && (
+                      {overlayPhase === 'revealed' && (
                         <>
                           {cyberpunkOverlay.type === 'impressum' && (
                             <motion.div 
@@ -2651,7 +2680,7 @@ In the end, Zardonic will unite listeners with Superstars.
                     </AnimatePresence>
                     </div>
                   )}
-                </motion.div>
+                </div>
               </motion.div>
             </motion.div>
           </>

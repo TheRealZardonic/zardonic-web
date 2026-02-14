@@ -24,6 +24,11 @@ const DEFAULTS = {
   FADE_IN_DURATION_S: 0.8,
   SECTION_REVEAL_DURATION_S: 1.0,
   OVERLAY_TRANSITION_DURATION_S: 0.3,
+
+  // Overlay Loading Sequence
+  OVERLAY_LOADING_TEXT_INTERVAL_MS: 600,
+  OVERLAY_GLITCH_PHASE_DELAY_MS: 1800,
+  OVERLAY_REVEAL_PHASE_DELAY_MS: 2200,
 } as const
 
 export type ConfigKey = keyof typeof DEFAULTS
@@ -128,6 +133,24 @@ export const CONFIG_META: Record<
     group: 'Animation Durations',
     type: 'number',
   },
+  OVERLAY_LOADING_TEXT_INTERVAL_MS: {
+    label: 'Overlay Loading Text Interval (ms)',
+    description: 'Interval between loading text changes in overlay sequence',
+    group: 'Overlay Loading Sequence',
+    type: 'number',
+  },
+  OVERLAY_GLITCH_PHASE_DELAY_MS: {
+    label: 'Overlay Glitch Phase Delay (ms)',
+    description: 'Delay before entering glitch phase in overlay sequence',
+    group: 'Overlay Loading Sequence',
+    type: 'number',
+  },
+  OVERLAY_REVEAL_PHASE_DELAY_MS: {
+    label: 'Overlay Reveal Phase Delay (ms)',
+    description: 'Delay before entering reveal phase in overlay sequence',
+    group: 'Overlay Loading Sequence',
+    type: 'number',
+  },
 }
 
 const overrides: Partial<Record<ConfigKey, number>> = {}
@@ -165,3 +188,6 @@ export const SYNC_INTERVAL_MS = DEFAULTS.SYNC_INTERVAL_MS
 export const FADE_IN_DURATION_S = DEFAULTS.FADE_IN_DURATION_S
 export const SECTION_REVEAL_DURATION_S = DEFAULTS.SECTION_REVEAL_DURATION_S
 export const OVERLAY_TRANSITION_DURATION_S = DEFAULTS.OVERLAY_TRANSITION_DURATION_S
+export const OVERLAY_LOADING_TEXT_INTERVAL_MS = DEFAULTS.OVERLAY_LOADING_TEXT_INTERVAL_MS
+export const OVERLAY_GLITCH_PHASE_DELAY_MS = DEFAULTS.OVERLAY_GLITCH_PHASE_DELAY_MS
+export const OVERLAY_REVEAL_PHASE_DELAY_MS = DEFAULTS.OVERLAY_REVEAL_PHASE_DELAY_MS
