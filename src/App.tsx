@@ -161,6 +161,12 @@ interface AnalyticsData {
   visitors: { date: string; count: number }[]
 }
 
+const PROFILE_LOADING_TEXTS = [
+  '> ACCESSING PROFILE...',
+  '> DECRYPTING DATA...',
+  '> IDENTITY VERIFIED',
+]
+
 function App() {
   const konamiActivated = useKonami()
   const [terminalOpen, setTerminalOpen] = useState(false)
@@ -384,7 +390,6 @@ In the end, Zardonic will unite listeners with Superstars.
   const [editingRelease, setEditingRelease] = useState<Release | null>(null)
   const [cyberpunkOverlay, setCyberpunkOverlay] = useState<{type: 'gig' | 'release' | 'member' | 'impressum' | 'privacy' | 'contact', data?: any} | null>(null)
   const [language, setLanguage] = useState<'en' | 'de'>('en')
-  const [contentReady, setContentReady] = useState(false)
   const [iTunesFetching, setITunesFetching] = useState(false)
   const [bandsintownFetching, setBandsintownFetching] = useState(false)
   const [hasAutoLoaded, setHasAutoLoaded] = useState(false)
@@ -393,25 +398,19 @@ In the end, Zardonic will unite listeners with Superstars.
 
   // 3-phase overlay loading state
   const [overlayPhase, setOverlayPhase] = useState<'loading' | 'glitch' | 'revealed'>('loading')
-  const [loadingText, setLoadingText] = useState('> ACCESSING PROFILE...')
-
-  const loadingTexts = [
-    '> ACCESSING PROFILE...',
-    '> DECRYPTING DATA...',
-    '> IDENTITY VERIFIED',
-  ]
+  const [loadingText, setLoadingText] = useState(PROFILE_LOADING_TEXTS[0])
 
   useEffect(() => {
     if (!cyberpunkOverlay) return
     
     setOverlayPhase('loading')
-    setLoadingText(loadingTexts[0])
+    setLoadingText(PROFILE_LOADING_TEXTS[0])
     
     let idx = 0
     const txtInterval = setInterval(() => {
       idx += 1
-      if (idx < loadingTexts.length) {
-        setLoadingText(loadingTexts[idx])
+      if (idx < PROFILE_LOADING_TEXTS.length) {
+        setLoadingText(PROFILE_LOADING_TEXTS[idx])
       }
     }, 600)
 
@@ -432,20 +431,6 @@ In the end, Zardonic will unite listeners with Superstars.
   }, [cyberpunkOverlay])
   
   const audioRef = useRef<HTMLAudioElement>(null)
-
-  useEffect(() => {
-    if (cyberpunkOverlay) {
-      setContentReady(false)
-
-      const contentTimer = setTimeout(() => {
-        setContentReady(true)
-      }, 600)
-
-      return () => {
-        clearTimeout(contentTimer)
-      }
-    }
-  }, [cyberpunkOverlay])
 
   useEffect(() => {
     if (audioRef.current) {

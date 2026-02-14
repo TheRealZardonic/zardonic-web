@@ -1,7 +1,13 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Terminal as TerminalIcon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
+
+const TERMINAL_LOADING_TEXTS = [
+  '> ACCESSING TERMINAL...',
+  '> DECRYPTING DATA...',
+  '> IDENTITY VERIFIED',
+]
 
 interface TerminalProps {
   isOpen: boolean
@@ -18,25 +24,19 @@ export function Terminal({ isOpen, onClose }: TerminalProps) {
 
   // 3-phase terminal loading state
   const [phase, setPhase] = useState<'loading' | 'glitch' | 'revealed'>('loading')
-  const [loadingText, setLoadingText] = useState('> ACCESSING TERMINAL...')
-
-  const loadingTexts = [
-    '> ACCESSING TERMINAL...',
-    '> DECRYPTING DATA...',
-    '> IDENTITY VERIFIED',
-  ]
+  const [loadingText, setLoadingText] = useState(TERMINAL_LOADING_TEXTS[0])
 
   useEffect(() => {
     if (!isOpen) return
     
     setPhase('loading')
-    setLoadingText(loadingTexts[0])
+    setLoadingText(TERMINAL_LOADING_TEXTS[0])
     
     let idx = 0
     const txtInterval = setInterval(() => {
       idx += 1
-      if (idx < loadingTexts.length) {
-        setLoadingText(loadingTexts[idx])
+      if (idx < TERMINAL_LOADING_TEXTS.length) {
+        setLoadingText(TERMINAL_LOADING_TEXTS[idx])
       }
     }, 600)
 
