@@ -23,7 +23,7 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
     const interval = setInterval(() => {
       setLoadingProgress((prev) => {
         if (prev >= 95) return prev
-        // Slow down as we approach 90%
+        // Slow down as we approach completion
         const increment = prev < 50 ? 3 : prev < 80 ? 1.5 : 0.5
         return Math.min(prev + increment, 95)
       })
