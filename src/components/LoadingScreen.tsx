@@ -13,9 +13,30 @@ interface LoadingScreenProps {
 export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, precacheUrls = [] }: LoadingScreenProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [loadingProgress, setLoadingProgress] = useState(0)
+  const [modelProgress, setModelProgress] = useState(0)
   const [loadingStage, setLoadingStage] = useState(0)
   const [glitchActive, setGlitchActive] = useState(false)
   const [cachingDone, setCachingDone] = useState(precacheUrls.length === 0)
+
+  // Simulated progress so the bar always moves
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLoadingProgress((prev) => {
+        if (prev >= 95) return prev
+        // Slow down as we approach completion
+        const increment = prev < 50 ? 3 : prev < 80 ? 1.5 : 0.5
+        return Math.min(prev + increment, 95)
+      })
+    }, 100)
+    return () => clearInterval(interval)
+  }, [])
+
+  // When model fully loads, jump to 100%
+  useEffect(() => {
+    if (modelProgress >= 100) {
+      setLoadingProgress(100)
+    }
+  }, [modelProgress])
 
   useEffect(() => {
     const glitchInterval = setInterval(() => {
@@ -104,7 +125,7 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
       (gltf) => {
         if (!gltf?.scene) {
           console.error('Invalid GLTF data')
-          setLoadingProgress(100)
+          setModelProgress(100)
           return
         }
 
@@ -121,21 +142,21 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
           model.scale.setScalar(scale)
           
           scene.add(model)
-          setLoadingProgress(100)
+          setModelProgress(100)
         } catch (err) {
           console.error('Failed to process model:', err)
-          setLoadingProgress(100)
+          setModelProgress(100)
         }
       },
       (progress) => {
         if (progress.total > 0) {
           const percent = Math.min((progress.loaded / progress.total) * 100, 95)
-          setLoadingProgress(percent)
+          setModelProgress(percent)
         }
       },
       (error) => {
         console.error('Error loading model:', error)
-        setLoadingProgress(100)
+        setModelProgress(100)
       }
     )
 
@@ -174,7 +195,7 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
   // Complete when both model progress reaches 100% and background caching is done
   useEffect(() => {
     if (loadingProgress >= 100 && cachingDone) {
-      const timeout = setTimeout(() => onLoadComplete(), 2000)
+      const timeout = setTimeout(() => onLoadComplete(), 800)
       return () => clearTimeout(timeout)
     }
   }, [loadingProgress, cachingDone, onLoadComplete])
@@ -183,7 +204,7 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
     <motion.div
       initial={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.8 }}
+      transition={{ duration: 0.5 }}
       className="fixed inset-0 z-[9999] bg-background flex items-center justify-center overflow-hidden"
     >
       <div className="full-page-noise periodic-noise-glitch" />
