@@ -933,7 +933,7 @@ In the end, Zardonic will unite listeners with Superstars.
             transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
             className="relative"
           >
-            <h2 className="text-4xl md:text-6xl font-bold mb-12 uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build" data-text="BIOGRAPHY">
+            <h2 className="text-4xl md:text-6xl font-bold mb-12 uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-data-corrupt" data-text="BIOGRAPHY">
               BIOGRAPHY
             </h2>
             
@@ -1102,7 +1102,7 @@ In the end, Zardonic will unite listeners with Superstars.
             viewport={{ once: true }}
             transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
           >
-            <h2 className="text-4xl md:text-6xl font-bold mb-12 uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build" data-text="MUSIC PLAYER">
+            <h2 className="text-4xl md:text-6xl font-bold mb-12 uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-crt-interference" data-text="MUSIC PLAYER">
               MUSIC PLAYER
             </h2>
 
@@ -1143,7 +1143,7 @@ In the end, Zardonic will unite listeners with Superstars.
             transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
           >
             <div className="flex items-center justify-between mb-12 flex-wrap gap-4">
-              <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build" data-text="UPCOMING GIGS">
+              <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-data-corrupt" data-text="UPCOMING GIGS">
                 UPCOMING GIGS
               </h2>
               {editMode && (
@@ -1289,7 +1289,7 @@ In the end, Zardonic will unite listeners with Superstars.
             transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
           >
             <div className="flex items-center justify-between mb-12 flex-wrap gap-4">
-              <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build" data-text="RELEASES">
+              <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-crt-interference" data-text="RELEASES">
                 RELEASES
               </h2>
               {editMode && (
@@ -1461,7 +1461,7 @@ In the end, Zardonic will unite listeners with Superstars.
             transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
           >
             <div className="flex items-center justify-between mb-12">
-              <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build" data-text="GALLERY">
+              <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-data-corrupt" data-text="GALLERY">
                 GALLERY
               </h2>
               {editMode && (
@@ -1586,7 +1586,7 @@ In the end, Zardonic will unite listeners with Superstars.
             transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
             className="text-center"
           >
-            <h2 className="text-4xl md:text-6xl font-bold mb-12 uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build" data-text="CONNECT">
+            <h2 className="text-4xl md:text-6xl font-bold mb-12 uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-crt-interference" data-text="CONNECT">
               CONNECT
             </h2>
 
@@ -1909,7 +1909,7 @@ In the end, Zardonic will unite listeners with Superstars.
                         className="glitch-effect text-primary font-mono text-lg"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: [0, 1, 0, 1, 0, 1] }}
-                        transition={{ duration: 0.4 }}
+                        transition={{ duration: 0.2 }}
                       >
                         {loadingText}
                       </motion.div>
@@ -1945,7 +1945,7 @@ In the end, Zardonic will unite listeners with Superstars.
                                 transition={{ delay: 0.1 }}
                               >
                                 <div className="data-label mb-2">// LEGAL.INFORMATION.STREAM</div>
-                                <h2 className="text-4xl md:text-5xl font-bold uppercase font-mono mb-4 hover-chromatic" data-text="IMPRESSUM">
+                                <h2 className="text-4xl md:text-5xl font-bold uppercase font-mono mb-4 hover-chromatic crt-flash-in" data-text="IMPRESSUM">
                                   IMPRESSUM
                                 </h2>
                               </motion.div>
@@ -2099,7 +2099,7 @@ In the end, Zardonic will unite listeners with Superstars.
                               >
                                 <div>
                                   <div className="data-label mb-2">// PRIVACY.POLICY.STREAM</div>
-                                  <h2 className="text-4xl md:text-5xl font-bold uppercase font-mono mb-4 hover-chromatic" data-text="PRIVACY POLICY">
+                                  <h2 className="text-4xl md:text-5xl font-bold uppercase font-mono mb-4 hover-chromatic crt-flash-in" data-text="PRIVACY POLICY">
                                     {language === 'de' ? 'DATENSCHUTZERKLÄRUNG' : 'PRIVACY POLICY'}
                                   </h2>
                                 </div>
@@ -2316,7 +2316,7 @@ In the end, Zardonic will unite listeners with Superstars.
                                 transition={{ delay: 0.1 }}
                               >
                                 <div className="data-label mb-2">// CONTACT.INTERFACE.STREAM</div>
-                                <h2 className="text-4xl md:text-5xl font-bold uppercase font-mono mb-4 hover-chromatic" data-text="CONTACT">
+                                <h2 className="text-4xl md:text-5xl font-bold uppercase font-mono mb-4 hover-chromatic crt-flash-in" data-text="CONTACT">
                                   CONTACT
                                 </h2>
                               </motion.div>
@@ -2468,7 +2468,7 @@ In the end, Zardonic will unite listeners with Superstars.
                                 )}
                                 <div className="flex-1">
                                   <div className="text-xs text-primary uppercase tracking-widest font-mono mb-2">// MEMBER.PROFILE</div>
-                                  <h2 className="text-4xl font-bold uppercase font-mono mb-2" data-text={cyberpunkOverlay.data.name}>
+                                  <h2 className="text-4xl font-bold uppercase font-mono mb-2 crt-flash-in" data-text={cyberpunkOverlay.data.name}>
                                     {cyberpunkOverlay.data.name}
                                   </h2>
                                   <p className="text-xl text-muted-foreground font-mono mb-4">{cyberpunkOverlay.data.role}</p>
@@ -2500,7 +2500,7 @@ In the end, Zardonic will unite listeners with Superstars.
                                 transition={{ delay: 0.1 }}
                               >
                                 <div className="data-label mb-2">// EVENT.DATA.STREAM</div>
-                                <h2 className="text-4xl md:text-5xl font-bold uppercase font-mono mb-4 hover-chromatic" data-text={cyberpunkOverlay.data.venue}>
+                                <h2 className="text-4xl md:text-5xl font-bold uppercase font-mono mb-4 hover-chromatic crt-flash-in" data-text={cyberpunkOverlay.data.venue}>
                                   {cyberpunkOverlay.data.venue}
                                 </h2>
                               </motion.div>
@@ -2608,7 +2608,7 @@ In the end, Zardonic will unite listeners with Superstars.
                                     transition={{ delay: 0.2 }}
                                   >
                                     <div className="data-label mb-2">// RELEASE.INFO.STREAM</div>
-                                    <h2 className="text-3xl md:text-4xl font-bold uppercase font-mono mb-2 hover-chromatic" data-text={cyberpunkOverlay.data.title}>
+                                    <h2 className="text-3xl md:text-4xl font-bold uppercase font-mono mb-2 hover-chromatic crt-flash-in" data-text={cyberpunkOverlay.data.title}>
                                       {cyberpunkOverlay.data.title}
                                     </h2>
                                     <p className="text-xl text-muted-foreground font-mono">{cyberpunkOverlay.data.year}</p>
