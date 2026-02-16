@@ -319,41 +319,162 @@ export default function EditControls({
                   <X size={20} />
                 </button>
               </div>
-              <div className="space-y-3">
-                {[
-                  { key: 'primaryColor' as const, label: 'Primary Color', placeholder: 'oklch(0.55 0.25 25)' },
-                  { key: 'accentColor' as const, label: 'Accent Color', placeholder: 'oklch(0.6 0.2 200)' },
-                  { key: 'backgroundColor' as const, label: 'Background Color', placeholder: 'oklch(0.1 0 0)' },
-                  { key: 'foregroundColor' as const, label: 'Foreground Color', placeholder: 'oklch(0.95 0 0)' },
-                  { key: 'borderColor' as const, label: 'Border Color', placeholder: 'oklch(0.25 0 0)' },
-                  { key: 'hoverColor' as const, label: 'Hover Color', placeholder: 'oklch(0.55 0.25 25)' },
-                ].map(({ key, label, placeholder }) => (
-                  <div key={key} className="space-y-1">
-                    <Label className="font-mono text-xs">{label}</Label>
-                    <div className="flex gap-2 items-center">
-                      <input
-                        type="color"
-                        value={isHexColor(theme[key] || '') ? theme[key]! : '#000000'}
-                        onChange={(e) => updateTheme(key, e.target.value)}
-                        className="w-8 h-8 shrink-0 cursor-pointer border border-border rounded-sm bg-transparent p-0"
-                        title="Pick a color"
-                      />
-                      <Input
-                        value={theme[key] || ''}
-                        onChange={(e) => updateTheme(key, e.target.value)}
-                        placeholder={placeholder}
-                        className="bg-background border-border font-mono text-xs flex-1"
-                      />
-                      {theme[key] && (
-                        <div
-                          className="w-8 h-8 border border-border rounded-sm shrink-0"
-                          style={{ backgroundColor: theme[key] }}
-                          title={theme[key]}
+              <div className="space-y-6">
+                {/* Base Colors */}
+                <div className="space-y-3">
+                  <h4 className="font-mono text-sm font-bold text-primary">Base Colors</h4>
+                  {[
+                    { key: 'primaryColor' as const, label: 'Primary Color', placeholder: 'oklch(0.55 0.25 25)' },
+                    { key: 'primaryForegroundColor' as const, label: 'Primary Foreground', placeholder: 'oklch(1 0 0)' },
+                    { key: 'accentColor' as const, label: 'Accent Color', placeholder: 'oklch(0.6 0.2 200)' },
+                    { key: 'accentForegroundColor' as const, label: 'Accent Foreground', placeholder: 'oklch(1 0 0)' },
+                    { key: 'backgroundColor' as const, label: 'Background Color', placeholder: 'oklch(0.1 0 0)' },
+                    { key: 'foregroundColor' as const, label: 'Foreground Color', placeholder: 'oklch(0.95 0 0)' },
+                  ].map(({ key, label, placeholder }) => (
+                    <div key={key} className="space-y-1">
+                      <Label className="font-mono text-xs">{label}</Label>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="color"
+                          value={isHexColor(theme[key] || '') ? theme[key]! : '#000000'}
+                          onChange={(e) => updateTheme(key, e.target.value)}
+                          className="w-8 h-8 shrink-0 cursor-pointer border border-border rounded-sm bg-transparent p-0"
+                          title="Pick a color"
                         />
-                      )}
+                        <Input
+                          value={theme[key] || ''}
+                          onChange={(e) => updateTheme(key, e.target.value)}
+                          placeholder={placeholder}
+                          className="bg-background border-border font-mono text-xs flex-1"
+                        />
+                        {theme[key] && (
+                          <div
+                            className="w-8 h-8 border border-border rounded-sm shrink-0"
+                            style={{ backgroundColor: theme[key] }}
+                            title={theme[key]}
+                          />
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+                
+                {/* UI Element Colors */}
+                <div className="space-y-3">
+                  <h4 className="font-mono text-sm font-bold text-primary">UI Elements</h4>
+                  {[
+                    { key: 'cardColor' as const, label: 'Card Background', placeholder: 'oklch(0.15 0 0)' },
+                    { key: 'cardForegroundColor' as const, label: 'Card Foreground', placeholder: 'oklch(0.95 0 0)' },
+                    { key: 'popoverColor' as const, label: 'Popover Background', placeholder: 'oklch(0.12 0 0)' },
+                    { key: 'popoverForegroundColor' as const, label: 'Popover Foreground', placeholder: 'oklch(0.95 0 0)' },
+                    { key: 'borderColor' as const, label: 'Border Color', placeholder: 'oklch(0.25 0 0)' },
+                    { key: 'inputColor' as const, label: 'Input Color', placeholder: 'oklch(0.25 0 0)' },
+                    { key: 'ringColor' as const, label: 'Focus Ring Color', placeholder: 'oklch(0.55 0.25 25)' },
+                    { key: 'hoverColor' as const, label: 'Hover Color', placeholder: 'oklch(0.55 0.25 25)' },
+                  ].map(({ key, label, placeholder }) => (
+                    <div key={key} className="space-y-1">
+                      <Label className="font-mono text-xs">{label}</Label>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="color"
+                          value={isHexColor(theme[key] || '') ? theme[key]! : '#000000'}
+                          onChange={(e) => updateTheme(key, e.target.value)}
+                          className="w-8 h-8 shrink-0 cursor-pointer border border-border rounded-sm bg-transparent p-0"
+                          title="Pick a color"
+                        />
+                        <Input
+                          value={theme[key] || ''}
+                          onChange={(e) => updateTheme(key, e.target.value)}
+                          placeholder={placeholder}
+                          className="bg-background border-border font-mono text-xs flex-1"
+                        />
+                        {theme[key] && (
+                          <div
+                            className="w-8 h-8 border border-border rounded-sm shrink-0"
+                            style={{ backgroundColor: theme[key] }}
+                            title={theme[key]}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Secondary & Muted Colors */}
+                <div className="space-y-3">
+                  <h4 className="font-mono text-sm font-bold text-primary">Secondary & Muted</h4>
+                  {[
+                    { key: 'secondaryColor' as const, label: 'Secondary Color', placeholder: 'oklch(0.2 0 0)' },
+                    { key: 'secondaryForegroundColor' as const, label: 'Secondary Foreground', placeholder: 'oklch(0.95 0 0)' },
+                    { key: 'mutedColor' as const, label: 'Muted Color', placeholder: 'oklch(0.25 0 0)' },
+                    { key: 'mutedForegroundColor' as const, label: 'Muted Foreground', placeholder: 'oklch(0.6 0 0)' },
+                  ].map(({ key, label, placeholder }) => (
+                    <div key={key} className="space-y-1">
+                      <Label className="font-mono text-xs">{label}</Label>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="color"
+                          value={isHexColor(theme[key] || '') ? theme[key]! : '#000000'}
+                          onChange={(e) => updateTheme(key, e.target.value)}
+                          className="w-8 h-8 shrink-0 cursor-pointer border border-border rounded-sm bg-transparent p-0"
+                          title="Pick a color"
+                        />
+                        <Input
+                          value={theme[key] || ''}
+                          onChange={(e) => updateTheme(key, e.target.value)}
+                          placeholder={placeholder}
+                          className="bg-background border-border font-mono text-xs flex-1"
+                        />
+                        {theme[key] && (
+                          <div
+                            className="w-8 h-8 border border-border rounded-sm shrink-0"
+                            style={{ backgroundColor: theme[key] }}
+                            title={theme[key]}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Destructive Colors */}
+                <div className="space-y-3">
+                  <h4 className="font-mono text-sm font-bold text-primary">Destructive</h4>
+                  {[
+                    { key: 'destructiveColor' as const, label: 'Destructive Color', placeholder: 'oklch(0.45 0.22 25)' },
+                    { key: 'destructiveForegroundColor' as const, label: 'Destructive Foreground', placeholder: 'oklch(1 0 0)' },
+                  ].map(({ key, label, placeholder }) => (
+                    <div key={key} className="space-y-1">
+                      <Label className="font-mono text-xs">{label}</Label>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="color"
+                          value={isHexColor(theme[key] || '') ? theme[key]! : '#000000'}
+                          onChange={(e) => updateTheme(key, e.target.value)}
+                          className="w-8 h-8 shrink-0 cursor-pointer border border-border rounded-sm bg-transparent p-0"
+                          title="Pick a color"
+                        />
+                        <Input
+                          value={theme[key] || ''}
+                          onChange={(e) => updateTheme(key, e.target.value)}
+                          placeholder={placeholder}
+                          className="bg-background border-border font-mono text-xs flex-1"
+                        />
+                        {theme[key] && (
+                          <div
+                            className="w-8 h-8 border border-border rounded-sm shrink-0"
+                            style={{ backgroundColor: theme[key] }}
+                            title={theme[key]}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Fonts */}
+                <div className="space-y-3">
+                  <h4 className="font-mono text-sm font-bold text-primary">Fonts</h4>
                 {([
                   { key: 'fontHeading' as const, label: 'Heading Font', placeholder: 'Orbitron, sans-serif', options: ['Orbitron', 'Rajdhani', 'Exo 2', 'Audiowide', 'Share Tech', 'Russo One', 'Teko', 'system-ui'] },
                   { key: 'fontBody' as const, label: 'Body Font', placeholder: 'system-ui, sans-serif', options: ['system-ui', 'Inter', 'Roboto', 'Open Sans', 'Lato', 'Poppins', 'Source Sans Pro', 'Share Tech Mono'] },

@@ -10,13 +10,48 @@ export interface SectionVisibility {
 }
 
 export interface ThemeCustomization {
+  // Base colors
   primaryColor?: string
   accentColor?: string
   backgroundColor?: string
   foregroundColor?: string
   borderColor?: string
   hoverColor?: string
+  
+  // Card colors
+  cardColor?: string
+  cardForegroundColor?: string
+  
+  // Popover colors
+  popoverColor?: string
+  popoverForegroundColor?: string
+  
+  // Primary foreground
+  primaryForegroundColor?: string
+  
+  // Secondary colors
+  secondaryColor?: string
+  secondaryForegroundColor?: string
+  
+  // Muted colors
+  mutedColor?: string
+  mutedForegroundColor?: string
+  
+  // Accent foreground
+  accentForegroundColor?: string
+  
+  // Destructive colors
+  destructiveColor?: string
+  destructiveForegroundColor?: string
+  
+  // Input and ring
+  inputColor?: string
+  ringColor?: string
+  
+  // Border radius
   borderRadius?: string
+  
+  // Fonts
   fontHeading?: string
   fontBody?: string
   fontMono?: string
