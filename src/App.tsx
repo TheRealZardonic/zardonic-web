@@ -15,6 +15,8 @@ import {
   OVERLAY_REVEAL_PHASE_DELAY_MS,
 } from '@/lib/config'
 import { submitContactForm, contactFormSchema } from '@/lib/contact'
+import { loginWithPassword, setupPassword, validateSession, hasSessionToken } from '@/lib/session'
+import { getSyncTimestamps, updateReleasesSync, updateGigsSync } from '@/lib/sync'
 import type { AdminSettings } from '@/lib/types'
 import {
   Play,
@@ -224,13 +226,16 @@ function App() {
     }
   }, [])
 
-  // Restore admin session from localStorage
+  // Restore admin session from Vercel KV
   useEffect(() => {
     if (!adminPasswordHash) return
-    const storedToken = localStorage.getItem('admin-token')
-    if (storedToken && storedToken === adminPasswordHash) {
-      setIsOwner(true)
-    }
+    
+    // Validate session token if exists
+    validateSession().then(isValid => {
+      if (isValid) {
+        setIsOwner(true)
+      }
+    })
   }, [adminPasswordHash])
 
   // Open setup dialog once KV data has loaded and confirms no password exists
@@ -615,9 +620,8 @@ In the end, Zardonic will unite listeners with Superstars.
 
   // Admin authentication handlers
   const handleAdminLogin = async (password: string): Promise<boolean> => {
-    const hash = await hashPassword(password)
-    if (hash === adminPasswordHash) {
-      localStorage.setItem('admin-token', hash)
+    const token = await loginWithPassword(password)
+    if (token) {
       setIsOwner(true)
       return true
     }
@@ -625,16 +629,19 @@ In the end, Zardonic will unite listeners with Superstars.
   }
 
   const handleSetupAdminPassword = async (password: string): Promise<void> => {
-    const hash = await hashPassword(password)
-    localStorage.setItem('admin-token', hash)
-    setAdminPasswordHash(hash)
-    setIsOwner(true)
+    const success = await setupPassword(password)
+    if (success) {
+      // Also need to store the hash in KV for the password check
+      setAdminPasswordHash(await hashPassword(password))
+      setIsOwner(true)
+    }
   }
 
   const handleSetAdminPassword = async (password: string): Promise<void> => {
-    const hash = await hashPassword(password)
-    localStorage.setItem('admin-token', hash)
-    setAdminPasswordHash(hash)
+    const success = await setupPassword(password)
+    if (success) {
+      setAdminPasswordHash(await hashPassword(password))
+    }
   }
 
   // Auto-fetch iTunes releases and Bandsintown events on mount (with 24h cache)
@@ -642,19 +649,20 @@ In the end, Zardonic will unite listeners with Superstars.
     if (!hasAutoLoaded && siteData) {
       setHasAutoLoaded(true)
       const now = Date.now()
-      const lastReleasesSync = Number(localStorage.getItem('lastReleasesSync') || '0')
-      const lastGigsSync = Number(localStorage.getItem('lastGigsSync') || '0')
-
-      if (now - lastReleasesSync > CACHE_DURATION_MS || siteData.releases.length === 0) {
-        handleFetchITunesReleases(true).then(() => {
-          localStorage.setItem('lastReleasesSync', String(Date.now()))
-        })
-      }
-      if (now - lastGigsSync > CACHE_DURATION_MS || siteData.gigs.length === 0) {
-        handleFetchBandsintownEvents(true).then(() => {
-          localStorage.setItem('lastGigsSync', String(Date.now()))
-        })
-      }
+      
+      // Get sync timestamps from Vercel KV
+      getSyncTimestamps().then(({ lastReleasesSync, lastGigsSync }) => {
+        if (now - lastReleasesSync > CACHE_DURATION_MS || siteData.releases.length === 0) {
+          handleFetchITunesReleases(true).then(() => {
+            updateReleasesSync(Date.now())
+          })
+        }
+        if (now - lastGigsSync > CACHE_DURATION_MS || siteData.gigs.length === 0) {
+          handleFetchBandsintownEvents(true).then(() => {
+            updateGigsSync(Date.now())
+          })
+        }
+      })
     }
   }, [hasAutoLoaded, siteData])
 
@@ -741,7 +749,7 @@ In the end, Zardonic will unite listeners with Superstars.
 
       if (!isAutoLoad) {
         toast.success(`Synced releases from iTunes`)
-        localStorage.setItem('lastReleasesSync', String(Date.now()))
+        updateReleasesSync(Date.now())
       }
     } catch (error) {
       if (!isAutoLoad) toast.error('Failed to fetch releases from iTunes')
@@ -806,7 +814,7 @@ In the end, Zardonic will unite listeners with Superstars.
 
       if (!isAutoLoad) {
         toast.success(`Synced events from Bandsintown`)
-        localStorage.setItem('lastGigsSync', String(Date.now()))
+        updateGigsSync(Date.now())
       }
     } catch (error) {
       if (!isAutoLoad) toast.error('Failed to fetch events from Bandsintown')
