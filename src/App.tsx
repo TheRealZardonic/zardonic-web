@@ -102,6 +102,13 @@ interface Gig {
   date: string
   ticketUrl?: string
   support?: string
+  lineup?: string[]
+  streetAddress?: string
+  postalCode?: string
+  soldOut?: boolean
+  startsAt?: string
+  description?: string
+  title?: string
 }
 
 interface Release {
@@ -411,13 +418,20 @@ In the end, Zardonic will unite listeners with Superstars.
     if (!t) return
     const root = document.documentElement
     if (t.primaryColor) root.style.setProperty('--primary', t.primaryColor)
-    if (t.accentColor) root.style.setProperty('--accent', t.accentColor)
+    if (t.accentColor) {
+      root.style.setProperty('--accent', t.accentColor)
+      // Also update hover-color fallback when accent changes and no specific hover color is set
+      if (!t.hoverColor) root.style.setProperty('--hover-color', t.accentColor)
+    }
     if (t.backgroundColor) root.style.setProperty('--background', t.backgroundColor)
     if (t.foregroundColor) root.style.setProperty('--foreground', t.foregroundColor)
     if (t.fontHeading) root.style.setProperty('--font-heading', t.fontHeading)
     if (t.fontBody) root.style.setProperty('--font-body', t.fontBody)
     if (t.fontMono) root.style.setProperty('--font-mono', t.fontMono)
-    if (t.borderColor) root.style.setProperty('--border-color', t.borderColor)
+    if (t.borderColor) {
+      root.style.setProperty('--border-color', t.borderColor)
+      root.style.setProperty('--border', t.borderColor)
+    }
     if (t.hoverColor) root.style.setProperty('--hover-color', t.hoverColor)
     if (t.borderRadius) root.style.setProperty('--radius', t.borderRadius)
     return () => {
@@ -429,6 +443,7 @@ In the end, Zardonic will unite listeners with Superstars.
       root.style.removeProperty('--font-body')
       root.style.removeProperty('--font-mono')
       root.style.removeProperty('--border-color')
+      root.style.removeProperty('--border')
       root.style.removeProperty('--hover-color')
       root.style.removeProperty('--radius')
     }
@@ -556,12 +571,25 @@ In the end, Zardonic will unite listeners with Superstars.
     setAdminPasswordHash(hash)
   }
 
-  // Auto-fetch iTunes releases and Bandsintown events on mount
+  // Auto-fetch iTunes releases and Bandsintown events on mount (with 24h cache)
   useEffect(() => {
     if (!hasAutoLoaded && siteData) {
       setHasAutoLoaded(true)
-      handleFetchITunesReleases(true)
-      handleFetchBandsintownEvents(true)
+      const CACHE_DURATION_MS = 24 * 60 * 60 * 1000 // 24 hours
+      const now = Date.now()
+      const lastReleasesSync = Number(localStorage.getItem('lastReleasesSync') || '0')
+      const lastGigsSync = Number(localStorage.getItem('lastGigsSync') || '0')
+
+      if (now - lastReleasesSync > CACHE_DURATION_MS || siteData.releases.length === 0) {
+        handleFetchITunesReleases(true).then(() => {
+          localStorage.setItem('lastReleasesSync', String(Date.now()))
+        })
+      }
+      if (now - lastGigsSync > CACHE_DURATION_MS || siteData.gigs.length === 0) {
+        handleFetchBandsintownEvents(true).then(() => {
+          localStorage.setItem('lastGigsSync', String(Date.now()))
+        })
+      }
     }
   }, [hasAutoLoaded, siteData])
 
@@ -645,6 +673,7 @@ In the end, Zardonic will unite listeners with Superstars.
 
       if (!isAutoLoad) {
         toast.success(`Synced releases from iTunes`)
+        localStorage.setItem('lastReleasesSync', String(Date.now()))
       }
     } catch (error) {
       if (!isAutoLoad) toast.error('Failed to fetch releases from iTunes')
@@ -675,13 +704,38 @@ In the end, Zardonic will unite listeners with Superstars.
             date: e.date,
             ticketUrl: e.ticketUrl,
             support: e.lineup?.filter(a => a.toLowerCase() !== 'zardonic').join(', ') || '',
+            lineup: e.lineup || [],
+            streetAddress: e.streetAddress,
+            postalCode: e.postalCode,
+            soldOut: e.soldOut,
+            startsAt: e.startsAt,
+            description: e.description,
+            title: e.title,
           }))
 
-        return { ...data, gigs: [...data.gigs, ...newGigs] }
+        // Also update existing gigs with enriched data from API
+        const updatedGigs = data.gigs.map(existing => {
+          const match = events.find(e => e.id === existing.id)
+          if (match) {
+            return {
+              ...existing,
+              lineup: match.lineup || existing.lineup,
+              streetAddress: match.streetAddress || existing.streetAddress,
+              postalCode: match.postalCode || existing.postalCode,
+              soldOut: match.soldOut ?? existing.soldOut,
+              startsAt: match.startsAt || existing.startsAt,
+              ticketUrl: match.ticketUrl || existing.ticketUrl,
+            }
+          }
+          return existing
+        })
+
+        return { ...data, gigs: [...updatedGigs, ...newGigs] }
       })
 
       if (!isAutoLoad) {
         toast.success(`Synced events from Bandsintown`)
+        localStorage.setItem('lastGigsSync', String(Date.now()))
       }
     } catch (error) {
       if (!isAutoLoad) toast.error('Failed to fetch events from Bandsintown')
@@ -756,7 +810,8 @@ In the end, Zardonic will unite listeners with Superstars.
       location: 'City, Country',
       date: new Date().toISOString().split('T')[0],
       ticketUrl: '',
-      support: ''
+      support: '',
+      lineup: [],
     }
     setSiteData((data) => data ? { ...data, gigs: [...data.gigs, newGig] } : data!)
     setEditingGig(newGig)
@@ -1126,164 +1181,218 @@ In the end, Zardonic will unite listeners with Superstars.
             viewport={{ once: true }}
             transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
           >
-            <h2 className="text-4xl md:text-6xl font-bold mb-12 uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-data-corrupt" data-text={sectionLabels.shell || 'SHELL'}>
-              <EditableHeading
-                text={sectionLabels.shell || ''}
-                defaultText="SHELL"
-                editMode={editMode}
-                onChange={(v) => updateSectionLabel('shell', v)}
-                glitchEnabled={adminSettings?.glitchTextSettings?.enabled !== false}
-                glitchIntervalMs={adminSettings?.glitchTextSettings?.intervalMs}
-                glitchDurationMs={adminSettings?.glitchTextSettings?.durationMs}
-              />
-            </h2>
+            <div className="flex items-center justify-between mb-12 flex-wrap gap-4">
+              <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-data-corrupt" data-text={sectionLabels.shell || 'SHELL'}>
+                <EditableHeading
+                  text={sectionLabels.shell || ''}
+                  defaultText="SHELL"
+                  editMode={editMode}
+                  onChange={(v) => updateSectionLabel('shell', v)}
+                  glitchEnabled={adminSettings?.glitchTextSettings?.enabled !== false}
+                  glitchIntervalMs={adminSettings?.glitchTextSettings?.intervalMs}
+                  glitchDurationMs={adminSettings?.glitchTextSettings?.durationMs}
+                />
+              </h2>
+              {editMode && (
+                <Button onClick={() => {
+                  const members = adminSettings?.shellMembers || (adminSettings?.shellMember ? [adminSettings.shellMember] : [])
+                  setAdminSettings((prev) => ({
+                    ...(prev || {}),
+                    shellMembers: [...members, { name: 'New Member', role: '', bio: '' }],
+                  }))
+                }} className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  Add Member
+                </Button>
+              )}
+            </div>
 
-            <div className="grid md:grid-cols-[280px_1fr] gap-8 items-start">
-              <motion.div
-                className="relative aspect-square bg-muted border border-primary/30 overflow-hidden cyber-card"
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: 0.1 }}
-              >
-                {adminSettings?.shellMember?.photo ? (
-                  <img
-                    src={adminSettings.shellMember.photo}
-                    alt={adminSettings.shellMember.name || 'Member'}
-                    className="w-full h-full object-cover glitch-image hover-chromatic-image"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <User className="w-20 h-20 text-muted-foreground" />
-                  </div>
-                )}
-                {editMode && (
-                  <div className="absolute bottom-2 right-2">
-                    <label className="cursor-pointer">
-                      <Upload className="w-6 h-6 text-primary bg-background/80 p-1 rounded" />
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0]
-                          if (file) {
-                            const reader = new FileReader()
-                            reader.onloadend = () => {
-                              setAdminSettings((prev) => ({
-                                ...(prev || {}),
-                                shellMember: { ...(prev?.shellMember || {}), photo: reader.result as string },
-                              }))
-                            }
-                            reader.readAsDataURL(file)
-                          }
-                        }}
+            <div className="space-y-12">
+              {(adminSettings?.shellMembers || (adminSettings?.shellMember ? [adminSettings.shellMember] : [])).map((member, memberIndex) => (
+                <div key={memberIndex} className="grid md:grid-cols-[280px_1fr] gap-8 items-start">
+                  <motion.div
+                    className="relative aspect-square bg-muted border border-primary/30 overflow-hidden cyber-card"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6, delay: 0.1 }}
+                  >
+                    {member?.photo ? (
+                      <img
+                        src={member.photo}
+                        alt={member.name || 'Member'}
+                        className="w-full h-full object-cover glitch-image hover-chromatic-image"
                       />
-                    </label>
-                  </div>
-                )}
-                <div className="absolute top-0 left-0 w-3 h-3 border-t border-l border-primary/60" />
-                <div className="absolute top-0 right-0 w-3 h-3 border-t border-r border-primary/60" />
-                <div className="absolute bottom-0 left-0 w-3 h-3 border-b border-l border-primary/60" />
-                <div className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-primary/60" />
-              </motion.div>
-
-              <motion.div
-                className="space-y-4"
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-              >
-                <div className="data-label mb-2">// PROFILE.DATA.STREAM</div>
-                <div className="cyber-grid p-4">
-                  <div className="data-label mb-2">Subject</div>
-                  {editMode ? (
-                    <Input
-                      value={adminSettings?.shellMember?.name || ''}
-                      onChange={(e) => setAdminSettings((prev) => ({ ...(prev || {}), shellMember: { ...(prev?.shellMember || {}), name: e.target.value } }))}
-                      className="bg-card border-border font-mono text-xl"
-                      placeholder="Member name"
-                    />
-                  ) : (
-                    <p className="text-xl font-bold font-mono hover-chromatic">{adminSettings?.shellMember?.name || 'Unknown'}</p>
-                  )}
-                </div>
-
-                <div className="cyber-grid p-4">
-                  <div className="data-label mb-2">Role</div>
-                  {editMode ? (
-                    <Input
-                      value={adminSettings?.shellMember?.role || ''}
-                      onChange={(e) => setAdminSettings((prev) => ({ ...(prev || {}), shellMember: { ...(prev?.shellMember || {}), role: e.target.value } }))}
-                      className="bg-card border-border font-mono"
-                      placeholder="Member role"
-                    />
-                  ) : (
-                    <p className="text-muted-foreground font-mono">{adminSettings?.shellMember?.role || ''}</p>
-                  )}
-                </div>
-
-                <div className="cyber-grid p-4">
-                  <div className="data-label mb-2">Bio</div>
-                  {editMode ? (
-                    <Textarea
-                      value={adminSettings?.shellMember?.bio || ''}
-                      onChange={(e) => setAdminSettings((prev) => ({ ...(prev || {}), shellMember: { ...(prev?.shellMember || {}), bio: e.target.value } }))}
-                      className="bg-card border-border font-mono min-h-[100px]"
-                      placeholder="Member bio"
-                    />
-                  ) : (
-                    <p className="text-foreground/90 leading-relaxed font-mono text-sm">{adminSettings?.shellMember?.bio || ''}</p>
-                  )}
-                </div>
-
-                {editMode && (
-                  <div className="cyber-grid p-4">
-                    <div className="data-label mb-2">Social Links</div>
-                    <div className="space-y-2">
-                      {(['instagram', 'spotify', 'youtube', 'soundcloud', 'twitter', 'website'] as const).map((platform) => (
-                        <div key={platform} className="flex gap-2 items-center">
-                          <Label className="font-mono text-xs w-24">{platform}</Label>
-                          <Input
-                            value={adminSettings?.shellMember?.social?.[platform] || ''}
-                            onChange={(e) => setAdminSettings((prev) => ({
-                              ...(prev || {}),
-                              shellMember: {
-                                ...(prev?.shellMember || {}),
-                                social: { ...(prev?.shellMember?.social || {}), [platform]: e.target.value },
-                              },
-                            }))}
-                            className="bg-card border-border font-mono text-xs flex-1"
-                            placeholder={`https://${platform}.com/...`}
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <User className="w-20 h-20 text-muted-foreground" />
+                      </div>
+                    )}
+                    {editMode && (
+                      <div className="absolute bottom-2 right-2 flex gap-1">
+                        <label className="cursor-pointer">
+                          <Upload className="w-6 h-6 text-primary bg-background/80 p-1 rounded" />
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0]
+                              if (file) {
+                                const reader = new FileReader()
+                                reader.onloadend = () => {
+                                  setAdminSettings((prev) => {
+                                    const members = [...(prev?.shellMembers || (prev?.shellMember ? [prev.shellMember] : []))]
+                                    members[memberIndex] = { ...members[memberIndex], photo: reader.result as string }
+                                    return { ...(prev || {}), shellMembers: members }
+                                  })
+                                }
+                                reader.readAsDataURL(file)
+                              }
+                            }}
                           />
-                        </div>
-                      ))}
+                        </label>
+                      </div>
+                    )}
+                    <div className="absolute top-0 left-0 w-3 h-3 border-t border-l border-primary/60" />
+                    <div className="absolute top-0 right-0 w-3 h-3 border-t border-r border-primary/60" />
+                    <div className="absolute bottom-0 left-0 w-3 h-3 border-b border-l border-primary/60" />
+                    <div className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-primary/60" />
+                  </motion.div>
+
+                  <motion.div
+                    className="space-y-4"
+                    initial={{ opacity: 0, x: 20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6, delay: 0.2 }}
+                  >
+                    <div className="data-label mb-2">// PROFILE.DATA.STREAM [{String(memberIndex).padStart(2, '0')}]</div>
+                    <div className="cyber-grid p-4">
+                      <div className="data-label mb-2">Subject</div>
+                      {editMode ? (
+                        <Input
+                          value={member?.name || ''}
+                          onChange={(e) => setAdminSettings((prev) => {
+                            const members = [...(prev?.shellMembers || (prev?.shellMember ? [prev.shellMember] : []))]
+                            members[memberIndex] = { ...members[memberIndex], name: e.target.value }
+                            return { ...(prev || {}), shellMembers: members }
+                          })}
+                          className="bg-card border-border font-mono text-xl"
+                          placeholder="Member name"
+                        />
+                      ) : (
+                        <p className="text-xl font-bold font-mono hover-chromatic">{member?.name || 'Unknown'}</p>
+                      )}
                     </div>
-                  </div>
-                )}
 
-                {!editMode && adminSettings?.shellMember?.social && (
-                  <div className="flex flex-wrap gap-3 pt-2">
-                    {Object.entries(adminSettings.shellMember.social).filter(([, url]) => url).map(([platform, url]) => (
-                      <a
-                        key={platform}
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs font-mono text-muted-foreground hover:text-primary transition-colors uppercase tracking-wider hover-chromatic"
+                    <div className="cyber-grid p-4">
+                      <div className="data-label mb-2">Role</div>
+                      {editMode ? (
+                        <Input
+                          value={member?.role || ''}
+                          onChange={(e) => setAdminSettings((prev) => {
+                            const members = [...(prev?.shellMembers || (prev?.shellMember ? [prev.shellMember] : []))]
+                            members[memberIndex] = { ...members[memberIndex], role: e.target.value }
+                            return { ...(prev || {}), shellMembers: members }
+                          })}
+                          className="bg-card border-border font-mono"
+                          placeholder="Member role"
+                        />
+                      ) : (
+                        <p className="text-muted-foreground font-mono">{member?.role || ''}</p>
+                      )}
+                    </div>
+
+                    <div className="cyber-grid p-4">
+                      <div className="data-label mb-2">Bio</div>
+                      {editMode ? (
+                        <Textarea
+                          value={member?.bio || ''}
+                          onChange={(e) => setAdminSettings((prev) => {
+                            const members = [...(prev?.shellMembers || (prev?.shellMember ? [prev.shellMember] : []))]
+                            members[memberIndex] = { ...members[memberIndex], bio: e.target.value }
+                            return { ...(prev || {}), shellMembers: members }
+                          })}
+                          className="bg-card border-border font-mono min-h-[100px]"
+                          placeholder="Member bio"
+                        />
+                      ) : (
+                        <p className="text-foreground/90 leading-relaxed font-mono text-sm">{member?.bio || ''}</p>
+                      )}
+                    </div>
+
+                    {editMode && (
+                      <div className="cyber-grid p-4">
+                        <div className="data-label mb-2">Social Links</div>
+                        <div className="space-y-2">
+                          {(['instagram', 'spotify', 'youtube', 'soundcloud', 'twitter', 'website'] as const).map((platform) => (
+                            <div key={platform} className="flex gap-2 items-center">
+                              <Label className="font-mono text-xs w-24">{platform}</Label>
+                              <Input
+                                value={member?.social?.[platform] || ''}
+                                onChange={(e) => setAdminSettings((prev) => {
+                                  const members = [...(prev?.shellMembers || (prev?.shellMember ? [prev.shellMember] : []))]
+                                  members[memberIndex] = {
+                                    ...members[memberIndex],
+                                    social: { ...(members[memberIndex]?.social || {}), [platform]: e.target.value },
+                                  }
+                                  return { ...(prev || {}), shellMembers: members }
+                                })}
+                                className="bg-card border-border font-mono text-xs flex-1"
+                                placeholder={`https://${platform}.com/...`}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {!editMode && member?.social && (
+                      <div className="flex flex-wrap gap-3 pt-2">
+                        {Object.entries(member.social).filter(([, url]) => url).map(([platform, url]) => (
+                          <a
+                            key={platform}
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs font-mono text-muted-foreground hover:text-primary transition-colors uppercase tracking-wider hover-chromatic"
+                          >
+                            [{platform}]
+                          </a>
+                        ))}
+                      </div>
+                    )}
+
+                    {editMode && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="mt-2"
+                        onClick={() => setAdminSettings((prev) => {
+                          const members = [...(prev?.shellMembers || (prev?.shellMember ? [prev.shellMember] : []))]
+                          members.splice(memberIndex, 1)
+                          return { ...(prev || {}), shellMembers: members }
+                        })}
                       >
-                        [{platform}]
-                      </a>
-                    ))}
-                  </div>
-                )}
+                        <Trash className="w-4 h-4 mr-1" />
+                        Remove Member
+                      </Button>
+                    )}
 
-                <div className="flex items-center gap-2 text-[9px] text-primary/40 pt-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-pulse" />
-                  <span>SESSION ACTIVE</span>
+                    <div className="flex items-center gap-2 text-[9px] text-primary/40 pt-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-pulse" />
+                      <span>SESSION ACTIVE</span>
+                    </div>
+                  </motion.div>
                 </div>
-              </motion.div>
+              ))}
+
+              {(adminSettings?.shellMembers || (adminSettings?.shellMember ? [adminSettings.shellMember] : [])).length === 0 && !editMode && (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground font-mono">No members configured</p>
+                </div>
+              )}
             </div>
           </motion.div>
         </div>
@@ -1472,10 +1581,21 @@ In the end, Zardonic will unite listeners with Superstars.
                 />
               </h2>
               {editMode && (
-                <Button onClick={addGig} className="gap-2">
-                  <Plus className="w-4 h-4" />
-                  Add Gig
-                </Button>
+                <div className="flex gap-2">
+                  <Button onClick={addGig} className="gap-2">
+                    <Plus className="w-4 h-4" />
+                    Add Gig
+                  </Button>
+                  <Button 
+                    onClick={() => handleFetchBandsintownEvents(false)} 
+                    variant="outline" 
+                    className="gap-2"
+                    disabled={bandsintownFetching}
+                  >
+                    <ArrowsClockwise className={`w-4 h-4 ${bandsintownFetching ? 'animate-spin' : ''}`} />
+                    Sync Gigs
+                  </Button>
+                </div>
               )}
             </div>
 
@@ -1629,10 +1749,21 @@ In the end, Zardonic will unite listeners with Superstars.
                 />
               </h2>
               {editMode && (
-                <Button onClick={addRelease} className="gap-2">
-                  <Plus className="w-4 h-4" />
-                  Add Release
-                </Button>
+                <div className="flex gap-2">
+                  <Button onClick={addRelease} className="gap-2">
+                    <Plus className="w-4 h-4" />
+                    Add Release
+                  </Button>
+                  <Button 
+                    onClick={() => handleFetchITunesReleases(false)} 
+                    variant="outline" 
+                    className="gap-2"
+                    disabled={iTunesFetching}
+                  >
+                    <ArrowsClockwise className={`w-4 h-4 ${iTunesFetching ? 'animate-spin' : ''}`} />
+                    Sync Releases
+                  </Button>
+                </div>
               )}
             </div>
 
@@ -2909,9 +3040,15 @@ In the end, Zardonic will unite listeners with Superstars.
                                 transition={{ delay: 0.1 }}
                               >
                                 <div className="data-label mb-2">// EVENT.DATA.STREAM</div>
+                                {cyberpunkOverlay.data.title && (
+                                  <p className="text-sm font-mono text-primary uppercase tracking-widest mb-1">{cyberpunkOverlay.data.title}</p>
+                                )}
                                 <h2 className="text-4xl md:text-5xl font-bold uppercase font-mono mb-4 hover-chromatic crt-flash-in" data-text={cyberpunkOverlay.data.venue}>
                                   {cyberpunkOverlay.data.venue}
                                 </h2>
+                                {cyberpunkOverlay.data.soldOut && (
+                                  <span className="inline-block px-3 py-1 text-xs font-mono uppercase tracking-wider bg-destructive/20 text-destructive border border-destructive/30">SOLD OUT</span>
+                                )}
                               </motion.div>
 
                               <div className="grid md:grid-cols-2 gap-6">
@@ -2923,9 +3060,15 @@ In the end, Zardonic will unite listeners with Superstars.
                                 >
                                   <div className="data-label mb-2">Location</div>
                                   <div className="flex items-center gap-2 text-xl font-mono hover-chromatic">
-                                    <MapPin className="w-5 h-5 text-primary" />
+                                    <MapPin className="w-5 h-5 text-primary shrink-0" />
                                     {cyberpunkOverlay.data.location}
                                   </div>
+                                  {cyberpunkOverlay.data.streetAddress && (
+                                    <p className="text-sm text-muted-foreground font-mono mt-2 ml-7">
+                                      {cyberpunkOverlay.data.streetAddress}
+                                      {cyberpunkOverlay.data.postalCode && `, ${cyberpunkOverlay.data.postalCode}`}
+                                    </p>
+                                  )}
                                 </motion.div>
 
                                 <motion.div 
@@ -2936,7 +3079,7 @@ In the end, Zardonic will unite listeners with Superstars.
                                 >
                                   <div className="data-label mb-2">Date & Time</div>
                                   <div className="flex items-center gap-2 text-xl font-mono hover-chromatic">
-                                    <CalendarBlank className="w-5 h-5 text-primary" />
+                                    <CalendarBlank className="w-5 h-5 text-primary shrink-0" />
                                     {new Date(cyberpunkOverlay.data.date).toLocaleDateString('en-US', { 
                                       weekday: 'long', 
                                       year: 'numeric', 
@@ -2944,10 +3087,55 @@ In the end, Zardonic will unite listeners with Superstars.
                                       day: 'numeric' 
                                     })}
                                   </div>
+                                  {cyberpunkOverlay.data.startsAt && (
+                                    <p className="text-sm text-muted-foreground font-mono mt-2 ml-7">
+                                      Doors: {new Date(cyberpunkOverlay.data.startsAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                                    </p>
+                                  )}
                                 </motion.div>
                               </div>
 
-                              {cyberpunkOverlay.data.support && (
+                              {cyberpunkOverlay.data.description && (
+                                <motion.div 
+                                  className="cyber-grid p-4"
+                                  initial={{ opacity: 0, x: -10 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{ delay: 0.35 }}
+                                >
+                                  <div className="data-label mb-2">Info</div>
+                                  <p className="text-foreground/90 font-mono text-sm">{cyberpunkOverlay.data.description}</p>
+                                </motion.div>
+                              )}
+
+                              {cyberpunkOverlay.data.lineup && cyberpunkOverlay.data.lineup.length > 0 && (
+                                <motion.div 
+                                  className="cyber-grid p-4"
+                                  initial={{ opacity: 0, x: -10 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{ delay: 0.4 }}
+                                >
+                                  <div className="data-label mb-3">Lineup</div>
+                                  <div className="flex flex-wrap gap-2">
+                                    {cyberpunkOverlay.data.lineup.map((artist: string, i: number) => (
+                                      <motion.span
+                                        key={i}
+                                        className={`px-3 py-1.5 text-sm font-mono border transition-colors ${
+                                          artist.toLowerCase() === 'zardonic'
+                                            ? 'bg-primary/20 border-primary/50 text-primary font-bold'
+                                            : 'bg-card border-border text-foreground/80 hover:border-primary/30'
+                                        }`}
+                                        initial={{ opacity: 0, scale: 0.8 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ delay: 0.4 + i * 0.05 }}
+                                      >
+                                        {artist}
+                                      </motion.span>
+                                    ))}
+                                  </div>
+                                </motion.div>
+                              )}
+
+                              {cyberpunkOverlay.data.support && !cyberpunkOverlay.data.lineup?.length && (
                                 <motion.div 
                                   className="cyber-grid p-4"
                                   initial={{ opacity: 0, x: -10 }}
@@ -2966,10 +3154,14 @@ In the end, Zardonic will unite listeners with Superstars.
                                   animate={{ opacity: 1, y: 0 }}
                                   transition={{ delay: 0.5 }}
                                 >
-                                  <Button asChild size="lg" className="w-full md:w-auto font-mono uppercase tracking-wider hover-noise cyber-border">
+                                  <Button 
+                                    asChild 
+                                    size="lg" 
+                                    className={`w-full md:w-auto font-mono uppercase tracking-wider hover-noise cyber-border ${cyberpunkOverlay.data.soldOut ? 'opacity-50 pointer-events-none' : ''}`}
+                                  >
                                     <a href={cyberpunkOverlay.data.ticketUrl} target="_blank" rel="noopener noreferrer">
                                       <Ticket className="w-5 h-5 mr-2" />
-                                      <span className="hover-chromatic">Get Tickets</span>
+                                      <span className="hover-chromatic">{cyberpunkOverlay.data.soldOut ? 'Sold Out' : 'Get Tickets'}</span>
                                     </a>
                                   </Button>
                                 </motion.div>
@@ -2981,7 +3173,7 @@ In the end, Zardonic will unite listeners with Superstars.
                                 animate={{ opacity: 1 }}
                                 transition={{ delay: 0.6 }}
                               >
-                                <div className="data-label">// SYSTEM.STATUS: [ACTIVE]</div>
+                                <div className="data-label">// SYSTEM.STATUS: [{cyberpunkOverlay.data.soldOut ? 'SOLD_OUT' : 'ACTIVE'}]</div>
                               </motion.div>
                             </motion.div>
                           )}
