@@ -33,8 +33,16 @@ describe('fetchBandsintownEvents', () => {
       venue: 'Club Voltage',
       location: 'Berlin, BE, Germany',
       date: '2025-03-15',
+      startsAt: '2025-03-15T20:00:00',
       ticketUrl: 'https://bandsintown.com/e/101',
       lineup: ['Zardonic', 'Support Act'],
+      streetAddress: undefined,
+      postalCode: undefined,
+      latitude: undefined,
+      longitude: undefined,
+      soldOut: false,
+      description: undefined,
+      title: undefined,
     })
   })
 

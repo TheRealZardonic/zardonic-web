@@ -119,6 +119,7 @@ export interface AdminSettings {
   contactInfo?: ContactInfo
   legalContent?: LegalContent
   shellMember?: ShellMember
+  shellMembers?: ShellMember[]
   customSocialLinks?: CustomSocialLink[]
   glitchTextSettings?: {
     enabled?: boolean

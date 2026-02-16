@@ -3,8 +3,16 @@ export interface BandsintownEvent {
   venue: string
   location: string
   date: string
+  startsAt?: string
   ticketUrl?: string
   lineup?: string[]
+  streetAddress?: string
+  postalCode?: string
+  latitude?: string
+  longitude?: string
+  soldOut?: boolean
+  description?: string
+  title?: string
 }
 
 const ARTIST_NAME = 'Zardonic'
@@ -35,8 +43,16 @@ export async function fetchBandsintownEvents(): Promise<BandsintownEvent[]> {
       date: event.datetime
         ? new Date(event.datetime).toISOString().split('T')[0]
         : '',
-      ticketUrl: event.url || undefined,
+      startsAt: event.starts_at || event.datetime || undefined,
+      ticketUrl: event.offers?.[0]?.url || event.url || undefined,
       lineup: event.lineup || [],
+      streetAddress: event.venue?.street_address || undefined,
+      postalCode: event.venue?.postal_code || undefined,
+      latitude: event.venue?.latitude || undefined,
+      longitude: event.venue?.longitude || undefined,
+      soldOut: event.sold_out || false,
+      description: event.description || undefined,
+      title: event.title || undefined,
     }))
   } catch (error) {
     console.error('Error fetching Bandsintown events:', error)
