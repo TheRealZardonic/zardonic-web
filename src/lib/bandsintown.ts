@@ -24,7 +24,14 @@ export async function fetchBandsintownEvents(): Promise<BandsintownEvent[]> {
     )
 
     if (!response.ok) {
-      console.error('Bandsintown API responded with', response.status)
+      // Check if it's a configuration error (503)
+      if (response.status === 503) {
+        const data = await response.json().catch(() => ({}))
+        console.error('Bandsintown API configuration error:', data.message || 'Service unavailable')
+        console.error('Please set BANDSINTOWN_API_KEY environment variable to enable gig syncing')
+      } else {
+        console.error('Bandsintown API responded with', response.status)
+      }
       return []
     }
 

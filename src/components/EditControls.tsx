@@ -319,98 +319,225 @@ export default function EditControls({
                   <X size={20} />
                 </button>
               </div>
-              <div className="space-y-3">
-                {[
-                  { key: 'primaryColor' as const, label: 'Primary Color', placeholder: 'oklch(0.55 0.25 25)' },
-                  { key: 'accentColor' as const, label: 'Accent Color', placeholder: 'oklch(0.6 0.2 200)' },
-                  { key: 'backgroundColor' as const, label: 'Background Color', placeholder: 'oklch(0.1 0 0)' },
-                  { key: 'foregroundColor' as const, label: 'Foreground Color', placeholder: 'oklch(0.95 0 0)' },
-                  { key: 'borderColor' as const, label: 'Border Color', placeholder: 'oklch(0.25 0 0)' },
-                  { key: 'hoverColor' as const, label: 'Hover Color', placeholder: 'oklch(0.55 0.25 25)' },
-                ].map(({ key, label, placeholder }) => (
-                  <div key={key} className="space-y-1">
-                    <Label className="font-mono text-xs">{label}</Label>
-                    <div className="flex gap-2 items-center">
-                      <input
-                        type="color"
-                        value={isHexColor(theme[key] || '') ? theme[key]! : '#000000'}
-                        onChange={(e) => updateTheme(key, e.target.value)}
-                        className="w-8 h-8 shrink-0 cursor-pointer border border-border rounded-sm bg-transparent p-0"
-                        title="Pick a color"
-                      />
+              <div className="space-y-6">
+                {/* Base Colors */}
+                <div className="space-y-3">
+                  <h4 className="font-mono text-sm font-bold text-primary">Base Colors</h4>
+                  {[
+                    { key: 'primaryColor' as const, label: 'Primary Color', placeholder: 'oklch(0.55 0.25 25)' },
+                    { key: 'primaryForegroundColor' as const, label: 'Primary Foreground', placeholder: 'oklch(1 0 0)' },
+                    { key: 'accentColor' as const, label: 'Accent Color', placeholder: 'oklch(0.6 0.2 200)' },
+                    { key: 'accentForegroundColor' as const, label: 'Accent Foreground', placeholder: 'oklch(1 0 0)' },
+                    { key: 'backgroundColor' as const, label: 'Background Color', placeholder: 'oklch(0.1 0 0)' },
+                    { key: 'foregroundColor' as const, label: 'Foreground Color', placeholder: 'oklch(0.95 0 0)' },
+                  ].map(({ key, label, placeholder }) => (
+                    <div key={key} className="space-y-1">
+                      <Label className="font-mono text-xs">{label}</Label>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="color"
+                          value={isHexColor(theme[key] || '') ? theme[key]! : '#000000'}
+                          onChange={(e) => updateTheme(key, e.target.value)}
+                          className="w-8 h-8 shrink-0 cursor-pointer border border-border rounded-sm bg-transparent p-0"
+                          title="Pick a color"
+                        />
+                        <Input
+                          value={theme[key] || ''}
+                          onChange={(e) => updateTheme(key, e.target.value)}
+                          placeholder={placeholder}
+                          className="bg-background border-border font-mono text-xs flex-1"
+                        />
+                        {theme[key] && (
+                          <div
+                            className="w-8 h-8 border border-border rounded-sm shrink-0"
+                            style={{ backgroundColor: theme[key] }}
+                            title={theme[key]}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* UI Element Colors */}
+                <div className="space-y-3">
+                  <h4 className="font-mono text-sm font-bold text-primary">UI Elements</h4>
+                  {[
+                    { key: 'cardColor' as const, label: 'Card Background', placeholder: 'oklch(0.15 0 0)' },
+                    { key: 'cardForegroundColor' as const, label: 'Card Foreground', placeholder: 'oklch(0.95 0 0)' },
+                    { key: 'popoverColor' as const, label: 'Popover Background', placeholder: 'oklch(0.12 0 0)' },
+                    { key: 'popoverForegroundColor' as const, label: 'Popover Foreground', placeholder: 'oklch(0.95 0 0)' },
+                    { key: 'borderColor' as const, label: 'Border Color', placeholder: 'oklch(0.25 0 0)' },
+                    { key: 'inputColor' as const, label: 'Input Color', placeholder: 'oklch(0.25 0 0)' },
+                    { key: 'ringColor' as const, label: 'Focus Ring Color', placeholder: 'oklch(0.55 0.25 25)' },
+                    { key: 'hoverColor' as const, label: 'Hover Color', placeholder: 'oklch(0.55 0.25 25)' },
+                  ].map(({ key, label, placeholder }) => (
+                    <div key={key} className="space-y-1">
+                      <Label className="font-mono text-xs">{label}</Label>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="color"
+                          value={isHexColor(theme[key] || '') ? theme[key]! : '#000000'}
+                          onChange={(e) => updateTheme(key, e.target.value)}
+                          className="w-8 h-8 shrink-0 cursor-pointer border border-border rounded-sm bg-transparent p-0"
+                          title="Pick a color"
+                        />
+                        <Input
+                          value={theme[key] || ''}
+                          onChange={(e) => updateTheme(key, e.target.value)}
+                          placeholder={placeholder}
+                          className="bg-background border-border font-mono text-xs flex-1"
+                        />
+                        {theme[key] && (
+                          <div
+                            className="w-8 h-8 border border-border rounded-sm shrink-0"
+                            style={{ backgroundColor: theme[key] }}
+                            title={theme[key]}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Secondary & Muted Colors */}
+                <div className="space-y-3">
+                  <h4 className="font-mono text-sm font-bold text-primary">Secondary & Muted</h4>
+                  {[
+                    { key: 'secondaryColor' as const, label: 'Secondary Color', placeholder: 'oklch(0.2 0 0)' },
+                    { key: 'secondaryForegroundColor' as const, label: 'Secondary Foreground', placeholder: 'oklch(0.95 0 0)' },
+                    { key: 'mutedColor' as const, label: 'Muted Color', placeholder: 'oklch(0.25 0 0)' },
+                    { key: 'mutedForegroundColor' as const, label: 'Muted Foreground', placeholder: 'oklch(0.6 0 0)' },
+                  ].map(({ key, label, placeholder }) => (
+                    <div key={key} className="space-y-1">
+                      <Label className="font-mono text-xs">{label}</Label>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="color"
+                          value={isHexColor(theme[key] || '') ? theme[key]! : '#000000'}
+                          onChange={(e) => updateTheme(key, e.target.value)}
+                          className="w-8 h-8 shrink-0 cursor-pointer border border-border rounded-sm bg-transparent p-0"
+                          title="Pick a color"
+                        />
+                        <Input
+                          value={theme[key] || ''}
+                          onChange={(e) => updateTheme(key, e.target.value)}
+                          placeholder={placeholder}
+                          className="bg-background border-border font-mono text-xs flex-1"
+                        />
+                        {theme[key] && (
+                          <div
+                            className="w-8 h-8 border border-border rounded-sm shrink-0"
+                            style={{ backgroundColor: theme[key] }}
+                            title={theme[key]}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Destructive Colors */}
+                <div className="space-y-3">
+                  <h4 className="font-mono text-sm font-bold text-primary">Destructive</h4>
+                  {[
+                    { key: 'destructiveColor' as const, label: 'Destructive Color', placeholder: 'oklch(0.45 0.22 25)' },
+                    { key: 'destructiveForegroundColor' as const, label: 'Destructive Foreground', placeholder: 'oklch(1 0 0)' },
+                  ].map(({ key, label, placeholder }) => (
+                    <div key={key} className="space-y-1">
+                      <Label className="font-mono text-xs">{label}</Label>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="color"
+                          value={isHexColor(theme[key] || '') ? theme[key]! : '#000000'}
+                          onChange={(e) => updateTheme(key, e.target.value)}
+                          className="w-8 h-8 shrink-0 cursor-pointer border border-border rounded-sm bg-transparent p-0"
+                          title="Pick a color"
+                        />
+                        <Input
+                          value={theme[key] || ''}
+                          onChange={(e) => updateTheme(key, e.target.value)}
+                          placeholder={placeholder}
+                          className="bg-background border-border font-mono text-xs flex-1"
+                        />
+                        {theme[key] && (
+                          <div
+                            className="w-8 h-8 border border-border rounded-sm shrink-0"
+                            style={{ backgroundColor: theme[key] }}
+                            title={theme[key]}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Fonts */}
+                <div className="space-y-3">
+                  <h4 className="font-mono text-sm font-bold text-primary">Fonts</h4>
+                  {([
+                    { key: 'fontHeading' as const, label: 'Heading Font', placeholder: 'Orbitron, sans-serif', options: ['Orbitron', 'Rajdhani', 'Exo 2', 'Audiowide', 'Share Tech', 'Russo One', 'Teko', 'system-ui'] },
+                    { key: 'fontBody' as const, label: 'Body Font', placeholder: 'system-ui, sans-serif', options: ['system-ui', 'Inter', 'Roboto', 'Open Sans', 'Lato', 'Poppins', 'Source Sans Pro', 'Share Tech Mono'] },
+                    { key: 'fontMono' as const, label: 'Mono Font', placeholder: 'Share Tech Mono, monospace', options: ['Share Tech Mono', 'JetBrains Mono', 'Fira Code', 'Source Code Pro', 'IBM Plex Mono', 'Courier New'] },
+                  ] as const).map(({ key, label, placeholder, options }) => (
+                    <div key={key} className="space-y-1">
+                      <Label className="font-mono text-xs">{label}</Label>
+                      <select
+                        value={(options as readonly string[]).includes(theme[key] || '') ? theme[key] : ''}
+                        onChange={(e) => { if (e.target.value) updateTheme(key, e.target.value) }}
+                        className="w-full bg-background text-foreground border border-border rounded-md px-3 py-2 font-mono text-xs"
+                      >
+                        <option value="">Custom...</option>
+                        {options.map((font) => (
+                          <option key={font} value={font} style={{ fontFamily: font }}>
+                            {font}
+                          </option>
+                        ))}
+                      </select>
                       <Input
                         value={theme[key] || ''}
                         onChange={(e) => updateTheme(key, e.target.value)}
                         placeholder={placeholder}
-                        className="bg-background border-border font-mono text-xs flex-1"
+                        className="bg-background border-border font-mono text-xs"
                       />
-                      {theme[key] && (
-                        <div
-                          className="w-8 h-8 border border-border rounded-sm shrink-0"
-                          style={{ backgroundColor: theme[key] }}
-                          title={theme[key]}
-                        />
-                      )}
                     </div>
-                  </div>
-                ))}
-                {([
-                  { key: 'fontHeading' as const, label: 'Heading Font', placeholder: 'Orbitron, sans-serif', options: ['Orbitron', 'Rajdhani', 'Exo 2', 'Audiowide', 'Share Tech', 'Russo One', 'Teko', 'system-ui'] },
-                  { key: 'fontBody' as const, label: 'Body Font', placeholder: 'system-ui, sans-serif', options: ['system-ui', 'Inter', 'Roboto', 'Open Sans', 'Lato', 'Poppins', 'Source Sans Pro', 'Share Tech Mono'] },
-                  { key: 'fontMono' as const, label: 'Mono Font', placeholder: 'Share Tech Mono, monospace', options: ['Share Tech Mono', 'JetBrains Mono', 'Fira Code', 'Source Code Pro', 'IBM Plex Mono', 'Courier New'] },
-                ] as const).map(({ key, label, placeholder, options }) => (
-                  <div key={key} className="space-y-1">
-                    <Label className="font-mono text-xs">{label}</Label>
-                    <select
-                      value={(options as readonly string[]).includes(theme[key] || '') ? theme[key] : ''}
-                      onChange={(e) => { if (e.target.value) updateTheme(key, e.target.value) }}
-                      className="w-full bg-background text-foreground border border-border rounded-md px-3 py-2 font-mono text-xs"
-                    >
-                      <option value="">Custom...</option>
-                      {options.map((font) => (
-                        <option key={font} value={font} style={{ fontFamily: font }}>
-                          {font}
-                        </option>
-                      ))}
-                    </select>
+                  ))}
+                </div>
+                
+                {/* Other Settings */}
+                <div className="space-y-3">
+                  <h4 className="font-mono text-sm font-bold text-primary">Other Settings</h4>
+                  <div className="space-y-1">
+                    <Label className="font-mono text-xs">Favicon URL</Label>
                     <Input
-                      value={theme[key] || ''}
-                      onChange={(e) => updateTheme(key, e.target.value)}
-                      placeholder={placeholder}
+                      value={adminSettings?.faviconUrl || ''}
+                      onChange={(e) =>
+                        onAdminSettingsChange?.({
+                          ...adminSettings,
+                          faviconUrl: e.target.value,
+                        })
+                      }
+                      placeholder="https://example.com/favicon.ico"
                       className="bg-background border-border font-mono text-xs"
                     />
                   </div>
-                ))}
-                <div className="space-y-1">
-                  <Label className="font-mono text-xs">Favicon URL</Label>
-                  <Input
-                    value={adminSettings?.faviconUrl || ''}
-                    onChange={(e) =>
-                      onAdminSettingsChange?.({
-                        ...adminSettings,
-                        faviconUrl: e.target.value,
-                      })
-                    }
-                    placeholder="https://example.com/favicon.ico"
-                    className="bg-background border-border font-mono text-xs"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="font-mono text-xs">Border Radius</Label>
-                  <select
-                    value={theme.borderRadius || ''}
-                    onChange={(e) => updateTheme('borderRadius', e.target.value)}
-                    className="w-full bg-background text-foreground border border-border rounded-md px-3 py-2 font-mono text-xs"
-                  >
-                    <option value="">Default (0.125rem)</option>
-                    <option value="0rem">Square (0rem)</option>
-                    <option value="0.125rem">Minimal (0.125rem)</option>
-                    <option value="0.25rem">Small (0.25rem)</option>
-                    <option value="0.375rem">Medium (0.375rem)</option>
-                    <option value="0.5rem">Large (0.5rem)</option>
-                    <option value="0.75rem">XL (0.75rem)</option>
-                    <option value="1rem">2XL (1rem)</option>
-                  </select>
+                  <div className="space-y-1">
+                    <Label className="font-mono text-xs">Border Radius</Label>
+                    <select
+                      value={theme.borderRadius || ''}
+                      onChange={(e) => updateTheme('borderRadius', e.target.value)}
+                      className="w-full bg-background text-foreground border border-border rounded-md px-3 py-2 font-mono text-xs"
+                    >
+                      <option value="">Default (0.125rem)</option>
+                      <option value="0rem">Square (0rem)</option>
+                      <option value="0.125rem">Minimal (0.125rem)</option>
+                      <option value="0.25rem">Small (0.25rem)</option>
+                      <option value="0.375rem">Medium (0.375rem)</option>
+                      <option value="0.5rem">Large (0.5rem)</option>
+                      <option value="0.75rem">XL (0.75rem)</option>
+                      <option value="1rem">2XL (1rem)</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             </motion.div>

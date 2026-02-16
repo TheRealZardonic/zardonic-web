@@ -7,7 +7,7 @@ import { useAnalytics, trackClick, trackPageView, trackHeatmapClick, trackRedire
 import { fetchITunesReleases, type ITunesRelease } from '@/lib/itunes'
 import { fetchOdesliLinks } from '@/lib/odesli'
 import { fetchBandsintownEvents } from '@/lib/bandsintown'
-import { toDirectImageUrl } from '@/lib/image-cache'
+import { toDirectImageUrl, normalizeImageUrl } from '@/lib/image-cache'
 import { 
   applyConfigOverrides,
   OVERLAY_LOADING_TEXT_INTERVAL_MS,
@@ -419,35 +419,99 @@ In the end, Zardonic will unite listeners with Superstars.
     const t = adminSettings?.theme
     if (!t) return
     const root = document.documentElement
+    
+    // Base colors
     if (t.primaryColor) root.style.setProperty('--primary', t.primaryColor)
+    if (t.primaryForegroundColor) root.style.setProperty('--primary-foreground', t.primaryForegroundColor)
     if (t.accentColor) {
       root.style.setProperty('--accent', t.accentColor)
       // Also update hover-color fallback when accent changes and no specific hover color is set
       if (!t.hoverColor) root.style.setProperty('--hover-color', t.accentColor)
     }
+    if (t.accentForegroundColor) root.style.setProperty('--accent-foreground', t.accentForegroundColor)
     if (t.backgroundColor) root.style.setProperty('--background', t.backgroundColor)
     if (t.foregroundColor) root.style.setProperty('--foreground', t.foregroundColor)
-    if (t.fontHeading) root.style.setProperty('--font-heading', t.fontHeading)
-    if (t.fontBody) root.style.setProperty('--font-body', t.fontBody)
-    if (t.fontMono) root.style.setProperty('--font-mono', t.fontMono)
+    
+    // Card colors
+    if (t.cardColor) root.style.setProperty('--card', t.cardColor)
+    if (t.cardForegroundColor) root.style.setProperty('--card-foreground', t.cardForegroundColor)
+    
+    // Popover colors
+    if (t.popoverColor) root.style.setProperty('--popover', t.popoverColor)
+    if (t.popoverForegroundColor) root.style.setProperty('--popover-foreground', t.popoverForegroundColor)
+    
+    // Secondary colors
+    if (t.secondaryColor) root.style.setProperty('--secondary', t.secondaryColor)
+    if (t.secondaryForegroundColor) root.style.setProperty('--secondary-foreground', t.secondaryForegroundColor)
+    
+    // Muted colors
+    if (t.mutedColor) root.style.setProperty('--muted', t.mutedColor)
+    if (t.mutedForegroundColor) root.style.setProperty('--muted-foreground', t.mutedForegroundColor)
+    
+    // Destructive colors
+    if (t.destructiveColor) root.style.setProperty('--destructive', t.destructiveColor)
+    if (t.destructiveForegroundColor) root.style.setProperty('--destructive-foreground', t.destructiveForegroundColor)
+    
+    // Border, input, ring
     if (t.borderColor) {
       root.style.setProperty('--border-color', t.borderColor)
       root.style.setProperty('--border', t.borderColor)
     }
+    if (t.inputColor) root.style.setProperty('--input', t.inputColor)
+    if (t.ringColor) root.style.setProperty('--ring', t.ringColor)
     if (t.hoverColor) root.style.setProperty('--hover-color', t.hoverColor)
+    
+    // Border radius
     if (t.borderRadius) root.style.setProperty('--radius', t.borderRadius)
+    
+    // Fonts
+    if (t.fontHeading) root.style.setProperty('--font-heading', t.fontHeading)
+    if (t.fontBody) root.style.setProperty('--font-body', t.fontBody)
+    if (t.fontMono) root.style.setProperty('--font-mono', t.fontMono)
+    
     return () => {
+      // Base colors
       root.style.removeProperty('--primary')
+      root.style.removeProperty('--primary-foreground')
       root.style.removeProperty('--accent')
+      root.style.removeProperty('--accent-foreground')
       root.style.removeProperty('--background')
       root.style.removeProperty('--foreground')
+      
+      // Card colors
+      root.style.removeProperty('--card')
+      root.style.removeProperty('--card-foreground')
+      
+      // Popover colors
+      root.style.removeProperty('--popover')
+      root.style.removeProperty('--popover-foreground')
+      
+      // Secondary colors
+      root.style.removeProperty('--secondary')
+      root.style.removeProperty('--secondary-foreground')
+      
+      // Muted colors
+      root.style.removeProperty('--muted')
+      root.style.removeProperty('--muted-foreground')
+      
+      // Destructive colors
+      root.style.removeProperty('--destructive')
+      root.style.removeProperty('--destructive-foreground')
+      
+      // Border, input, ring
+      root.style.removeProperty('--border-color')
+      root.style.removeProperty('--border')
+      root.style.removeProperty('--input')
+      root.style.removeProperty('--ring')
+      root.style.removeProperty('--hover-color')
+      
+      // Border radius
+      root.style.removeProperty('--radius')
+      
+      // Fonts
       root.style.removeProperty('--font-heading')
       root.style.removeProperty('--font-body')
       root.style.removeProperty('--font-mono')
-      root.style.removeProperty('--border-color')
-      root.style.removeProperty('--border')
-      root.style.removeProperty('--hover-color')
-      root.style.removeProperty('--radius')
     }
   }, [adminSettings?.theme])
 
@@ -1440,6 +1504,15 @@ In the end, Zardonic will unite listeners with Superstars.
                           updated[index] = { ...updated[index], src: e.target.value }
                           setSiteData((data) => data ? { ...data, creditHighlights: updated } : data!)
                         }}
+                        onBlur={(e) => {
+                          // Normalize the URL when the user leaves the field
+                          const normalized = normalizeImageUrl(e.target.value)
+                          if (normalized !== e.target.value) {
+                            const updated = [...siteData.creditHighlights]
+                            updated[index] = { ...updated[index], src: normalized }
+                            setSiteData((data) => data ? { ...data, creditHighlights: updated } : data!)
+                          }
+                        }}
                         placeholder="https://drive.google.com/file/d/... or image URL"
                         className="bg-card border-border font-mono text-xs"
                       />
@@ -1975,7 +2048,9 @@ In the end, Zardonic will unite listeners with Superstars.
                         const formData = new FormData(e.currentTarget)
                         const url = formData.get('imageUrl') as string
                         if (url && siteData) {
-                          setSiteData({ ...siteData, gallery: [...siteData.gallery, url] })
+                          // Normalize the URL (convert Google Drive to wsrv.nl)
+                          const normalizedUrl = normalizeImageUrl(url)
+                          setSiteData({ ...siteData, gallery: [...siteData.gallery, normalizedUrl] })
                           toast.success('Image URL added to gallery')
                           e.currentTarget.reset()
                         }
