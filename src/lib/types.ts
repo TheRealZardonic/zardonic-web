@@ -6,6 +6,7 @@ export interface SectionVisibility {
   gallery?: boolean
   connect?: boolean
   creditHighlights?: boolean
+  shell?: boolean
 }
 
 export interface ThemeCustomization {
@@ -13,6 +14,9 @@ export interface ThemeCustomization {
   accentColor?: string
   backgroundColor?: string
   foregroundColor?: string
+  borderColor?: string
+  hoverColor?: string
+  borderRadius?: string
   fontHeading?: string
   fontBody?: string
   fontMono?: string
@@ -47,6 +51,44 @@ export interface SectionLabels {
   creditHighlights?: string
   media?: string
   tourDates?: string
+  shell?: string
+}
+
+export interface ContactInfo {
+  managementName?: string
+  managementEmail?: string
+  bookingEmail?: string
+  pressEmail?: string
+  formTitle?: string
+  formNameLabel?: string
+  formNamePlaceholder?: string
+  formEmailLabel?: string
+  formEmailPlaceholder?: string
+  formSubjectLabel?: string
+  formSubjectPlaceholder?: string
+  formMessageLabel?: string
+  formMessagePlaceholder?: string
+  formButtonText?: string
+}
+
+export interface LegalContent {
+  impressumCustom?: string
+  privacyCustom?: string
+}
+
+export interface ShellMember {
+  name?: string
+  role?: string
+  bio?: string
+  photo?: string
+  social?: Record<string, string>
+}
+
+export interface CustomSocialLink {
+  id: string
+  label: string
+  url: string
+  icon?: string
 }
 
 export interface TerminalCommand {
@@ -74,4 +116,13 @@ export interface AdminSettings {
   sectionLabels?: SectionLabels
   terminalCommands?: TerminalCommand[]
   sectionOrder?: string[]
+  contactInfo?: ContactInfo
+  legalContent?: LegalContent
+  shellMember?: ShellMember
+  customSocialLinks?: CustomSocialLink[]
+  glitchTextSettings?: {
+    enabled?: boolean
+    intervalMs?: number
+    durationMs?: number
+  }
 }
