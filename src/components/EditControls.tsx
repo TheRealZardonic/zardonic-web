@@ -167,6 +167,7 @@ export default function EditControls({
   const theme = adminSettings?.theme ?? {}
   const anim = adminSettings?.animations ?? {}
   const progModes = adminSettings?.progressiveOverlayModes ?? {}
+  const isHexColor = (v: string) => /^#[0-9a-fA-F]{6}$/i.test(v)
 
   const sectionItems: { key: keyof SectionVisibility; label: string }[] = [
     { key: 'bio', label: 'Biography' },
@@ -275,7 +276,14 @@ export default function EditControls({
                 ].map(({ key, label, placeholder }) => (
                   <div key={key} className="space-y-1">
                     <Label className="font-mono text-xs">{label}</Label>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 items-center">
+                      <input
+                        type="color"
+                        value={isHexColor(theme[key] || '') ? theme[key]! : '#000000'}
+                        onChange={(e) => updateTheme(key, e.target.value)}
+                        className="w-8 h-8 shrink-0 cursor-pointer border border-border rounded-sm bg-transparent p-0"
+                        title="Pick a color"
+                      />
                       <Input
                         value={theme[key] || ''}
                         onChange={(e) => updateTheme(key, e.target.value)}
@@ -286,18 +294,31 @@ export default function EditControls({
                         <div
                           className="w-8 h-8 border border-border rounded-sm shrink-0"
                           style={{ backgroundColor: theme[key] }}
+                          title={theme[key]}
                         />
                       )}
                     </div>
                   </div>
                 ))}
-                {[
-                  { key: 'fontHeading' as const, label: 'Heading Font', placeholder: 'Orbitron, sans-serif' },
-                  { key: 'fontBody' as const, label: 'Body Font', placeholder: 'system-ui, sans-serif' },
-                  { key: 'fontMono' as const, label: 'Mono Font', placeholder: 'Share Tech Mono, monospace' },
-                ].map(({ key, label, placeholder }) => (
+                {([
+                  { key: 'fontHeading' as const, label: 'Heading Font', placeholder: 'Orbitron, sans-serif', options: ['Orbitron', 'Rajdhani', 'Exo 2', 'Audiowide', 'Share Tech', 'Russo One', 'Teko', 'system-ui'] },
+                  { key: 'fontBody' as const, label: 'Body Font', placeholder: 'system-ui, sans-serif', options: ['system-ui', 'Inter', 'Roboto', 'Open Sans', 'Lato', 'Poppins', 'Source Sans Pro', 'Share Tech Mono'] },
+                  { key: 'fontMono' as const, label: 'Mono Font', placeholder: 'Share Tech Mono, monospace', options: ['Share Tech Mono', 'JetBrains Mono', 'Fira Code', 'Source Code Pro', 'IBM Plex Mono', 'Courier New'] },
+                ] as const).map(({ key, label, placeholder, options }) => (
                   <div key={key} className="space-y-1">
                     <Label className="font-mono text-xs">{label}</Label>
+                    <select
+                      value={(options as readonly string[]).includes(theme[key] || '') ? theme[key] : ''}
+                      onChange={(e) => { if (e.target.value) updateTheme(key, e.target.value) }}
+                      className="w-full bg-background text-foreground border border-border rounded-md px-3 py-2 font-mono text-xs"
+                    >
+                      <option value="">Custom...</option>
+                      {options.map((font) => (
+                        <option key={font} value={font} style={{ fontFamily: font }}>
+                          {font}
+                        </option>
+                      ))}
+                    </select>
                     <Input
                       value={theme[key] || ''}
                       onChange={(e) => updateTheme(key, e.target.value)}
