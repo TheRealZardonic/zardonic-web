@@ -13,7 +13,6 @@ vi.mock('@upstash/redis', () => ({
   },
 }))
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Res = { status: ReturnType<typeof vi.fn>; json: ReturnType<typeof vi.fn>; end: ReturnType<typeof vi.fn> }
 
 function mockRes(): Res {
@@ -29,7 +28,7 @@ function mockRes(): Res {
 }
 
 // We need a dynamic import so vi.mock is applied before the handler reads it
-const { default: handler, timingSafeEqual } = await import('../../api/kv.js')
+const { default: handler, timingSafeEqual } = await import('../../api/kv.ts')
 
 // ---------------------------------------------------------------------------
 describe('KV API handler', () => {

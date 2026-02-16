@@ -1,3 +1,4 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { Redis } from '@upstash/redis'
 
 // Check if KV is properly configured
@@ -6,19 +7,19 @@ const isKVConfigured = () => {
 }
 
 // Lazily create the Redis client so we only instantiate when env vars are set
-let _redis
-function getRedis() {
+let _redis: Redis | null = null
+function getRedis(): Redis {
   if (!_redis) {
     _redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+      url: process.env.UPSTASH_REDIS_REST_URL!,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN!,
     })
   }
   return _redis
 }
 
 // Constant-time string comparison to prevent timing attacks on hash comparison
-export function timingSafeEqual(a, b) {
+export function timingSafeEqual(a: string, b: string): boolean {
   if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) return false
   let result = 0
   for (let i = 0; i < a.length; i++) {
@@ -27,7 +28,7 @@ export function timingSafeEqual(a, b) {
   return result === 0
 }
 
-export default async function handler(req, res) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') {
     return res.status(200).end()
   }
@@ -45,7 +46,7 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      const { key } = req.query
+      const key = req.query.key
       if (!key || typeof key !== 'string') return res.status(400).json({ error: 'key is required' })
 
       const value = await kv.get(key)
@@ -57,22 +58,22 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Request body is required' })
       }
 
-      const { key, value } = req.body
+      const { key, value } = req.body as { key: unknown; value: unknown }
       if (!key || typeof key !== 'string') return res.status(400).json({ error: 'key is required' })
       if (value === undefined) return res.status(400).json({ error: 'value is required' })
 
-      const token = req.headers['x-admin-token'] || ''
+      const token = (req.headers['x-admin-token'] as string) || ''
 
       if (key === 'admin-password-hash') {
         // Allow setting password if none exists (initial setup)
         // Require auth to change an existing password
-        const existingHash = await kv.get('admin-password-hash')
+        const existingHash = await kv.get<string>('admin-password-hash')
         if (existingHash && !timingSafeEqual(token, existingHash)) {
           return res.status(403).json({ error: 'Unauthorized' })
         }
       } else {
         // All other writes require a valid admin token
-        const adminHash = await kv.get('admin-password-hash')
+        const adminHash = await kv.get<string>('admin-password-hash')
         if (adminHash && !timingSafeEqual(token, adminHash)) {
           return res.status(403).json({ error: 'Unauthorized' })
         }
