@@ -9,6 +9,9 @@ interface EditableHeadingProps {
   onChange: (value: string) => void
   className?: string
   dataText?: string
+  glitchEnabled?: boolean
+  glitchIntervalMs?: number
+  glitchDurationMs?: number
 }
 
 /**
@@ -22,6 +25,9 @@ export default function EditableHeading({
   onChange,
   className = '',
   dataText,
+  glitchEnabled = true,
+  glitchIntervalMs,
+  glitchDurationMs,
 }: EditableHeadingProps) {
   const [showOriginal, setShowOriginal] = useState(false)
   const displayText = text || defaultText
@@ -29,13 +35,15 @@ export default function EditableHeading({
 
   // Periodic glitch flash showing original text
   useEffect(() => {
-    if (!isCustom) return
+    if (!isCustom || !glitchEnabled) return
+    const duration = glitchDurationMs ?? 120
+    const baseInterval = glitchIntervalMs ?? 8000
     const interval = setInterval(() => {
       setShowOriginal(true)
-      setTimeout(() => setShowOriginal(false), 120)
-    }, 8000 + Math.random() * 4000)
+      setTimeout(() => setShowOriginal(false), duration)
+    }, baseInterval + Math.random() * 4000)
     return () => clearInterval(interval)
-  }, [isCustom])
+  }, [isCustom, glitchEnabled, glitchIntervalMs, glitchDurationMs])
 
   if (editMode) {
     return (

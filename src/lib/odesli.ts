@@ -11,6 +11,9 @@ interface OdesliResponse {
     soundcloud?: OdesliPlatformLink
     youtube?: OdesliPlatformLink
     bandcamp?: OdesliPlatformLink
+    deezer?: OdesliPlatformLink
+    tidal?: OdesliPlatformLink
+    amazon?: OdesliPlatformLink
     [key: string]: OdesliPlatformLink | undefined
   }
   entitiesByUniqueId: {
@@ -30,6 +33,9 @@ export interface OdesliResult {
   soundcloud?: string
   youtube?: string
   bandcamp?: string
+  deezer?: string
+  tidal?: string
+  amazonMusic?: string
 }
 
 export async function fetchOdesliLinks(streamingUrl: string): Promise<OdesliResult | null> {
@@ -60,6 +66,15 @@ export async function fetchOdesliLinks(streamingUrl: string): Promise<OdesliResu
     }
     if (data.linksByPlatform?.bandcamp) {
       result.bandcamp = data.linksByPlatform.bandcamp.url
+    }
+    if (data.linksByPlatform?.deezer) {
+      result.deezer = data.linksByPlatform.deezer.url
+    }
+    if (data.linksByPlatform?.tidal) {
+      result.tidal = data.linksByPlatform.tidal.url
+    }
+    if (data.linksByPlatform?.amazon) {
+      result.amazonMusic = data.linksByPlatform.amazon.url
     }
 
     return result

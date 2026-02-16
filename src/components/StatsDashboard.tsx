@@ -162,9 +162,9 @@ function HeatmapCanvas({ points }: { points: HeatmapPoint[] }) {
     <div className="space-y-2">
       <canvas
         ref={canvasRef}
-        width={400}
-        height={300}
-        className="w-full h-48 border border-primary/10 bg-black/50"
+        width={600}
+        height={400}
+        className="w-full h-64 border border-primary/10 bg-black/50"
       />
       <div className="flex items-center gap-4 text-[9px] font-mono text-primary/40">
         <div className="flex items-center gap-1">
@@ -340,6 +340,26 @@ export default function StatsDashboard({ open, onClose }: StatsDashboardProps) {
 
               {/* Breakdown grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {/* Countries */}
+                {Object.keys(data.countries).length > 0 && (
+                  <div className="space-y-3 sm:col-span-2">
+                    <h3 className="text-xs text-primary/60 tracking-wider uppercase border-b border-primary/10 pb-1">
+                      <Globe size={12} className="inline mr-1" /> Visitor Countries
+                    </h3>
+                    <BarChart data={data.countries} color="bg-primary/70" />
+                  </div>
+                )}
+
+                {/* Languages */}
+                {Object.keys(data.languages || {}).length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="text-xs text-primary/60 tracking-wider uppercase border-b border-primary/10 pb-1">
+                      {'>'} Languages
+                    </h3>
+                    <TopList items={data.languages || {}} />
+                  </div>
+                )}
+
                 {/* Devices */}
                 <div className="space-y-3">
                   <h3 className="text-xs text-primary/60 tracking-wider uppercase border-b border-primary/10 pb-1">
@@ -405,7 +425,7 @@ export default function StatsDashboard({ open, onClose }: StatsDashboardProps) {
               {/* Click table by element */}
               <div className="space-y-3">
                 <h3 className="text-xs text-primary/60 tracking-wider uppercase border-b border-primary/10 pb-1">
-                  {'>'} Clicks by Element Type
+                  {'>'} Clicks by Button / Element
                 </h3>
                 <ClickTable points={data.heatmap} />
               </div>

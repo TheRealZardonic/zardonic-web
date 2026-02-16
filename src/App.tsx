@@ -115,6 +115,9 @@ interface Release {
   youtube?: string
   bandcamp?: string
   appleMusic?: string
+  deezer?: string
+  tidal?: string
+  amazonMusic?: string
 }
 
 interface Member {
@@ -160,6 +163,10 @@ export interface SiteData {
     bandcamp?: string
     tiktok?: string
     appleMusic?: string
+    twitter?: string
+    twitch?: string
+    beatport?: string
+    linktree?: string
   }
 }
 
@@ -242,7 +249,17 @@ function App() {
       const x = e.clientX / window.innerWidth
       const y = (e.clientY + window.scrollY) / document.documentElement.scrollHeight
       const target = e.target as HTMLElement
-      const el = target.tagName.toLowerCase() + (target.className ? '.' + String(target.className).split(' ')[0].slice(0, 20) : '')
+      // Find the closest interactive element for meaningful names
+      const interactive = target.closest('button, a, [role="button"]') as HTMLElement | null
+      let el: string
+      if (interactive) {
+        const text = interactive.textContent?.trim().slice(0, 30) || ''
+        const tag = interactive.tagName.toLowerCase()
+        const ariaLabel = interactive.getAttribute('aria-label') || interactive.getAttribute('title') || ''
+        el = ariaLabel || text || `${tag}`
+      } else {
+        el = target.textContent?.trim().slice(0, 30) || target.tagName.toLowerCase()
+      }
       trackHeatmapClick(x, y, el)
     }
     document.addEventListener('click', handleClick)
@@ -363,7 +380,7 @@ In the end, Zardonic will unite listeners with Superstars.
   const sectionLabels = adminSettings?.sectionLabels ?? {}
   const terminalCommands = adminSettings?.terminalCommands ?? []
 
-  const DEFAULT_SECTION_ORDER = ['bio', 'creditHighlights', 'music', 'gigs', 'releases', 'gallery', 'media', 'connect']
+  const DEFAULT_SECTION_ORDER = ['bio', 'shell', 'creditHighlights', 'music', 'gigs', 'releases', 'gallery', 'media', 'connect']
   const sectionOrder = adminSettings?.sectionOrder ?? DEFAULT_SECTION_ORDER
   const getSectionOrder = useCallback((section: string) => {
     const idx = sectionOrder.indexOf(section)
@@ -400,6 +417,9 @@ In the end, Zardonic will unite listeners with Superstars.
     if (t.fontHeading) root.style.setProperty('--font-heading', t.fontHeading)
     if (t.fontBody) root.style.setProperty('--font-body', t.fontBody)
     if (t.fontMono) root.style.setProperty('--font-mono', t.fontMono)
+    if (t.borderColor) root.style.setProperty('--border-color', t.borderColor)
+    if (t.hoverColor) root.style.setProperty('--hover-color', t.hoverColor)
+    if (t.borderRadius) root.style.setProperty('--radius', t.borderRadius)
     return () => {
       root.style.removeProperty('--primary')
       root.style.removeProperty('--accent')
@@ -408,6 +428,9 @@ In the end, Zardonic will unite listeners with Superstars.
       root.style.removeProperty('--font-heading')
       root.style.removeProperty('--font-body')
       root.style.removeProperty('--font-mono')
+      root.style.removeProperty('--border-color')
+      root.style.removeProperty('--hover-color')
+      root.style.removeProperty('--radius')
     }
   }, [adminSettings?.theme])
 
@@ -565,6 +588,9 @@ In the end, Zardonic will unite listeners with Superstars.
                 if (links.soundcloud) release.soundcloud = links.soundcloud
                 if (links.youtube) release.youtube = links.youtube
                 if (links.bandcamp) release.bandcamp = links.bandcamp
+                if (links.deezer) release.deezer = links.deezer
+                if (links.tidal) release.tidal = links.tidal
+                if (links.amazonMusic) release.amazonMusic = links.amazonMusic
               }
             } catch (e) {
               console.error(`Odesli enrichment failed for ${release.title}:`, e)
@@ -589,6 +615,9 @@ In the end, Zardonic will unite listeners with Superstars.
             youtube: r.youtube || '',
             bandcamp: r.bandcamp || '',
             appleMusic: r.appleMusic || '',
+            deezer: r.deezer || '',
+            tidal: r.tidal || '',
+            amazonMusic: r.amazonMusic || '',
           }))
 
         // Update existing releases with better artwork from iTunes
@@ -603,6 +632,9 @@ In the end, Zardonic will unite listeners with Superstars.
               soundcloud: match.soundcloud || existing.soundcloud,
               youtube: match.youtube || existing.youtube,
               bandcamp: match.bandcamp || existing.bandcamp,
+              deezer: match.deezer || existing.deezer,
+              tidal: match.tidal || existing.tidal,
+              amazonMusic: match.amazonMusic || existing.amazonMusic,
             }
           }
           return existing
@@ -1009,6 +1041,9 @@ In the end, Zardonic will unite listeners with Superstars.
                 defaultText="BIOGRAPHY"
                 editMode={editMode}
                 onChange={(v) => updateSectionLabel('biography', v)}
+                glitchEnabled={adminSettings?.glitchTextSettings?.enabled !== false}
+                glitchIntervalMs={adminSettings?.glitchTextSettings?.intervalMs}
+                glitchDurationMs={adminSettings?.glitchTextSettings?.durationMs}
               />
             </h2>
             
@@ -1072,6 +1107,184 @@ In the end, Zardonic will unite listeners with Superstars.
                 </motion.div>
               </div>
             )}
+          </motion.div>
+        </div>
+      </section>
+      </>
+      )}
+      </div>
+
+      <div style={{ order: getSectionOrder('shell') }}>
+      {vis.shell !== false && (
+      <>
+      <Separator className="bg-border" />
+      <section id="shell" className="py-24 px-4 scanline-effect crt-effect">
+        <div className="container mx-auto max-w-4xl">
+          <motion.div
+            initial={{ opacity: 0, x: -30, filter: 'blur(10px)', clipPath: 'polygon(0 0, 0 0, 0 100%, 0 100%)' }}
+            whileInView={{ opacity: 1, x: 0, filter: 'blur(0px)', clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' }}
+            viewport={{ once: true }}
+            transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
+          >
+            <h2 className="text-4xl md:text-6xl font-bold mb-12 uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-data-corrupt" data-text={sectionLabels.shell || 'SHELL'}>
+              <EditableHeading
+                text={sectionLabels.shell || ''}
+                defaultText="SHELL"
+                editMode={editMode}
+                onChange={(v) => updateSectionLabel('shell', v)}
+                glitchEnabled={adminSettings?.glitchTextSettings?.enabled !== false}
+                glitchIntervalMs={adminSettings?.glitchTextSettings?.intervalMs}
+                glitchDurationMs={adminSettings?.glitchTextSettings?.durationMs}
+              />
+            </h2>
+
+            <div className="grid md:grid-cols-[280px_1fr] gap-8 items-start">
+              <motion.div
+                className="relative aspect-square bg-muted border border-primary/30 overflow-hidden cyber-card"
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.1 }}
+              >
+                {adminSettings?.shellMember?.photo ? (
+                  <img
+                    src={adminSettings.shellMember.photo}
+                    alt={adminSettings.shellMember.name || 'Member'}
+                    className="w-full h-full object-cover glitch-image hover-chromatic-image"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <User className="w-20 h-20 text-muted-foreground" />
+                  </div>
+                )}
+                {editMode && (
+                  <div className="absolute bottom-2 right-2">
+                    <label className="cursor-pointer">
+                      <Upload className="w-6 h-6 text-primary bg-background/80 p-1 rounded" />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) {
+                            const reader = new FileReader()
+                            reader.onloadend = () => {
+                              setAdminSettings((prev) => ({
+                                ...(prev || {}),
+                                shellMember: { ...(prev?.shellMember || {}), photo: reader.result as string },
+                              }))
+                            }
+                            reader.readAsDataURL(file)
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+                )}
+                <div className="absolute top-0 left-0 w-3 h-3 border-t border-l border-primary/60" />
+                <div className="absolute top-0 right-0 w-3 h-3 border-t border-r border-primary/60" />
+                <div className="absolute bottom-0 left-0 w-3 h-3 border-b border-l border-primary/60" />
+                <div className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-primary/60" />
+              </motion.div>
+
+              <motion.div
+                className="space-y-4"
+                initial={{ opacity: 0, x: 20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
+                <div className="data-label mb-2">// PROFILE.DATA.STREAM</div>
+                <div className="cyber-grid p-4">
+                  <div className="data-label mb-2">Subject</div>
+                  {editMode ? (
+                    <Input
+                      value={adminSettings?.shellMember?.name || ''}
+                      onChange={(e) => setAdminSettings((prev) => ({ ...(prev || {}), shellMember: { ...(prev?.shellMember || {}), name: e.target.value } }))}
+                      className="bg-card border-border font-mono text-xl"
+                      placeholder="Member name"
+                    />
+                  ) : (
+                    <p className="text-xl font-bold font-mono hover-chromatic">{adminSettings?.shellMember?.name || 'Unknown'}</p>
+                  )}
+                </div>
+
+                <div className="cyber-grid p-4">
+                  <div className="data-label mb-2">Role</div>
+                  {editMode ? (
+                    <Input
+                      value={adminSettings?.shellMember?.role || ''}
+                      onChange={(e) => setAdminSettings((prev) => ({ ...(prev || {}), shellMember: { ...(prev?.shellMember || {}), role: e.target.value } }))}
+                      className="bg-card border-border font-mono"
+                      placeholder="Member role"
+                    />
+                  ) : (
+                    <p className="text-muted-foreground font-mono">{adminSettings?.shellMember?.role || ''}</p>
+                  )}
+                </div>
+
+                <div className="cyber-grid p-4">
+                  <div className="data-label mb-2">Bio</div>
+                  {editMode ? (
+                    <Textarea
+                      value={adminSettings?.shellMember?.bio || ''}
+                      onChange={(e) => setAdminSettings((prev) => ({ ...(prev || {}), shellMember: { ...(prev?.shellMember || {}), bio: e.target.value } }))}
+                      className="bg-card border-border font-mono min-h-[100px]"
+                      placeholder="Member bio"
+                    />
+                  ) : (
+                    <p className="text-foreground/90 leading-relaxed font-mono text-sm">{adminSettings?.shellMember?.bio || ''}</p>
+                  )}
+                </div>
+
+                {editMode && (
+                  <div className="cyber-grid p-4">
+                    <div className="data-label mb-2">Social Links</div>
+                    <div className="space-y-2">
+                      {(['instagram', 'spotify', 'youtube', 'soundcloud', 'twitter', 'website'] as const).map((platform) => (
+                        <div key={platform} className="flex gap-2 items-center">
+                          <Label className="font-mono text-xs w-24">{platform}</Label>
+                          <Input
+                            value={adminSettings?.shellMember?.social?.[platform] || ''}
+                            onChange={(e) => setAdminSettings((prev) => ({
+                              ...(prev || {}),
+                              shellMember: {
+                                ...(prev?.shellMember || {}),
+                                social: { ...(prev?.shellMember?.social || {}), [platform]: e.target.value },
+                              },
+                            }))}
+                            className="bg-card border-border font-mono text-xs flex-1"
+                            placeholder={`https://${platform}.com/...`}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {!editMode && adminSettings?.shellMember?.social && (
+                  <div className="flex flex-wrap gap-3 pt-2">
+                    {Object.entries(adminSettings.shellMember.social).filter(([, url]) => url).map(([platform, url]) => (
+                      <a
+                        key={platform}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-mono text-muted-foreground hover:text-primary transition-colors uppercase tracking-wider hover-chromatic"
+                      >
+                        [{platform}]
+                      </a>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 text-[9px] text-primary/40 pt-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-pulse" />
+                  <span>SESSION ACTIVE</span>
+                </div>
+              </motion.div>
+            </div>
           </motion.div>
         </div>
       </section>
@@ -1201,6 +1414,9 @@ In the end, Zardonic will unite listeners with Superstars.
                 defaultText="MUSIC PLAYER"
                 editMode={editMode}
                 onChange={(v) => updateSectionLabel('musicPlayer', v)}
+                glitchEnabled={adminSettings?.glitchTextSettings?.enabled !== false}
+                glitchIntervalMs={adminSettings?.glitchTextSettings?.intervalMs}
+                glitchDurationMs={adminSettings?.glitchTextSettings?.durationMs}
               />
             </h2>
 
@@ -1250,6 +1466,9 @@ In the end, Zardonic will unite listeners with Superstars.
                   defaultText="UPCOMING GIGS"
                   editMode={editMode}
                   onChange={(v) => updateSectionLabel('upcomingGigs', v)}
+                  glitchEnabled={adminSettings?.glitchTextSettings?.enabled !== false}
+                  glitchIntervalMs={adminSettings?.glitchTextSettings?.intervalMs}
+                  glitchDurationMs={adminSettings?.glitchTextSettings?.durationMs}
                 />
               </h2>
               {editMode && (
@@ -1404,6 +1623,9 @@ In the end, Zardonic will unite listeners with Superstars.
                   defaultText="RELEASES"
                   editMode={editMode}
                   onChange={(v) => updateSectionLabel('releases', v)}
+                  glitchEnabled={adminSettings?.glitchTextSettings?.enabled !== false}
+                  glitchIntervalMs={adminSettings?.glitchTextSettings?.intervalMs}
+                  glitchDurationMs={adminSettings?.glitchTextSettings?.durationMs}
                 />
               </h2>
               {editMode && (
@@ -1584,6 +1806,9 @@ In the end, Zardonic will unite listeners with Superstars.
                   defaultText="GALLERY"
                   editMode={editMode}
                   onChange={(v) => updateSectionLabel('gallery', v)}
+                  glitchEnabled={adminSettings?.glitchTextSettings?.enabled !== false}
+                  glitchIntervalMs={adminSettings?.glitchTextSettings?.intervalMs}
+                  glitchDurationMs={adminSettings?.glitchTextSettings?.durationMs}
                 />
               </h2>
               {editMode && (
@@ -1744,131 +1969,74 @@ In the end, Zardonic will unite listeners with Superstars.
                 defaultText="CONNECT"
                 editMode={editMode}
                 onChange={(v) => updateSectionLabel('connect', v)}
+                glitchEnabled={adminSettings?.glitchTextSettings?.enabled !== false}
+                glitchIntervalMs={adminSettings?.glitchTextSettings?.intervalMs}
+                glitchDurationMs={adminSettings?.glitchTextSettings?.durationMs}
               />
             </h2>
 
             {editMode && (
               <div className="mb-8 space-y-4 max-w-md mx-auto text-left">
-                <div>
-                  <Label className="font-mono">Instagram</Label>
-                  <Input
-                    value={siteData.social.instagram || ''}
-                    onChange={(e) => setSiteData((data) => data ? { ...data, social: { ...data.social, instagram: e.target.value } } : data!)}
-                    className="bg-card border-border"
-                  />
-                </div>
-                <div>
-                  <Label className="font-mono">Facebook</Label>
-                  <Input
-                    value={siteData.social.facebook || ''}
-                    onChange={(e) => setSiteData((data) => data ? { ...data, social: { ...data.social, facebook: e.target.value } } : data!)}
-                    className="bg-card border-border"
-                  />
-                </div>
-                <div>
-                  <Label className="font-mono">Spotify</Label>
-                  <Input
-                    value={siteData.social.spotify || ''}
-                    onChange={(e) => setSiteData((data) => data ? { ...data, social: { ...data.social, spotify: e.target.value } } : data!)}
-                    className="bg-card border-border"
-                  />
-                </div>
-                <div>
-                  <Label className="font-mono">YouTube</Label>
-                  <Input
-                    value={siteData.social.youtube || ''}
-                    onChange={(e) => setSiteData((data) => data ? { ...data, social: { ...data.social, youtube: e.target.value } } : data!)}
-                    className="bg-card border-border"
-                  />
-                </div>
+                {([
+                  { key: 'instagram', label: 'Instagram' },
+                  { key: 'facebook', label: 'Facebook' },
+                  { key: 'spotify', label: 'Spotify' },
+                  { key: 'youtube', label: 'YouTube' },
+                  { key: 'soundcloud', label: 'SoundCloud' },
+                  { key: 'bandcamp', label: 'Bandcamp' },
+                  { key: 'tiktok', label: 'TikTok' },
+                  { key: 'appleMusic', label: 'Apple Music' },
+                  { key: 'twitter', label: 'Twitter / X' },
+                  { key: 'twitch', label: 'Twitch' },
+                  { key: 'beatport', label: 'Beatport' },
+                  { key: 'linktree', label: 'Linktree' },
+                ] as { key: keyof typeof siteData.social; label: string }[]).map(({ key, label }) => (
+                  <div key={key}>
+                    <Label className="font-mono">{label}</Label>
+                    <Input
+                      value={siteData.social[key] || ''}
+                      onChange={(e) => setSiteData((data) => data ? { ...data, social: { ...data.social, [key]: e.target.value } } : data!)}
+                      className="bg-card border-border"
+                      placeholder={`https://${label.toLowerCase().replace(/\s.*/, '')}.com/...`}
+                    />
+                  </div>
+                ))}
               </div>
             )}
 
             <div className="flex flex-wrap justify-center gap-6">
-              {siteData.social.instagram && (
-                <motion.a
-                  href={siteData.social.instagram}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: 0.1, ease: [0.25, 0.46, 0.45, 0.94] }}
-                  className="text-foreground hover:text-primary transition-colors hover-glitch hover-chromatic relative"
-                >
-                  <InstagramLogo className="w-12 h-12" weight="fill" />
-                </motion.a>
-              )}
-              {siteData.social.facebook && (
-                <motion.a
-                  href={siteData.social.facebook}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-                  className="text-foreground hover:text-primary transition-colors hover-glitch hover-chromatic relative"
-                >
-                  <FacebookLogo className="w-12 h-12" weight="fill" />
-                </motion.a>
-              )}
-              {siteData.social.spotify && (
-                <motion.a
-                  href={siteData.social.spotify}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
-                  className="text-foreground hover:text-primary transition-colors hover-glitch hover-chromatic relative"
-                >
-                  <SpotifyLogo className="w-12 h-12" weight="fill" />
-                </motion.a>
-              )}
-              {siteData.social.youtube && (
-                <motion.a
-                  href={siteData.social.youtube}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
-                  className="text-foreground hover:text-primary transition-colors hover-glitch hover-chromatic relative"
-                >
-                  <YoutubeLogo className="w-12 h-12" weight="fill" />
-                </motion.a>
-              )}
-              {siteData.social.soundcloud && (
-                <motion.a
-                  href={siteData.social.soundcloud}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
-                  className="text-foreground hover:text-primary transition-colors hover-glitch hover-chromatic relative"
-                >
-                  <SoundcloudLogo className="w-12 h-12" weight="fill" />
-                </motion.a>
-              )}
-              {siteData.social.tiktok && (
-                <motion.a
-                  href={siteData.social.tiktok}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
-                  className="text-foreground hover:text-primary transition-colors hover-glitch hover-chromatic relative"
-                >
-                  <TiktokLogo className="w-12 h-12" weight="fill" />
-                </motion.a>
-              )}
+              {([
+                { key: 'instagram', Icon: InstagramLogo, label: 'Instagram' },
+                { key: 'facebook', Icon: FacebookLogo, label: 'Facebook' },
+                { key: 'spotify', Icon: SpotifyLogo, label: 'Spotify' },
+                { key: 'youtube', Icon: YoutubeLogo, label: 'YouTube' },
+                { key: 'soundcloud', Icon: SoundcloudLogo, label: 'SoundCloud' },
+                { key: 'tiktok', Icon: TiktokLogo, label: 'TikTok' },
+                { key: 'bandcamp', Icon: Storefront, label: 'Bandcamp' },
+                { key: 'appleMusic', Icon: ApplePodcastsLogo, label: 'Apple Music' },
+                { key: 'twitter', Icon: MusicNote, label: 'X' },
+                { key: 'twitch', Icon: MusicNote, label: 'Twitch' },
+                { key: 'beatport', Icon: MusicNote, label: 'Beatport' },
+                { key: 'linktree', Icon: MusicNote, label: 'Linktree' },
+              ] as { key: keyof typeof siteData.social; Icon: React.ComponentType<{ className?: string; weight?: string }>; label: string }[]).map(({ key, Icon, label }, index) => (
+                siteData.social[key] ? (
+                  <motion.a
+                    key={key}
+                    href={siteData.social[key]}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.4, delay: 0.1 + index * 0.08, ease: [0.25, 0.46, 0.45, 0.94] }}
+                    className="text-foreground hover:text-primary transition-colors hover-glitch hover-chromatic relative flex flex-col items-center gap-1"
+                    title={label}
+                  >
+                    <Icon className="w-12 h-12" weight="fill" />
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">{label}</span>
+                  </motion.a>
+                ) : null
+              ))}
             </div>
 
             <motion.div
@@ -2116,6 +2284,23 @@ In the end, Zardonic will unite listeners with Superstars.
                                 </h2>
                               </motion.div>
 
+                              {editMode ? (
+                                <div className="space-y-4">
+                                  <div className="data-label mb-2">Custom Impressum Content (HTML supported)</div>
+                                  <Textarea
+                                    value={adminSettings?.legalContent?.impressumCustom || ''}
+                                    onChange={(e) => setAdminSettings((prev) => ({ ...(prev || {}), legalContent: { ...(prev?.legalContent || {}), impressumCustom: e.target.value } }))}
+                                    className="bg-card border-border font-mono text-sm min-h-[300px]"
+                                    placeholder="Enter custom Impressum text here. Leave empty for default content."
+                                  />
+                                </div>
+                              ) : adminSettings?.legalContent?.impressumCustom ? (
+                                <div className="cyber-grid p-4">
+                                  <div className="font-mono text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">
+                                    {adminSettings.legalContent.impressumCustom}
+                                  </div>
+                                </div>
+                              ) : (
                               <div className="space-y-6 text-foreground/90">
                                 <motion.div 
                                   className="cyber-grid p-4"
@@ -2237,6 +2422,7 @@ In the end, Zardonic will unite listeners with Superstars.
                                   </div>
                                 </motion.div>
                               </div>
+                              )}
 
                               <motion.div 
                                 className="pt-6 border-t border-border"
@@ -2289,6 +2475,24 @@ In the end, Zardonic will unite listeners with Superstars.
                                 </div>
                               </motion.div>
 
+                              {editMode ? (
+                                <div className="space-y-4">
+                                  <div className="data-label mb-2">Custom Privacy/Datenschutz Content</div>
+                                  <Textarea
+                                    value={adminSettings?.legalContent?.privacyCustom || ''}
+                                    onChange={(e) => setAdminSettings((prev) => ({ ...(prev || {}), legalContent: { ...(prev?.legalContent || {}), privacyCustom: e.target.value } }))}
+                                    className="bg-card border-border font-mono text-sm min-h-[300px]"
+                                    placeholder="Enter custom privacy policy text here. Leave empty for default content."
+                                  />
+                                </div>
+                              ) : adminSettings?.legalContent?.privacyCustom ? (
+                                <div className="cyber-grid p-4">
+                                  <div className="font-mono text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">
+                                    {adminSettings.legalContent.privacyCustom}
+                                  </div>
+                                </div>
+                              ) : (
+                              <>
                               {language === 'en' ? (
                                 <div className="space-y-6 text-foreground/90">
                                   <motion.div className="cyber-grid p-4" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
@@ -2456,6 +2660,8 @@ In the end, Zardonic will unite listeners with Superstars.
                                   </motion.div>
                                 </div>
                               )}
+                              </>
+                              )}
 
                               <motion.div 
                                 className="pt-6 border-t border-border"
@@ -2496,8 +2702,27 @@ In the end, Zardonic will unite listeners with Superstars.
                                 >
                                   <div className="data-label mb-3">Management</div>
                                   <div className="space-y-2 font-mono text-sm">
-                                    <p>Federico Augusto Ágreda Álvarez</p>
-                                    <p>E-Mail: <a href="mailto:info@zardonic.net" className="text-primary hover:underline">info@zardonic.net</a></p>
+                                    {editMode ? (
+                                      <>
+                                        <Input
+                                          value={adminSettings?.contactInfo?.managementName || 'Federico Augusto Ágreda Álvarez'}
+                                          onChange={(e) => setAdminSettings((prev) => ({ ...(prev || {}), contactInfo: { ...(prev?.contactInfo || {}), managementName: e.target.value } }))}
+                                          className="bg-card border-border font-mono text-sm"
+                                          placeholder="Management name"
+                                        />
+                                        <Input
+                                          value={adminSettings?.contactInfo?.managementEmail || 'info@zardonic.net'}
+                                          onChange={(e) => setAdminSettings((prev) => ({ ...(prev || {}), contactInfo: { ...(prev?.contactInfo || {}), managementEmail: e.target.value } }))}
+                                          className="bg-card border-border font-mono text-sm"
+                                          placeholder="Management email"
+                                        />
+                                      </>
+                                    ) : (
+                                      <>
+                                        <p>{adminSettings?.contactInfo?.managementName || 'Federico Augusto Ágreda Álvarez'}</p>
+                                        <p>E-Mail: <a href={`mailto:${adminSettings?.contactInfo?.managementEmail || 'info@zardonic.net'}`} className="text-primary hover:underline">{adminSettings?.contactInfo?.managementEmail || 'info@zardonic.net'}</a></p>
+                                      </>
+                                    )}
                                   </div>
                                 </motion.div>
 
@@ -2509,7 +2734,16 @@ In the end, Zardonic will unite listeners with Superstars.
                                 >
                                   <div className="data-label mb-3">Booking</div>
                                   <div className="space-y-2 font-mono text-sm">
-                                    <p>E-Mail: <a href="mailto:booking@zardonic.net" className="text-primary hover:underline">booking@zardonic.net</a></p>
+                                    {editMode ? (
+                                      <Input
+                                        value={adminSettings?.contactInfo?.bookingEmail || 'booking@zardonic.net'}
+                                        onChange={(e) => setAdminSettings((prev) => ({ ...(prev || {}), contactInfo: { ...(prev?.contactInfo || {}), bookingEmail: e.target.value } }))}
+                                        className="bg-card border-border font-mono text-sm"
+                                        placeholder="Booking email"
+                                      />
+                                    ) : (
+                                      <p>E-Mail: <a href={`mailto:${adminSettings?.contactInfo?.bookingEmail || 'booking@zardonic.net'}`} className="text-primary hover:underline">{adminSettings?.contactInfo?.bookingEmail || 'booking@zardonic.net'}</a></p>
+                                    )}
                                   </div>
                                 </motion.div>
 
@@ -2521,7 +2755,16 @@ In the end, Zardonic will unite listeners with Superstars.
                                 >
                                   <div className="data-label mb-3">Press / Media</div>
                                   <div className="space-y-2 font-mono text-sm">
-                                    <p>E-Mail: <a href="mailto:press@zardonic.net" className="text-primary hover:underline">press@zardonic.net</a></p>
+                                    {editMode ? (
+                                      <Input
+                                        value={adminSettings?.contactInfo?.pressEmail || 'press@zardonic.net'}
+                                        onChange={(e) => setAdminSettings((prev) => ({ ...(prev || {}), contactInfo: { ...(prev?.contactInfo || {}), pressEmail: e.target.value } }))}
+                                        className="bg-card border-border font-mono text-sm"
+                                        placeholder="Press email"
+                                      />
+                                    ) : (
+                                      <p>E-Mail: <a href={`mailto:${adminSettings?.contactInfo?.pressEmail || 'press@zardonic.net'}`} className="text-primary hover:underline">{adminSettings?.contactInfo?.pressEmail || 'press@zardonic.net'}</a></p>
+                                    )}
                                   </div>
                                 </motion.div>
 
@@ -2574,25 +2817,25 @@ In the end, Zardonic will unite listeners with Superstars.
                                     <input type="text" name="_hp" tabIndex={-1} autoComplete="off" aria-hidden="true" className="absolute opacity-0 h-0 w-0 overflow-hidden pointer-events-none" />
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                       <div>
-                                        <Label className="font-mono text-xs uppercase tracking-wide">Name</Label>
-                                        <Input name="name" required maxLength={100} placeholder="Your name" className="bg-card border-border font-mono mt-1" />
+                                        <Label className="font-mono text-xs uppercase tracking-wide">{adminSettings?.contactInfo?.formNameLabel || 'Name'}</Label>
+                                        <Input name="name" required maxLength={100} placeholder={adminSettings?.contactInfo?.formNamePlaceholder || 'Your name'} className="bg-card border-border font-mono mt-1" />
                                       </div>
                                       <div>
-                                        <Label className="font-mono text-xs uppercase tracking-wide">Email</Label>
-                                        <Input name="email" type="email" required maxLength={254} placeholder="your@email.com" className="bg-card border-border font-mono mt-1" />
+                                        <Label className="font-mono text-xs uppercase tracking-wide">{adminSettings?.contactInfo?.formEmailLabel || 'Email'}</Label>
+                                        <Input name="email" type="email" required maxLength={254} placeholder={adminSettings?.contactInfo?.formEmailPlaceholder || 'your@email.com'} className="bg-card border-border font-mono mt-1" />
                                       </div>
                                     </div>
                                     <div>
-                                      <Label className="font-mono text-xs uppercase tracking-wide">Subject</Label>
-                                      <Input name="subject" required maxLength={200} placeholder="Subject" className="bg-card border-border font-mono mt-1" />
+                                      <Label className="font-mono text-xs uppercase tracking-wide">{adminSettings?.contactInfo?.formSubjectLabel || 'Subject'}</Label>
+                                      <Input name="subject" required maxLength={200} placeholder={adminSettings?.contactInfo?.formSubjectPlaceholder || 'Subject'} className="bg-card border-border font-mono mt-1" />
                                     </div>
                                     <div>
-                                      <Label className="font-mono text-xs uppercase tracking-wide">Message</Label>
-                                      <Textarea name="message" required maxLength={5000} placeholder="Your message..." className="bg-card border-border font-mono mt-1 min-h-[120px]" />
+                                      <Label className="font-mono text-xs uppercase tracking-wide">{adminSettings?.contactInfo?.formMessageLabel || 'Message'}</Label>
+                                      <Textarea name="message" required maxLength={5000} placeholder={adminSettings?.contactInfo?.formMessagePlaceholder || 'Your message...'} className="bg-card border-border font-mono mt-1 min-h-[120px]" />
                                     </div>
                                     <Button type="submit" className="w-full uppercase font-mono hover-glitch cyber-border">
                                       <PaperPlaneTilt className="w-5 h-5 mr-2" />
-                                      <span className="hover-chromatic">Send Message</span>
+                                      <span className="hover-chromatic">{adminSettings?.contactInfo?.formButtonText || 'Send Message'}</span>
                                     </Button>
                                   </form>
                                 </motion.div>
@@ -2823,6 +3066,27 @@ In the end, Zardonic will unite listeners with Superstars.
                                           <a href={cyberpunkOverlay.data.appleMusic} target="_blank" rel="noopener noreferrer">
                                             <ApplePodcastsLogo className="w-5 h-5 mr-2" weight="fill" />
                                             <span className="hover-chromatic">Apple Music</span>
+                                          </a>
+                                        </Button>
+                                      )}
+                                      {cyberpunkOverlay.data.deezer && (
+                                        <Button asChild variant="outline" className="font-mono">
+                                          <a href={cyberpunkOverlay.data.deezer} target="_blank" rel="noopener noreferrer">
+                                            <span className="hover-chromatic">Deezer</span>
+                                          </a>
+                                        </Button>
+                                      )}
+                                      {cyberpunkOverlay.data.tidal && (
+                                        <Button asChild variant="outline" className="font-mono">
+                                          <a href={cyberpunkOverlay.data.tidal} target="_blank" rel="noopener noreferrer">
+                                            <span className="hover-chromatic">Tidal</span>
+                                          </a>
+                                        </Button>
+                                      )}
+                                      {cyberpunkOverlay.data.amazonMusic && (
+                                        <Button asChild variant="outline" className="font-mono">
+                                          <a href={cyberpunkOverlay.data.amazonMusic} target="_blank" rel="noopener noreferrer">
+                                            <span className="hover-chromatic">Amazon Music</span>
                                           </a>
                                         </Button>
                                       )}

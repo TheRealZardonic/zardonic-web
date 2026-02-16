@@ -8,6 +8,9 @@ export interface ITunesRelease {
   soundcloud?: string
   youtube?: string
   bandcamp?: string
+  deezer?: string
+  tidal?: string
+  amazonMusic?: string
 }
 
 const ARTIST_NAME = 'Zardonic'

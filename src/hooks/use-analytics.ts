@@ -1,5 +1,26 @@
 import { useEffect } from 'react'
 
+const TZ_COUNTRY_MAP: Record<string, string> = {
+  'Europe/Berlin': 'DE', 'Europe/Vienna': 'AT', 'Europe/Zurich': 'CH',
+  'Europe/London': 'GB', 'Europe/Paris': 'FR', 'Europe/Madrid': 'ES',
+  'Europe/Rome': 'IT', 'Europe/Amsterdam': 'NL', 'Europe/Brussels': 'BE',
+  'Europe/Stockholm': 'SE', 'Europe/Oslo': 'NO', 'Europe/Copenhagen': 'DK',
+  'Europe/Helsinki': 'FI', 'Europe/Warsaw': 'PL', 'Europe/Prague': 'CZ',
+  'Europe/Budapest': 'HU', 'Europe/Bucharest': 'RO', 'Europe/Sofia': 'BG',
+  'Europe/Athens': 'GR', 'Europe/Lisbon': 'PT', 'Europe/Dublin': 'IE',
+  'America/New_York': 'US', 'America/Chicago': 'US', 'America/Denver': 'US',
+  'America/Los_Angeles': 'US', 'America/Toronto': 'CA', 'America/Vancouver': 'CA',
+  'America/Mexico_City': 'MX', 'America/Sao_Paulo': 'BR', 'America/Buenos_Aires': 'AR',
+  'America/Bogota': 'CO', 'America/Caracas': 'VE', 'America/Lima': 'PE',
+  'America/Santiago': 'CL', 'Asia/Tokyo': 'JP', 'Asia/Shanghai': 'CN',
+  'Asia/Seoul': 'KR', 'Asia/Kolkata': 'IN', 'Asia/Bangkok': 'TH',
+  'Asia/Singapore': 'SG', 'Asia/Dubai': 'AE', 'Asia/Istanbul': 'TR',
+  'Australia/Sydney': 'AU', 'Australia/Melbourne': 'AU', 'Pacific/Auckland': 'NZ',
+  'Africa/Johannesburg': 'ZA', 'Africa/Cairo': 'EG', 'Africa/Lagos': 'NG',
+  'Asia/Jakarta': 'ID', 'Asia/Manila': 'PH', 'Asia/Taipei': 'TW',
+  'Europe/Moscow': 'RU', 'Asia/Riyadh': 'SA', 'Asia/Karachi': 'PK',
+}
+
 export interface HeatmapPoint {
   x: number
   y: number
@@ -18,6 +39,8 @@ export interface AnalyticsData {
   browsers: Record<string, number>
   screenResolutions: Record<string, number>
   heatmap: HeatmapPoint[]
+  countries: Record<string, number>
+  languages: Record<string, number>
   firstTracked?: string
   lastTracked?: string
 }
@@ -64,6 +87,8 @@ export function getAnalyticsData(): AnalyticsData {
         browsers: parsed.browsers || {},
         screenResolutions: parsed.screenResolutions || {},
         heatmap: parsed.heatmap || [],
+        countries: parsed.countries || {},
+        languages: parsed.languages || {},
         firstTracked: parsed.firstTracked,
         lastTracked: parsed.lastTracked,
       }
@@ -82,6 +107,8 @@ export function getAnalyticsData(): AnalyticsData {
     browsers: {},
     screenResolutions: {},
     heatmap: [],
+    countries: {},
+    languages: {},
   }
 }
 
@@ -189,6 +216,19 @@ export function trackPageView() {
     // Track screen resolution
     const res = `${window.screen.width}x${window.screen.height}`
     analytics.screenResolutions[res] = (analytics.screenResolutions[res] || 0) + 1
+
+    // Track country via timezone
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''
+      const country = TZ_COUNTRY_MAP[tz] || 'Other'
+      analytics.countries[country] = (analytics.countries[country] || 0) + 1
+    } catch {
+      // ignore timezone errors
+    }
+
+    // Track language
+    const lang = navigator.language?.split('-')[0] || 'unknown'
+    analytics.languages[lang] = (analytics.languages[lang] || 0) + 1
 
     saveAnalyticsData(analytics)
   } catch (e) {

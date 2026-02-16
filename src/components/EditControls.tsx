@@ -61,10 +61,11 @@ export default function EditControls({
   const [showReorderPanel, setShowReorderPanel] = useState(false)
   const importInputRef = useRef<HTMLInputElement>(null)
 
-  const defaultSectionOrder = ['bio', 'creditHighlights', 'music', 'gigs', 'releases', 'gallery', 'media', 'connect']
+  const defaultSectionOrder = ['bio', 'shell', 'creditHighlights', 'music', 'gigs', 'releases', 'gallery', 'media', 'connect']
 
   const sectionDisplayNames: Record<string, string> = {
     bio: 'Biography',
+    shell: 'Shell (Member)',
     creditHighlights: 'Credit Highlights',
     music: 'Music Player',
     gigs: 'Upcoming Gigs',
@@ -221,6 +222,7 @@ export default function EditControls({
 
   const sectionItems: { key: keyof SectionVisibility; label: string }[] = [
     { key: 'bio', label: 'Biography' },
+    { key: 'shell', label: 'Shell (Member)' },
     { key: 'music', label: 'Music Player' },
     { key: 'gigs', label: 'Upcoming Gigs' },
     { key: 'releases', label: 'Releases' },
@@ -323,6 +325,8 @@ export default function EditControls({
                   { key: 'accentColor' as const, label: 'Accent Color', placeholder: 'oklch(0.6 0.2 200)' },
                   { key: 'backgroundColor' as const, label: 'Background Color', placeholder: 'oklch(0.1 0 0)' },
                   { key: 'foregroundColor' as const, label: 'Foreground Color', placeholder: 'oklch(0.95 0 0)' },
+                  { key: 'borderColor' as const, label: 'Border Color', placeholder: 'oklch(0.25 0 0)' },
+                  { key: 'hoverColor' as const, label: 'Hover Color', placeholder: 'oklch(0.55 0.25 25)' },
                 ].map(({ key, label, placeholder }) => (
                   <div key={key} className="space-y-1">
                     <Label className="font-mono text-xs">{label}</Label>
@@ -391,6 +395,23 @@ export default function EditControls({
                     className="bg-background border-border font-mono text-xs"
                   />
                 </div>
+                <div className="space-y-1">
+                  <Label className="font-mono text-xs">Border Radius</Label>
+                  <select
+                    value={theme.borderRadius || ''}
+                    onChange={(e) => updateTheme('borderRadius', e.target.value)}
+                    className="w-full bg-background text-foreground border border-border rounded-md px-3 py-2 font-mono text-xs"
+                  >
+                    <option value="">Default (0.125rem)</option>
+                    <option value="0rem">Square (0rem)</option>
+                    <option value="0.125rem">Minimal (0.125rem)</option>
+                    <option value="0.25rem">Small (0.25rem)</option>
+                    <option value="0.375rem">Medium (0.375rem)</option>
+                    <option value="0.5rem">Large (0.5rem)</option>
+                    <option value="0.75rem">XL (0.75rem)</option>
+                    <option value="1rem">2XL (1rem)</option>
+                  </select>
+                </div>
               </div>
             </motion.div>
           </motion.div>
@@ -456,6 +477,66 @@ export default function EditControls({
                     max={100}
                     step={5}
                     onValueChange={([v]) => updateAnimationNumber('crtVignetteOpacity', v / 100)}
+                  />
+                </div>
+              </div>
+              <div className="space-y-3 pt-2 border-t border-border">
+                <Label className="font-mono text-xs font-bold">Heading Glitch Text</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="font-mono text-sm">Glitch Effect</Label>
+                  <Switch
+                    checked={adminSettings?.glitchTextSettings?.enabled !== false}
+                    onCheckedChange={(checked) =>
+                      onAdminSettingsChange?.({
+                        ...adminSettings,
+                        glitchTextSettings: {
+                          ...(adminSettings?.glitchTextSettings || {}),
+                          enabled: checked,
+                        },
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="font-mono text-xs">Glitch Interval</Label>
+                    <span className="font-mono text-xs text-muted-foreground">{adminSettings?.glitchTextSettings?.intervalMs || 8000}ms</span>
+                  </div>
+                  <Slider
+                    value={[adminSettings?.glitchTextSettings?.intervalMs || 8000]}
+                    min={1000}
+                    max={30000}
+                    step={500}
+                    onValueChange={([v]) =>
+                      onAdminSettingsChange?.({
+                        ...adminSettings,
+                        glitchTextSettings: {
+                          ...(adminSettings?.glitchTextSettings || {}),
+                          intervalMs: v,
+                        },
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="font-mono text-xs">Glitch Duration</Label>
+                    <span className="font-mono text-xs text-muted-foreground">{adminSettings?.glitchTextSettings?.durationMs || 120}ms</span>
+                  </div>
+                  <Slider
+                    value={[adminSettings?.glitchTextSettings?.durationMs || 120]}
+                    min={50}
+                    max={1000}
+                    step={10}
+                    onValueChange={([v]) =>
+                      onAdminSettingsChange?.({
+                        ...adminSettings,
+                        glitchTextSettings: {
+                          ...(adminSettings?.glitchTextSettings || {}),
+                          durationMs: v,
+                        },
+                      })
+                    }
                   />
                 </div>
               </div>
