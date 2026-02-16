@@ -10,6 +10,9 @@ import {
   Palette,
   GearSix,
   ChartLine,
+  ArrowsVertical,
+  ArrowUp,
+  ArrowDown,
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -55,7 +58,43 @@ export default function EditControls({
   const [showThemePanel, setShowThemePanel] = useState(false)
   const [showAnimationPanel, setShowAnimationPanel] = useState(false)
   const [showProgressiveModesPanel, setShowProgressiveModesPanel] = useState(false)
+  const [showReorderPanel, setShowReorderPanel] = useState(false)
   const importInputRef = useRef<HTMLInputElement>(null)
+
+  const defaultSectionOrder = ['bio', 'creditHighlights', 'music', 'gigs', 'releases', 'gallery', 'media', 'connect']
+
+  const sectionDisplayNames: Record<string, string> = {
+    bio: 'Biography',
+    creditHighlights: 'Credit Highlights',
+    music: 'Music Player',
+    gigs: 'Upcoming Gigs',
+    releases: 'Releases',
+    gallery: 'Gallery',
+    media: 'Media',
+    connect: 'Connect / Social',
+  }
+
+  const currentOrder = adminSettings?.sectionOrder ?? defaultSectionOrder
+
+  const moveSectionUp = useCallback(
+    (index: number) => {
+      if (index <= 0 || !onAdminSettingsChange) return
+      const newOrder = [...currentOrder]
+      ;[newOrder[index - 1], newOrder[index]] = [newOrder[index], newOrder[index - 1]]
+      onAdminSettingsChange({ ...adminSettings, sectionOrder: newOrder })
+    },
+    [currentOrder, adminSettings, onAdminSettingsChange],
+  )
+
+  const moveSectionDown = useCallback(
+    (index: number) => {
+      if (index >= currentOrder.length - 1 || !onAdminSettingsChange) return
+      const newOrder = [...currentOrder]
+      ;[newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]]
+      onAdminSettingsChange({ ...adminSettings, sectionOrder: newOrder })
+    },
+    [currentOrder, adminSettings, onAdminSettingsChange],
+  )
 
   const handleExport = () => {
     if (!siteData) return
@@ -480,8 +519,67 @@ export default function EditControls({
         )}
       </AnimatePresence>
 
+      {/* Section Reorder Panel */}
+      <AnimatePresence>
+        {showReorderPanel && (
+          <motion.div
+            className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowReorderPanel(false)}
+          >
+            <motion.div
+              className="bg-card border border-border p-6 w-full max-w-md space-y-4 relative max-h-[80vh] overflow-y-auto"
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold font-mono uppercase">Reorder Sections</h3>
+                <button onClick={() => setShowReorderPanel(false)} className="text-muted-foreground hover:text-foreground">
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="space-y-1">
+                {currentOrder.map((section, index) => (
+                  <div key={section} className="flex items-center justify-between bg-background border border-border rounded-md px-3 py-2">
+                    <span className="font-mono text-sm">{sectionDisplayNames[section] ?? section}</span>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => moveSectionUp(index)}
+                        disabled={index === 0}
+                        className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+                        title="Move up"
+                      >
+                        <ArrowUp size={16} />
+                      </button>
+                      <button
+                        onClick={() => moveSectionDown(index)}
+                        disabled={index === currentOrder.length - 1}
+                        className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+                        title="Move down"
+                      >
+                        <ArrowDown size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <Button
+                onClick={() => onAdminSettingsChange?.({ ...adminSettings, sectionOrder: defaultSectionOrder })}
+                variant="outline"
+                className="w-full font-mono text-xs"
+              >
+                Reset to Default
+              </Button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <motion.div
-        className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50 flex flex-col items-end gap-3"
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 260, damping: 20 }}
@@ -546,6 +644,14 @@ export default function EditControls({
                 title="Progressive overlay loading modes"
               >
                 <Sliders size={18} weight="bold" />
+              </Button>
+              <Button
+                onClick={() => setShowReorderPanel(true)}
+                className="bg-secondary hover:bg-secondary/80 active:scale-90 w-10 h-10 md:w-12 md:h-12 rounded-full shadow-lg transition-all touch-manipulation"
+                size="icon"
+                title="Reorder sections"
+              >
+                <ArrowsVertical size={18} weight="bold" />
               </Button>
               {onOpenStats && (
                 <Button
