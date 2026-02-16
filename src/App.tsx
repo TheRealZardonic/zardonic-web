@@ -115,6 +115,9 @@ interface Release {
   youtube?: string
   bandcamp?: string
   appleMusic?: string
+  deezer?: string
+  tidal?: string
+  amazonMusic?: string
 }
 
 interface Member {
@@ -160,6 +163,10 @@ export interface SiteData {
     bandcamp?: string
     tiktok?: string
     appleMusic?: string
+    twitter?: string
+    twitch?: string
+    beatport?: string
+    linktree?: string
   }
 }
 
@@ -363,7 +370,7 @@ In the end, Zardonic will unite listeners with Superstars.
   const sectionLabels = adminSettings?.sectionLabels ?? {}
   const terminalCommands = adminSettings?.terminalCommands ?? []
 
-  const DEFAULT_SECTION_ORDER = ['bio', 'creditHighlights', 'music', 'gigs', 'releases', 'gallery', 'media', 'connect']
+  const DEFAULT_SECTION_ORDER = ['bio', 'shell', 'creditHighlights', 'music', 'gigs', 'releases', 'gallery', 'media', 'connect']
   const sectionOrder = adminSettings?.sectionOrder ?? DEFAULT_SECTION_ORDER
   const getSectionOrder = useCallback((section: string) => {
     const idx = sectionOrder.indexOf(section)
@@ -400,6 +407,9 @@ In the end, Zardonic will unite listeners with Superstars.
     if (t.fontHeading) root.style.setProperty('--font-heading', t.fontHeading)
     if (t.fontBody) root.style.setProperty('--font-body', t.fontBody)
     if (t.fontMono) root.style.setProperty('--font-mono', t.fontMono)
+    if (t.borderColor) root.style.setProperty('--border-color', t.borderColor)
+    if (t.hoverColor) root.style.setProperty('--hover-color', t.hoverColor)
+    if (t.borderRadius) root.style.setProperty('--radius', t.borderRadius)
     return () => {
       root.style.removeProperty('--primary')
       root.style.removeProperty('--accent')
@@ -408,6 +418,9 @@ In the end, Zardonic will unite listeners with Superstars.
       root.style.removeProperty('--font-heading')
       root.style.removeProperty('--font-body')
       root.style.removeProperty('--font-mono')
+      root.style.removeProperty('--border-color')
+      root.style.removeProperty('--hover-color')
+      root.style.removeProperty('--radius')
     }
   }, [adminSettings?.theme])
 
@@ -565,6 +578,9 @@ In the end, Zardonic will unite listeners with Superstars.
                 if (links.soundcloud) release.soundcloud = links.soundcloud
                 if (links.youtube) release.youtube = links.youtube
                 if (links.bandcamp) release.bandcamp = links.bandcamp
+                if (links.deezer) release.deezer = links.deezer
+                if (links.tidal) release.tidal = links.tidal
+                if (links.amazonMusic) release.amazonMusic = links.amazonMusic
               }
             } catch (e) {
               console.error(`Odesli enrichment failed for ${release.title}:`, e)
@@ -589,6 +605,9 @@ In the end, Zardonic will unite listeners with Superstars.
             youtube: r.youtube || '',
             bandcamp: r.bandcamp || '',
             appleMusic: r.appleMusic || '',
+            deezer: r.deezer || '',
+            tidal: r.tidal || '',
+            amazonMusic: r.amazonMusic || '',
           }))
 
         // Update existing releases with better artwork from iTunes
@@ -603,6 +622,9 @@ In the end, Zardonic will unite listeners with Superstars.
               soundcloud: match.soundcloud || existing.soundcloud,
               youtube: match.youtube || existing.youtube,
               bandcamp: match.bandcamp || existing.bandcamp,
+              deezer: match.deezer || existing.deezer,
+              tidal: match.tidal || existing.tidal,
+              amazonMusic: match.amazonMusic || existing.amazonMusic,
             }
           }
           return existing
