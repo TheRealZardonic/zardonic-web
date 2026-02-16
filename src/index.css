@@ -26,7 +26,7 @@
   --muted: oklch(0.25 0 0);
   --muted-foreground: oklch(0.6 0 0);
   
-  --accent: var(--accent);
+  --accent: oklch(0.55 0.25 25);
   --accent-foreground: oklch(1 0 0);
   
   --destructive: oklch(0.45 0.22 25);
@@ -34,7 +34,7 @@
   
   --border: oklch(0.25 0 0);
   --input: oklch(0.25 0 0);
-  --ring: var(--accent);
+  --ring: oklch(0.55 0.25 25);
   
   --radius: 0.125rem;
   

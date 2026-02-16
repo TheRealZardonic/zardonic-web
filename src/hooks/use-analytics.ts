@@ -1,5 +1,26 @@
 import { useEffect } from 'react'
 
+const TZ_COUNTRY_MAP: Record<string, string> = {
+  'Europe/Berlin': 'DE', 'Europe/Vienna': 'AT', 'Europe/Zurich': 'CH',
+  'Europe/London': 'GB', 'Europe/Paris': 'FR', 'Europe/Madrid': 'ES',
+  'Europe/Rome': 'IT', 'Europe/Amsterdam': 'NL', 'Europe/Brussels': 'BE',
+  'Europe/Stockholm': 'SE', 'Europe/Oslo': 'NO', 'Europe/Copenhagen': 'DK',
+  'Europe/Helsinki': 'FI', 'Europe/Warsaw': 'PL', 'Europe/Prague': 'CZ',
+  'Europe/Budapest': 'HU', 'Europe/Bucharest': 'RO', 'Europe/Sofia': 'BG',
+  'Europe/Athens': 'GR', 'Europe/Lisbon': 'PT', 'Europe/Dublin': 'IE',
+  'America/New_York': 'US', 'America/Chicago': 'US', 'America/Denver': 'US',
+  'America/Los_Angeles': 'US', 'America/Toronto': 'CA', 'America/Vancouver': 'CA',
+  'America/Mexico_City': 'MX', 'America/Sao_Paulo': 'BR', 'America/Buenos_Aires': 'AR',
+  'America/Bogota': 'CO', 'America/Caracas': 'VE', 'America/Lima': 'PE',
+  'America/Santiago': 'CL', 'Asia/Tokyo': 'JP', 'Asia/Shanghai': 'CN',
+  'Asia/Seoul': 'KR', 'Asia/Kolkata': 'IN', 'Asia/Bangkok': 'TH',
+  'Asia/Singapore': 'SG', 'Asia/Dubai': 'AE', 'Asia/Istanbul': 'TR',
+  'Australia/Sydney': 'AU', 'Australia/Melbourne': 'AU', 'Pacific/Auckland': 'NZ',
+  'Africa/Johannesburg': 'ZA', 'Africa/Cairo': 'EG', 'Africa/Lagos': 'NG',
+  'Asia/Jakarta': 'ID', 'Asia/Manila': 'PH', 'Asia/Taipei': 'TW',
+  'Europe/Moscow': 'RU', 'Asia/Riyadh': 'SA', 'Asia/Karachi': 'PK',
+}
+
 export interface HeatmapPoint {
   x: number
   y: number
@@ -199,27 +220,7 @@ export function trackPageView() {
     // Track country via timezone
     try {
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''
-      const tzCountryMap: Record<string, string> = {
-        'Europe/Berlin': 'DE', 'Europe/Vienna': 'AT', 'Europe/Zurich': 'CH',
-        'Europe/London': 'GB', 'Europe/Paris': 'FR', 'Europe/Madrid': 'ES',
-        'Europe/Rome': 'IT', 'Europe/Amsterdam': 'NL', 'Europe/Brussels': 'BE',
-        'Europe/Stockholm': 'SE', 'Europe/Oslo': 'NO', 'Europe/Copenhagen': 'DK',
-        'Europe/Helsinki': 'FI', 'Europe/Warsaw': 'PL', 'Europe/Prague': 'CZ',
-        'Europe/Budapest': 'HU', 'Europe/Bucharest': 'RO', 'Europe/Sofia': 'BG',
-        'Europe/Athens': 'GR', 'Europe/Lisbon': 'PT', 'Europe/Dublin': 'IE',
-        'America/New_York': 'US', 'America/Chicago': 'US', 'America/Denver': 'US',
-        'America/Los_Angeles': 'US', 'America/Toronto': 'CA', 'America/Vancouver': 'CA',
-        'America/Mexico_City': 'MX', 'America/Sao_Paulo': 'BR', 'America/Buenos_Aires': 'AR',
-        'America/Bogota': 'CO', 'America/Caracas': 'VE', 'America/Lima': 'PE',
-        'America/Santiago': 'CL', 'Asia/Tokyo': 'JP', 'Asia/Shanghai': 'CN',
-        'Asia/Seoul': 'KR', 'Asia/Kolkata': 'IN', 'Asia/Bangkok': 'TH',
-        'Asia/Singapore': 'SG', 'Asia/Dubai': 'AE', 'Asia/Istanbul': 'TR',
-        'Australia/Sydney': 'AU', 'Australia/Melbourne': 'AU', 'Pacific/Auckland': 'NZ',
-        'Africa/Johannesburg': 'ZA', 'Africa/Cairo': 'EG', 'Africa/Lagos': 'NG',
-        'Asia/Jakarta': 'ID', 'Asia/Manila': 'PH', 'Asia/Taipei': 'TW',
-        'Europe/Moscow': 'RU', 'Asia/Riyadh': 'SA', 'Asia/Karachi': 'PK',
-      }
-      const country = tzCountryMap[tz] || tz.split('/')[0] || 'Unknown'
+      const country = TZ_COUNTRY_MAP[tz] || 'Other'
       analytics.countries[country] = (analytics.countries[country] || 0) + 1
     } catch {
       // ignore timezone errors
