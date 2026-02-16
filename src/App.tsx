@@ -87,6 +87,8 @@ import type { TerminalCommand, SectionLabels } from '@/lib/types'
 import heroImage from '@/assets/images/meta_eyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ==.webp'
 import logoImage from '@/assets/images/meta_eyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ==.webp'
 
+const CACHE_DURATION_MS = 24 * 60 * 60 * 1000 // 24 hours
+
 interface Track {
   id: string
   title: string
@@ -575,7 +577,6 @@ In the end, Zardonic will unite listeners with Superstars.
   useEffect(() => {
     if (!hasAutoLoaded && siteData) {
       setHasAutoLoaded(true)
-      const CACHE_DURATION_MS = 24 * 60 * 60 * 1000 // 24 hours
       const now = Date.now()
       const lastReleasesSync = Number(localStorage.getItem('lastReleasesSync') || '0')
       const lastGigsSync = Number(localStorage.getItem('lastGigsSync') || '0')
