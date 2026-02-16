@@ -475,63 +475,69 @@ export default function EditControls({
                 {/* Fonts */}
                 <div className="space-y-3">
                   <h4 className="font-mono text-sm font-bold text-primary">Fonts</h4>
-                {([
-                  { key: 'fontHeading' as const, label: 'Heading Font', placeholder: 'Orbitron, sans-serif', options: ['Orbitron', 'Rajdhani', 'Exo 2', 'Audiowide', 'Share Tech', 'Russo One', 'Teko', 'system-ui'] },
-                  { key: 'fontBody' as const, label: 'Body Font', placeholder: 'system-ui, sans-serif', options: ['system-ui', 'Inter', 'Roboto', 'Open Sans', 'Lato', 'Poppins', 'Source Sans Pro', 'Share Tech Mono'] },
-                  { key: 'fontMono' as const, label: 'Mono Font', placeholder: 'Share Tech Mono, monospace', options: ['Share Tech Mono', 'JetBrains Mono', 'Fira Code', 'Source Code Pro', 'IBM Plex Mono', 'Courier New'] },
-                ] as const).map(({ key, label, placeholder, options }) => (
-                  <div key={key} className="space-y-1">
-                    <Label className="font-mono text-xs">{label}</Label>
-                    <select
-                      value={(options as readonly string[]).includes(theme[key] || '') ? theme[key] : ''}
-                      onChange={(e) => { if (e.target.value) updateTheme(key, e.target.value) }}
-                      className="w-full bg-background text-foreground border border-border rounded-md px-3 py-2 font-mono text-xs"
-                    >
-                      <option value="">Custom...</option>
-                      {options.map((font) => (
-                        <option key={font} value={font} style={{ fontFamily: font }}>
-                          {font}
-                        </option>
-                      ))}
-                    </select>
+                  {([
+                    { key: 'fontHeading' as const, label: 'Heading Font', placeholder: 'Orbitron, sans-serif', options: ['Orbitron', 'Rajdhani', 'Exo 2', 'Audiowide', 'Share Tech', 'Russo One', 'Teko', 'system-ui'] },
+                    { key: 'fontBody' as const, label: 'Body Font', placeholder: 'system-ui, sans-serif', options: ['system-ui', 'Inter', 'Roboto', 'Open Sans', 'Lato', 'Poppins', 'Source Sans Pro', 'Share Tech Mono'] },
+                    { key: 'fontMono' as const, label: 'Mono Font', placeholder: 'Share Tech Mono, monospace', options: ['Share Tech Mono', 'JetBrains Mono', 'Fira Code', 'Source Code Pro', 'IBM Plex Mono', 'Courier New'] },
+                  ] as const).map(({ key, label, placeholder, options }) => (
+                    <div key={key} className="space-y-1">
+                      <Label className="font-mono text-xs">{label}</Label>
+                      <select
+                        value={(options as readonly string[]).includes(theme[key] || '') ? theme[key] : ''}
+                        onChange={(e) => { if (e.target.value) updateTheme(key, e.target.value) }}
+                        className="w-full bg-background text-foreground border border-border rounded-md px-3 py-2 font-mono text-xs"
+                      >
+                        <option value="">Custom...</option>
+                        {options.map((font) => (
+                          <option key={font} value={font} style={{ fontFamily: font }}>
+                            {font}
+                          </option>
+                        ))}
+                      </select>
+                      <Input
+                        value={theme[key] || ''}
+                        onChange={(e) => updateTheme(key, e.target.value)}
+                        placeholder={placeholder}
+                        className="bg-background border-border font-mono text-xs"
+                      />
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Other Settings */}
+                <div className="space-y-3">
+                  <h4 className="font-mono text-sm font-bold text-primary">Other Settings</h4>
+                  <div className="space-y-1">
+                    <Label className="font-mono text-xs">Favicon URL</Label>
                     <Input
-                      value={theme[key] || ''}
-                      onChange={(e) => updateTheme(key, e.target.value)}
-                      placeholder={placeholder}
+                      value={adminSettings?.faviconUrl || ''}
+                      onChange={(e) =>
+                        onAdminSettingsChange?.({
+                          ...adminSettings,
+                          faviconUrl: e.target.value,
+                        })
+                      }
+                      placeholder="https://example.com/favicon.ico"
                       className="bg-background border-border font-mono text-xs"
                     />
                   </div>
-                ))}
-                <div className="space-y-1">
-                  <Label className="font-mono text-xs">Favicon URL</Label>
-                  <Input
-                    value={adminSettings?.faviconUrl || ''}
-                    onChange={(e) =>
-                      onAdminSettingsChange?.({
-                        ...adminSettings,
-                        faviconUrl: e.target.value,
-                      })
-                    }
-                    placeholder="https://example.com/favicon.ico"
-                    className="bg-background border-border font-mono text-xs"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="font-mono text-xs">Border Radius</Label>
-                  <select
-                    value={theme.borderRadius || ''}
-                    onChange={(e) => updateTheme('borderRadius', e.target.value)}
-                    className="w-full bg-background text-foreground border border-border rounded-md px-3 py-2 font-mono text-xs"
-                  >
-                    <option value="">Default (0.125rem)</option>
-                    <option value="0rem">Square (0rem)</option>
-                    <option value="0.125rem">Minimal (0.125rem)</option>
-                    <option value="0.25rem">Small (0.25rem)</option>
-                    <option value="0.375rem">Medium (0.375rem)</option>
-                    <option value="0.5rem">Large (0.5rem)</option>
-                    <option value="0.75rem">XL (0.75rem)</option>
-                    <option value="1rem">2XL (1rem)</option>
-                  </select>
+                  <div className="space-y-1">
+                    <Label className="font-mono text-xs">Border Radius</Label>
+                    <select
+                      value={theme.borderRadius || ''}
+                      onChange={(e) => updateTheme('borderRadius', e.target.value)}
+                      className="w-full bg-background text-foreground border border-border rounded-md px-3 py-2 font-mono text-xs"
+                    >
+                      <option value="">Default (0.125rem)</option>
+                      <option value="0rem">Square (0rem)</option>
+                      <option value="0.125rem">Minimal (0.125rem)</option>
+                      <option value="0.25rem">Small (0.25rem)</option>
+                      <option value="0.375rem">Medium (0.375rem)</option>
+                      <option value="0.5rem">Large (0.5rem)</option>
+                      <option value="0.75rem">XL (0.75rem)</option>
+                      <option value="1rem">2XL (1rem)</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             </motion.div>
