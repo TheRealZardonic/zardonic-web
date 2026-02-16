@@ -693,7 +693,10 @@ In the end, Zardonic will unite listeners with Superstars.
       }
 
       setSiteData((data) => {
-        if (!data) return data!
+        if (!data) {
+          console.warn('siteData is undefined during iTunes sync, skipping update')
+          return data
+        }
         const existingIds = new Set(data.releases.map(r => r.id))
         const newReleases: Release[] = iTunesReleases
           .filter(r => !existingIds.has(r.id))
@@ -860,10 +863,10 @@ In the end, Zardonic will unite listeners with Superstars.
       reader.onloadend = () => {
         const imageUrl = reader.result as string
         if (type === 'hero') {
-          setSiteData((data) => data ? { ...data, heroImage: imageUrl } : data!)
+          setSiteData((data) => data ? { ...data, heroImage: imageUrl } : data)
           toast.success('Hero image updated')
         } else {
-          setSiteData((data) => data ? { ...data, gallery: [...data.gallery, imageUrl] } : data!)
+          setSiteData((data) => data ? { ...data, gallery: [...data.gallery, imageUrl] } : data)
           toast.success('Image added to gallery')
         }
       }
@@ -881,13 +884,16 @@ In the end, Zardonic will unite listeners with Superstars.
       support: '',
       lineup: [],
     }
-    setSiteData((data) => data ? { ...data, gigs: [...data.gigs, newGig] } : data!)
+    setSiteData((data) => data ? { ...data, gigs: [...data.gigs, newGig] } : data)
     setEditingGig(newGig)
   }
 
   const saveGig = (gig: Gig) => {
     setSiteData((data) => {
-      if (!data) return data!
+      if (!data) {
+        console.warn('siteData is undefined during gig save, skipping update')
+        return data
+      }
       const gigIndex = data.gigs.findIndex(g => g.id === gig.id)
       if (gigIndex >= 0) {
         const newGigs = [...data.gigs]
@@ -901,7 +907,7 @@ In the end, Zardonic will unite listeners with Superstars.
   }
 
   const deleteGig = (id: string) => {
-    setSiteData((data) => data ? { ...data, gigs: data.gigs.filter(g => g.id !== id) } : data!)
+    setSiteData((data) => data ? { ...data, gigs: data.gigs.filter(g => g.id !== id) } : data)
     toast.success('Gig deleted')
   }
 
@@ -916,13 +922,16 @@ In the end, Zardonic will unite listeners with Superstars.
       youtube: '',
       bandcamp: ''
     }
-    setSiteData((data) => data ? { ...data, releases: [...data.releases, newRelease] } : data!)
+    setSiteData((data) => data ? { ...data, releases: [...data.releases, newRelease] } : data)
     setEditingRelease(newRelease)
   }
 
   const saveRelease = (release: Release) => {
     setSiteData((data) => {
-      if (!data) return data!
+      if (!data) {
+        console.warn('siteData is undefined during release save, skipping update')
+        return data
+      }
       const releaseIndex = data.releases.findIndex(r => r.id === release.id)
       if (releaseIndex >= 0) {
         const newReleases = [...data.releases]
@@ -936,13 +945,16 @@ In the end, Zardonic will unite listeners with Superstars.
   }
 
   const deleteRelease = (id: string) => {
-    setSiteData((data) => data ? { ...data, releases: data.releases.filter(r => r.id !== id) } : data!)
+    setSiteData((data) => data ? { ...data, releases: data.releases.filter(r => r.id !== id) } : data)
     toast.success('Release deleted')
   }
 
   const deleteGalleryImage = (index: number) => {
     setSiteData((data) => {
-      if (!data) return data!
+      if (!data) {
+        console.warn('siteData is undefined during gallery image delete, skipping update')
+        return data
+      }
       const newGallery = [...data.gallery]
       newGallery.splice(index, 1)
       return { ...data, gallery: newGallery }
@@ -989,7 +1001,7 @@ In the end, Zardonic will unite listeners with Superstars.
             {editMode ? (
               <Input
                 value={siteData.artistName}
-                onChange={(e) => setSiteData((data) => data ? { ...data, artistName: e.target.value } : data!)}
+                onChange={(e) => setSiteData((data) => data ? { ...data, artistName: e.target.value } : data)}
                 className="w-48 bg-transparent border-border text-foreground"
               />
             ) : (
@@ -1176,7 +1188,7 @@ In the end, Zardonic will unite listeners with Superstars.
                   value={siteData.bio}
                   onChange={(e) => {
                     const newBio = e.target.value
-                    setSiteData((data) => data ? { ...data, bio: newBio } : data!)
+                    setSiteData((data) => data ? { ...data, bio: newBio } : data)
                   }}
                   className="min-h-[300px] font-mono bg-card border-border text-foreground"
                 />
@@ -1505,7 +1517,7 @@ In the end, Zardonic will unite listeners with Superstars.
                         onChange={(e) => {
                           const updated = [...siteData.creditHighlights]
                           updated[index] = { ...updated[index], src: e.target.value }
-                          setSiteData((data) => data ? { ...data, creditHighlights: updated } : data!)
+                          setSiteData((data) => data ? { ...data, creditHighlights: updated } : data)
                         }}
                         onBlur={(e) => {
                           // Normalize the URL when the user leaves the field
@@ -1513,7 +1525,7 @@ In the end, Zardonic will unite listeners with Superstars.
                           if (normalized !== e.target.value) {
                             const updated = [...siteData.creditHighlights]
                             updated[index] = { ...updated[index], src: normalized }
-                            setSiteData((data) => data ? { ...data, creditHighlights: updated } : data!)
+                            setSiteData((data) => data ? { ...data, creditHighlights: updated } : data)
                           }
                         }}
                         placeholder="https://drive.google.com/file/d/... or image URL"
@@ -1527,7 +1539,7 @@ In the end, Zardonic will unite listeners with Superstars.
                         onChange={(e) => {
                           const updated = [...siteData.creditHighlights]
                           updated[index] = { ...updated[index], alt: e.target.value }
-                          setSiteData((data) => data ? { ...data, creditHighlights: updated } : data!)
+                          setSiteData((data) => data ? { ...data, creditHighlights: updated } : data)
                         }}
                         placeholder="Name"
                         className="bg-card border-border font-mono text-xs"
@@ -1538,7 +1550,7 @@ In the end, Zardonic will unite listeners with Superstars.
                       variant="destructive"
                       onClick={() => {
                         const updated = siteData.creditHighlights.filter((_, i) => i !== index)
-                        setSiteData((data) => data ? { ...data, creditHighlights: updated } : data!)
+                        setSiteData((data) => data ? { ...data, creditHighlights: updated } : data)
                       }}
                     >
                       <Trash className="w-4 h-4" />
@@ -1549,7 +1561,7 @@ In the end, Zardonic will unite listeners with Superstars.
                   size="sm"
                   variant="outline"
                   onClick={() => {
-                    setSiteData((data) => data ? { ...data, creditHighlights: [...data.creditHighlights, { src: '', alt: '' }] } : data!)
+                    setSiteData((data) => data ? { ...data, creditHighlights: [...data.creditHighlights, { src: '', alt: '' }] } : data)
                   }}
                   className="font-mono"
                 >
@@ -2155,7 +2167,7 @@ In the end, Zardonic will unite listeners with Superstars.
               type: (f.type === 'download' ? 'zip' : f.type || 'zip') as 'image' | 'pdf' | 'zip',
               size: f.description || '',
             })),
-          } : data!)
+          } : data)
         }}
       />
       </div>
@@ -2205,7 +2217,7 @@ In the end, Zardonic will unite listeners with Superstars.
                     <Label className="font-mono">{label}</Label>
                     <Input
                       value={siteData.social[key] || ''}
-                      onChange={(e) => setSiteData((data) => data ? { ...data, social: { ...data.social, [key]: e.target.value } } : data!)}
+                      onChange={(e) => setSiteData((data) => data ? { ...data, social: { ...data.social, [key]: e.target.value } } : data)}
                       className="bg-card border-border"
                       placeholder={`https://${label.toLowerCase().replace(/\s.*/, '')}.com/...`}
                     />
