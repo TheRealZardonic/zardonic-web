@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
 import { useLocalStorage } from '@/hooks/use-local-storage'
-import { useKV } from '@/hooks/use-kv'
+import { useKV, SKIP_UPDATE } from '@/hooks/use-kv'
 import { useKonami } from '@/hooks/use-konami'
 import { useAnalytics, trackClick, trackPageView, trackHeatmapClick, trackRedirect } from '@/hooks/use-analytics'
 import { fetchITunesReleases, type ITunesRelease } from '@/lib/itunes'
@@ -15,6 +15,8 @@ import {
   OVERLAY_REVEAL_PHASE_DELAY_MS,
 } from '@/lib/config'
 import { submitContactForm, contactFormSchema } from '@/lib/contact'
+import { loginWithPassword, setupPassword, validateSession, hasSessionToken } from '@/lib/session'
+import { getSyncTimestamps, updateReleasesSync, updateGigsSync } from '@/lib/sync'
 import type { AdminSettings } from '@/lib/types'
 import {
   Play,
@@ -224,13 +226,16 @@ function App() {
     }
   }, [])
 
-  // Restore admin session from localStorage
+  // Restore admin session from Vercel KV
   useEffect(() => {
     if (!adminPasswordHash) return
-    const storedToken = localStorage.getItem('admin-token')
-    if (storedToken && storedToken === adminPasswordHash) {
-      setIsOwner(true)
-    }
+    
+    // Validate session token if exists
+    validateSession().then(isValid => {
+      if (isValid) {
+        setIsOwner(true)
+      }
+    })
   }, [adminPasswordHash])
 
   // Open setup dialog once KV data has loaded and confirms no password exists
@@ -615,9 +620,8 @@ In the end, Zardonic will unite listeners with Superstars.
 
   // Admin authentication handlers
   const handleAdminLogin = async (password: string): Promise<boolean> => {
-    const hash = await hashPassword(password)
-    if (hash === adminPasswordHash) {
-      localStorage.setItem('admin-token', hash)
+    const token = await loginWithPassword(password)
+    if (token) {
       setIsOwner(true)
       return true
     }
@@ -625,16 +629,19 @@ In the end, Zardonic will unite listeners with Superstars.
   }
 
   const handleSetupAdminPassword = async (password: string): Promise<void> => {
-    const hash = await hashPassword(password)
-    localStorage.setItem('admin-token', hash)
-    setAdminPasswordHash(hash)
-    setIsOwner(true)
+    const success = await setupPassword(password)
+    if (success) {
+      // Also need to store the hash in KV for the password check
+      setAdminPasswordHash(await hashPassword(password))
+      setIsOwner(true)
+    }
   }
 
   const handleSetAdminPassword = async (password: string): Promise<void> => {
-    const hash = await hashPassword(password)
-    localStorage.setItem('admin-token', hash)
-    setAdminPasswordHash(hash)
+    const success = await setupPassword(password)
+    if (success) {
+      setAdminPasswordHash(await hashPassword(password))
+    }
   }
 
   // Auto-fetch iTunes releases and Bandsintown events on mount (with 24h cache)
@@ -642,19 +649,20 @@ In the end, Zardonic will unite listeners with Superstars.
     if (!hasAutoLoaded && siteData) {
       setHasAutoLoaded(true)
       const now = Date.now()
-      const lastReleasesSync = Number(localStorage.getItem('lastReleasesSync') || '0')
-      const lastGigsSync = Number(localStorage.getItem('lastGigsSync') || '0')
-
-      if (now - lastReleasesSync > CACHE_DURATION_MS || siteData.releases.length === 0) {
-        handleFetchITunesReleases(true).then(() => {
-          localStorage.setItem('lastReleasesSync', String(Date.now()))
-        })
-      }
-      if (now - lastGigsSync > CACHE_DURATION_MS || siteData.gigs.length === 0) {
-        handleFetchBandsintownEvents(true).then(() => {
-          localStorage.setItem('lastGigsSync', String(Date.now()))
-        })
-      }
+      
+      // Get sync timestamps from Vercel KV
+      getSyncTimestamps().then(({ lastReleasesSync, lastGigsSync }) => {
+        if (now - lastReleasesSync > CACHE_DURATION_MS || siteData.releases.length === 0) {
+          handleFetchITunesReleases(true).then(() => {
+            updateReleasesSync(Date.now())
+          })
+        }
+        if (now - lastGigsSync > CACHE_DURATION_MS || siteData.gigs.length === 0) {
+          handleFetchBandsintownEvents(true).then(() => {
+            updateGigsSync(Date.now())
+          })
+        }
+      })
     }
   }, [hasAutoLoaded, siteData])
 
@@ -693,7 +701,10 @@ In the end, Zardonic will unite listeners with Superstars.
       }
 
       setSiteData((data) => {
-        if (!data) return data!
+        if (!data) {
+          console.warn('siteData is undefined during iTunes sync, skipping update')
+          return SKIP_UPDATE as any
+        }
         const existingIds = new Set(data.releases.map(r => r.id))
         const newReleases: Release[] = iTunesReleases
           .filter(r => !existingIds.has(r.id))
@@ -738,7 +749,7 @@ In the end, Zardonic will unite listeners with Superstars.
 
       if (!isAutoLoad) {
         toast.success(`Synced releases from iTunes`)
-        localStorage.setItem('lastReleasesSync', String(Date.now()))
+        updateReleasesSync(Date.now())
       }
     } catch (error) {
       if (!isAutoLoad) toast.error('Failed to fetch releases from iTunes')
@@ -758,7 +769,10 @@ In the end, Zardonic will unite listeners with Superstars.
       }
 
       setSiteData((data) => {
-        if (!data) return data!
+        if (!data) {
+          console.warn('siteData is undefined during Bandsintown sync, skipping update')
+          return SKIP_UPDATE as any
+        }
         const existingIds = new Set(data.gigs.map(g => g.id))
         const newGigs: Gig[] = events
           .filter(e => !existingIds.has(e.id))
@@ -800,7 +814,7 @@ In the end, Zardonic will unite listeners with Superstars.
 
       if (!isAutoLoad) {
         toast.success(`Synced events from Bandsintown`)
-        localStorage.setItem('lastGigsSync', String(Date.now()))
+        updateGigsSync(Date.now())
       }
     } catch (error) {
       if (!isAutoLoad) toast.error('Failed to fetch events from Bandsintown')
@@ -857,10 +871,10 @@ In the end, Zardonic will unite listeners with Superstars.
       reader.onloadend = () => {
         const imageUrl = reader.result as string
         if (type === 'hero') {
-          setSiteData((data) => data ? { ...data, heroImage: imageUrl } : data!)
+          setSiteData((data) => data ? { ...data, heroImage: imageUrl } : data)
           toast.success('Hero image updated')
         } else {
-          setSiteData((data) => data ? { ...data, gallery: [...data.gallery, imageUrl] } : data!)
+          setSiteData((data) => data ? { ...data, gallery: [...data.gallery, imageUrl] } : data)
           toast.success('Image added to gallery')
         }
       }
@@ -878,13 +892,16 @@ In the end, Zardonic will unite listeners with Superstars.
       support: '',
       lineup: [],
     }
-    setSiteData((data) => data ? { ...data, gigs: [...data.gigs, newGig] } : data!)
+    setSiteData((data) => data ? { ...data, gigs: [...data.gigs, newGig] } : data)
     setEditingGig(newGig)
   }
 
   const saveGig = (gig: Gig) => {
     setSiteData((data) => {
-      if (!data) return data!
+      if (!data) {
+        console.warn('siteData is undefined during gig save, skipping update')
+        return SKIP_UPDATE as any
+      }
       const gigIndex = data.gigs.findIndex(g => g.id === gig.id)
       if (gigIndex >= 0) {
         const newGigs = [...data.gigs]
@@ -898,7 +915,7 @@ In the end, Zardonic will unite listeners with Superstars.
   }
 
   const deleteGig = (id: string) => {
-    setSiteData((data) => data ? { ...data, gigs: data.gigs.filter(g => g.id !== id) } : data!)
+    setSiteData((data) => data ? { ...data, gigs: data.gigs.filter(g => g.id !== id) } : data)
     toast.success('Gig deleted')
   }
 
@@ -913,13 +930,16 @@ In the end, Zardonic will unite listeners with Superstars.
       youtube: '',
       bandcamp: ''
     }
-    setSiteData((data) => data ? { ...data, releases: [...data.releases, newRelease] } : data!)
+    setSiteData((data) => data ? { ...data, releases: [...data.releases, newRelease] } : data)
     setEditingRelease(newRelease)
   }
 
   const saveRelease = (release: Release) => {
     setSiteData((data) => {
-      if (!data) return data!
+      if (!data) {
+        console.warn('siteData is undefined during release save, skipping update')
+        return SKIP_UPDATE as any
+      }
       const releaseIndex = data.releases.findIndex(r => r.id === release.id)
       if (releaseIndex >= 0) {
         const newReleases = [...data.releases]
@@ -933,13 +953,16 @@ In the end, Zardonic will unite listeners with Superstars.
   }
 
   const deleteRelease = (id: string) => {
-    setSiteData((data) => data ? { ...data, releases: data.releases.filter(r => r.id !== id) } : data!)
+    setSiteData((data) => data ? { ...data, releases: data.releases.filter(r => r.id !== id) } : data)
     toast.success('Release deleted')
   }
 
   const deleteGalleryImage = (index: number) => {
     setSiteData((data) => {
-      if (!data) return data!
+      if (!data) {
+        console.warn('siteData is undefined during gallery image delete, skipping update')
+        return SKIP_UPDATE as any
+      }
       const newGallery = [...data.gallery]
       newGallery.splice(index, 1)
       return { ...data, gallery: newGallery }
@@ -986,7 +1009,7 @@ In the end, Zardonic will unite listeners with Superstars.
             {editMode ? (
               <Input
                 value={siteData.artistName}
-                onChange={(e) => setSiteData((data) => data ? { ...data, artistName: e.target.value } : data!)}
+                onChange={(e) => setSiteData((data) => data ? { ...data, artistName: e.target.value } : data)}
                 className="w-48 bg-transparent border-border text-foreground"
               />
             ) : (
@@ -1173,7 +1196,7 @@ In the end, Zardonic will unite listeners with Superstars.
                   value={siteData.bio}
                   onChange={(e) => {
                     const newBio = e.target.value
-                    setSiteData((data) => data ? { ...data, bio: newBio } : data!)
+                    setSiteData((data) => data ? { ...data, bio: newBio } : data)
                   }}
                   className="min-h-[300px] font-mono bg-card border-border text-foreground"
                 />
@@ -1502,7 +1525,7 @@ In the end, Zardonic will unite listeners with Superstars.
                         onChange={(e) => {
                           const updated = [...siteData.creditHighlights]
                           updated[index] = { ...updated[index], src: e.target.value }
-                          setSiteData((data) => data ? { ...data, creditHighlights: updated } : data!)
+                          setSiteData((data) => data ? { ...data, creditHighlights: updated } : data)
                         }}
                         onBlur={(e) => {
                           // Normalize the URL when the user leaves the field
@@ -1510,7 +1533,7 @@ In the end, Zardonic will unite listeners with Superstars.
                           if (normalized !== e.target.value) {
                             const updated = [...siteData.creditHighlights]
                             updated[index] = { ...updated[index], src: normalized }
-                            setSiteData((data) => data ? { ...data, creditHighlights: updated } : data!)
+                            setSiteData((data) => data ? { ...data, creditHighlights: updated } : data)
                           }
                         }}
                         placeholder="https://drive.google.com/file/d/... or image URL"
@@ -1524,7 +1547,7 @@ In the end, Zardonic will unite listeners with Superstars.
                         onChange={(e) => {
                           const updated = [...siteData.creditHighlights]
                           updated[index] = { ...updated[index], alt: e.target.value }
-                          setSiteData((data) => data ? { ...data, creditHighlights: updated } : data!)
+                          setSiteData((data) => data ? { ...data, creditHighlights: updated } : data)
                         }}
                         placeholder="Name"
                         className="bg-card border-border font-mono text-xs"
@@ -1535,7 +1558,7 @@ In the end, Zardonic will unite listeners with Superstars.
                       variant="destructive"
                       onClick={() => {
                         const updated = siteData.creditHighlights.filter((_, i) => i !== index)
-                        setSiteData((data) => data ? { ...data, creditHighlights: updated } : data!)
+                        setSiteData((data) => data ? { ...data, creditHighlights: updated } : data)
                       }}
                     >
                       <Trash className="w-4 h-4" />
@@ -1546,7 +1569,7 @@ In the end, Zardonic will unite listeners with Superstars.
                   size="sm"
                   variant="outline"
                   onClick={() => {
-                    setSiteData((data) => data ? { ...data, creditHighlights: [...data.creditHighlights, { src: '', alt: '' }] } : data!)
+                    setSiteData((data) => data ? { ...data, creditHighlights: [...data.creditHighlights, { src: '', alt: '' }] } : data)
                   }}
                   className="font-mono"
                 >
@@ -2152,7 +2175,7 @@ In the end, Zardonic will unite listeners with Superstars.
               type: (f.type === 'download' ? 'zip' : f.type || 'zip') as 'image' | 'pdf' | 'zip',
               size: f.description || '',
             })),
-          } : data!)
+          } : data)
         }}
       />
       </div>
@@ -2202,7 +2225,7 @@ In the end, Zardonic will unite listeners with Superstars.
                     <Label className="font-mono">{label}</Label>
                     <Input
                       value={siteData.social[key] || ''}
-                      onChange={(e) => setSiteData((data) => data ? { ...data, social: { ...data.social, [key]: e.target.value } } : data!)}
+                      onChange={(e) => setSiteData((data) => data ? { ...data, social: { ...data.social, [key]: e.target.value } } : data)}
                       className="bg-card border-border"
                       placeholder={`https://${label.toLowerCase().replace(/\s.*/, '')}.com/...`}
                     />

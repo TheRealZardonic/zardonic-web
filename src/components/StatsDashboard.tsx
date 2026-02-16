@@ -227,9 +227,33 @@ function ClickTable({ points }: { points: HeatmapPoint[] }) {
 }
 
 export default function StatsDashboard({ open, onClose }: StatsDashboardProps) {
-  const [data, setData] = useState<AnalyticsData>(getAnalyticsData)
+  const [data, setData] = useState<AnalyticsData>({
+    pageViews: 0,
+    sectionViews: {},
+    clicks: {},
+    visitors: [],
+    redirects: {},
+    devices: {},
+    referrers: {},
+    browsers: {},
+    screenResolutions: {},
+    heatmap: [],
+    countries: {},
+    languages: {},
+  })
+  const [loading, setLoading] = useState(true)
 
-  const reload = useCallback(() => setData(getAnalyticsData()), [])
+  const reload = useCallback(async () => {
+    setLoading(true)
+    try {
+      const analyticsData = await getAnalyticsData()
+      setData(analyticsData)
+    } catch (error) {
+      console.error('[StatsDashboard] Failed to load analytics:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
     if (open) reload()
@@ -259,9 +283,9 @@ export default function StatsDashboard({ open, onClose }: StatsDashboardProps) {
     [data.redirects],
   )
 
-  const handleReset = () => {
-    resetAnalytics()
-    reload()
+  const handleReset = async () => {
+    await resetAnalytics()
+    await reload()
   }
 
   return (

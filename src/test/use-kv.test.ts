@@ -4,7 +4,7 @@ import { useKV } from '@/hooks/use-kv'
 
 describe('useKV', () => {
   beforeEach(() => {
-    localStorage.clear()
+    sessionStorage.clear()
     vi.restoreAllMocks()
   })
 
@@ -28,18 +28,6 @@ describe('useKV', () => {
     expect(result.current[0]).toEqual({ foo: 'bar' })
   })
 
-  it('falls back to localStorage when API returns null but localStorage has data', async () => {
-    localStorage.setItem('kv:persisted-key', JSON.stringify({ saved: 'from-local' }))
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ value: null }), { status: 200 })
-    )
-
-    const { result } = renderHook(() => useKV('persisted-key', { saved: 'default' }))
-
-    await waitFor(() => expect(result.current[2]).toBe(true))
-    expect(result.current[0]).toEqual({ saved: 'from-local' })
-  })
-
   it('returns value from API when available', async () => {
     const apiData = { name: 'ZARDONIC', genres: ['DnB'] }
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
@@ -52,32 +40,16 @@ describe('useKV', () => {
     expect(result.current[0]).toEqual(apiData)
   })
 
-  it('syncs API data to localStorage as backup', async () => {
-    const apiData = { name: 'TEST' }
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ value: apiData }), { status: 200 })
-    )
-
-    renderHook(() => useKV('sync-key', {}))
-
-    await waitFor(() => {
-      const stored = localStorage.getItem('kv:sync-key')
-      expect(stored).not.toBeNull()
-      expect(JSON.parse(stored!)).toEqual(apiData)
-    })
-  })
-
-  it('falls back to localStorage when API fails', async () => {
-    localStorage.setItem('kv:fallback-key', JSON.stringify({ saved: true }))
+  it('uses default value when API fails', async () => {
     vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Network error'))
 
-    const { result } = renderHook(() => useKV('fallback-key', { saved: false }))
+    const { result } = renderHook(() => useKV('fallback-key', { saved: true }))
 
     await waitFor(() => expect(result.current[2]).toBe(true))
     expect(result.current[0]).toEqual({ saved: true })
   })
 
-  it('updateValue persists to localStorage immediately', async () => {
+  it('updateValue changes state immediately', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ value: null }), { status: 200 })
     )
@@ -91,7 +63,6 @@ describe('useKV', () => {
     })
 
     expect(result.current[0]).toBe('updated')
-    expect(JSON.parse(localStorage.getItem('kv:update-key')!)).toBe('updated')
   })
 
   it('updateValue with updater function receives current value', async () => {
@@ -138,12 +109,12 @@ describe('useKV', () => {
     await waitFor(() => expect(result.current[2]).toBe(true))
   })
 
-  it('sends admin token with POST when authenticated', async () => {
+  it('sends session token with POST when authenticated', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ value: 'data' }), { status: 200 })
     )
 
-    localStorage.setItem('admin-token', 'my-token')
+    sessionStorage.setItem('admin-session-token', 'my-session-token')
 
     const { result } = renderHook(() => useKV('auth-key', 'default'))
     await waitFor(() => expect(result.current[2]).toBe(true))
@@ -156,16 +127,16 @@ describe('useKV', () => {
       )
       expect(postCalls).toHaveLength(1)
       const headers = (postCalls[0][1] as RequestInit).headers as Record<string, string>
-      expect(headers['x-admin-token']).toBe('my-token')
+      expect(headers['x-admin-token']).toBe('my-session-token')
     })
   })
 
-  it('does not POST when no admin token is present', async () => {
+  it('does not POST when no session token is present', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ value: 'data' }), { status: 200 })
     )
 
-    localStorage.removeItem('admin-token')
+    sessionStorage.removeItem('admin-session-token')
 
     const { result } = renderHook(() => useKV('no-auth-key', 'default'))
     await waitFor(() => expect(result.current[2]).toBe(true))

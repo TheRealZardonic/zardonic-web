@@ -1,5 +1,10 @@
 import { useEffect } from 'react'
 
+/**
+ * Analytics Hook - MIGRATED TO VERCEL KV ONLY
+ * NO localStorage - all data stored in Vercel KV
+ */
+
 const TZ_COUNTRY_MAP: Record<string, string> = {
   'Europe/Berlin': 'DE', 'Europe/Vienna': 'AT', 'Europe/Zurich': 'CH',
   'Europe/London': 'GB', 'Europe/Paris': 'FR', 'Europe/Madrid': 'ES',
@@ -45,6 +50,116 @@ export interface AnalyticsData {
   lastTracked?: string
 }
 
+// In-memory cache for client-side performance
+let analyticsCache: AnalyticsData | null = null
+let cacheTimestamp = 0
+const CACHE_TTL = 60000 // 1 minute cache
+
+/**
+ * Get analytics data from Vercel KV API
+ */
+export async function getAnalyticsData(): Promise<AnalyticsData> {
+  // Use cache if fresh
+  if (analyticsCache && Date.now() - cacheTimestamp < CACHE_TTL) {
+    return analyticsCache
+  }
+
+  try {
+    const response = await fetch('/api/analytics')
+    
+    if (!response.ok) {
+      console.warn('[Analytics] API unavailable, using empty data')
+      return getEmptyAnalytics()
+    }
+
+    const result = await response.json()
+    const data = result.value || getEmptyAnalytics()
+    
+    // Update cache
+    analyticsCache = data
+    cacheTimestamp = Date.now()
+    
+    return data
+  } catch (error) {
+    console.error('[Analytics] Failed to fetch:', error)
+    return analyticsCache || getEmptyAnalytics()
+  }
+}
+
+function getEmptyAnalytics(): AnalyticsData {
+  return {
+    pageViews: 0,
+    sectionViews: {},
+    clicks: {},
+    visitors: [],
+    redirects: {},
+    devices: {},
+    referrers: {},
+    browsers: {},
+    screenResolutions: {},
+    heatmap: [],
+    countries: {},
+    languages: {},
+  }
+}
+
+/**
+ * Save analytics data to Vercel KV API
+ * Requires admin token for write access
+ */
+async function saveAnalyticsData(analytics: AnalyticsData): Promise<void> {
+  try {
+    // Update timestamps
+    analytics.lastTracked = new Date().toISOString().split('T')[0]
+    if (!analytics.firstTracked) {
+      analytics.firstTracked = analytics.lastTracked
+    }
+
+    // Limit heatmap to last 500 points
+    if (analytics.heatmap.length > 500) {
+      analytics.heatmap = analytics.heatmap.slice(-500)
+    }
+
+    // Get admin token from session storage (temporary, cleared on tab close)
+    const adminToken = sessionStorage.getItem('admin-session-token') || ''
+
+    const response = await fetch('/api/analytics', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-token': adminToken,
+      },
+      body: JSON.stringify({ data: analytics }),
+    })
+
+    if (!response.ok) {
+      console.warn('[Analytics] Failed to save:', response.status)
+    } else {
+      // Update cache
+      analyticsCache = analytics
+      cacheTimestamp = Date.now()
+    }
+  } catch (error) {
+    console.error('[Analytics] Save error:', error)
+  }
+}
+
+/**
+ * Track section view
+ */
+async function trackSectionView(section: string): Promise<void> {
+  try {
+    const analytics = await getAnalyticsData()
+    analytics.sectionViews[section] = (analytics.sectionViews[section] || 0) + 1
+    await saveAnalyticsData(analytics)
+  } catch (e) {
+    console.error('[Analytics] trackSectionView error:', e)
+  }
+}
+
+/**
+ * Hook to track section views with IntersectionObserver
+ */
 export function useAnalytics(sectionId: string) {
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -71,87 +186,25 @@ export function useAnalytics(sectionId: string) {
   }, [sectionId])
 }
 
-export function getAnalyticsData(): AnalyticsData {
+/**
+ * Track click events
+ */
+export async function trackClick(element: string): Promise<void> {
   try {
-    const stored = localStorage.getItem('zardonic-analytics')
-    if (stored) {
-      const parsed = JSON.parse(stored)
-      return {
-        pageViews: parsed.pageViews || 0,
-        sectionViews: parsed.sectionViews || {},
-        clicks: parsed.clicks || {},
-        visitors: parsed.visitors || [],
-        redirects: parsed.redirects || {},
-        devices: parsed.devices || {},
-        referrers: parsed.referrers || {},
-        browsers: parsed.browsers || {},
-        screenResolutions: parsed.screenResolutions || {},
-        heatmap: parsed.heatmap || [],
-        countries: parsed.countries || {},
-        languages: parsed.languages || {},
-        firstTracked: parsed.firstTracked,
-        lastTracked: parsed.lastTracked,
-      }
-    }
-  } catch {
-    // ignore parse errors
-  }
-  return {
-    pageViews: 0,
-    sectionViews: {},
-    clicks: {},
-    visitors: [],
-    redirects: {},
-    devices: {},
-    referrers: {},
-    browsers: {},
-    screenResolutions: {},
-    heatmap: [],
-    countries: {},
-    languages: {},
-  }
-}
-
-function saveAnalyticsData(analytics: AnalyticsData) {
-  try {
-    // Limit heatmap to last 500 points to avoid localStorage bloat
-    if (analytics.heatmap.length > 500) {
-      analytics.heatmap = analytics.heatmap.slice(-500)
-    }
-    analytics.lastTracked = new Date().toISOString().split('T')[0]
-    if (!analytics.firstTracked) {
-      analytics.firstTracked = analytics.lastTracked
-    }
-    localStorage.setItem('zardonic-analytics', JSON.stringify(analytics))
-  } catch {
-    // ignore storage errors
-  }
-}
-
-async function trackSectionView(section: string) {
-  try {
-    const analytics = getAnalyticsData()
-    analytics.sectionViews[section] = (analytics.sectionViews[section] || 0) + 1
-    saveAnalyticsData(analytics)
-  } catch (e) {
-    console.error('Analytics error:', e)
-  }
-}
-
-export async function trackClick(element: string) {
-  try {
-    const analytics = getAnalyticsData()
+    const analytics = await getAnalyticsData()
     analytics.clicks[element] = (analytics.clicks[element] || 0) + 1
-    saveAnalyticsData(analytics)
+    await saveAnalyticsData(analytics)
   } catch (e) {
-    console.error('Analytics error:', e)
+    console.error('[Analytics] trackClick error:', e)
   }
 }
 
-export async function trackRedirect(url: string) {
+/**
+ * Track redirect/outbound link
+ */
+export async function trackRedirect(url: string): Promise<void> {
   try {
-    const analytics = getAnalyticsData()
-    // Store just the domain or a short label
+    const analytics = await getAnalyticsData()
     let label: string
     try {
       label = new URL(url).hostname
@@ -159,30 +212,36 @@ export async function trackRedirect(url: string) {
       label = url.slice(0, 50)
     }
     analytics.redirects[label] = (analytics.redirects[label] || 0) + 1
-    saveAnalyticsData(analytics)
+    await saveAnalyticsData(analytics)
   } catch (e) {
-    console.error('Analytics error:', e)
+    console.error('[Analytics] trackRedirect error:', e)
   }
 }
 
-export async function trackHeatmapClick(x: number, y: number, el: string) {
+/**
+ * Track heatmap click
+ */
+export async function trackHeatmapClick(x: number, y: number, el: string): Promise<void> {
   try {
-    const analytics = getAnalyticsData()
+    const analytics = await getAnalyticsData()
     analytics.heatmap.push({
       x: Math.round(x * 1000) / 1000,
       y: Math.round(y * 1000) / 1000,
       el,
       ts: Date.now(),
     })
-    saveAnalyticsData(analytics)
+    await saveAnalyticsData(analytics)
   } catch (e) {
-    console.error('Analytics error:', e)
+    console.error('[Analytics] trackHeatmapClick error:', e)
   }
 }
 
-export function trackPageView() {
+/**
+ * Track page view with device/browser/geo data
+ */
+export async function trackPageView(): Promise<void> {
   try {
-    const analytics = getAnalyticsData()
+    const analytics = await getAnalyticsData()
     analytics.pageViews += 1
 
     // Track device type
@@ -198,7 +257,7 @@ export function trackPageView() {
           analytics.referrers[referrerHost] = (analytics.referrers[referrerHost] || 0) + 1
         }
       } catch {
-        // ignore invalid referrer
+        // Invalid referrer
       }
     } else {
       analytics.referrers['direct'] = (analytics.referrers['direct'] || 0) + 1
@@ -223,24 +282,43 @@ export function trackPageView() {
       const country = TZ_COUNTRY_MAP[tz] || 'Other'
       analytics.countries[country] = (analytics.countries[country] || 0) + 1
     } catch {
-      // ignore timezone errors
+      // Ignore timezone errors
     }
 
     // Track language
     const lang = navigator.language?.split('-')[0] || 'unknown'
     analytics.languages[lang] = (analytics.languages[lang] || 0) + 1
 
-    saveAnalyticsData(analytics)
+    await saveAnalyticsData(analytics)
   } catch (e) {
-    console.error('Analytics error:', e)
+    console.error('[Analytics] trackPageView error:', e)
   }
 }
 
-export function resetAnalytics() {
+/**
+ * Reset analytics data (requires admin token)
+ */
+export async function resetAnalytics(): Promise<void> {
   try {
-    localStorage.removeItem('zardonic-analytics')
-  } catch {
-    // ignore storage errors
+    const adminToken = sessionStorage.getItem('admin-session-token') || ''
+    
+    const response = await fetch('/api/analytics', {
+      method: 'DELETE',
+      headers: {
+        'x-admin-token': adminToken,
+      },
+    })
+
+    if (response.ok) {
+      // Clear cache
+      analyticsCache = null
+      cacheTimestamp = 0
+    } else {
+      console.warn('[Analytics] Reset failed:', response.status)
+    }
+  } catch (error) {
+    console.error('[Analytics] Reset error:', error)
   }
 }
+
 
