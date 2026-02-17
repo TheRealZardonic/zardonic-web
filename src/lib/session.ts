@@ -1,7 +1,7 @@
 /**
  * Session Management Helper
  * Handles admin authentication via Vercel KV
- * NO localStorage!
+ * Uses localStorage for persistent admin sessions
  */
 
 /**
@@ -35,9 +35,9 @@ export async function loginWithPassword(password: string): Promise<string | null
 
     const result = await response.json()
     
-    // Store session token in sessionStorage (cleared on tab close)
+    // Store session token in localStorage (persistent across page reloads)
     if (result.token) {
-      sessionStorage.setItem('admin-session-token', result.token)
+      localStorage.setItem('admin-token', result.token)
       return result.token
     }
 
@@ -53,7 +53,7 @@ export async function loginWithPassword(password: string): Promise<string | null
  */
 export async function validateSession(): Promise<boolean> {
   try {
-    const token = sessionStorage.getItem('admin-session-token')
+    const token = localStorage.getItem('admin-token')
     
     if (!token) {
       return false
@@ -78,7 +78,7 @@ export async function validateSession(): Promise<boolean> {
  */
 export async function logout(): Promise<void> {
   try {
-    const token = sessionStorage.getItem('admin-session-token')
+    const token = localStorage.getItem('admin-token')
     
     if (token) {
       await fetch('/api/session', {
@@ -89,7 +89,7 @@ export async function logout(): Promise<void> {
       })
     }
 
-    sessionStorage.removeItem('admin-session-token')
+    localStorage.removeItem('admin-token')
   } catch (error) {
     console.error('[Session] Logout error:', error)
   }
@@ -126,5 +126,5 @@ export async function setupPassword(password: string): Promise<boolean> {
  * Check if user has valid session
  */
 export function hasSessionToken(): boolean {
-  return !!sessionStorage.getItem('admin-session-token')
+  return !!localStorage.getItem('admin-token')
 }

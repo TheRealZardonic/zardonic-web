@@ -15,10 +15,11 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 export const SKIP_UPDATE = Symbol('SKIP_UPDATE')
 
 /**
- * Custom KV hook backed ONLY by Vercel KV API - NO localStorage!
+ * Custom KV hook with localStorage fallback
  * 
- * Uses /api/kv (Vercel KV) for persistence.
- * All data is stored server-side in Vercel KV (Redis).
+ * Uses /api/kv (Vercel KV) for persistence, with localStorage as fallback.
+ * All data is stored server-side in Vercel KV (Redis) when available,
+ * but also immediately saved to localStorage for offline/local dev support.
  * 
  * Returns [value, updateValue, loaded] — `loaded` is true once the initial
  * KV fetch has completed.
@@ -36,19 +37,41 @@ export function useKV<T>(key: string, defaultValue: T): [T | undefined, (updater
     if (initializedRef.current) return
     initializedRef.current = true
 
+    // Helper to get localStorage key
+    const localStorageKey = `kv:${key}`
+
+    // Helper function to load from localStorage fallback
+    const loadFromLocalStorage = (): T | undefined => {
+      try {
+        const localData = localStorage.getItem(localStorageKey)
+        if (localData !== null) {
+          return JSON.parse(localData) as T
+        }
+      } catch (e) {
+        console.warn('[KV] Failed to read from localStorage:', e)
+      }
+      return defaultRef.current
+    }
+
     fetch(`/api/kv?key=${encodeURIComponent(key)}`)
       .then(res => res.ok ? res.json() : null)
       .then(data => {
         if (data && data.value !== null && data.value !== undefined) {
+          // API returned valid data - use it and sync to localStorage
           setValue(data.value as T)
+          try {
+            localStorage.setItem(localStorageKey, JSON.stringify(data.value))
+          } catch (e) {
+            console.warn('[KV] Failed to save to localStorage:', e)
+          }
         } else {
-          // API returned null, use default value
-          setValue(defaultRef.current)
+          // API returned null - try localStorage fallback
+          setValue(loadFromLocalStorage())
         }
       })
       .catch(() => {
-        // API not available, use default value
-        setValue(defaultRef.current)
+        // API not available, try localStorage fallback
+        setValue(loadFromLocalStorage())
       })
       .finally(() => {
         loadedRef.current = true
@@ -68,8 +91,16 @@ export function useKV<T>(key: string, defaultValue: T): [T | undefined, (updater
         return prev
       }
 
-      // Get admin token from sessionStorage (secure, cleared on tab close)
-      const adminToken = sessionStorage.getItem('admin-session-token') || ''
+      // Save to localStorage immediately (as backup)
+      const localStorageKey = `kv:${key}`
+      try {
+        localStorage.setItem(localStorageKey, JSON.stringify(newValue))
+      } catch (e) {
+        console.warn('[KV] Failed to save to localStorage:', e)
+      }
+
+      // Get admin token from localStorage (persistent across page reloads)
+      const adminToken = localStorage.getItem('admin-token') || ''
 
       // Only write to the remote KV once the initial load has finished and
       // the user is authenticated (has an admin token) to prevent

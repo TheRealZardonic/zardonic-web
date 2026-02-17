@@ -4,7 +4,7 @@ import { useKV } from '@/hooks/use-kv'
 
 describe('useKV', () => {
   beforeEach(() => {
-    sessionStorage.clear()
+    localStorage.clear()
     vi.restoreAllMocks()
   })
 
@@ -109,12 +109,12 @@ describe('useKV', () => {
     await waitFor(() => expect(result.current[2]).toBe(true))
   })
 
-  it('sends session token with POST when authenticated', async () => {
+  it('sends admin token with POST when authenticated', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ value: 'data' }), { status: 200 })
     )
 
-    sessionStorage.setItem('admin-session-token', 'my-session-token')
+    localStorage.setItem('admin-token', 'my-session-token')
 
     const { result } = renderHook(() => useKV('auth-key', 'default'))
     await waitFor(() => expect(result.current[2]).toBe(true))
@@ -131,12 +131,12 @@ describe('useKV', () => {
     })
   })
 
-  it('does not POST when no session token is present', async () => {
+  it('does not POST when no admin token is present', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ value: 'data' }), { status: 200 })
     )
 
-    sessionStorage.removeItem('admin-session-token')
+    localStorage.removeItem('admin-token')
 
     const { result } = renderHook(() => useKV('no-auth-key', 'default'))
     await waitFor(() => expect(result.current[2]).toBe(true))
@@ -157,5 +157,60 @@ describe('useKV', () => {
     const { result } = renderHook(() => useKV('server-error-key', 'fallback'))
     await waitFor(() => expect(result.current[2]).toBe(true))
     expect(result.current[0]).toBe('fallback')
+  })
+
+  it('loads from localStorage when API returns null', async () => {
+    const localData = { name: 'ZARDONIC', source: 'localStorage' }
+    localStorage.setItem('kv:local-fallback-key', JSON.stringify(localData))
+
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ value: null }), { status: 200 })
+    )
+
+    const { result } = renderHook(() => useKV('local-fallback-key', { name: '', source: '' }))
+    await waitFor(() => expect(result.current[2]).toBe(true))
+    expect(result.current[0]).toEqual(localData)
+  })
+
+  it('loads from localStorage when API fails', async () => {
+    const localData = { offline: true }
+    localStorage.setItem('kv:offline-key', JSON.stringify(localData))
+
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Network error'))
+
+    const { result } = renderHook(() => useKV('offline-key', { offline: false }))
+    await waitFor(() => expect(result.current[2]).toBe(true))
+    expect(result.current[0]).toEqual(localData)
+  })
+
+  it('saves to localStorage immediately on update', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ value: 'initial' }), { status: 200 })
+    )
+
+    const { result } = renderHook(() => useKV('save-test-key', 'default'))
+    await waitFor(() => expect(result.current[2]).toBe(true))
+
+    act(() => {
+      result.current[1]('updated-value')
+    })
+
+    expect(result.current[0]).toBe('updated-value')
+    const savedData = localStorage.getItem('kv:save-test-key')
+    expect(savedData).toBe(JSON.stringify('updated-value'))
+  })
+
+  it('syncs localStorage with API data on successful fetch', async () => {
+    const apiData = { source: 'api', synced: true }
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ value: apiData }), { status: 200 })
+    )
+
+    const { result } = renderHook(() => useKV('sync-key', { source: '', synced: false }))
+    await waitFor(() => expect(result.current[2]).toBe(true))
+    
+    expect(result.current[0]).toEqual(apiData)
+    const savedData = localStorage.getItem('kv:sync-key')
+    expect(savedData).toBe(JSON.stringify(apiData))
   })
 })

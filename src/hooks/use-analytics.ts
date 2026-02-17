@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
 
 /**
- * Analytics Hook - MIGRATED TO VERCEL KV ONLY
- * NO localStorage - all data stored in Vercel KV
+ * Analytics Hook - MIGRATED TO VERCEL KV WITH localStorage FALLBACK
+ * Data stored in Vercel KV with localStorage backup for offline support
  */
 
 const TZ_COUNTRY_MAP: Record<string, string> = {
@@ -120,8 +120,8 @@ async function saveAnalyticsData(analytics: AnalyticsData): Promise<void> {
       analytics.heatmap = analytics.heatmap.slice(-500)
     }
 
-    // Get admin token from session storage (temporary, cleared on tab close)
-    const adminToken = sessionStorage.getItem('admin-session-token') || ''
+    // Get admin token from localStorage (persistent across page reloads)
+    const adminToken = localStorage.getItem('admin-token') || ''
 
     const response = await fetch('/api/analytics', {
       method: 'POST',
@@ -300,7 +300,7 @@ export async function trackPageView(): Promise<void> {
  */
 export async function resetAnalytics(): Promise<void> {
   try {
-    const adminToken = sessionStorage.getItem('admin-session-token') || ''
+    const adminToken = localStorage.getItem('admin-token') || ''
     
     const response = await fetch('/api/analytics', {
       method: 'DELETE',
