@@ -123,11 +123,11 @@ All parameters are properly saved and loaded:
 
 ### Storage Architecture
 - **Primary:** Vercel KV (Redis) with 24-hour TTL
-- **Fallback:** localStorage for offline/development
+- **Fallback:** localStorage for offline/development (stored with `kv:` prefix)
 - **Keys Used:**
   - `zardonic-admin-settings` - Theme, animations, section visibility, config overrides
   - `zardonic-site-data` - Gigs, releases, gallery, bio, etc.
-  - `admin-password-hash` - SHA-256 hashed admin password
+  - `admin-token` - Admin session token (stored in localStorage, persistent across page reloads)
 
 ### What Gets Saved
 ✅ All theme colors (20+ variables)

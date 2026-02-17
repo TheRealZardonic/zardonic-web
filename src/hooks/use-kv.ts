@@ -40,6 +40,19 @@ export function useKV<T>(key: string, defaultValue: T): [T | undefined, (updater
     // Helper to get localStorage key
     const localStorageKey = `kv:${key}`
 
+    // Helper function to load from localStorage fallback
+    const loadFromLocalStorage = (): T | undefined => {
+      try {
+        const localData = localStorage.getItem(localStorageKey)
+        if (localData !== null) {
+          return JSON.parse(localData) as T
+        }
+      } catch (e) {
+        console.warn('[KV] Failed to read from localStorage:', e)
+      }
+      return defaultRef.current
+    }
+
     fetch(`/api/kv?key=${encodeURIComponent(key)}`)
       .then(res => res.ok ? res.json() : null)
       .then(data => {
@@ -53,36 +66,12 @@ export function useKV<T>(key: string, defaultValue: T): [T | undefined, (updater
           }
         } else {
           // API returned null - try localStorage fallback
-          try {
-            const localData = localStorage.getItem(localStorageKey)
-            if (localData !== null) {
-              const parsed = JSON.parse(localData)
-              setValue(parsed as T)
-            } else {
-              // No localStorage data either, use default
-              setValue(defaultRef.current)
-            }
-          } catch (e) {
-            console.warn('[KV] Failed to read from localStorage:', e)
-            setValue(defaultRef.current)
-          }
+          setValue(loadFromLocalStorage())
         }
       })
       .catch(() => {
         // API not available, try localStorage fallback
-        try {
-          const localData = localStorage.getItem(localStorageKey)
-          if (localData !== null) {
-            const parsed = JSON.parse(localData)
-            setValue(parsed as T)
-          } else {
-            // No localStorage data either, use default
-            setValue(defaultRef.current)
-          }
-        } catch (e) {
-          console.warn('[KV] Failed to read from localStorage:', e)
-          setValue(defaultRef.current)
-        }
+        setValue(loadFromLocalStorage())
       })
       .finally(() => {
         loadedRef.current = true
