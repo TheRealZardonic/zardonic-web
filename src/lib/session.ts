@@ -2,24 +2,22 @@
  * Session Management Helper
  * Handles admin authentication.
  *
- * Supports the new cookie-based auth system (`/api/auth` with HttpOnly `zd-session`
- * cookie + optional TOTP) as primary, with backwards-compatible fallback to the
- * legacy `/api/session` token-in-header approach.
+ * Uses cookie-based auth system (`/api/auth` with HttpOnly `zd-session`
+ * cookie + optional TOTP). Legacy `/api/session` token-in-header approach
+ * is kept as fallback for backward compatibility.
  */
 
 /**
- * Login with password (and optional TOTP token).
- * Uses the new `/api/auth` endpoint which sets an HttpOnly `zd-session` cookie.
- * Falls back to legacy `/api/session` if auth endpoint is unavailable.
+ * Login with password (and optional TOTP code).
+ * Uses the `/api/auth` endpoint which sets an HttpOnly `zd-session` cookie.
  */
 export async function loginWithPassword(
   password: string,
-  totpToken?: string
-): Promise<{ success: boolean; requiresTotp?: boolean; error?: string }> {
+  totpCode?: string
+): Promise<{ success: boolean; totpRequired?: boolean; error?: string }> {
   try {
-    // Primary: new cookie-based auth
     const body: Record<string, string> = { password }
-    if (totpToken) body.totp = totpToken
+    if (totpCode) body.totpCode = totpCode
 
     const response = await fetch('/api/auth', {
       method: 'POST',
@@ -29,39 +27,34 @@ export async function loginWithPassword(
     })
 
     if (response.ok) {
-      const data = await response.json()
-      // Store legacy token for backward compat if returned
-      if (data.token) {
-        localStorage.setItem('admin-token', data.token)
-      }
       return { success: true }
     }
 
-    // 403 with totp_required means step 2 needed
-    if (response.status === 403) {
-      const data = await response.json().catch(() => ({}))
-      if (data?.error === 'totp_required') {
-        return { success: false, requiresTotp: true }
-      }
+    const data = await response.json().catch(() => ({}))
+
+    // 403 with totpRequired means step 2 needed
+    if (response.status === 403 && data?.totpRequired) {
+      return { success: false, totpRequired: true }
     }
 
     // Fallback: try legacy session endpoint
-    const legacyResponse = await fetch('/api/session', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password }),
-    })
+    if (response.status !== 200) {
+      const legacyResponse = await fetch('/api/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      })
 
-    if (legacyResponse.ok) {
-      const result = await legacyResponse.json()
-      if (result.token) {
-        localStorage.setItem('admin-token', result.token)
-        return { success: true }
+      if (legacyResponse.ok) {
+        const result = await legacyResponse.json()
+        if (result.token) {
+          localStorage.setItem('admin-token', result.token)
+          return { success: true }
+        }
       }
     }
 
-    const errData = await response.json().catch(() => ({}))
-    return { success: false, error: errData?.error || 'Login failed' }
+    return { success: false, error: data?.error || 'Login failed' }
   } catch (error) {
     console.error('[Session] Login error:', error)
     return { success: false, error: 'Network error' }
@@ -69,34 +62,42 @@ export async function loginWithPassword(
 }
 
 /**
- * Validate current session (checks both cookie and legacy token).
+ * Validate current session and get auth status.
+ * Returns full status object from /api/auth.
  */
-export async function validateSession(): Promise<boolean> {
+export async function validateSession(): Promise<{
+  authenticated: boolean
+  needsSetup?: boolean
+  totpEnabled?: boolean
+}> {
   try {
-    // Primary: check cookie-based session via /api/auth GET
-    const cookieResponse = await fetch('/api/auth', {
+    const response = await fetch('/api/auth', {
       method: 'GET',
       credentials: 'same-origin',
     })
-    if (cookieResponse.ok) return true
+    if (response.ok) {
+      return await response.json()
+    }
 
     // Fallback: legacy token-in-header validation
     const token = localStorage.getItem('admin-token')
-    if (!token) return false
+    if (token) {
+      const legacyResponse = await fetch('/api/session', {
+        method: 'GET',
+        headers: { 'x-session-token': token },
+      })
+      if (legacyResponse.ok) return { authenticated: true }
+    }
 
-    const legacyResponse = await fetch('/api/session', {
-      method: 'GET',
-      headers: { 'x-session-token': token },
-    })
-    return legacyResponse.ok
+    return { authenticated: false }
   } catch (error) {
     console.error('[Session] Validation error:', error)
-    return false
+    return { authenticated: false }
   }
 }
 
 /**
- * Logout (clears both cookie session and legacy token).
+ * Logout — clears cookie session (and legacy localStorage token).
  */
 export async function logout(): Promise<void> {
   try {
@@ -122,23 +123,21 @@ export async function logout(): Promise<void> {
 }
 
 /**
- * Setup initial admin password.
+ * Setup initial admin password via /api/auth POST action=setup.
  */
-export async function setupPassword(password: string): Promise<boolean> {
+export async function setupPassword(password: string, setupToken?: string): Promise<boolean> {
   try {
-    // Primary: use /api/auth for setup
+    const body: Record<string, string> = { action: 'setup', password }
+    if (setupToken) body.setupToken = setupToken
+
     const response = await fetch('/api/auth', {
-      method: 'PUT',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'same-origin',
-      body: JSON.stringify({ password }),
+      body: JSON.stringify(body),
     })
 
-    if (response.ok) {
-      // Login immediately after setup
-      const loginResult = await loginWithPassword(password)
-      return loginResult.success
-    }
+    if (response.ok) return true
 
     // Fallback: legacy session endpoint
     const legacyResponse = await fetch('/api/session', {
@@ -147,10 +146,7 @@ export async function setupPassword(password: string): Promise<boolean> {
       body: JSON.stringify({ password }),
     })
 
-    if (!legacyResponse.ok) return false
-
-    const result = await loginWithPassword(password)
-    return result.success
+    return legacyResponse.ok
   } catch (error) {
     console.error('[Session] Setup error:', error)
     return false
@@ -158,10 +154,96 @@ export async function setupPassword(password: string): Promise<boolean> {
 }
 
 /**
- * Check if user has a valid session token in localStorage (legacy check).
+ * Change the admin password (requires current password + valid session).
  */
-export function hasSessionToken(): boolean {
-  return !!localStorage.getItem('admin-token')
+export async function changePassword(currentPassword: string, newPassword: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    })
+
+    if (response.ok) return { success: true }
+    const data = await response.json().catch(() => ({}))
+    return { success: false, error: data?.error || 'Password change failed' }
+  } catch (error) {
+    console.error('[Session] Change password error:', error)
+    return { success: false, error: 'Network error' }
+  }
+}
+
+/**
+ * Initiate TOTP setup — returns the TOTP URI and secret for QR code display.
+ */
+export async function setupTotp(): Promise<{ success: boolean; totpUri?: string; totpSecret?: string; error?: string }> {
+  try {
+    const response = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ action: 'totp-setup' }),
+    })
+
+    const data = await response.json().catch(() => ({}))
+    if (response.ok) return { success: true, totpUri: data.totpUri, totpSecret: data.totpSecret }
+    return { success: false, error: data?.error || 'TOTP setup failed' }
+  } catch (error) {
+    console.error('[Session] TOTP setup error:', error)
+    return { success: false, error: 'Network error' }
+  }
+}
+
+/**
+ * Confirm TOTP enrollment with a 6-digit code.
+ */
+export async function verifyTotp(code: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ action: 'totp-verify', code }),
+    })
+
+    if (response.ok) return { success: true }
+    const data = await response.json().catch(() => ({}))
+    return { success: false, error: data?.error || 'TOTP verification failed' }
+  } catch (error) {
+    console.error('[Session] TOTP verify error:', error)
+    return { success: false, error: 'Network error' }
+  }
+}
+
+/**
+ * Disable TOTP (requires password + current TOTP code).
+ */
+export async function disableTotp(password: string, code: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const response = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ action: 'totp-disable', password, code }),
+    })
+
+    if (response.ok) return { success: true }
+    const data = await response.json().catch(() => ({}))
+    return { success: false, error: data?.error || 'TOTP disable failed' }
+  } catch (error) {
+    console.error('[Session] TOTP disable error:', error)
+    return { success: false, error: 'Network error' }
+  }
+}
+
+/**
+ * Check if the user has an active session by calling /api/auth.
+ * Returns true if authenticated (cookie session or legacy token).
+ */
+export async function hasSessionToken(): Promise<boolean> {
+  const status = await validateSession()
+  return status.authenticated
 }
 
 /**

@@ -114,6 +114,25 @@ describe('KV API handler', () => {
       expect(res.json).toHaveBeenCalledWith({ value: { name: 'ZARDONIC' } })
     })
 
+    it('returns value for public key (zardonic-site-data) without session', async () => {
+      vi.mocked(authMod.validateSession).mockResolvedValue(false)
+      mockKvGet.mockResolvedValue({ gigs: [], releases: [] })
+      const res = mockRes()
+      await handler({ method: 'GET', query: { key: 'zardonic-site-data' }, body: {}, headers: {} }, res)
+      expect(mockKvGet).toHaveBeenCalledWith('zardonic-site-data')
+      expect(res.json).toHaveBeenCalledWith({ value: { gigs: [], releases: [] } })
+    })
+
+    it('strips terminalCommands from public zardonic-site-data reads', async () => {
+      vi.mocked(authMod.validateSession).mockResolvedValue(false)
+      mockKvGet.mockResolvedValue({ gigs: [], terminalCommands: ['ls', 'help'] })
+      const res = mockRes()
+      await handler({ method: 'GET', query: { key: 'zardonic-site-data' }, body: {}, headers: {} }, res)
+      const responseValue = (vi.mocked(res.json).mock.calls[0][0] as { value: Record<string, unknown> }).value
+      expect(responseValue).not.toHaveProperty('terminalCommands')
+      expect(responseValue).toHaveProperty('gigs')
+    })
+
     it('returns 403 for non-public keys without session', async () => {
       vi.mocked(authMod.validateSession).mockResolvedValue(false)
       mockKvGet.mockResolvedValue(undefined)
@@ -165,7 +184,7 @@ describe('KV API handler', () => {
       expect(res.status).toHaveBeenCalledWith(400)
     })
 
-    it('saves value with valid session', async () => {
+    it('saves value with valid session (transient key uses 90-day TTL)', async () => {
       mockKvGet.mockResolvedValue(null)
       mockKvSet.mockResolvedValue('OK')
       const res = mockRes()
@@ -175,7 +194,35 @@ describe('KV API handler', () => {
         body: { key: 'site-data', value: { name: 'test' } },
         headers: {},
       }, res)
-      expect(mockKvSet).toHaveBeenCalledWith('site-data', { name: 'test' }, { ex: 86400 })
+      expect(mockKvSet).toHaveBeenCalledWith('site-data', { name: 'test' }, { ex: 90 * 24 * 60 * 60 })
+      expect(res.json).toHaveBeenCalledWith({ success: true })
+    })
+
+    it('saves zardonic-site-data without TTL (persistent key)', async () => {
+      mockKvGet.mockResolvedValue(null)
+      mockKvSet.mockResolvedValue('OK')
+      const res = mockRes()
+      await handler({
+        method: 'POST',
+        query: {},
+        body: { key: 'zardonic-site-data', value: { gigs: [], releases: [] } },
+        headers: {},
+      }, res)
+      expect(mockKvSet).toHaveBeenCalledWith('zardonic-site-data', { gigs: [], releases: [] })
+      expect(res.json).toHaveBeenCalledWith({ success: true })
+    })
+
+    it('saves zardonic-band-data without TTL (persistent key)', async () => {
+      mockKvGet.mockResolvedValue(null)
+      mockKvSet.mockResolvedValue('OK')
+      const res = mockRes()
+      await handler({
+        method: 'POST',
+        query: {},
+        body: { key: 'zardonic-band-data', value: { name: 'ZARDONIC' } },
+        headers: {},
+      }, res)
+      expect(mockKvSet).toHaveBeenCalledWith('zardonic-band-data', { name: 'ZARDONIC' })
       expect(res.json).toHaveBeenCalledWith({ success: true })
     })
 

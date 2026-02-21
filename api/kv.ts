@@ -17,6 +17,16 @@ const isKVConfigured = () => {
  */
 const ALLOWED_PUBLIC_READ_KEYS = new Set([
   'zardonic-band-data',
+  'zardonic-site-data',
+])
+
+/**
+ * Keys whose data is long-lived admin-managed content and must not have a TTL.
+ * All other (cached/transient) keys use a 90-day expiry.
+ */
+const PERSISTENT_KEYS = new Set([
+  'zardonic-band-data',
+  'zardonic-site-data',
 ])
 
 // Lazily create the Redis client so we only instantiate when env vars are set
@@ -179,11 +189,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       }
 
-      // Use 24h TTL for cached data keys, no TTL for admin-password-hash
-      if (key === 'admin-password-hash') {
+      // Persistent keys and admin-password-hash never expire.
+      // All other (transient/cached) keys use a 90-day TTL.
+      if (key === 'admin-password-hash' || PERSISTENT_KEYS.has(key)) {
         await kv.set(key, value)
       } else {
-        await kv.set(key, value, { ex: 86400 }) // 24 hours
+        await kv.set(key, value, { ex: 90 * 24 * 60 * 60 }) // 90-day TTL for transient/cached keys
       }
       return res.json({ success: true })
     }

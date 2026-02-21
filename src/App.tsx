@@ -15,7 +15,7 @@ import {
   OVERLAY_REVEAL_PHASE_DELAY_MS,
 } from '@/lib/config'
 import { submitContactForm, contactFormSchema } from '@/lib/contact'
-import { loginWithPassword, setupPassword, validateSession, hasSessionToken } from '@/lib/session'
+import { loginWithPassword, setupPassword, validateSession, hashPassword } from '@/lib/session'
 import { getSyncTimestamps, updateReleasesSync, updateGigsSync } from '@/lib/sync'
 import type { AdminSettings } from '@/lib/types'
 import {
@@ -78,7 +78,7 @@ import { SwipeableGallery } from '@/components/SwipeableGallery'
 import { Terminal } from '@/components/Terminal'
 import { LoadingScreen } from '@/components/LoadingScreen'
 import { CircuitBackground } from '@/components/CircuitBackground'
-import AdminLoginDialog, { hashPassword } from '@/components/AdminLoginDialog'
+import AdminLoginDialog from '@/components/AdminLoginDialog'
 import EditControls from '@/components/EditControls'
 import ConfigEditorDialog from '@/components/ConfigEditorDialog'
 import { SpotifyEmbed } from '@/components/SpotifyEmbed'
@@ -236,8 +236,8 @@ function App() {
     if (!adminPasswordHash) return
     
     // Validate session token if exists
-    validateSession().then(isValid => {
-      if (isValid) {
+    validateSession().then(result => {
+      if (result.authenticated) {
         setIsOwner(true)
       }
     })
@@ -629,13 +629,12 @@ In the end, Zardonic will unite listeners with Superstars.
   }, [volume])
 
   // Admin authentication handlers
-  const handleAdminLogin = async (password: string): Promise<boolean> => {
-    const token = await loginWithPassword(password)
-    if (token) {
+  const handleAdminLogin = async (password: string, totpCode?: string): Promise<{ success: boolean; totpRequired?: boolean }> => {
+    const result = await loginWithPassword(password, totpCode)
+    if (result.success) {
       setIsOwner(true)
-      return true
     }
-    return false
+    return result
   }
 
   const handleSetupAdminPassword = async (password: string): Promise<void> => {

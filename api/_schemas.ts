@@ -118,6 +118,23 @@ export const odesliQuerySchema = z.object({
 })
 
 // ---------------------------------------------------------------------------
+// Image proxy API — GET query
+// ---------------------------------------------------------------------------
+
+export const imageProxyQuerySchema = z.object({
+  url: z.string().min(1, 'url parameter is required').max(2000),
+})
+
+// ---------------------------------------------------------------------------
+// Terminal API — POST body
+// ---------------------------------------------------------------------------
+
+export const terminalCommandSchema = z.object({
+  command: z.string().min(1, 'command is required').max(100)
+    .regex(/^[a-z0-9_-]+$/, 'Invalid command format'),
+})
+
+// ---------------------------------------------------------------------------
 // Blocklist API
 // ---------------------------------------------------------------------------
 

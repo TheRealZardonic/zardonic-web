@@ -192,6 +192,25 @@ export function injectEntropyHeaders(res: VercelResponse, count = 200): void {
 }
 
 /**
+ * Serve a 1x1 transparent PNG fingerprint pixel with browser hint headers.
+ * Used to gather information about suspected bot clients.
+ */
+export function serveFingerprintPixel(res: VercelResponse): void {
+  // Minimal 1x1 transparent PNG (67 bytes)
+  const PIXEL = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+    'base64'
+  )
+  res.setHeader('Content-Type', 'image/png')
+  res.setHeader('Content-Length', PIXEL.length)
+  res.setHeader('Cache-Control', 'no-store')
+  res.setHeader('Accept-CH', 'Sec-CH-UA, Sec-CH-UA-Mobile, Sec-CH-UA-Platform, Viewport-Width, Width')
+  res.setHeader('Critical-CH', 'Sec-CH-UA, Sec-CH-UA-Mobile')
+  res.setHeader('Vary', 'Sec-CH-UA, Sec-CH-UA-Mobile, Sec-CH-UA-Platform')
+  res.status(200).send(PIXEL)
+}
+
+/**
  * Seed honeytoken records into KV.
  */
 export async function seedHoneytokens(): Promise<void> {

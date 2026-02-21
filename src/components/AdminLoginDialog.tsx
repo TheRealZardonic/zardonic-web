@@ -9,27 +9,19 @@ interface AdminLoginDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   mode: 'login' | 'setup'
-  onLogin?: (password: string) => Promise<boolean>
+  onLogin?: (password: string, totpCode?: string) => Promise<{ success: boolean; totpRequired?: boolean }>
   onSetPassword: (password: string) => Promise<void>
 }
-
-async function hashPassword(password: string): Promise<string> {
-  const encoder = new TextEncoder()
-  const data = encoder.encode(password)
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-  const hashArray = Array.from(new Uint8Array(hashBuffer))
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
-}
-
-export { hashPassword }
 
 export default function AdminLoginDialog({ open, onOpenChange, mode, onLogin, onSetPassword }: AdminLoginDialogProps) {
   const isLoginMode = mode === 'login'
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [totpCode, setTotpCode] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [totpStep, setTotpStep] = useState(false)
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -43,13 +35,19 @@ export default function AdminLoginDialog({ open, onOpenChange, mode, onLogin, on
     setIsLoading(true)
     setError('')
     try {
-      const success = await onLogin(password)
-      if (success) {
+      const result = await onLogin(password, totpStep ? totpCode : undefined)
+      if (result.success) {
         toast.success('ADMIN ACCESS GRANTED', {
           description: 'Edit mode is now available'
         })
         setPassword('')
+        setTotpCode('')
+        setTotpStep(false)
         onOpenChange(false)
+      } else if (result.totpRequired) {
+        // Password was correct, need TOTP code
+        setTotpStep(true)
+        setError('')
       } else {
         setError('Invalid password')
       }
@@ -95,6 +93,8 @@ export default function AdminLoginDialog({ open, onOpenChange, mode, onLogin, on
     if (!isOpen) {
       setPassword('')
       setConfirmPassword('')
+      setTotpCode('')
+      setTotpStep(false)
       setError('')
       setShowPassword(false)
     }
@@ -106,39 +106,64 @@ export default function AdminLoginDialog({ open, onOpenChange, mode, onLogin, on
       <DialogContent className="bg-card border-border sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-mono text-primary">
-            {isLoginMode ? 'ADMIN LOGIN' : 'SET ADMIN PASSWORD'}
+            {isLoginMode
+              ? (totpStep ? 'TWO-FACTOR AUTHENTICATION' : 'ADMIN LOGIN')
+              : 'SET ADMIN PASSWORD'
+            }
           </DialogTitle>
           <DialogDescription className="text-muted-foreground">
             {isLoginMode
-              ? 'Enter your admin password to access edit mode.'
+              ? (totpStep
+                ? 'Enter the 6-digit code from your authenticator app.'
+                : 'Enter your admin password to access edit mode.'
+              )
               : 'Set a password to protect the admin edit mode. You will need this password to edit the page content.'
             }
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={isLoginMode ? handleLogin : handleSetPassword} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="admin-password">Password</Label>
-            <div className="relative">
+          {isLoginMode && totpStep ? (
+            <div className="space-y-2">
+              <Label htmlFor="totp-code">Authenticator Code</Label>
               <Input
-                id="admin-password"
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => { setPassword(e.target.value); setError('') }}
-                placeholder={isLoginMode ? 'Enter password...' : 'Choose a password (min. 8 characters)...'}
-                className="bg-secondary border-input pr-10"
+                id="totp-code"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={6}
+                value={totpCode}
+                onChange={(e) => { setTotpCode(e.target.value.replace(/\D/g, '')); setError('') }}
+                placeholder="000000"
+                className="bg-secondary border-input text-center tracking-widest text-lg"
                 autoFocus
-                autoComplete={isLoginMode ? 'current-password' : 'new-password'}
+                autoComplete="one-time-code"
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {showPassword ? '🙈' : '👁️'}
-              </button>
             </div>
-          </div>
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="admin-password">Password</Label>
+              <div className="relative">
+                <Input
+                  id="admin-password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); setError('') }}
+                  placeholder={isLoginMode ? 'Enter password...' : 'Choose a password (min. 8 characters)...'}
+                  className="bg-secondary border-input pr-10"
+                  autoFocus
+                  autoComplete={isLoginMode ? 'current-password' : 'new-password'}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showPassword ? '🙈' : '👁️'}
+                </button>
+              </div>
+            </div>
+          )}
 
           {!isLoginMode && (
             <div className="space-y-2">
@@ -170,11 +195,21 @@ export default function AdminLoginDialog({ open, onOpenChange, mode, onLogin, on
             >
               Cancel
             </Button>
+            {isLoginMode && totpStep && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => { setTotpStep(false); setTotpCode(''); setError('') }}
+                disabled={isLoading}
+              >
+                Back
+              </Button>
+            )}
             <Button
               type="submit"
-              disabled={isLoading || !password.trim() || (!isLoginMode && !confirmPassword.trim())}
+              disabled={isLoading || (!totpStep && !password.trim()) || (totpStep && totpCode.length !== 6) || (!isLoginMode && !confirmPassword.trim())}
             >
-              {isLoading ? 'Processing...' : (isLoginMode ? 'Login' : 'Set Password')}
+              {isLoading ? 'Processing...' : (totpStep ? 'Verify' : (isLoginMode ? 'Login' : 'Set Password'))}
             </Button>
           </DialogFooter>
         </form>

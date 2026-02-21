@@ -1,14 +1,16 @@
 import { Redis } from '@upstash/redis'
+import { Ratelimit } from '@upstash/ratelimit'
 import { createHash } from 'node:crypto'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 /**
  * GDPR-compliant rate limiting utility.
  *
- * IP addresses are hashed with SHA-256 + a secret salt before being used
- * as identifiers, so no personal data (IP) is stored in plaintext.
- * Rate limit state is ephemeral — entries expire automatically after the
- * sliding window period.
+ * - Uses @upstash/ratelimit with Upstash Redis as the backing store.
+ * - IP addresses are hashed with SHA-256 + a secret salt before being used
+ *   as identifiers, so no personal data (IP) is stored in plaintext.
+ * - Rate limit state is ephemeral — entries expire automatically after the
+ *   sliding window period (10 s default).
  *
  * The salt is read from the RATE_LIMIT_SALT environment variable. If absent,
  * a hardcoded fallback is used so the system still works in development.
@@ -16,25 +18,14 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 const SALT = process.env.RATE_LIMIT_SALT || 'zd-default-rate-limit-salt-change-me'
 
+// Refuse to start in production without a unique salt — a static fallback would
+// allow attackers to reverse IP hashes via rainbow tables since the code is public.
 if (!process.env.RATE_LIMIT_SALT && process.env.NODE_ENV === 'production') {
   throw new Error('[SECURITY] RATE_LIMIT_SALT environment variable is not set. A unique random salt is required in production to protect IP hashes. Generate one with: openssl rand -hex 32')
 }
 
-const WINDOW_SECONDS = 10
-const MAX_REQUESTS = 5
-const RL_PREFIX = 'zd-rl:'
-
-let _redis: Redis | null = null
-
-function getRedis(): Redis | null {
-  if (_redis) return _redis
-  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) return null
-  _redis = new Redis({
-    url: process.env.UPSTASH_REDIS_REST_URL,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN,
-  })
-  return _redis
-}
+const isKVConfigured = () =>
+  !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
 
 /**
  * Hash an IP address with SHA-256 + salt so it can be used as a rate-limit
@@ -60,7 +51,31 @@ export function getClientIp(req: VercelRequest): string {
 }
 
 /**
- * Apply rate limiting to a request using a fixed-window counter in Redis.
+ * Pre-configured rate limiter instance.
+ * Sliding window: 5 requests per 10 seconds per (hashed) IP.
+ *
+ * Only created when KV is configured; otherwise applyRateLimit() is a no-op
+ * so local development without KV still works.
+ */
+let ratelimit: Ratelimit | null = null
+
+function getRatelimit(): Ratelimit | null {
+  if (ratelimit) return ratelimit
+  if (!isKVConfigured()) return null
+  const redis = new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL!,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+  })
+  ratelimit = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(5, '10 s'),
+    prefix: 'zd-rl',
+  })
+  return ratelimit
+}
+
+/**
+ * Apply rate limiting to a request.
  *
  * Returns `true` if the request is allowed, `false` + sends a 429 response
  * if the limit has been exceeded.
@@ -70,28 +85,30 @@ export function getClientIp(req: VercelRequest): string {
  *   if (!allowed) return   // 429 already sent
  */
 export async function applyRateLimit(req: VercelRequest, res: VercelResponse): Promise<boolean> {
-  const redis = getRedis()
-  if (!redis) return true // Redis not configured — allow (dev mode)
+  const rl = getRatelimit()
+  if (!rl) return true // KV not configured — allow (dev mode)
 
   const ip = getClientIp(req)
   const identifier = hashIp(ip)
-  const key = `${RL_PREFIX}${identifier}`
 
   try {
-    const count = await redis.incr(key)
-    if (count === 1) {
-      // First request in window — set expiry
-      await redis.expire(key, WINDOW_SECONDS)
-    }
-    if (count > MAX_REQUESTS) {
-      res.status(429).setHeader('Retry-After', String(WINDOW_SECONDS)).json({
+    const { success } = await rl.limit(identifier)
+    if (!success) {
+      res.status(429).setHeader('Retry-After', '10').json({
         error: 'Too Many Requests',
         message: 'Rate limit exceeded. Please try again in a few seconds.',
       })
       return false
     }
     return true
-  } catch {
-    return true // On error, allow the request
+  } catch (err) {
+    // If rate limiting itself fails (e.g. KV outage), fail closed to prevent
+    // brute-force bypass by destabilizing the KV backend.
+    console.error('Rate limit check failed, blocking request:', err)
+    res.status(503).json({
+      error: 'Service Unavailable',
+      message: 'Rate limiting service is temporarily unavailable. Please try again later.',
+    })
+    return false
   }
 }

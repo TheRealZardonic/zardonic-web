@@ -99,18 +99,21 @@ export function useKV<T>(key: string, defaultValue: T): [T | undefined, (updater
         console.warn('[KV] Failed to save to localStorage:', e)
       }
 
-      // Get admin token from localStorage (persistent across page reloads)
+      // Get admin token from localStorage (backward-compat with legacy session system)
       const adminToken = localStorage.getItem('admin-token') || ''
 
       // Only write to the remote KV once the initial load has finished and
-      // the user is authenticated (has an admin token) to prevent
-      // unnecessary 500 errors for non-admin visitors.
+      // the user is authenticated (has an admin token or active cookie session)
+      // to prevent unnecessary 403 errors for non-admin visitors.
       if (loadedRef.current && adminToken) {
         fetch('/api/kv', {
           method: 'POST',
+          credentials: 'same-origin',
           headers: {
             'Content-Type': 'application/json',
-            'x-admin-token': adminToken
+            // x-session-token: supports both legacy localStorage token and new
+            // cookie-based sessions (validateSession checks this header as fallback)
+            'x-session-token': adminToken,
           },
           body: JSON.stringify({ key, value: newValue }),
         }).then(async res => {

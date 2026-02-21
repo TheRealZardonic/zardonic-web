@@ -40,6 +40,7 @@ export async function updateReleasesSync(timestamp: number = Date.now()): Promis
   try {
     await fetch('/api/sync', {
       method: 'POST',
+      credentials: 'same-origin',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -59,6 +60,7 @@ export async function updateGigsSync(timestamp: number = Date.now()): Promise<vo
   try {
     await fetch('/api/sync', {
       method: 'POST',
+      credentials: 'same-origin',
       headers: {
         'Content-Type': 'application/json',
       },

@@ -109,7 +109,7 @@ describe('useKV', () => {
     await waitFor(() => expect(result.current[2]).toBe(true))
   })
 
-  it('sends admin token with POST when authenticated', async () => {
+  it('sends x-session-token and credentials on authenticated POST', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ value: 'data' }), { status: 200 })
     )
@@ -126,8 +126,10 @@ describe('useKV', () => {
         (call) => call[1] && (call[1] as RequestInit).method === 'POST'
       )
       expect(postCalls).toHaveLength(1)
-      const headers = (postCalls[0][1] as RequestInit).headers as Record<string, string>
-      expect(headers['x-admin-token']).toBe('my-session-token')
+      const opts = postCalls[0][1] as RequestInit
+      const headers = opts.headers as Record<string, string>
+      expect(headers['x-session-token']).toBe('my-session-token')
+      expect(opts.credentials).toBe('same-origin')
     })
   })
 

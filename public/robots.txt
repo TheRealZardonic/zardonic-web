@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin/
+Disallow: /wp-admin/
+Disallow: /phpmyadmin/
+Disallow: /.env
+Disallow: /.git/
+Disallow: /dashboard/
+Disallow: /backup/
+Disallow: /config/
+Disallow: /debug/
+Disallow: /staging/
+Disallow: /internal/
+Disallow: /private/
+Disallow: /data/
+Disallow: /logs/
+Disallow: /tmp/
+Disallow: /cgi-bin/
