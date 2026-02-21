@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Trash, Eye, CursorClick, X, ArrowSquareOut, DeviceMobile, Desktop, Globe, Browser } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
-import { getAnalyticsData, resetAnalytics } from '@/hooks/use-analytics'
+import { getAnalyticsData, getHeatmapData, resetAnalytics } from '@/hooks/use-analytics'
 import type { AnalyticsData, HeatmapPoint } from '@/hooks/use-analytics'
 
 interface StatsDashboardProps {
@@ -246,8 +246,11 @@ export default function StatsDashboard({ open, onClose }: StatsDashboardProps) {
   const reload = useCallback(async () => {
     setLoading(true)
     try {
-      const analyticsData = await getAnalyticsData()
-      setData(analyticsData)
+      const [analyticsData, heatmapData] = await Promise.all([
+        getAnalyticsData(),
+        getHeatmapData(),
+      ])
+      setData({ ...analyticsData, heatmap: heatmapData })
     } catch (error) {
       console.error('[StatsDashboard] Failed to load analytics:', error)
     } finally {

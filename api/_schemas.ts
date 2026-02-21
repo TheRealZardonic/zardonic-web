@@ -114,6 +114,7 @@ export const itunesQuerySchema = z.object({
 
 export const odesliQuerySchema = z.object({
   url: z.string().min(1, 'A streaming URL is required').max(2000).url('Invalid URL'),
+  userCountry: z.string().length(2).regex(/^[A-Z]{2}$/).optional(),
 })
 
 // ---------------------------------------------------------------------------

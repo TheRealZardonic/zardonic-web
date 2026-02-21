@@ -1,25 +1,27 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { applyRateLimit } from './_ratelimit.js'
+import { fetchWithRetry } from './_fetch-retry.js'
+import { validate, odesliQuerySchema } from './_schemas.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const { url, userCountry } = req.query
+  // Rate limiting (GDPR-compliant, IP is hashed)
+  const allowed = await applyRateLimit(req, res)
+  if (!allowed) return
 
-  if (!url || typeof url !== 'string') {
-    return res.status(400).json({ error: 'Missing url parameter' })
+  // Zod validation
+  const parsed = validate(odesliQuerySchema, req.query)
+  if (!parsed.success) {
+    return res.status(400).json({ error: parsed.error })
   }
+  const { url, userCountry } = parsed.data
 
   const params = new URLSearchParams({ url })
-  if (userCountry && typeof userCountry === 'string') {
-    params.set('userCountry', userCountry)
-  }
+  if (userCountry) params.set('userCountry', userCountry)
 
   try {
-    const response = await fetch(
+    const response = await fetchWithRetry(
       `https://api.song.link/v1-alpha.1/links?${params.toString()}`,
-      {
-        headers: {
-          'Accept': 'application/json',
-        },
-      }
+      { headers: { 'Accept': 'application/json' } }
     )
 
     if (!response.ok) {
