@@ -1,15 +1,43 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // ---------------------------------------------------------------------------
-// Mock @vercel/kv — must be declared before importing modules
+// Mock @upstash/redis — must be declared before importing modules
 // ---------------------------------------------------------------------------
 const mockKvGet = vi.fn()
 const mockKvSet = vi.fn()
 const mockKvLpush = vi.fn()
 const mockKvLtrim = vi.fn()
 
-vi.mock('@vercel/kv', () => ({
-  kv: { get: mockKvGet, set: mockKvSet, lpush: mockKvLpush, ltrim: mockKvLtrim },
+vi.mock('@upstash/redis', () => {
+  const Redis = function () {
+    return { get: mockKvGet, set: mockKvSet, lpush: mockKvLpush, ltrim: mockKvLtrim }
+  }
+  return { Redis }
+})
+
+// Mock alerting
+vi.mock('../../api/_alerting.js', () => ({
+  sendSecurityAlert: vi.fn().mockResolvedValue(undefined),
+}))
+
+// Mock zipbomb
+vi.mock('../../api/_zipbomb.js', () => ({
+  serveZipBomb: vi.fn().mockReturnValue(false),
+}))
+
+// Mock threat score
+vi.mock('../../api/_threat-score.js', () => ({
+  incrementThreatScore: vi.fn().mockResolvedValue({ score: 5, level: 'WARN' }),
+  THREAT_REASONS: {
+    HONEYTOKEN_ACCESS: { reason: 'honeytoken_access', points: 5 },
+    ROBOTS_VIOLATION: { reason: 'robots_violation', points: 3 },
+    SUSPICIOUS_UA: { reason: 'suspicious_ua', points: 4 },
+  },
+}))
+
+// Mock attacker profile
+vi.mock('../../api/_attacker-profile.js', () => ({
+  recordIncident: vi.fn().mockResolvedValue(undefined),
 }))
 
 // Mock rate limiter
@@ -18,6 +46,10 @@ vi.mock('../../api/_ratelimit.js', () => ({
   getClientIp: vi.fn().mockReturnValue('1.2.3.4'),
   hashIp: vi.fn().mockReturnValue('hashed-ip-1234'),
 }))
+
+// Set env vars before import so the singleton Redis is properly initialized
+process.env.UPSTASH_REDIS_REST_URL = 'https://fake-kv.test'
+process.env.UPSTASH_REDIS_REST_TOKEN = 'fake-token'
 
 const {
   markAttacker,

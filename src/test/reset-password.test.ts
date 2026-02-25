@@ -17,6 +17,12 @@ vi.mock('@vercel/kv', () => ({
   kv: { get: mockKvGet, set: mockKvSet, del: mockKvDel, pipeline: mockKvPipeline },
 }))
 
+// Mock @upstash/redis (transitive dep via kv.js)
+vi.mock('@upstash/redis', () => {
+  const Redis = function () { return {} }
+  return { Redis }
+})
+
 // Mock rate limiter — always allow requests in tests
 vi.mock('../../api/_ratelimit.js', () => ({
   applyRateLimit: vi.fn().mockResolvedValue(true),

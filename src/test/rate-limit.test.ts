@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // ---------------------------------------------------------------------------
-// Mock @vercel/kv — must be declared before importing the handler
+// Mock @vercel/kv (for reset-password handler) and @upstash/redis (for kv handler)
 // ---------------------------------------------------------------------------
 const mockKvGet = vi.fn()
 const mockKvSet = vi.fn()
@@ -9,6 +9,13 @@ const mockKvSet = vi.fn()
 vi.mock('@vercel/kv', () => ({
   kv: { get: mockKvGet, set: mockKvSet },
 }))
+
+vi.mock('@upstash/redis', () => {
+  const Redis = function () {
+    return { get: mockKvGet, set: mockKvSet }
+  }
+  return { Redis }
+})
 
 // ---------------------------------------------------------------------------
 // Mock rate limiter with controllable behavior
@@ -60,6 +67,8 @@ describe('Rate limiting integration', () => {
     vi.clearAllMocks()
     process.env.KV_REST_API_URL = 'https://fake-kv.vercel.test'
     process.env.KV_REST_API_TOKEN = 'fake-token'
+    process.env.UPSTASH_REDIS_REST_URL = 'https://fake-kv.test'
+    process.env.UPSTASH_REDIS_REST_TOKEN = 'fake-token'
     process.env.ADMIN_RESET_EMAIL = 'admin@example.com'
   })
 

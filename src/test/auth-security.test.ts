@@ -1,16 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // ---------------------------------------------------------------------------
-// Mock @vercel/kv — must be declared before importing the handler
+// Mock @upstash/redis — must be declared before importing the handler
 // ---------------------------------------------------------------------------
 const mockKvGet = vi.fn()
 const mockKvSet = vi.fn()
 const mockKvDel = vi.fn()
 const mockKvScan = vi.fn()
 
-vi.mock('@vercel/kv', () => ({
-  kv: { get: mockKvGet, set: mockKvSet, del: mockKvDel, scan: mockKvScan },
-}))
+vi.mock('@upstash/redis', () => {
+  const Redis = function () {
+    return { get: mockKvGet, set: mockKvSet, del: mockKvDel, scan: mockKvScan }
+  }
+  return { Redis }
+})
 
 // Mock rate limiter — always allow requests in tests
 vi.mock('../../api/_ratelimit.js', () => ({
@@ -40,8 +43,8 @@ const { default: handler, hashPassword } = await import('../../api/auth.js')
 describe('Auth security: password change requires currentPassword', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    process.env.KV_REST_API_URL = 'https://fake-kv.vercel.test'
-    process.env.KV_REST_API_TOKEN = 'fake-token'
+    process.env.UPSTASH_REDIS_REST_URL = 'https://fake-kv.test'
+    process.env.UPSTASH_REDIS_REST_TOKEN = 'fake-token'
   })
 
   it('rejects password change without currentPassword even with valid session', async () => {
@@ -94,8 +97,8 @@ describe('Auth security: password change requires currentPassword', () => {
 describe('Auth security: session invalidation on password change', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    process.env.KV_REST_API_URL = 'https://fake-kv.vercel.test'
-    process.env.KV_REST_API_TOKEN = 'fake-token'
+    process.env.UPSTASH_REDIS_REST_URL = 'https://fake-kv.test'
+    process.env.UPSTASH_REDIS_REST_TOKEN = 'fake-token'
   })
 
   it('invalidates all sessions and creates new one after password change', async () => {
@@ -136,8 +139,8 @@ describe('Auth security: session invalidation on password change', () => {
 describe('Auth security: session TTL is 4 hours', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    process.env.KV_REST_API_URL = 'https://fake-kv.vercel.test'
-    process.env.KV_REST_API_TOKEN = 'fake-token'
+    process.env.UPSTASH_REDIS_REST_URL = 'https://fake-kv.test'
+    process.env.UPSTASH_REDIS_REST_TOKEN = 'fake-token'
   })
 
   it('sets session with 4-hour TTL on login', async () => {
@@ -171,8 +174,8 @@ describe('Auth security: session TTL is 4 hours', () => {
 describe('Auth security: client fingerprint binding', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    process.env.KV_REST_API_URL = 'https://fake-kv.vercel.test'
-    process.env.KV_REST_API_TOKEN = 'fake-token'
+    process.env.UPSTASH_REDIS_REST_URL = 'https://fake-kv.test'
+    process.env.UPSTASH_REDIS_REST_TOKEN = 'fake-token'
   })
 
   it('stores fingerprint when creating session', async () => {

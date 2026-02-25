@@ -1,13 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // ---------------------------------------------------------------------------
-// Mock @vercel/kv
+// Mock @upstash/redis
 // ---------------------------------------------------------------------------
 const mockKvGet = vi.fn()
 const mockKvSet = vi.fn()
 
-vi.mock('@vercel/kv', () => ({
-  kv: { get: mockKvGet, set: mockKvSet },
+vi.mock('@upstash/redis', () => {
+  const Redis = function () {
+    return { get: mockKvGet, set: mockKvSet }
+  }
+  return { Redis }
+})
+
+vi.mock('../../api/_blocklist.js', () => ({
+  isHardBlocked: vi.fn().mockResolvedValue(false),
 }))
 
 // Mock rate limiter — always allow requests in tests
@@ -87,8 +94,8 @@ describe('Security: timingSafeEqual constant-time comparison', () => {
 describe('Security: KV API key validation', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    process.env.KV_REST_API_URL = 'https://fake-kv.vercel.test'
-    process.env.KV_REST_API_TOKEN = 'fake-token'
+    process.env.UPSTASH_REDIS_REST_URL = 'https://fake-kv.test'
+    process.env.UPSTASH_REDIS_REST_TOKEN = 'fake-token'
   })
 
   it('rejects GET with overly long key', async () => {
@@ -349,8 +356,8 @@ describe('Security: Honeytoken detection', () => {
 describe('Security: Entropy injection for flagged attackers', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    process.env.KV_REST_API_URL = 'https://fake-kv.vercel.test'
-    process.env.KV_REST_API_TOKEN = 'fake-token'
+    process.env.UPSTASH_REDIS_REST_URL = 'https://fake-kv.test'
+    process.env.UPSTASH_REDIS_REST_TOKEN = 'fake-token'
   })
 
   it('injects entropy headers and defense headers when the request comes from a flagged attacker', async () => {
