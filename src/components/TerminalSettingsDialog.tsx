@@ -21,7 +21,7 @@ interface TerminalSettingsDialogProps {
 
 const RESERVED = TERMINAL_RESERVED_COMMANDS
 
-const MORSE_RE = /^[.\-]*$/
+const MORSE_RE = /^[.-]*$/
 
 export default function TerminalSettingsDialog({
   open,

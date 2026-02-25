@@ -62,8 +62,8 @@ export async function triggerHoneytokenAlarm(req: VercelRequest, key: string, re
   const redis = getRedis()
   if (redis) {
     try {
-      await redis.lpush('zd-honeytoken-alerts', JSON.stringify(entry))
-      await redis.ltrim('zd-honeytoken-alerts', 0, 499)
+      await redis.lpush('nk-honeytoken-alerts', JSON.stringify(entry))
+      await redis.ltrim('nk-honeytoken-alerts', 0, 499)
     } catch {
       // Persistence failure must not block the response
     }
@@ -125,7 +125,7 @@ export async function triggerHoneytokenAlarm(req: VercelRequest, key: string, re
 }
 
 /** KV prefix and TTL for flagged attacker IPs */
-const FLAGGED_PREFIX = 'zd-flagged:'
+const FLAGGED_PREFIX = 'nk-flagged:'
 const FLAGGED_TTL = 86400 // 24 hours
 
 /**
@@ -178,7 +178,7 @@ export function getRandomTaunt(): string {
 export function setDefenseHeaders(res: VercelResponse): void {
   res.setHeader('X-Neural-Defense', 'Active. Target identified.')
   res.setHeader('X-Netrunner-Status', "Nice try, but you're barking up the wrong tree.")
-  res.setHeader('X-Warning', 'Stop poking the machine. It might poke back.')
+  res.setHeader('X-Warning', 'Stop poking the Baphomet. It might poke back.')
 }
 
 /**
@@ -203,10 +203,11 @@ export function serveFingerprintPixel(res: VercelResponse): void {
   )
   res.setHeader('Content-Type', 'image/png')
   res.setHeader('Content-Length', PIXEL.length)
-  res.setHeader('Cache-Control', 'no-store')
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
   res.setHeader('Accept-CH', 'Sec-CH-UA, Sec-CH-UA-Mobile, Sec-CH-UA-Platform, Viewport-Width, Width')
   res.setHeader('Critical-CH', 'Sec-CH-UA, Sec-CH-UA-Mobile')
   res.setHeader('Vary', 'Sec-CH-UA, Sec-CH-UA-Mobile, Sec-CH-UA-Platform')
+  setDefenseHeaders(res)
   res.status(200).send(PIXEL)
 }
 

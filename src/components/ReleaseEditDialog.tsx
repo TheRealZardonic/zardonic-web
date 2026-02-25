@@ -93,7 +93,7 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
       let bandcamp = formData.bandcamp || undefined
       let youtube = formData.youtube || undefined
       let appleMusic = formData.appleMusic || undefined
-      let beatport = formData.beatport || undefined
+      const beatport = formData.beatport || undefined
 
       // Use the first available streaming link to look up the rest via Odesli
       const lookupUrl = formData.spotify || formData.appleMusic || formData.soundcloud || formData.youtube || formData.bandcamp

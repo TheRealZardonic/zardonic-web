@@ -1,13 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // ---------------------------------------------------------------------------
-// Mock @vercel/kv
+// Mock @upstash/redis
 // ---------------------------------------------------------------------------
 const mockKvGet = vi.fn()
 const mockKvSet = vi.fn()
 
-vi.mock('@vercel/kv', () => ({
-  kv: { get: mockKvGet, set: mockKvSet },
+vi.mock('@upstash/redis', () => {
+  const Redis = function () {
+    return { get: mockKvGet, set: mockKvSet }
+  }
+  return { Redis }
+})
+
+vi.mock('../../api/_blocklist.js', () => ({
+  isHardBlocked: vi.fn().mockResolvedValue(false),
 }))
 
 // Mock rate limiter — always allow requests in tests
@@ -87,15 +94,15 @@ describe('Security: timingSafeEqual constant-time comparison', () => {
 describe('Security: KV API key validation', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    process.env.KV_REST_API_URL = 'https://fake-kv.vercel.test'
-    process.env.KV_REST_API_TOKEN = 'fake-token'
+    process.env.UPSTASH_REDIS_REST_URL = 'https://fake-kv.test'
+    process.env.UPSTASH_REDIS_REST_TOKEN = 'fake-token'
   })
 
   it('rejects GET with overly long key', async () => {
     const res = mockRes()
     await kvHandler({ method: 'GET', query: { key: 'a'.repeat(201) }, body: {}, headers: {} }, res)
     expect(res.status).toHaveBeenCalledWith(400)
-    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'String must contain at most 200 character(s)' }))
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'key must be 200 characters or less' }))
   })
 
   it('rejects GET with key containing newline characters', async () => {
@@ -121,7 +128,7 @@ describe('Security: KV API key validation', () => {
     const res = mockRes()
     await kvHandler({ method: 'POST', query: {}, body: { key: 'a'.repeat(201), value: 'test' }, headers: {} }, res)
     expect(res.status).toHaveBeenCalledWith(400)
-    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'String must contain at most 200 character(s)' }))
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'key must be 200 characters or less' }))
   })
 
   it('rejects POST with key containing newline', async () => {
@@ -349,8 +356,8 @@ describe('Security: Honeytoken detection', () => {
 describe('Security: Entropy injection for flagged attackers', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    process.env.KV_REST_API_URL = 'https://fake-kv.vercel.test'
-    process.env.KV_REST_API_TOKEN = 'fake-token'
+    process.env.UPSTASH_REDIS_REST_URL = 'https://fake-kv.test'
+    process.env.UPSTASH_REDIS_REST_TOKEN = 'fake-token'
   })
 
   it('injects entropy headers and defense headers when the request comes from a flagged attacker', async () => {
@@ -359,7 +366,7 @@ describe('Security: Entropy injection for flagged attackers', () => {
 
     mockKvGet.mockResolvedValue({ name: 'test' })
     const res = mockRes()
-    await kvHandler({ method: 'GET', query: { key: 'band-data' }, body: {}, headers: {} }, res)
+    await kvHandler({ method: 'GET', query: { key: 'zardonic-band-data' }, body: {}, headers: {} }, res)
 
     expect(isMarkedAttacker).toHaveBeenCalled()
     expect(injectEntropyHeaders).toHaveBeenCalledWith(res)

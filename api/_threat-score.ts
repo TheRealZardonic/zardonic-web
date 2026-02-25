@@ -35,11 +35,54 @@ export const THREAT_REASONS = {
   RATE_LIMIT_EXCEEDED: { reason: 'rate_limit_exceeded', points: 2 },
 }
 
-export function classifyThreatLevel(score: number): string {
-  if (score >= THREAT_LEVELS.BLOCK) return 'BLOCK'
-  if (score >= THREAT_LEVELS.TARPIT) return 'TARPIT'
-  if (score >= THREAT_LEVELS.WARN) return 'WARN'
+export function classifyThreatLevel(score: number, customThresholds?: Record<string, number>): string {
+  const thresholds = customThresholds || THREAT_LEVELS
+  if (score >= thresholds.BLOCK) return 'BLOCK'
+  if (score >= thresholds.TARPIT) return 'TARPIT'
+  if (score >= thresholds.WARN) return 'WARN'
   return 'CLEAN'
+}
+
+/**
+ * Get effective threat level thresholds from KV settings, falling back to defaults.
+ */
+export async function getEffectiveThresholds(): Promise<typeof THREAT_LEVELS> {
+  const redis = getRedis()
+  if (!redis) return { ...THREAT_LEVELS }
+  try {
+    const settings = await redis.get<Record<string, unknown>>('zd-security-settings')
+    if (!settings) return { ...THREAT_LEVELS }
+    return {
+      CLEAN: 0,
+      WARN: (settings.warnThreshold as number) || THREAT_LEVELS.WARN,
+      TARPIT: (settings.tarpitThreshold as number) || THREAT_LEVELS.TARPIT,
+      BLOCK: (settings.autoBlockThreshold as number) || THREAT_LEVELS.BLOCK,
+    }
+  } catch {
+    return { ...THREAT_LEVELS }
+  }
+}
+
+/**
+ * Get effective threat reason points from KV settings, falling back to defaults.
+ */
+export async function getEffectiveReasonPoints(): Promise<typeof THREAT_REASONS> {
+  const redis = getRedis()
+  if (!redis) return { ...THREAT_REASONS }
+  try {
+    const settings = await redis.get<Record<string, unknown>>('zd-security-settings')
+    if (!settings) return { ...THREAT_REASONS }
+    return {
+      ROBOTS_VIOLATION: { reason: 'robots_violation', points: (settings.pointsRobotsViolation as number) || THREAT_REASONS.ROBOTS_VIOLATION.points },
+      HONEYTOKEN_ACCESS: { reason: 'honeytoken_access', points: (settings.pointsHoneytokenAccess as number) || THREAT_REASONS.HONEYTOKEN_ACCESS.points },
+      SUSPICIOUS_UA: { reason: 'suspicious_ua', points: (settings.pointsSuspiciousUa as number) || THREAT_REASONS.SUSPICIOUS_UA.points },
+      MISSING_BROWSER_HEADERS: { reason: 'missing_browser_headers', points: (settings.pointsMissingHeaders as number) || THREAT_REASONS.MISSING_BROWSER_HEADERS.points },
+      GENERIC_ACCEPT: { reason: 'generic_accept', points: (settings.pointsGenericAccept as number) || THREAT_REASONS.GENERIC_ACCEPT.points },
+      RATE_LIMIT_EXCEEDED: { reason: 'rate_limit_exceeded', points: (settings.pointsRateLimitExceeded as number) || THREAT_REASONS.RATE_LIMIT_EXCEEDED.points },
+    }
+  } catch {
+    return { ...THREAT_REASONS }
+  }
 }
 
 interface ThreatResult {

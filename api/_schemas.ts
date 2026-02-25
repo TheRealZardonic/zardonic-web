@@ -185,6 +185,35 @@ export const securitySettingsSchema = z.object({
 })
 
 // ---------------------------------------------------------------------------
+// Reset Password API
+// ---------------------------------------------------------------------------
+
+export const resetPasswordSchema = z.object({
+  email: z.string().min(1, 'Email is required').max(200).email('Invalid email format'),
+})
+
+export const confirmResetPasswordSchema = z.object({
+  token: z.string().min(1, 'Token is required').max(200),
+  newPassword: z.string().min(8, 'New password must be at least 8 characters').max(200),
+})
+
+// ---------------------------------------------------------------------------
+// Drive Download API — GET query
+// ---------------------------------------------------------------------------
+
+export const driveDownloadQuerySchema = z.object({
+  fileId: z.string().min(1, 'fileId is required').max(200).regex(/^[A-Za-z0-9_-]+$/, 'Invalid fileId format'),
+})
+
+// ---------------------------------------------------------------------------
+// Drive Folder API — GET query
+// ---------------------------------------------------------------------------
+
+export const driveFolderQuerySchema = z.object({
+  folderId: z.string().min(1, 'folderId is required').max(200).regex(/^[A-Za-z0-9_-]+$/, 'Invalid folderId format'),
+})
+
+// ---------------------------------------------------------------------------
 // Helper: validate and return first error message
 // ---------------------------------------------------------------------------
 

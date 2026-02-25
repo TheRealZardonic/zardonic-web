@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // ---------------------------------------------------------------------------
-// Mock @vercel/kv
+// Mock @vercel/kv (for canary-alerts.ts)
 // ---------------------------------------------------------------------------
 const mockKvGet = vi.fn()
 const mockKvSet = vi.fn()
@@ -18,6 +18,14 @@ vi.mock('@vercel/kv', () => ({
     lrange: mockKvLrange,
   },
 }))
+
+// Mock @upstash/redis (for _threat-score.ts)
+vi.mock('@upstash/redis', () => {
+  const Redis = function () {
+    return { get: mockKvGet, set: mockKvSet, incrby: mockKvIncrby, expire: mockKvExpire }
+  }
+  return { Redis }
+})
 
 // Mock rate limiter
 vi.mock('../../api/_ratelimit.js', () => ({
@@ -56,6 +64,9 @@ function mockRes(): Res {
 // ---------------------------------------------------------------------------
 // Configurable Threat Score Thresholds & Points
 // ---------------------------------------------------------------------------
+process.env.UPSTASH_REDIS_REST_URL = 'https://fake-kv.test'
+process.env.UPSTASH_REDIS_REST_TOKEN = 'fake-token'
+
 const { classifyThreatLevel, getEffectiveThresholds, getEffectiveReasonPoints, THREAT_LEVELS, THREAT_REASONS } = await import('../../api/_threat-score.js')
 
 describe('Configurable Threat Score: classifyThreatLevel', () => {

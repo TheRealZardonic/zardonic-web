@@ -25,8 +25,8 @@ function getRedis(): Redis | null {
  * All data is GDPR-compliant — only hashed IPs are stored.
  */
 
-const PROFILE_PREFIX = 'zd-profile:'
-const PROFILE_LIST_KEY = 'zd-profile-list'
+const PROFILE_PREFIX = 'nk-profile:'
+const PROFILE_LIST_KEY = 'nk-profile-list'
 const PROFILE_TTL = 2592000 // 30 days
 const MAX_HISTORY_ENTRIES = 100
 

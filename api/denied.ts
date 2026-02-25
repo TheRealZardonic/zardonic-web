@@ -117,8 +117,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const redis = getRedis()
   if (redis) {
     try {
-      await redis.lpush('zd-honeytoken-alerts', JSON.stringify(entry))
-      await redis.ltrim('zd-honeytoken-alerts', 0, 499)
+      await redis.lpush('nk-honeytoken-alerts', JSON.stringify(entry))
+      await redis.ltrim('nk-honeytoken-alerts', 0, 499)
     } catch {
       // Persistence failure must not block the response
     }

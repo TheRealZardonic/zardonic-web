@@ -1,14 +1,40 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 // ---------------------------------------------------------------------------
-// Mock @vercel/kv
+// Mock @upstash/redis
 // ---------------------------------------------------------------------------
 const mockKvLpush = vi.fn()
 const mockKvLtrim = vi.fn()
 const mockKvSet = vi.fn()
 
-vi.mock('@vercel/kv', () => ({
-  kv: { lpush: mockKvLpush, ltrim: mockKvLtrim, set: mockKvSet },
+vi.mock('@upstash/redis', () => {
+  const Redis = function () {
+    return { lpush: mockKvLpush, ltrim: mockKvLtrim, set: mockKvSet }
+  }
+  return { Redis }
+})
+
+// Mock blocklist
+vi.mock('../../api/_blocklist.js', () => ({
+  isHardBlocked: vi.fn().mockResolvedValue(false),
+}))
+
+// Mock threat score
+vi.mock('../../api/_threat-score.js', () => ({
+  incrementThreatScore: vi.fn().mockResolvedValue({ score: 5, level: 'WARN' }),
+  THREAT_REASONS: {
+    ROBOTS_VIOLATION: { reason: 'robots_violation', points: 3 },
+  },
+}))
+
+// Mock attacker profile
+vi.mock('../../api/_attacker-profile.js', () => ({
+  recordIncident: vi.fn().mockResolvedValue(undefined),
+}))
+
+// Mock zipbomb
+vi.mock('../../api/_zipbomb.js', () => ({
+  serveZipBomb: vi.fn().mockReturnValue(false),
 }))
 
 // Mock rate limiter
@@ -51,6 +77,8 @@ const { default: deniedHandler } = await import('../../api/denied.js')
 describe('Denied handler: robots.txt access violation response', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    process.env.UPSTASH_REDIS_REST_URL = 'https://fake-kv.test'
+    process.env.UPSTASH_REDIS_REST_TOKEN = 'fake-token'
     vi.useFakeTimers()
   })
   afterEach(() => {

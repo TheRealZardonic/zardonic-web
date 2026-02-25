@@ -3,7 +3,7 @@ import { Trash, ShieldWarning, Globe, Clock, User, Hash, Eye, ShieldCheck, Caret
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { useState, useEffect } from 'react'
 
-interface SecurityIncident {
+export interface SecurityIncident {
   key: string
   method: string
   hashedIp: string
@@ -24,13 +24,13 @@ interface SecurityIncidentsDashboardProps {
 }
 
 /** Classify incident type from the key field */
-function classifyIncident(key: string): { label: string; color: string } {
-  if (key.startsWith('robots:')) return { label: 'ROBOTS.TXT VIOLATION', color: 'text-orange-400' }
-  if (key.startsWith('threat:')) return { label: 'THREAT ESCALATION', color: 'text-purple-400' }
-  if (key.startsWith('blocked:')) return { label: 'HARD BLOCK', color: 'text-red-600' }
+export function classifyIncident(key: string): { type: string; label: string; color: string } {
+  if (key.startsWith('robots:')) return { type: 'robots', label: 'ROBOTS.TXT VIOLATION', color: 'text-orange-400' }
+  if (key.startsWith('threat:')) return { type: 'threat', label: 'THREAT ESCALATION', color: 'text-purple-400' }
+  if (key.startsWith('blocked:')) return { type: 'blocked', label: 'HARD BLOCK', color: 'text-red-600' }
   if (key.includes('backup') || key.includes('credential') || key.includes('master-key') || key.includes('password'))
-    return { label: 'HONEYTOKEN ACCESS', color: 'text-red-400' }
-  return { label: 'SECURITY EVENT', color: 'text-yellow-400' }
+    return { type: 'honeytoken', label: 'HONEYTOKEN ACCESS', color: 'text-red-400' }
+  return { type: 'event', label: 'SECURITY EVENT', color: 'text-yellow-400' }
 }
 
 /** Shorten hashed IP for display */
@@ -39,7 +39,7 @@ function shortHash(hash: string): string {
   return `${hash.slice(0, 8)}…${hash.slice(-4)}`
 }
 
-function classifyCountermeasure(incident: SecurityIncident): string {
+export function classifyCountermeasure(incident: SecurityIncident): string {
   if (incident.autoBlocked) return 'BLOCKED'
   if (incident.countermeasure) return incident.countermeasure
   if (incident.threatLevel === 'BLOCK') return 'BLOCKED'
@@ -47,7 +47,7 @@ function classifyCountermeasure(incident: SecurityIncident): string {
   if (incident.threatLevel === 'WARN') return 'RATE_LIMITED'
   if (incident.key.startsWith('blocked:')) return 'BLOCKED'
   if (incident.key.startsWith('threat:')) return 'TARPITTED'
-  return 'GELOGGT'
+  return 'LOGGED'
 }
 
 /** Format timestamp for display */

@@ -50,7 +50,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     )
 
     if (!response.ok) {
-      return res.status(response.status).json({ error: `iTunes API responded with ${response.status}` })
+      return res.status(500).json({ error: `iTunes API responded with ${response.status}` })
     }
 
     const data = await response.json()

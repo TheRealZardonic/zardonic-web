@@ -1,6 +1,7 @@
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react-swc";
 import { defineConfig } from "vite";
+import obfuscator from 'vite-plugin-obfuscator'
 
 import { resolve } from 'path'
 
@@ -14,6 +15,7 @@ export default defineConfig({
       fastRefresh: true,
     }),
     tailwindcss(),
+    ...(process.env.NODE_ENV === 'production' ? [obfuscator({})] : []),
   ],
   resolve: {
     alias: {

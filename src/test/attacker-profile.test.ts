@@ -1,26 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // ---------------------------------------------------------------------------
-// Mock @vercel/kv
+// Mock @upstash/redis
 // ---------------------------------------------------------------------------
-vi.mock('@vercel/kv', () => {
-  const mockKvGet = vi.fn()
-  const mockKvSet = vi.fn()
-  const mockKvSadd = vi.fn()
-  const mockKvSrem = vi.fn()
-  const mockKvSmembers = vi.fn()
-  const mockKvDel = vi.fn()
+const mockKvGet = vi.fn()
+const mockKvSet = vi.fn()
+const mockKvSadd = vi.fn()
+const mockKvSrem = vi.fn()
+const mockKvSmembers = vi.fn()
+const mockKvDel = vi.fn()
 
-  return {
-    kv: {
+vi.mock('@upstash/redis', () => {
+  const Redis = function () {
+    return {
       get: mockKvGet,
       set: mockKvSet,
       sadd: mockKvSadd,
       srem: mockKvSrem,
       smembers: mockKvSmembers,
       del: mockKvDel,
-    },
+    }
   }
+  return { Redis }
 })
 
 // Mock ratelimit
@@ -29,7 +30,10 @@ vi.mock('../../api/_ratelimit.js', () => ({
   getClientIp: vi.fn(() => '127.0.0.1'),
 }))
 
-import { kv } from '@vercel/kv'
+// Set env vars before import so the singleton Redis is properly initialized
+process.env.UPSTASH_REDIS_REST_URL = 'https://fake-kv.test'
+process.env.UPSTASH_REDIS_REST_TOKEN = 'fake-token'
+
 import {
   recordIncident,
   getProfile,
@@ -37,13 +41,6 @@ import {
   analyzeUserAgents,
   deleteProfile,
 } from '../../api/_attacker-profile.js'
-
-const mockKvGet = kv.get as ReturnType<typeof vi.fn>
-const mockKvSet = kv.set as ReturnType<typeof vi.fn>
-const mockKvSadd = kv.sadd as ReturnType<typeof vi.fn>
-const mockKvSrem = kv.srem as ReturnType<typeof vi.fn>
-const mockKvSmembers = kv.smembers as ReturnType<typeof vi.fn>
-const mockKvDel = kv.del as ReturnType<typeof vi.fn>
 
 describe('Attacker Profile Module', () => {
   beforeEach(() => {

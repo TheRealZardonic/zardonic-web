@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // ---------------------------------------------------------------------------
-// Mock @vercel/kv — must be declared before importing the handler
+// Mock @upstash/redis — must be declared before importing the handler
 // ---------------------------------------------------------------------------
 const mockKvGet = vi.fn()
 const mockKvSet = vi.fn()
@@ -11,19 +11,22 @@ const mockPipeExec = vi.fn()
 const mockPipeSet = vi.fn()
 const mockPipeDel = vi.fn()
 
-vi.mock('@vercel/kv', () => ({
-  kv: {
-    get: mockKvGet,
-    set: mockKvSet,
-    del: mockKvDel,
-    scan: mockKvScan,
-    pipeline: () => ({
-      set: mockPipeSet,
-      del: mockPipeDel,
-      exec: mockPipeExec,
-    }),
-  },
-}))
+vi.mock('@upstash/redis', () => {
+  const Redis = function () {
+    return {
+      get: mockKvGet,
+      set: mockKvSet,
+      del: mockKvDel,
+      scan: mockKvScan,
+      pipeline: () => ({
+        set: mockPipeSet,
+        del: mockPipeDel,
+        exec: mockPipeExec,
+      }),
+    }
+  }
+  return { Redis }
+})
 
 // Mock rate limiter — always allow requests in tests
 vi.mock('../../api/_ratelimit.js', () => ({
@@ -52,8 +55,8 @@ const { default: handler, hashPassword } = await import('../../api/auth.js')
 describe('Auth security: setup token protection', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    process.env.KV_REST_API_URL = 'https://fake-kv.vercel.test'
-    process.env.KV_REST_API_TOKEN = 'fake-token'
+    process.env.UPSTASH_REDIS_REST_URL = 'https://fake-kv.test'
+    process.env.UPSTASH_REDIS_REST_TOKEN = 'fake-token'
     delete process.env.ADMIN_SETUP_TOKEN
   })
 
@@ -148,8 +151,8 @@ describe('Auth security: setup token protection', () => {
 describe('Auth security: TOTP 2FA', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    process.env.KV_REST_API_URL = 'https://fake-kv.vercel.test'
-    process.env.KV_REST_API_TOKEN = 'fake-token'
+    process.env.UPSTASH_REDIS_REST_URL = 'https://fake-kv.test'
+    process.env.UPSTASH_REDIS_REST_TOKEN = 'fake-token'
     delete process.env.ADMIN_SETUP_TOKEN
   })
 
@@ -168,7 +171,7 @@ describe('Auth security: TOTP 2FA', () => {
 
   it('reports totpEnabled=true when TOTP secret is stored', async () => {
     mockKvGet.mockImplementation(async (key: string) => {
-      if (key === 'admin-totp-secret') return 'JBSWY3DPEHPK3PXP'
+      if (key === 'zd-admin-totp-secret') return 'JBSWY3DPEHPK3PXP'
       return null
     })
 
@@ -200,8 +203,8 @@ describe('Auth security: TOTP 2FA', () => {
     const expectedFingerprint = crypto.createHash('sha256').update('TestBrowser|1.2.3').digest('hex')
 
     mockKvGet.mockImplementation(async (key: string) => {
-      if (key.startsWith('session:')) return { created: Date.now(), fingerprint: expectedFingerprint }
-      if (key === 'admin-totp-secret') return null // no existing TOTP
+      if (key.startsWith('zd-session:')) return { created: Date.now(), fingerprint: expectedFingerprint }
+      if (key === 'zd-admin-totp-secret') return null // no existing TOTP
       return null
     })
     mockKvSet.mockResolvedValue('OK')
@@ -210,7 +213,7 @@ describe('Auth security: TOTP 2FA', () => {
     await handler({
       method: 'POST',
       body: { action: 'totp-setup' },
-      headers: { cookie: 'nk-session=valid-token', 'user-agent': 'TestBrowser' },
+      headers: { cookie: 'zd-session=valid-token', 'user-agent': 'TestBrowser' },
     }, res)
 
     const jsonData = res.json.mock.calls[0][0]
@@ -225,8 +228,8 @@ describe('Auth security: TOTP 2FA', () => {
     const expectedFingerprint = crypto.createHash('sha256').update('TestBrowser|1.2.3').digest('hex')
 
     mockKvGet.mockImplementation(async (key: string) => {
-      if (key.startsWith('session:')) return { created: Date.now(), fingerprint: expectedFingerprint }
-      if (key === 'admin-totp-secret') return 'EXISTING_SECRET'
+      if (key.startsWith('zd-session:')) return { created: Date.now(), fingerprint: expectedFingerprint }
+      if (key === 'zd-admin-totp-secret') return 'EXISTING_SECRET'
       return null
     })
 
@@ -234,7 +237,7 @@ describe('Auth security: TOTP 2FA', () => {
     await handler({
       method: 'POST',
       body: { action: 'totp-setup' },
-      headers: { cookie: 'nk-session=valid-token', 'user-agent': 'TestBrowser' },
+      headers: { cookie: 'zd-session=valid-token', 'user-agent': 'TestBrowser' },
     }, res)
 
     expect(res.status).toHaveBeenCalledWith(409)
@@ -245,7 +248,7 @@ describe('Auth security: TOTP 2FA', () => {
 
     mockKvGet.mockImplementation(async (key: string) => {
       if (key === 'admin-password-hash') return hashed
-      if (key === 'admin-totp-secret') return 'JBSWY3DPEHPK3PXP'
+      if (key === 'zd-admin-totp-secret') return 'JBSWY3DPEHPK3PXP'
       return null
     })
 
@@ -266,7 +269,7 @@ describe('Auth security: TOTP 2FA', () => {
 
     mockKvGet.mockImplementation(async (key: string) => {
       if (key === 'admin-password-hash') return hashed
-      if (key === 'admin-totp-secret') return null
+      if (key === 'zd-admin-totp-secret') return null
       return null
     })
     mockKvSet.mockResolvedValue('OK')
@@ -286,9 +289,9 @@ describe('Auth security: TOTP 2FA', () => {
     const expectedFingerprint = crypto.createHash('sha256').update('TestBrowser|1.2.3').digest('hex')
 
     mockKvGet.mockImplementation(async (key: string) => {
-      if (key.startsWith('session:')) return { created: Date.now(), fingerprint: expectedFingerprint }
+      if (key.startsWith('zd-session:')) return { created: Date.now(), fingerprint: expectedFingerprint }
       if (key === 'admin-password-hash') return 'scrypt:salt:hash'
-      if (key === 'admin-totp-secret') return 'JBSWY3DPEHPK3PXP'
+      if (key === 'zd-admin-totp-secret') return 'JBSWY3DPEHPK3PXP'
       return null
     })
 
@@ -296,7 +299,7 @@ describe('Auth security: TOTP 2FA', () => {
     await handler({
       method: 'POST',
       body: { action: 'totp-disable', password: 'wrong', code: '123456' },
-      headers: { cookie: 'nk-session=valid-token', 'user-agent': 'TestBrowser' },
+      headers: { cookie: 'zd-session=valid-token', 'user-agent': 'TestBrowser' },
     }, res)
 
     expect(res.status).toHaveBeenCalledWith(403)
