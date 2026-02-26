@@ -1,5 +1,9 @@
 import { applyRateLimit } from './_ratelimit.js'
 
+function isValidEmail(email: unknown): email is string {
+  return typeof email === 'string' && email.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
@@ -21,7 +25,7 @@ export default async function handler(req, res) {
 
   const { email, source } = req.body || {}
 
-  if (!email || typeof email !== 'string' || !email.includes('@') || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  if (!isValidEmail(email)) {
     return res.status(400).json({ error: 'Valid email required' })
   }
 
