@@ -168,11 +168,12 @@ export default async function handler(req, res) {
     }
 
     if (!response.ok) {
-      return res.status(response.status).json({ error: `Upstream returned ${response.status}` })
+      return res.status(502).json({ error: 'Failed to fetch image' })
     }
 
     const contentType = response.headers.get('content-type') || 'image/jpeg'
-    if (!contentType.startsWith('image/')) {
+    // Only allow raster image content types. Reject SVG (XSS vector) and non-image types.
+    if (!contentType.startsWith('image/') || contentType.includes('svg')) {
       return res.status(400).json({ error: 'Unsupported content type' })
     }
 

@@ -54,11 +54,19 @@ All API inputs are validated through strict [Zod](https://zod.dev/) schemas (`ap
 
 ### Rate Limiting
 All API endpoints are protected by rate limiting (`api/_ratelimit.ts`):
-- **Algorithm**: Fixed-window counter — 5 requests per 10 seconds per client
+- **Algorithm**: Sliding window — 5 requests per 10 seconds per client
 - **Backend**: Upstash Redis (`@upstash/redis`)
 - **GDPR Compliance**: Client IPs are hashed with SHA-256 + a secret salt before use as rate-limit keys. No plaintext IPs are stored. Rate-limit state auto-expires after the window period.
 - **Response**: HTTP 429 `Too Many Requests` when the limit is exceeded
 - **Graceful Degradation**: If Redis is unavailable, requests are allowed through
+
+### SSRF Protection (Image Proxy)
+- Blocklist for private/internal networks: `127.x`, `10.x`, `172.16-31.x`, `192.168.x`, `169.254.x`, IPv6 loopback/mapped/link-local/unique-local, metadata endpoints
+- Hex, octal, and decimal integer IP notation blocked
+- Protocol allowlist: only `http:` and `https:`
+- DNS rebinding protection: resolved IPs checked against blocklist
+- Redirect target re-validated after fetch
+- Content-type restricted to raster `image/*` (SVG blocked to prevent XSS)
 
 ### Security HTTP Headers (vercel.json)
 All responses include defensive HTTP headers:
