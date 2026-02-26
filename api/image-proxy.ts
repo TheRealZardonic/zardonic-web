@@ -206,13 +206,13 @@ export default async function handler(req, res) {
     }
 
     if (!response.ok) {
-      return res.status(response.status).json({ error: `Upstream returned ${response.status}` })
+      return res.status(502).json({ error: 'Failed to fetch image' })
     }
 
     const contentType = response.headers.get('content-type') || 'image/jpeg'
-    // Only allow image content types through the image proxy.
-    // Reject text/html, application/javascript, etc. to prevent XSS.
-    if (!contentType.startsWith('image/')) {
+    // Only allow raster image content types through the image proxy.
+    // Reject text/html, application/javascript, image/svg+xml, etc. to prevent XSS.
+    if (!contentType.startsWith('image/') || contentType.includes('svg')) {
       return res.status(400).json({ error: 'Unsupported content type' })
     }
 

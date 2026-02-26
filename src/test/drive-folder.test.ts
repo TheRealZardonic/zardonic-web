@@ -138,7 +138,7 @@ describe('Drive folder API (Google Drive v3)', () => {
     const res = mockRes()
     await handler({ method: 'GET', query: { folderId: 'abc123' }, headers: {} }, res)
     expect(res.status).toHaveBeenCalledWith(502)
-    expect(res.json).toHaveBeenCalledWith({ error: 'Drive API returned 403' })
+    expect(res.json).toHaveBeenCalledWith({ error: 'Failed to list Drive folder' })
   })
 
   it('returns 502 when fetch throws a network error', async () => {
@@ -174,12 +174,12 @@ describe('Drive folder API (Google Drive v3)', () => {
     expect(images[0].caption).toBe('my.photo')
   })
 
-  it('returns 500 when GOOGLE_DRIVE_API_KEY is not set', async () => {
+  it('returns 503 when GOOGLE_DRIVE_API_KEY is not set', async () => {
     delete process.env.GOOGLE_DRIVE_API_KEY
     const res = mockRes()
     await handler({ method: 'GET', query: { folderId: 'abc123' }, headers: {} }, res)
-    expect(res.status).toHaveBeenCalledWith(500)
-    expect(res.json).toHaveBeenCalledWith({ error: 'Drive API key is not configured' })
+    expect(res.status).toHaveBeenCalledWith(503)
+    expect(res.json).toHaveBeenCalledWith({ error: 'Service unavailable' })
     expect(mockFetch).not.toHaveBeenCalled()
   })
 })

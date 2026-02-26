@@ -21,7 +21,7 @@ export default async function handler(req, res) {
 
   const { email, source } = req.body || {}
 
-  if (!email || typeof email !== 'string' || !email.includes('@')) {
+  if (!email || typeof email !== 'string' || !email.includes('@') || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return res.status(400).json({ error: 'Valid email required' })
   }
 
@@ -46,7 +46,7 @@ export default async function handler(req, res) {
       })
       const data = await response.json()
       if (!response.ok && data.title !== 'Member Exists') {
-        return res.status(400).json({ error: data.detail || 'Subscription failed' })
+        return res.status(400).json({ error: 'Subscription failed' })
       }
       return res.status(200).json({ success: true })
     } catch {
@@ -72,7 +72,7 @@ export default async function handler(req, res) {
       })
       if (!response.ok) {
         const data = await response.json().catch(() => ({}))
-        return res.status(400).json({ error: data.message || 'Subscription failed' })
+        return res.status(400).json({ error: 'Subscription failed' })
       }
       return res.status(200).json({ success: true })
     } catch {

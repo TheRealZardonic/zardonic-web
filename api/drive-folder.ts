@@ -28,7 +28,7 @@ export default async function handler(req, res) {
   try {
     const apiKey = process.env.GOOGLE_DRIVE_API_KEY
     if (!apiKey) {
-      return res.status(500).json({ error: 'Drive API key is not configured' })
+      return res.status(503).json({ error: 'Service unavailable' })
     }
 
     const q = `'${folderId}' in parents and mimeType != 'application/vnd.google-apps.folder' and trashed = false`
@@ -41,7 +41,7 @@ export default async function handler(req, res) {
     const response = await fetch(`https://www.googleapis.com/drive/v3/files?${params}`)
 
     if (!response.ok) {
-      return res.status(502).json({ error: `Drive API returned ${response.status}` })
+      return res.status(502).json({ error: 'Failed to list Drive folder' })
     }
 
     const data = await response.json()
