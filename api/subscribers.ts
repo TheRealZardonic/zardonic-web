@@ -52,7 +52,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!email) {
         return res.status(400).json({ error: 'Email is required' })
       }
-      const subscribers = ((await kv.get(KV_KEY)) || []) as Array<{ email: string }>
+      const raw = await kv.get(KV_KEY)
+      const subscribers = Array.isArray(raw) ? raw as Array<{ email: string }> : []
       const filtered = subscribers.filter((s) => s.email !== email)
       await kv.set(KV_KEY, filtered)
       return res.status(200).json({ success: true })

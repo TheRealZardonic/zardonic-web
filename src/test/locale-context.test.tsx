@@ -71,11 +71,13 @@ describe('LocaleContext', () => {
   })
 
   it('should throw when useLocale is used outside provider', () => {
-    const originalError = console.error
-    console.error = () => {}
-    expect(() => render(<TestConsumer />)).toThrow(
-      'useLocale must be used within a LocaleProvider'
-    )
-    console.error = originalError
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      expect(() => render(<TestConsumer />)).toThrow(
+        'useLocale must be used within a LocaleProvider'
+      )
+    } finally {
+      spy.mockRestore()
+    }
   })
 })
