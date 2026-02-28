@@ -90,7 +90,11 @@ import SecuritySettingsDialog from '@/components/SecuritySettingsDialog'
 import BlocklistManagerDialog from '@/components/BlocklistManagerDialog'
 import AttackerProfileDialog from '@/components/AttackerProfileDialog'
 import { SystemMonitorHUD } from '@/components/SystemMonitorHUD'
-import type { TerminalCommand, SectionLabels } from '@/lib/types'
+import ContactSection from '@/components/ContactSection'
+import ContactInboxDialog from '@/components/ContactInboxDialog'
+import SubscriberListDialog from '@/components/SubscriberListDialog'
+import LanguageSwitcher from '@/components/LanguageSwitcher'
+import type { TerminalCommand, SectionLabels, ContactSettings } from '@/lib/types'
 import heroImage from '@/assets/images/meta_eyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ==.webp'
 import logoImage from '@/assets/images/meta_eyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ==.webp'
 
@@ -396,6 +400,8 @@ In the end, Zardonic will unite listeners with Superstars.
   const [showBlocklist, setShowBlocklist] = useState(false)
   const [showAttackerProfile, setShowAttackerProfile] = useState(false)
   const [selectedAttackerIp, setSelectedAttackerIp] = useState<string>('')
+  const [showContactInbox, setShowContactInbox] = useState(false)
+  const [showSubscriberList, setShowSubscriberList] = useState(false)
 
   // Admin settings (persisted in Redis)
   const [adminSettings, setAdminSettings] = useKV<AdminSettings>('zardonic-admin-settings', {})
@@ -403,8 +409,9 @@ In the end, Zardonic will unite listeners with Superstars.
   const anim = adminSettings?.animations ?? {}
   const sectionLabels = adminSettings?.sectionLabels ?? {}
   const terminalCommands = adminSettings?.terminalCommands ?? []
+  const contactSettings = adminSettings?.contactSettings ?? {}
 
-  const DEFAULT_SECTION_ORDER = ['bio', 'shell', 'creditHighlights', 'music', 'gigs', 'releases', 'gallery', 'media', 'connect']
+  const DEFAULT_SECTION_ORDER = ['bio', 'shell', 'creditHighlights', 'music', 'gigs', 'releases', 'gallery', 'media', 'connect', 'contact']
   const sectionOrder = adminSettings?.sectionOrder ?? DEFAULT_SECTION_ORDER
   const getSectionOrder = useCallback((section: string) => {
     const idx = sectionOrder.indexOf(section)
@@ -2309,6 +2316,19 @@ In the end, Zardonic will unite listeners with Superstars.
       )}
       </div>
 
+      {/* Contact Section */}
+      <div style={{ order: getSectionOrder('contact') }}>
+      {vis.contact !== false && (
+        <ContactSection
+          contactSettings={contactSettings}
+          editMode={editMode}
+          onUpdate={(settings: ContactSettings) => setAdminSettings((prev) => ({ ...(prev || {}), contactSettings: settings }))}
+          sectionLabels={sectionLabels}
+          onLabelChange={(key, value) => setAdminSettings((prev) => ({ ...(prev || {}), sectionLabels: { ...(prev?.sectionLabels || {}), [key]: value } }))}
+        />
+      )}
+      </div>
+
       </div>{/* end flex container for reorderable sections */}
 
       <footer className="py-12 px-4 border-t border-border noise-effect">
@@ -2347,6 +2367,7 @@ In the end, Zardonic will unite listeners with Superstars.
                 <Lock size={14} />
               </button>
             )}
+            <LanguageSwitcher />
           </div>
           <p className="text-sm text-muted-foreground uppercase tracking-wide font-mono hover-chromatic">
             © {new Date().getFullYear()} {siteData.artistName}
@@ -3547,6 +3568,8 @@ In the end, Zardonic will unite listeners with Superstars.
           onOpenSecurityIncidents={() => setShowSecurityIncidents(true)}
           onOpenSecuritySettings={() => setShowSecuritySettings(true)}
           onOpenBlocklist={() => setShowBlocklist(true)}
+          onOpenContactInbox={() => setShowContactInbox(true)}
+          onOpenSubscriberList={() => setShowSubscriberList(true)}
         />
       )}
 
@@ -3580,6 +3603,14 @@ In the end, Zardonic will unite listeners with Superstars.
             open={showAttackerProfile}
             onClose={() => setShowAttackerProfile(false)}
             hashedIp={selectedAttackerIp}
+          />
+          <ContactInboxDialog
+            open={showContactInbox}
+            onClose={() => setShowContactInbox(false)}
+          />
+          <SubscriberListDialog
+            open={showSubscriberList}
+            onClose={() => setShowSubscriberList(false)}
           />
         </>
       )}

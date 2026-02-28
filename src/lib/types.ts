@@ -7,6 +7,7 @@ export interface SectionVisibility {
   connect?: boolean
   creditHighlights?: boolean
   shell?: boolean
+  contact?: boolean
 }
 
 export interface ThemeCustomization {
@@ -87,6 +88,8 @@ export interface SectionLabels {
   media?: string
   tourDates?: string
   shell?: string
+  contact?: string
+  headingPrefix?: string
 }
 
 export interface ContactInfo {
@@ -152,6 +155,7 @@ export interface AdminSettings {
   terminalCommands?: TerminalCommand[]
   sectionOrder?: string[]
   contactInfo?: ContactInfo
+  contactSettings?: ContactSettings
   legalContent?: LegalContent
   shellMember?: ShellMember
   shellMembers?: ShellMember[]
@@ -161,4 +165,23 @@ export interface AdminSettings {
     intervalMs?: number
     durationMs?: number
   }
+}
+
+export interface ContactMessage {
+  id: string
+  name: string
+  email: string
+  subject: string
+  message: string
+  date: string
+  read?: boolean
+}
+
+export interface ContactSettings {
+  enabled?: boolean
+  title?: string
+  description?: string
+  emailForwardTo?: string
+  successMessage?: string
+  showSection?: boolean
 }

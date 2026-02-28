@@ -16,6 +16,8 @@ import {
   ShieldWarning,
   ShieldCheck,
   ProhibitInset,
+  Envelope,
+  Users,
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -44,6 +46,8 @@ interface EditControlsProps {
   onOpenSecurityIncidents?: () => void
   onOpenSecuritySettings?: () => void
   onOpenBlocklist?: () => void
+  onOpenContactInbox?: () => void
+  onOpenSubscriberList?: () => void
 }
 
 export default function EditControls({
@@ -61,6 +65,8 @@ export default function EditControls({
   onOpenSecurityIncidents,
   onOpenSecuritySettings,
   onOpenBlocklist,
+  onOpenContactInbox,
+  onOpenSubscriberList,
 }: EditControlsProps) {
   const [showPasswordDialog, setShowPasswordDialog] = useState(false)
   const [showVisibilityPanel, setShowVisibilityPanel] = useState(false)
@@ -70,7 +76,7 @@ export default function EditControls({
   const [showReorderPanel, setShowReorderPanel] = useState(false)
   const importInputRef = useRef<HTMLInputElement>(null)
 
-  const defaultSectionOrder = ['bio', 'shell', 'creditHighlights', 'music', 'gigs', 'releases', 'gallery', 'media', 'connect']
+  const defaultSectionOrder = ['bio', 'shell', 'creditHighlights', 'music', 'gigs', 'releases', 'gallery', 'media', 'connect', 'contact']
 
   const sectionDisplayNames: Record<string, string> = {
     bio: 'Biography',
@@ -82,6 +88,7 @@ export default function EditControls({
     gallery: 'Gallery',
     media: 'Media',
     connect: 'Connect / Social',
+    contact: 'Contact Form',
   }
 
   const currentOrder = adminSettings?.sectionOrder ?? defaultSectionOrder
@@ -238,6 +245,7 @@ export default function EditControls({
     { key: 'gallery', label: 'Gallery' },
     { key: 'connect', label: 'Connect / Social' },
     { key: 'creditHighlights', label: 'Credit Highlights' },
+    { key: 'contact', label: 'Contact Form' },
   ]
 
   const animItems: { key: keyof AnimationSettings; label: string }[] = [
@@ -908,6 +916,26 @@ export default function EditControls({
                   title="Manage blocklist"
                 >
                   <ProhibitInset size={18} weight="bold" />
+                </Button>
+              )}
+              {onOpenContactInbox && (
+                <Button
+                  onClick={onOpenContactInbox}
+                  className="bg-secondary hover:bg-secondary/80 active:scale-90 w-10 h-10 md:w-12 md:h-12 rounded-full shadow-lg transition-all touch-manipulation"
+                  size="icon"
+                  title="Contact inbox"
+                >
+                  <Envelope size={18} weight="bold" />
+                </Button>
+              )}
+              {onOpenSubscriberList && (
+                <Button
+                  onClick={onOpenSubscriberList}
+                  className="bg-secondary hover:bg-secondary/80 active:scale-90 w-10 h-10 md:w-12 md:h-12 rounded-full shadow-lg transition-all touch-manipulation"
+                  size="icon"
+                  title="Subscriber list"
+                >
+                  <Users size={18} weight="bold" />
                 </Button>
               )}
             </motion.div>

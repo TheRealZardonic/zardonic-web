@@ -3,6 +3,7 @@ import { ErrorBoundary } from "react-error-boundary";
 
 import App from './App.tsx'
 import { ErrorFallback } from './ErrorFallback.tsx'
+import { LocaleProvider } from './contexts/LocaleContext.tsx'
 
 import '@fontsource/jetbrains-mono/400.css'
 import '@fontsource/jetbrains-mono/500.css'
@@ -17,6 +18,8 @@ import "./index.css"
 
 createRoot(document.getElementById('root')!).render(
   <ErrorBoundary FallbackComponent={ErrorFallback}>
-    <App />
+    <LocaleProvider>
+      <App />
+    </LocaleProvider>
    </ErrorBoundary>
 )
