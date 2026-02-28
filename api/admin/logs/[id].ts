@@ -37,7 +37,7 @@ export default async function handler(req, res) {
   const numericId = parseInt(id, 10) || Math.floor(Math.random() * 100000)
 
   // Generate a page of fake log entries
-  const entries = []
+  const entries: ReturnType<typeof fakeLogEntry>[] = []
   for (let i = 0; i < 25; i++) {
     entries.push(fakeLogEntry(`log-${numericId}-${i}`))
   }

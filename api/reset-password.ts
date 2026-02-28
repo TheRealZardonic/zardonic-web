@@ -45,7 +45,7 @@ export default async function handler(req, res) {
     const { token, newPassword } = parsed.data
 
     try {
-      const storedToken = await kv.get(RESET_TOKEN_KEY)
+      const storedToken = await kv.get<string>(RESET_TOKEN_KEY)
       if (!storedToken || !timingSafeEqual(token, storedToken)) {
         return res.status(400).json({ error: 'Invalid or expired reset token' })
       }

@@ -149,7 +149,7 @@ async function mergeAnalytics(
 
   // Set first/last tracked
   pipe.hsetnx(ANALYTICS_KEY, 'firstTracked', today)
-  pipe.hset(ANALYTICS_KEY, 'lastTracked', today)
+  pipe.hset(ANALYTICS_KEY, { lastTracked: today })
 
   await pipe.exec()
 

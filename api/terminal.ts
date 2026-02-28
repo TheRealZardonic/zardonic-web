@@ -46,7 +46,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const bandData = await kv.get('band-data')
+    const bandData = await kv.get<{ terminalCommands?: { name?: string; description?: string; output?: unknown[]; fileUrl?: string; fileName?: string }[] }>('band-data')
     const commands = (bandData && typeof bandData === 'object' && Array.isArray(bandData.terminalCommands))
       ? bandData.terminalCommands
       : []

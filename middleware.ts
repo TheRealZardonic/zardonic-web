@@ -1,5 +1,4 @@
 import { Redis } from '@upstash/redis'
-import { NextResponse, type NextRequest } from 'next/server'
 
 /**
  * Vercel Edge Middleware — Global Circuit Breaker + IP Blocklist Gate.
@@ -33,7 +32,7 @@ async function hashIp(ip: string): Promise<string> {
     .join('')
 }
 
-function getClientIp(req: NextRequest): string {
+function getClientIp(req: Request): string {
   const forwarded = req.headers.get('x-forwarded-for')
   if (typeof forwarded === 'string') {
     return forwarded.split(',')[0].trim()
@@ -47,7 +46,7 @@ const THRESHOLD = 500
 /** How long (seconds) the circuit breaker stays open once tripped. */
 const COOLDOWN_SECONDS = 300
 
-export default async function middleware(req: NextRequest): Promise<NextResponse | undefined> {
+export default async function middleware(req: Request): Promise<Response | undefined> {
   // Skip when Redis is not configured (local development)
   if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
     return
@@ -62,7 +61,7 @@ export default async function middleware(req: NextRequest): Promise<NextResponse
     // ── 1. Circuit Breaker ──────────────────────────────────────────
     const isUnderAttack = await redis.get('zd_under_attack')
     if (isUnderAttack) {
-      return new NextResponse(null, { status: 429 })
+      return new Response(null, { status: 429 })
     }
 
     // ── 2. Hard-Blocked IP Gate ─────────────────────────────────────
@@ -70,7 +69,7 @@ export default async function middleware(req: NextRequest): Promise<NextResponse
     const hashedIp = await hashIp(ip)
     const isBlocked = await redis.get(`zd-blocked:${hashedIp}`)
     if (isBlocked) {
-      return new NextResponse(null, { status: 403 })
+      return new Response(null, { status: 403 })
     }
 
     // ── 3. Global Rate Counter ──────────────────────────────────────
@@ -86,7 +85,7 @@ export default async function middleware(req: NextRequest): Promise<NextResponse
 
     if (currentRequests > THRESHOLD) {
       await redis.set('zd_under_attack', true, { ex: COOLDOWN_SECONDS })
-      return new NextResponse(null, { status: 429 })
+      return new Response(null, { status: 429 })
     }
 
     // Pass through — Serverless Function handles the rest

@@ -18,7 +18,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    await applyRateLimit(req, res, { maxRequests: 5, windowSeconds: 60 })
+    await applyRateLimit(req, res)
   } catch {
     return res.status(429).json({ error: 'Too many requests' })
   }

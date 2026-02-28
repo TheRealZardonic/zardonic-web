@@ -170,7 +170,7 @@ export default async function handler(req, res) {
 
   try {
     // Check KV cache first
-    const cached = await kv.get(key)
+    const cached = await kv.get<{ data: string; contentType: string }>(key)
     if (cached && cached.data && cached.contentType) {
       const buf = Buffer.from(cached.data, 'base64')
       res.setHeader('Content-Type', cached.contentType)
