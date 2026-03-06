@@ -1,0 +1,29 @@
+{
+  "biography": {
+    "story": "Zardonic is a Venezuelan-Canadian electronic music producer, DJ, and multi-instrumentalist known for his unique fusion of drum and bass, metal, and industrial sounds. Since emerging onto the scene, he has pushed the boundaries of heavy electronic music, combining aggressive breakbeats with crushing guitar riffs and cinematic atmospheres. His work spans multiple genres including neurofunk, crossbreed, and industrial, creating a sound that is uniquely his own. With releases on major labels and collaborations with artists across the heavy music spectrum, Zardonic continues to be a driving force in the underground electronic music scene.",
+    "story_de": "Zardonic ist ein venezolanisch-kanadischer Produzent elektronischer Musik, DJ und Multi-Instrumentalist, bekannt für seine einzigartige Fusion aus Drum and Bass, Metal und Industrial-Sounds.",
+    "founded": "2004",
+    "members": [
+      "Zardonic (Production / DJ)"
+    ],
+    "achievements": [
+      "Multiple releases on major DnB and industrial labels",
+      "Performed at festivals worldwide",
+      "Mastering engineer for various artists",
+      "Pioneer of the DnB-metal crossover sound"
+    ]
+  },
+  "terminalMorseCode": "..--.",
+  "band": {
+    "name": "ZARDONIC",
+    "genres": [
+      "DRUM AND BASS",
+      "NEUROFUNK",
+      "INDUSTRIAL",
+      "CROSSBREED"
+    ],
+    "location": "Canada",
+    "description": "An uncompromising force in heavy electronic music, pushing the boundaries of drum and bass, industrial, and metal fusion.",
+    "label": "Independent"
+  }
+}

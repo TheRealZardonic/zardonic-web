@@ -178,3 +178,18 @@ export function prepareImageUrl(url: string | null | undefined): string {
   
   return directUrl
 }
+
+/**
+ * Normalizes an image URL entered by a user in edit mode.
+ * Automatically converts Google Drive URLs to wsrv.nl proxy URLs.
+ * This should be called when saving image URLs from input fields.
+ */
+export function normalizeImageUrl(url: string | null | undefined): string {
+  if (!url) return ''
+  
+  // If it's already a data URL or empty, return it directly
+  if (url.startsWith('data:') || !url.trim()) return url
+  
+  // Convert to direct image URL (Google Drive → wsrv.nl)
+  return toDirectImageUrl(url)
+}

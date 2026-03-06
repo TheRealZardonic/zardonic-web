@@ -1,9 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { useEffect, useRef, useState, useMemo, memo } from 'react'
-import * as THREE from 'three'
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import { useEffect, useState, useMemo, memo } from 'react'
 import { cacheImage } from '@/lib/image-cache'
-import modelFile from '@/assets/models/ZARDONICHEAD.glb'
 
 interface LoadingScreenProps {
   onLoadComplete: () => void
@@ -11,19 +8,21 @@ interface LoadingScreenProps {
 }
 
 export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, precacheUrls = [] }: LoadingScreenProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [loadingStage, setLoadingStage] = useState(0)
-  const [glitchActive, setGlitchActive] = useState(false)
   const [cachingDone, setCachingDone] = useState(precacheUrls.length === 0)
 
+  // Simulated progress so the bar always moves
   useEffect(() => {
-    const glitchInterval = setInterval(() => {
-      setGlitchActive(true)
-      setTimeout(() => setGlitchActive(false), 100)
-    }, 2000)
-
-    return () => clearInterval(glitchInterval)
+    const interval = setInterval(() => {
+      setLoadingProgress((prev) => {
+        if (prev >= 95) return prev
+        // Slow down as we approach completion
+        const increment = prev < 50 ? 3 : prev < 80 ? 1.5 : 0.5
+        return Math.min(prev + increment, 95)
+      })
+    }, 100)
+    return () => clearInterval(interval)
   }, [])
 
   // Background data caching during loading screen
@@ -38,6 +37,13 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
       .then(() => { if (!cancelled) setCachingDone(true) })
     return () => { cancelled = true }
   }, [precacheUrls])
+
+  // Jump to 100% when caching is done
+  useEffect(() => {
+    if (cachingDone && loadingProgress >= 90) {
+      setLoadingProgress(100)
+    }
+  }, [cachingDone, loadingProgress])
 
   useEffect(() => {
     if (loadingProgress > 20 && loadingStage < 1) setLoadingStage(1)
@@ -56,125 +62,10 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
     'SYSTEM READY'
   ], [])
 
-  useEffect(() => {
-    if (!canvasRef.current) return
-
-    const canvas = canvasRef.current
-    const scene = new THREE.Scene()
-    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000)
-    
-    let renderer: THREE.WebGLRenderer
-    try {
-      renderer = new THREE.WebGLRenderer({
-        canvas,
-        alpha: true,
-        antialias: true,
-      })
-      renderer.setSize(500, 500)
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-    } catch (err) {
-      console.error('Failed to create renderer:', err)
-      setTimeout(() => onLoadComplete(), 1000)
-      return
-    }
-
-    camera.position.z = 5
-
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
-    scene.add(ambientLight)
-
-    const directionalLight1 = new THREE.DirectionalLight(0xff6464, 1.5)
-    directionalLight1.position.set(5, 5, 5)
-    scene.add(directionalLight1)
-
-    const directionalLight2 = new THREE.DirectionalLight(0x64ffff, 1.0)
-    directionalLight2.position.set(-5, -5, 5)
-    scene.add(directionalLight2)
-
-    const pointLight = new THREE.PointLight(0xffffff, 1.0)
-    pointLight.position.set(0, 0, 3)
-    scene.add(pointLight)
-
-    let model: THREE.Object3D | null = null
-    let animationFrameId: number
-
-    const loader = new GLTFLoader()
-    loader.load(
-      modelFile,
-      (gltf) => {
-        if (!gltf?.scene) {
-          console.error('Invalid GLTF data')
-          setLoadingProgress(100)
-          return
-        }
-
-        try {
-          model = gltf.scene
-          
-          const box = new THREE.Box3().setFromObject(model)
-          const center = box.getCenter(new THREE.Vector3())
-          model.position.sub(center)
-          
-          const size = box.getSize(new THREE.Vector3())
-          const maxDim = Math.max(size.x, size.y, size.z)
-          const scale = 3 / maxDim
-          model.scale.setScalar(scale)
-          
-          scene.add(model)
-          setLoadingProgress(100)
-        } catch (err) {
-          console.error('Failed to process model:', err)
-          setLoadingProgress(100)
-        }
-      },
-      (progress) => {
-        if (progress.total > 0) {
-          const percent = Math.min((progress.loaded / progress.total) * 100, 95)
-          setLoadingProgress(percent)
-        }
-      },
-      (error) => {
-        console.error('Error loading model:', error)
-        setLoadingProgress(100)
-      }
-    )
-
-    const animate = () => {
-      animationFrameId = requestAnimationFrame(animate)
-
-      if (model) {
-        try {
-          model.rotation.y += 0.01
-          model.rotation.x = Math.sin(Date.now() * 0.001) * 0.1
-        } catch (err) {
-          console.error('Animation error:', err)
-        }
-      }
-
-      try {
-        renderer.render(scene, camera)
-      } catch (err) {
-        console.error('Render error:', err)
-      }
-    }
-
-    animate()
-
-    return () => {
-      try {
-        cancelAnimationFrame(animationFrameId)
-        renderer.dispose()
-        scene.clear()
-      } catch (err) {
-        console.error('Cleanup error:', err)
-      }
-    }
-  }, [messages])
-
-  // Complete when both model progress reaches 100% and background caching is done
+  // Complete when progress reaches 100% and background caching is done
   useEffect(() => {
     if (loadingProgress >= 100 && cachingDone) {
-      const timeout = setTimeout(() => onLoadComplete(), 2000)
+      const timeout = setTimeout(() => onLoadComplete(), 800)
       return () => clearTimeout(timeout)
     }
   }, [loadingProgress, cachingDone, onLoadComplete])
@@ -183,7 +74,7 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
     <motion.div
       initial={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.8 }}
+      transition={{ duration: 0.5 }}
       className="fixed inset-0 z-[9999] bg-background flex items-center justify-center overflow-hidden"
     >
       <div className="full-page-noise periodic-noise-glitch" />
@@ -220,7 +111,7 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
         transition={{ duration: 0.15 }}
         className="relative z-10 flex flex-col items-center"
       >
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-20">
+        <div className="mb-8">
           <motion.div
             className="data-label text-center"
             animate={{
@@ -234,93 +125,12 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
             {'>'} ZARDONIC.SYS v2.077 {'<'}
           </motion.div>
         </div>
-
-        <div className="relative">
-          <motion.div
-            className="absolute inset-0 border-2 border-primary/20"
-            animate={{
-              opacity: [0.2, 0.5, 0.2],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-            }}
-          />
-          
-          <canvas
-            ref={canvasRef}
-            className={`w-[500px] h-[500px] max-w-full ${glitchActive ? 'logo-glitch' : ''}`}
-            style={{
-              filter: glitchActive ? 'contrast(1.2) saturate(1.5)' : 'none',
-            }}
-          />
-
-          <motion.div
-            className="absolute top-0 left-0 w-1 h-1 bg-primary"
-            animate={{
-              boxShadow: [
-                '0 0 10px 2px rgba(180, 50, 50, 0.5)',
-                '0 0 20px 4px rgba(180, 50, 50, 0.8)',
-                '0 0 10px 2px rgba(180, 50, 50, 0.5)',
-              ],
-            }}
-            transition={{
-              duration: 1.5,
-              repeat: Infinity,
-            }}
-          />
-          <motion.div
-            className="absolute top-0 right-0 w-1 h-1 bg-primary"
-            animate={{
-              boxShadow: [
-                '0 0 10px 2px rgba(180, 50, 50, 0.5)',
-                '0 0 20px 4px rgba(180, 50, 50, 0.8)',
-                '0 0 10px 2px rgba(180, 50, 50, 0.5)',
-              ],
-            }}
-            transition={{
-              duration: 1.5,
-              repeat: Infinity,
-              delay: 0.3,
-            }}
-          />
-          <motion.div
-            className="absolute bottom-0 left-0 w-1 h-1 bg-primary"
-            animate={{
-              boxShadow: [
-                '0 0 10px 2px rgba(180, 50, 50, 0.5)',
-                '0 0 20px 4px rgba(180, 50, 50, 0.8)',
-                '0 0 10px 2px rgba(180, 50, 50, 0.5)',
-              ],
-            }}
-            transition={{
-              duration: 1.5,
-              repeat: Infinity,
-              delay: 0.6,
-            }}
-          />
-          <motion.div
-            className="absolute bottom-0 right-0 w-1 h-1 bg-primary"
-            animate={{
-              boxShadow: [
-                '0 0 10px 2px rgba(180, 50, 50, 0.5)',
-                '0 0 20px 4px rgba(180, 50, 50, 0.8)',
-                '0 0 10px 2px rgba(180, 50, 50, 0.5)',
-              ],
-            }}
-            transition={{
-              duration: 1.5,
-              repeat: Infinity,
-              delay: 0.9,
-            }}
-          />
-        </div>
         
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="mt-12 text-center w-full max-w-2xl px-4"
+          className="text-center w-full max-w-2xl px-4"
         >
           <div className="mb-6 h-8">
             <AnimatePresence mode="wait">

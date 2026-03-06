@@ -1,23 +1,34 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { applyRateLimit } from './_ratelimit.js'
+import { fetchWithRetry } from './_fetch-retry.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const { artist, app_id } = req.query
+  // Rate limiting
+  const allowed = await applyRateLimit(req, res)
+  if (!allowed) return
+
+  const { artist } = req.query
 
   if (!artist || typeof artist !== 'string') {
     return res.status(400).json({ error: 'Missing artist parameter' })
   }
 
+  // Check if Bandsintown API key is configured
+  const apiKey = process.env.BANDSINTOWN_API_KEY
+  if (!apiKey) {
+    return res.status(503).json({
+      error: 'Service unavailable',
+      message: 'Bandsintown API is not configured. Please set BANDSINTOWN_API_KEY environment variable.'
+    })
+  }
+
   const params = new URLSearchParams()
-  if (app_id && typeof app_id === 'string') params.set('app_id', app_id)
+  params.set('app_id', apiKey)
 
   try {
-    const response = await fetch(
+    const response = await fetchWithRetry(
       `https://rest.bandsintown.com/artists/${encodeURIComponent(artist)}/events?${params.toString()}`,
-      {
-        headers: {
-          'Accept': 'application/json',
-        },
-      }
+      { headers: { 'Accept': 'application/json' } }
     )
 
     if (!response.ok) {

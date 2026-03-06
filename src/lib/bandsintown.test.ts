@@ -33,8 +33,16 @@ describe('fetchBandsintownEvents', () => {
       venue: 'Club Voltage',
       location: 'Berlin, BE, Germany',
       date: '2025-03-15',
+      startsAt: '2025-03-15T20:00:00',
       ticketUrl: 'https://bandsintown.com/e/101',
       lineup: ['Zardonic', 'Support Act'],
+      streetAddress: undefined,
+      postalCode: undefined,
+      latitude: undefined,
+      longitude: undefined,
+      soldOut: false,
+      description: undefined,
+      title: undefined,
     })
   })
 
@@ -104,18 +112,5 @@ describe('fetchBandsintownEvents', () => {
 
     const result = await fetchBandsintownEvents()
     expect(result[0].date).toBe('')
-  })
-
-  it('should include app_id in the request URL', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve([]),
-    })
-
-    await fetchBandsintownEvents()
-
-    const calledUrl = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string
-    expect(calledUrl).toContain('app_id=')
-    expect(calledUrl).toContain('artist=')
   })
 })

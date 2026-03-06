@@ -28,18 +28,6 @@ describe('useKV', () => {
     expect(result.current[0]).toEqual({ foo: 'bar' })
   })
 
-  it('falls back to localStorage when API returns null but localStorage has data', async () => {
-    localStorage.setItem('kv:persisted-key', JSON.stringify({ saved: 'from-local' }))
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ value: null }), { status: 200 })
-    )
-
-    const { result } = renderHook(() => useKV('persisted-key', { saved: 'default' }))
-
-    await waitFor(() => expect(result.current[2]).toBe(true))
-    expect(result.current[0]).toEqual({ saved: 'from-local' })
-  })
-
   it('returns value from API when available', async () => {
     const apiData = { name: 'ZARDONIC', genres: ['DnB'] }
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
@@ -52,32 +40,16 @@ describe('useKV', () => {
     expect(result.current[0]).toEqual(apiData)
   })
 
-  it('syncs API data to localStorage as backup', async () => {
-    const apiData = { name: 'TEST' }
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ value: apiData }), { status: 200 })
-    )
-
-    renderHook(() => useKV('sync-key', {}))
-
-    await waitFor(() => {
-      const stored = localStorage.getItem('kv:sync-key')
-      expect(stored).not.toBeNull()
-      expect(JSON.parse(stored!)).toEqual(apiData)
-    })
-  })
-
-  it('falls back to localStorage when API fails', async () => {
-    localStorage.setItem('kv:fallback-key', JSON.stringify({ saved: true }))
+  it('uses default value when API fails', async () => {
     vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Network error'))
 
-    const { result } = renderHook(() => useKV('fallback-key', { saved: false }))
+    const { result } = renderHook(() => useKV('fallback-key', { saved: true }))
 
     await waitFor(() => expect(result.current[2]).toBe(true))
     expect(result.current[0]).toEqual({ saved: true })
   })
 
-  it('updateValue persists to localStorage immediately', async () => {
+  it('updateValue changes state immediately', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ value: null }), { status: 200 })
     )
@@ -91,7 +63,6 @@ describe('useKV', () => {
     })
 
     expect(result.current[0]).toBe('updated')
-    expect(JSON.parse(localStorage.getItem('kv:update-key')!)).toBe('updated')
   })
 
   it('updateValue with updater function receives current value', async () => {
@@ -138,12 +109,12 @@ describe('useKV', () => {
     await waitFor(() => expect(result.current[2]).toBe(true))
   })
 
-  it('sends admin token with POST when authenticated', async () => {
+  it('sends x-session-token and credentials on authenticated POST', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ value: 'data' }), { status: 200 })
     )
 
-    localStorage.setItem('admin-token', 'my-token')
+    localStorage.setItem('admin-token', 'my-session-token')
 
     const { result } = renderHook(() => useKV('auth-key', 'default'))
     await waitFor(() => expect(result.current[2]).toBe(true))
@@ -155,8 +126,10 @@ describe('useKV', () => {
         (call) => call[1] && (call[1] as RequestInit).method === 'POST'
       )
       expect(postCalls).toHaveLength(1)
-      const headers = (postCalls[0][1] as RequestInit).headers as Record<string, string>
-      expect(headers['x-admin-token']).toBe('my-token')
+      const opts = postCalls[0][1] as RequestInit
+      const headers = opts.headers as Record<string, string>
+      expect(headers['x-session-token']).toBe('my-session-token')
+      expect(opts.credentials).toBe('same-origin')
     })
   })
 
@@ -186,5 +159,60 @@ describe('useKV', () => {
     const { result } = renderHook(() => useKV('server-error-key', 'fallback'))
     await waitFor(() => expect(result.current[2]).toBe(true))
     expect(result.current[0]).toBe('fallback')
+  })
+
+  it('loads from localStorage when API returns null', async () => {
+    const localData = { name: 'ZARDONIC', source: 'localStorage' }
+    localStorage.setItem('kv:local-fallback-key', JSON.stringify(localData))
+
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ value: null }), { status: 200 })
+    )
+
+    const { result } = renderHook(() => useKV('local-fallback-key', { name: '', source: '' }))
+    await waitFor(() => expect(result.current[2]).toBe(true))
+    expect(result.current[0]).toEqual(localData)
+  })
+
+  it('loads from localStorage when API fails', async () => {
+    const localData = { offline: true }
+    localStorage.setItem('kv:offline-key', JSON.stringify(localData))
+
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Network error'))
+
+    const { result } = renderHook(() => useKV('offline-key', { offline: false }))
+    await waitFor(() => expect(result.current[2]).toBe(true))
+    expect(result.current[0]).toEqual(localData)
+  })
+
+  it('saves to localStorage immediately on update', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ value: 'initial' }), { status: 200 })
+    )
+
+    const { result } = renderHook(() => useKV('save-test-key', 'default'))
+    await waitFor(() => expect(result.current[2]).toBe(true))
+
+    act(() => {
+      result.current[1]('updated-value')
+    })
+
+    expect(result.current[0]).toBe('updated-value')
+    const savedData = localStorage.getItem('kv:save-test-key')
+    expect(savedData).toBe(JSON.stringify('updated-value'))
+  })
+
+  it('syncs localStorage with API data on successful fetch', async () => {
+    const apiData = { source: 'api', synced: true }
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ value: apiData }), { status: 200 })
+    )
+
+    const { result } = renderHook(() => useKV('sync-key', { source: '', synced: false }))
+    await waitFor(() => expect(result.current[2]).toBe(true))
+    
+    expect(result.current[0]).toEqual(apiData)
+    const savedData = localStorage.getItem('kv:sync-key')
+    expect(savedData).toBe(JSON.stringify(apiData))
   })
 })

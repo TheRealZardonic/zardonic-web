@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { z } from 'zod'
+import { applyRateLimit } from './_ratelimit.js'
 
 /** Maximum lengths for contact form fields (mirrors client schema) */
 const MAX_NAME_LENGTH = 100
@@ -18,25 +19,21 @@ const contactSchema = z.object({
 })
 
 /**
- * Simple in-memory rate limiter.
- * Limits each IP to a configurable number of requests per time window.
- * In a multi-instance deployment Vercel will run one per isolate, so
- * this is a best-effort guard — not a hard guarantee.
+ * Simple in-memory rate limiter (fallback when Redis is unavailable).
+ * The KV-based applyRateLimit from _ratelimit.ts is the primary limiter.
  */
-const RATE_LIMIT_WINDOW_MS = 60_000 // 1 minute
-const RATE_LIMIT_MAX = 5 // max submissions per window per IP
+const RATE_LIMIT_WINDOW_MS = 60_000
+const RATE_LIMIT_MAX = 5
 
 const ipHits = new Map<string, { count: number; resetAt: number }>()
 
-function isRateLimited(ip: string): boolean {
+function isRateLimitedInMemory(ip: string): boolean {
   const now = Date.now()
   const entry = ipHits.get(ip)
-
   if (!entry || now > entry.resetAt) {
     ipHits.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS })
     return false
   }
-
   entry.count++
   return entry.count > RATE_LIMIT_MAX
 }
@@ -62,9 +59,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  // --- Rate limiting ---
+  // --- KV-based rate limiting (GDPR-compliant, IP hashed) ---
+  const rlAllowed = await applyRateLimit(req, res)
+  if (!rlAllowed) return
+
+  // --- Fallback in-memory rate limiting (multi-submission guard) ---
   const ip = getClientIp(req)
-  if (isRateLimited(ip)) {
+  if (isRateLimitedInMemory(ip)) {
     return res.status(429).json({ error: 'Too many requests — please try again later' })
   }
 

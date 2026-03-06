@@ -48,12 +48,17 @@ npm run dev
 
 ### Environment Variables
 
-For Redis persistence, set these in your `.env` or deployment environment:
+For Redis persistence and API integrations, set these in your `.env` or deployment environment:
 
 ```
 UPSTASH_REDIS_REST_URL=https://your-redis-url.upstash.io
 UPSTASH_REDIS_REST_TOKEN=your-token-here
+BANDSINTOWN_API_KEY=your-bandsintown-api-key
 ```
+
+**How to get API keys:**
+- **Upstash Redis**: Sign up at https://upstash.com and create a Redis database
+- **Bandsintown API**: Register at https://www.bandsintown.com/api/overview
 
 ### Scripts
 

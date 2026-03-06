@@ -9,11 +9,21 @@ import {
   EyeSlash,
   Palette,
   GearSix,
+  ChartLine,
+  ArrowsVertical,
+  ArrowUp,
+  ArrowDown,
+  ShieldWarning,
+  ShieldCheck,
+  ProhibitInset,
+  Envelope,
+  Users,
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
+import { Slider } from '@/components/ui/slider'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRef, useState, useCallback } from 'react'
 import AdminLoginDialog from '@/components/AdminLoginDialog'
@@ -32,6 +42,12 @@ interface EditControlsProps {
   adminSettings?: AdminSettings
   onAdminSettingsChange?: (settings: AdminSettings) => void
   onOpenConfigEditor?: () => void
+  onOpenStats?: () => void
+  onOpenSecurityIncidents?: () => void
+  onOpenSecuritySettings?: () => void
+  onOpenBlocklist?: () => void
+  onOpenContactInbox?: () => void
+  onOpenSubscriberList?: () => void
 }
 
 export default function EditControls({
@@ -45,17 +61,65 @@ export default function EditControls({
   adminSettings,
   onAdminSettingsChange,
   onOpenConfigEditor,
+  onOpenStats,
+  onOpenSecurityIncidents,
+  onOpenSecuritySettings,
+  onOpenBlocklist,
+  onOpenContactInbox,
+  onOpenSubscriberList,
 }: EditControlsProps) {
   const [showPasswordDialog, setShowPasswordDialog] = useState(false)
   const [showVisibilityPanel, setShowVisibilityPanel] = useState(false)
   const [showThemePanel, setShowThemePanel] = useState(false)
   const [showAnimationPanel, setShowAnimationPanel] = useState(false)
   const [showProgressiveModesPanel, setShowProgressiveModesPanel] = useState(false)
+  const [showReorderPanel, setShowReorderPanel] = useState(false)
   const importInputRef = useRef<HTMLInputElement>(null)
+
+  const defaultSectionOrder = ['bio', 'shell', 'creditHighlights', 'music', 'gigs', 'releases', 'gallery', 'media', 'connect', 'contact']
+
+  const sectionDisplayNames: Record<string, string> = {
+    bio: 'Biography',
+    shell: 'Shell (Member)',
+    creditHighlights: 'Credit Highlights',
+    music: 'Music Player',
+    gigs: 'Upcoming Gigs',
+    releases: 'Releases',
+    gallery: 'Gallery',
+    media: 'Media',
+    connect: 'Connect / Social',
+    contact: 'Contact Form',
+  }
+
+  const currentOrder = adminSettings?.sectionOrder ?? defaultSectionOrder
+
+  const moveSectionUp = useCallback(
+    (index: number) => {
+      if (index <= 0 || !onAdminSettingsChange) return
+      const newOrder = [...currentOrder]
+      ;[newOrder[index - 1], newOrder[index]] = [newOrder[index], newOrder[index - 1]]
+      onAdminSettingsChange({ ...adminSettings, sectionOrder: newOrder })
+    },
+    [currentOrder, adminSettings, onAdminSettingsChange],
+  )
+
+  const moveSectionDown = useCallback(
+    (index: number) => {
+      if (index >= currentOrder.length - 1 || !onAdminSettingsChange) return
+      const newOrder = [...currentOrder]
+      ;[newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]]
+      onAdminSettingsChange({ ...adminSettings, sectionOrder: newOrder })
+    },
+    [currentOrder, adminSettings, onAdminSettingsChange],
+  )
 
   const handleExport = () => {
     if (!siteData) return
-    const json = JSON.stringify(siteData, null, 2)
+    const exportData = {
+      ...siteData,
+      _adminSettings: adminSettings || {},
+    }
+    const json = JSON.stringify(exportData, null, 2)
     const blob = new Blob([json], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -65,7 +129,7 @@ export default function EditControls({
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
-    toast.success('Data exported successfully')
+    toast.success('Data exported (including settings)')
   }
 
   const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -79,8 +143,15 @@ export default function EditControls({
           toast.error('Invalid site data file')
           return
         }
-        onImportData(parsed as SiteData)
-        toast.success('Data imported successfully')
+        // Extract admin settings if present in the export
+        const { _adminSettings, ...siteDataOnly } = parsed
+        onImportData(siteDataOnly as SiteData)
+        if (_adminSettings && onAdminSettingsChange) {
+          onAdminSettingsChange(_adminSettings)
+          toast.success('Data & settings imported successfully')
+        } else {
+          toast.success('Data imported successfully')
+        }
       } catch {
         toast.error('Failed to parse JSON file')
       }
@@ -131,6 +202,20 @@ export default function EditControls({
     [adminSettings, onAdminSettingsChange],
   )
 
+  const updateAnimationNumber = useCallback(
+    (key: keyof AnimationSettings, value: number) => {
+      if (!onAdminSettingsChange) return
+      onAdminSettingsChange({
+        ...adminSettings,
+        animations: {
+          ...adminSettings?.animations,
+          [key]: value,
+        },
+      })
+    },
+    [adminSettings, onAdminSettingsChange],
+  )
+
   const updateProgressiveMode = useCallback(
     (key: keyof ProgressiveOverlayModes, value: boolean) => {
       if (!onAdminSettingsChange) return
@@ -149,15 +234,18 @@ export default function EditControls({
   const theme = adminSettings?.theme ?? {}
   const anim = adminSettings?.animations ?? {}
   const progModes = adminSettings?.progressiveOverlayModes ?? {}
+  const isHexColor = (v: string) => /^#[0-9a-fA-F]{6}$/i.test(v)
 
   const sectionItems: { key: keyof SectionVisibility; label: string }[] = [
     { key: 'bio', label: 'Biography' },
+    { key: 'shell', label: 'Shell (Member)' },
     { key: 'music', label: 'Music Player' },
     { key: 'gigs', label: 'Upcoming Gigs' },
     { key: 'releases', label: 'Releases' },
     { key: 'gallery', label: 'Gallery' },
     { key: 'connect', label: 'Connect / Social' },
     { key: 'creditHighlights', label: 'Credit Highlights' },
+    { key: 'contact', label: 'Contact Form' },
   ]
 
   const animItems: { key: keyof AnimationSettings; label: string }[] = [
@@ -248,59 +336,225 @@ export default function EditControls({
                   <X size={20} />
                 </button>
               </div>
-              <div className="space-y-3">
-                {[
-                  { key: 'primaryColor' as const, label: 'Primary Color', placeholder: 'oklch(0.55 0.25 25)' },
-                  { key: 'accentColor' as const, label: 'Accent Color', placeholder: 'oklch(0.6 0.2 200)' },
-                  { key: 'backgroundColor' as const, label: 'Background Color', placeholder: 'oklch(0.1 0 0)' },
-                  { key: 'foregroundColor' as const, label: 'Foreground Color', placeholder: 'oklch(0.95 0 0)' },
-                ].map(({ key, label, placeholder }) => (
-                  <div key={key} className="space-y-1">
-                    <Label className="font-mono text-xs">{label}</Label>
-                    <div className="flex gap-2">
+              <div className="space-y-6">
+                {/* Base Colors */}
+                <div className="space-y-3">
+                  <h4 className="font-mono text-sm font-bold text-primary">Base Colors</h4>
+                  {[
+                    { key: 'primaryColor' as const, label: 'Primary Color', placeholder: 'oklch(0.55 0.25 25)' },
+                    { key: 'primaryForegroundColor' as const, label: 'Primary Foreground', placeholder: 'oklch(1 0 0)' },
+                    { key: 'accentColor' as const, label: 'Accent Color', placeholder: 'oklch(0.6 0.2 200)' },
+                    { key: 'accentForegroundColor' as const, label: 'Accent Foreground', placeholder: 'oklch(1 0 0)' },
+                    { key: 'backgroundColor' as const, label: 'Background Color', placeholder: 'oklch(0.1 0 0)' },
+                    { key: 'foregroundColor' as const, label: 'Foreground Color', placeholder: 'oklch(0.95 0 0)' },
+                  ].map(({ key, label, placeholder }) => (
+                    <div key={key} className="space-y-1">
+                      <Label className="font-mono text-xs">{label}</Label>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="color"
+                          value={isHexColor(theme[key] || '') ? theme[key]! : '#000000'}
+                          onChange={(e) => updateTheme(key, e.target.value)}
+                          className="w-8 h-8 shrink-0 cursor-pointer border border-border rounded-sm bg-transparent p-0"
+                          title="Pick a color"
+                        />
+                        <Input
+                          value={theme[key] || ''}
+                          onChange={(e) => updateTheme(key, e.target.value)}
+                          placeholder={placeholder}
+                          className="bg-background border-border font-mono text-xs flex-1"
+                        />
+                        {theme[key] && (
+                          <div
+                            className="w-8 h-8 border border-border rounded-sm shrink-0"
+                            style={{ backgroundColor: theme[key] }}
+                            title={theme[key]}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* UI Element Colors */}
+                <div className="space-y-3">
+                  <h4 className="font-mono text-sm font-bold text-primary">UI Elements</h4>
+                  {[
+                    { key: 'cardColor' as const, label: 'Card Background', placeholder: 'oklch(0.15 0 0)' },
+                    { key: 'cardForegroundColor' as const, label: 'Card Foreground', placeholder: 'oklch(0.95 0 0)' },
+                    { key: 'popoverColor' as const, label: 'Popover Background', placeholder: 'oklch(0.12 0 0)' },
+                    { key: 'popoverForegroundColor' as const, label: 'Popover Foreground', placeholder: 'oklch(0.95 0 0)' },
+                    { key: 'borderColor' as const, label: 'Border Color', placeholder: 'oklch(0.25 0 0)' },
+                    { key: 'inputColor' as const, label: 'Input Color', placeholder: 'oklch(0.25 0 0)' },
+                    { key: 'ringColor' as const, label: 'Focus Ring Color', placeholder: 'oklch(0.55 0.25 25)' },
+                    { key: 'hoverColor' as const, label: 'Hover Color', placeholder: 'oklch(0.55 0.25 25)' },
+                  ].map(({ key, label, placeholder }) => (
+                    <div key={key} className="space-y-1">
+                      <Label className="font-mono text-xs">{label}</Label>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="color"
+                          value={isHexColor(theme[key] || '') ? theme[key]! : '#000000'}
+                          onChange={(e) => updateTheme(key, e.target.value)}
+                          className="w-8 h-8 shrink-0 cursor-pointer border border-border rounded-sm bg-transparent p-0"
+                          title="Pick a color"
+                        />
+                        <Input
+                          value={theme[key] || ''}
+                          onChange={(e) => updateTheme(key, e.target.value)}
+                          placeholder={placeholder}
+                          className="bg-background border-border font-mono text-xs flex-1"
+                        />
+                        {theme[key] && (
+                          <div
+                            className="w-8 h-8 border border-border rounded-sm shrink-0"
+                            style={{ backgroundColor: theme[key] }}
+                            title={theme[key]}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Secondary & Muted Colors */}
+                <div className="space-y-3">
+                  <h4 className="font-mono text-sm font-bold text-primary">Secondary & Muted</h4>
+                  {[
+                    { key: 'secondaryColor' as const, label: 'Secondary Color', placeholder: 'oklch(0.2 0 0)' },
+                    { key: 'secondaryForegroundColor' as const, label: 'Secondary Foreground', placeholder: 'oklch(0.95 0 0)' },
+                    { key: 'mutedColor' as const, label: 'Muted Color', placeholder: 'oklch(0.25 0 0)' },
+                    { key: 'mutedForegroundColor' as const, label: 'Muted Foreground', placeholder: 'oklch(0.6 0 0)' },
+                  ].map(({ key, label, placeholder }) => (
+                    <div key={key} className="space-y-1">
+                      <Label className="font-mono text-xs">{label}</Label>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="color"
+                          value={isHexColor(theme[key] || '') ? theme[key]! : '#000000'}
+                          onChange={(e) => updateTheme(key, e.target.value)}
+                          className="w-8 h-8 shrink-0 cursor-pointer border border-border rounded-sm bg-transparent p-0"
+                          title="Pick a color"
+                        />
+                        <Input
+                          value={theme[key] || ''}
+                          onChange={(e) => updateTheme(key, e.target.value)}
+                          placeholder={placeholder}
+                          className="bg-background border-border font-mono text-xs flex-1"
+                        />
+                        {theme[key] && (
+                          <div
+                            className="w-8 h-8 border border-border rounded-sm shrink-0"
+                            style={{ backgroundColor: theme[key] }}
+                            title={theme[key]}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Destructive Colors */}
+                <div className="space-y-3">
+                  <h4 className="font-mono text-sm font-bold text-primary">Destructive</h4>
+                  {[
+                    { key: 'destructiveColor' as const, label: 'Destructive Color', placeholder: 'oklch(0.45 0.22 25)' },
+                    { key: 'destructiveForegroundColor' as const, label: 'Destructive Foreground', placeholder: 'oklch(1 0 0)' },
+                  ].map(({ key, label, placeholder }) => (
+                    <div key={key} className="space-y-1">
+                      <Label className="font-mono text-xs">{label}</Label>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="color"
+                          value={isHexColor(theme[key] || '') ? theme[key]! : '#000000'}
+                          onChange={(e) => updateTheme(key, e.target.value)}
+                          className="w-8 h-8 shrink-0 cursor-pointer border border-border rounded-sm bg-transparent p-0"
+                          title="Pick a color"
+                        />
+                        <Input
+                          value={theme[key] || ''}
+                          onChange={(e) => updateTheme(key, e.target.value)}
+                          placeholder={placeholder}
+                          className="bg-background border-border font-mono text-xs flex-1"
+                        />
+                        {theme[key] && (
+                          <div
+                            className="w-8 h-8 border border-border rounded-sm shrink-0"
+                            style={{ backgroundColor: theme[key] }}
+                            title={theme[key]}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Fonts */}
+                <div className="space-y-3">
+                  <h4 className="font-mono text-sm font-bold text-primary">Fonts</h4>
+                  {([
+                    { key: 'fontHeading' as const, label: 'Heading Font', placeholder: 'Orbitron, sans-serif', options: ['Orbitron', 'Rajdhani', 'Exo 2', 'Audiowide', 'Share Tech', 'Russo One', 'Teko', 'system-ui'] },
+                    { key: 'fontBody' as const, label: 'Body Font', placeholder: 'system-ui, sans-serif', options: ['system-ui', 'Inter', 'Roboto', 'Open Sans', 'Lato', 'Poppins', 'Source Sans Pro', 'Share Tech Mono'] },
+                    { key: 'fontMono' as const, label: 'Mono Font', placeholder: 'Share Tech Mono, monospace', options: ['Share Tech Mono', 'JetBrains Mono', 'Fira Code', 'Source Code Pro', 'IBM Plex Mono', 'Courier New'] },
+                  ] as const).map(({ key, label, placeholder, options }) => (
+                    <div key={key} className="space-y-1">
+                      <Label className="font-mono text-xs">{label}</Label>
+                      <select
+                        value={(options as readonly string[]).includes(theme[key] || '') ? theme[key] : ''}
+                        onChange={(e) => { if (e.target.value) updateTheme(key, e.target.value) }}
+                        className="w-full bg-background text-foreground border border-border rounded-md px-3 py-2 font-mono text-xs"
+                      >
+                        <option value="">Custom...</option>
+                        {options.map((font) => (
+                          <option key={font} value={font} style={{ fontFamily: font }}>
+                            {font}
+                          </option>
+                        ))}
+                      </select>
                       <Input
                         value={theme[key] || ''}
                         onChange={(e) => updateTheme(key, e.target.value)}
                         placeholder={placeholder}
-                        className="bg-background border-border font-mono text-xs flex-1"
+                        className="bg-background border-border font-mono text-xs"
                       />
-                      {theme[key] && (
-                        <div
-                          className="w-8 h-8 border border-border rounded-sm shrink-0"
-                          style={{ backgroundColor: theme[key] }}
-                        />
-                      )}
                     </div>
-                  </div>
-                ))}
-                {[
-                  { key: 'fontHeading' as const, label: 'Heading Font', placeholder: 'Orbitron, sans-serif' },
-                  { key: 'fontBody' as const, label: 'Body Font', placeholder: 'system-ui, sans-serif' },
-                  { key: 'fontMono' as const, label: 'Mono Font', placeholder: 'Share Tech Mono, monospace' },
-                ].map(({ key, label, placeholder }) => (
-                  <div key={key} className="space-y-1">
-                    <Label className="font-mono text-xs">{label}</Label>
+                  ))}
+                </div>
+                
+                {/* Other Settings */}
+                <div className="space-y-3">
+                  <h4 className="font-mono text-sm font-bold text-primary">Other Settings</h4>
+                  <div className="space-y-1">
+                    <Label className="font-mono text-xs">Favicon URL</Label>
                     <Input
-                      value={theme[key] || ''}
-                      onChange={(e) => updateTheme(key, e.target.value)}
-                      placeholder={placeholder}
+                      value={adminSettings?.faviconUrl || ''}
+                      onChange={(e) =>
+                        onAdminSettingsChange?.({
+                          ...adminSettings,
+                          faviconUrl: e.target.value,
+                        })
+                      }
+                      placeholder="https://example.com/favicon.ico"
                       className="bg-background border-border font-mono text-xs"
                     />
                   </div>
-                ))}
-                <div className="space-y-1">
-                  <Label className="font-mono text-xs">Favicon URL</Label>
-                  <Input
-                    value={adminSettings?.faviconUrl || ''}
-                    onChange={(e) =>
-                      onAdminSettingsChange?.({
-                        ...adminSettings,
-                        faviconUrl: e.target.value,
-                      })
-                    }
-                    placeholder="https://example.com/favicon.ico"
-                    className="bg-background border-border font-mono text-xs"
-                  />
+                  <div className="space-y-1">
+                    <Label className="font-mono text-xs">Border Radius</Label>
+                    <select
+                      value={theme.borderRadius || ''}
+                      onChange={(e) => updateTheme('borderRadius', e.target.value)}
+                      className="w-full bg-background text-foreground border border-border rounded-md px-3 py-2 font-mono text-xs"
+                    >
+                      <option value="">Default (0.125rem)</option>
+                      <option value="0rem">Square (0rem)</option>
+                      <option value="0.125rem">Minimal (0.125rem)</option>
+                      <option value="0.25rem">Small (0.25rem)</option>
+                      <option value="0.375rem">Medium (0.375rem)</option>
+                      <option value="0.5rem">Large (0.5rem)</option>
+                      <option value="0.75rem">XL (0.75rem)</option>
+                      <option value="1rem">2XL (1rem)</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -341,6 +595,94 @@ export default function EditControls({
                     />
                   </div>
                 ))}
+              </div>
+              <div className="space-y-3 pt-2 border-t border-border">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="font-mono text-xs">CRT Overlay Opacity</Label>
+                    <span className="font-mono text-xs text-muted-foreground">{Math.round((typeof anim.crtOverlayOpacity === 'number' ? anim.crtOverlayOpacity : 0.6) * 100)}%</span>
+                  </div>
+                  <Slider
+                    value={[typeof anim.crtOverlayOpacity === 'number' ? anim.crtOverlayOpacity * 100 : 60]}
+                    min={0}
+                    max={100}
+                    step={5}
+                    onValueChange={([v]) => updateAnimationNumber('crtOverlayOpacity', v / 100)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="font-mono text-xs">CRT Vignette Opacity</Label>
+                    <span className="font-mono text-xs text-muted-foreground">{Math.round((typeof anim.crtVignetteOpacity === 'number' ? anim.crtVignetteOpacity : 0.3) * 100)}%</span>
+                  </div>
+                  <Slider
+                    value={[typeof anim.crtVignetteOpacity === 'number' ? anim.crtVignetteOpacity * 100 : 30]}
+                    min={0}
+                    max={100}
+                    step={5}
+                    onValueChange={([v]) => updateAnimationNumber('crtVignetteOpacity', v / 100)}
+                  />
+                </div>
+              </div>
+              <div className="space-y-3 pt-2 border-t border-border">
+                <Label className="font-mono text-xs font-bold">Heading Glitch Text</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="font-mono text-sm">Glitch Effect</Label>
+                  <Switch
+                    checked={adminSettings?.glitchTextSettings?.enabled !== false}
+                    onCheckedChange={(checked) =>
+                      onAdminSettingsChange?.({
+                        ...adminSettings,
+                        glitchTextSettings: {
+                          ...(adminSettings?.glitchTextSettings || {}),
+                          enabled: checked,
+                        },
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="font-mono text-xs">Glitch Interval</Label>
+                    <span className="font-mono text-xs text-muted-foreground">{adminSettings?.glitchTextSettings?.intervalMs || 8000}ms</span>
+                  </div>
+                  <Slider
+                    value={[adminSettings?.glitchTextSettings?.intervalMs || 8000]}
+                    min={1000}
+                    max={30000}
+                    step={500}
+                    onValueChange={([v]) =>
+                      onAdminSettingsChange?.({
+                        ...adminSettings,
+                        glitchTextSettings: {
+                          ...(adminSettings?.glitchTextSettings || {}),
+                          intervalMs: v,
+                        },
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="font-mono text-xs">Glitch Duration</Label>
+                    <span className="font-mono text-xs text-muted-foreground">{adminSettings?.glitchTextSettings?.durationMs || 120}ms</span>
+                  </div>
+                  <Slider
+                    value={[adminSettings?.glitchTextSettings?.durationMs || 120]}
+                    min={50}
+                    max={1000}
+                    step={10}
+                    onValueChange={([v]) =>
+                      onAdminSettingsChange?.({
+                        ...adminSettings,
+                        glitchTextSettings: {
+                          ...(adminSettings?.glitchTextSettings || {}),
+                          durationMs: v,
+                        },
+                      })
+                    }
+                  />
+                </div>
               </div>
               {onOpenConfigEditor && (
                 <Button
@@ -402,8 +744,67 @@ export default function EditControls({
         )}
       </AnimatePresence>
 
+      {/* Section Reorder Panel */}
+      <AnimatePresence>
+        {showReorderPanel && (
+          <motion.div
+            className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowReorderPanel(false)}
+          >
+            <motion.div
+              className="bg-card border border-border p-6 w-full max-w-md space-y-4 relative max-h-[80vh] overflow-y-auto"
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold font-mono uppercase">Reorder Sections</h3>
+                <button onClick={() => setShowReorderPanel(false)} className="text-muted-foreground hover:text-foreground">
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="space-y-1">
+                {currentOrder.map((section, index) => (
+                  <div key={section} className="flex items-center justify-between bg-background border border-border rounded-md px-3 py-2">
+                    <span className="font-mono text-sm">{sectionDisplayNames[section] ?? section}</span>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => moveSectionUp(index)}
+                        disabled={index === 0}
+                        className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+                        title="Move up"
+                      >
+                        <ArrowUp size={16} />
+                      </button>
+                      <button
+                        onClick={() => moveSectionDown(index)}
+                        disabled={index === currentOrder.length - 1}
+                        className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+                        title="Move down"
+                      >
+                        <ArrowDown size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <Button
+                onClick={() => onAdminSettingsChange?.({ ...adminSettings, sectionOrder: defaultSectionOrder })}
+                variant="outline"
+                className="w-full font-mono text-xs"
+              >
+                Reset to Default
+              </Button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <motion.div
-        className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50 flex flex-col items-end gap-3"
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 260, damping: 20 }}
@@ -469,6 +870,74 @@ export default function EditControls({
               >
                 <Sliders size={18} weight="bold" />
               </Button>
+              <Button
+                onClick={() => setShowReorderPanel(true)}
+                className="bg-secondary hover:bg-secondary/80 active:scale-90 w-10 h-10 md:w-12 md:h-12 rounded-full shadow-lg transition-all touch-manipulation"
+                size="icon"
+                title="Reorder sections"
+              >
+                <ArrowsVertical size={18} weight="bold" />
+              </Button>
+              {onOpenStats && (
+                <Button
+                  onClick={onOpenStats}
+                  className="bg-secondary hover:bg-secondary/80 active:scale-90 w-10 h-10 md:w-12 md:h-12 rounded-full shadow-lg transition-all touch-manipulation"
+                  size="icon"
+                  title="View site statistics"
+                >
+                  <ChartLine size={18} weight="bold" />
+                </Button>
+              )}
+              {onOpenSecurityIncidents && (
+                <Button
+                  onClick={onOpenSecurityIncidents}
+                  className="bg-secondary hover:bg-secondary/80 active:scale-90 w-10 h-10 md:w-12 md:h-12 rounded-full shadow-lg transition-all touch-manipulation"
+                  size="icon"
+                  title="Security incidents"
+                >
+                  <ShieldWarning size={18} weight="bold" />
+                </Button>
+              )}
+              {onOpenSecuritySettings && (
+                <Button
+                  onClick={onOpenSecuritySettings}
+                  className="bg-secondary hover:bg-secondary/80 active:scale-90 w-10 h-10 md:w-12 md:h-12 rounded-full shadow-lg transition-all touch-manipulation"
+                  size="icon"
+                  title="Security settings"
+                >
+                  <ShieldCheck size={18} weight="bold" />
+                </Button>
+              )}
+              {onOpenBlocklist && (
+                <Button
+                  onClick={onOpenBlocklist}
+                  className="bg-secondary hover:bg-secondary/80 active:scale-90 w-10 h-10 md:w-12 md:h-12 rounded-full shadow-lg transition-all touch-manipulation"
+                  size="icon"
+                  title="Manage blocklist"
+                >
+                  <ProhibitInset size={18} weight="bold" />
+                </Button>
+              )}
+              {onOpenContactInbox && (
+                <Button
+                  onClick={onOpenContactInbox}
+                  className="bg-secondary hover:bg-secondary/80 active:scale-90 w-10 h-10 md:w-12 md:h-12 rounded-full shadow-lg transition-all touch-manipulation"
+                  size="icon"
+                  title="Contact inbox"
+                >
+                  <Envelope size={18} weight="bold" />
+                </Button>
+              )}
+              {onOpenSubscriberList && (
+                <Button
+                  onClick={onOpenSubscriberList}
+                  className="bg-secondary hover:bg-secondary/80 active:scale-90 w-10 h-10 md:w-12 md:h-12 rounded-full shadow-lg transition-all touch-manipulation"
+                  size="icon"
+                  title="Subscriber list"
+                >
+                  <Users size={18} weight="bold" />
+                </Button>
+              )}
             </motion.div>
             <motion.div
               initial={{ scale: 0, opacity: 0 }}
