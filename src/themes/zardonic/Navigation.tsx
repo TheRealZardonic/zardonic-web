@@ -1,39 +1,43 @@
-import { motion, AnimatePresence } from 'framer-motion'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { List, X, Pencil } from '@phosphor-icons/react'
+import { motion } from 'framer-motion'
 import { useState } from 'react'
+import { List, X } from '@phosphor-icons/react'
 
 interface NavigationProps {
-  artistName: string
-  logoUrl?: string
-  editMode?: boolean
-  isOwner?: boolean
-  showLoginButton?: boolean
-  onNavigate: (section: string) => void
-  onEditClick?: () => void
-  onLoginClick?: () => void
-  onArtistNameChange?: (name: string) => void
+  logo?: string | React.ReactNode
+  brandName?: string
+  menuItems?: { label: string; href: string }[]
+  onNavigate?: (href: string) => void
 }
 
+const defaultMenuItems = [
+  { label: 'Bio', href: '#bio' },
+  { label: 'Music', href: '#music' },
+  { label: 'Gigs', href: '#gigs' },
+  { label: 'Releases', href: '#releases' },
+  { label: 'Gallery', href: '#gallery' },
+  { label: 'Connect', href: '#connect' },
+]
+
 export default function Navigation({
-  artistName,
-  logoUrl,
-  editMode = false,
-  isOwner = false,
-  showLoginButton = false,
-  onNavigate,
-  onEditClick,
-  onLoginClick,
-  onArtistNameChange
+  logo,
+  brandName = '{{BAND_NAME}}',
+  menuItems = defaultMenuItems,
+  onNavigate
 }: NavigationProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  
-  const sections = ['bio', 'music', 'gigs', 'releases', 'gallery', 'connect']
 
-  const handleNavigate = (section: string) => {
+  const handleNavClick = (href: string) => {
     setMobileMenuOpen(false)
-    setTimeout(() => onNavigate(section), 100)
+    if (onNavigate) {
+      onNavigate(href)
+    } else {
+      const element = document.querySelector(href)
+      if (element) {
+        const navHeight = 80
+        const y = element.getBoundingClientRect().top + window.scrollY - navHeight
+        window.scrollTo({ top: y, behavior: 'smooth' })
+      }
+    }
   }
 
   return (
@@ -42,91 +46,71 @@ export default function Navigation({
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
       className="fixed top-0 left-0 right-0 z-50 bg-background/98 backdrop-blur-sm border-b border-border zardonic-theme-scanline-effect"
-      style={{ position: 'fixed', top: 0 }}
     >
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        {/* Logo/Brand */}
         <motion.div
-          className="text-2xl md:text-3xl font-bold tracking-tighter text-foreground uppercase"
-          whileHover={{ filter: 'drop-shadow(2px 0 0 rgba(255,0,100,0.3)) drop-shadow(-2px 0 0 rgba(0,255,255,0.3))' }}
+          className="text-2xl md:text-3xl font-bold tracking-tighter text-foreground uppercase font-['Orbitron']"
+          whileHover={{ 
+            filter: 'drop-shadow(2px 0 0 rgba(255,0,100,0.3)) drop-shadow(-2px 0 0 rgba(0,255,255,0.3))' 
+          }}
         >
-          {editMode ? (
-            <Input
-              value={artistName}
-              onChange={(e) => onArtistNameChange?.(e.target.value)}
-              className="w-48 bg-transparent border-border text-foreground"
-            />
-          ) : (
+          {typeof logo === 'string' ? (
             <img 
-              src={logoUrl}
-              alt={artistName}
-              className="h-10 md:h-12 w-auto object-contain zardonic-theme-logo-glitch brightness-110 zardonic-theme-hover-chromatic-image"
+              src={logo}
+              alt={brandName} 
+              className="h-10 md:h-12 w-auto object-contain brightness-110 zardonic-theme-hover-chromatic-image"
             />
+          ) : logo ? (
+            logo
+          ) : (
+            <span className="zardonic-theme-hover-chromatic">{brandName}</span>
           )}
         </motion.div>
 
+        {/* Desktop Menu */}
         <div className="hidden md:flex items-center gap-6">
-          {sections.map((section) => (
+          {menuItems.map((item) => (
             <button
-              key={section}
-              onClick={() => onNavigate(section)}
+              key={item.href}
+              onClick={() => handleNavClick(item.href)}
               className="text-sm uppercase tracking-wide hover:text-primary transition-colors font-mono zardonic-theme-hover-chromatic zardonic-theme-hover-glitch"
             >
-              {section}
+              {item.label}
             </button>
           ))}
         </div>
 
-        <div className="flex items-center gap-4">
-          {isOwner && onEditClick && (
-            <Button
-              size="sm"
-              variant={editMode ? 'default' : 'outline'}
-              onClick={onEditClick}
-            >
-              <Pencil className="w-4 h-4" />
-            </Button>
-          )}
-          {showLoginButton && onLoginClick && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onLoginClick}
-            >
-              Login
-            </Button>
-          )}
-          
-          <button
-            className="md:hidden text-foreground"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <List className="w-6 h-6" />}
-          </button>
-        </div>
+        {/* Mobile Menu Toggle */}
+        <button
+          className="md:hidden text-foreground hover:text-primary transition-colors"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        >
+          {mobileMenuOpen ? <X className="w-6 h-6" /> : <List className="w-6 h-6" />}
+        </button>
       </div>
 
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="md:hidden bg-card/95 border-t border-border overflow-hidden"
-          >
-            <div className="container mx-auto px-4 py-4 flex flex-col gap-4">
-              {sections.map((section) => (
-                <button
-                  key={section}
-                  onClick={() => handleNavigate(section)}
-                  className="text-left text-sm uppercase tracking-wide hover:text-primary transition-colors font-mono"
-                >
-                  {section}
-                </button>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: 'auto', opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          className="md:hidden bg-card/95 border-t border-border overflow-hidden zardonic-theme-scanline-effect"
+        >
+          <div className="container mx-auto px-4 py-4 flex flex-col gap-4">
+            {menuItems.map((item) => (
+              <button
+                key={item.href}
+                onClick={() => handleNavClick(item.href)}
+                className="text-left text-sm uppercase tracking-wide hover:text-primary transition-colors font-mono"
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </motion.div>
+      )}
     </motion.nav>
   )
 }
