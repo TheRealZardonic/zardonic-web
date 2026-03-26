@@ -392,7 +392,7 @@ export function Terminal({ isOpen, onClose, customCommands = [], editMode = fals
                         <div key={idx} className="border border-accent/20 p-3 space-y-2">
                           <div className="flex items-center gap-2">
                             <div className="flex-1 space-y-1">
-                              <Label className="text-accent/60 text-[10px] uppercase">Name</Label>
+                              <Label className="text-accent/60 text-xs uppercase">Name</Label>
                               <Input
                                 value={cmd.name}
                                 onChange={(e) => updateCommandField(idx, 'name', e.target.value)}
@@ -401,7 +401,7 @@ export function Terminal({ isOpen, onClose, customCommands = [], editMode = fals
                               />
                             </div>
                             <div className="flex-1 space-y-1">
-                              <Label className="text-accent/60 text-[10px] uppercase">Description</Label>
+                              <Label className="text-accent/60 text-xs uppercase">Description</Label>
                               <Input
                                 value={cmd.description}
                                 onChange={(e) => updateCommandField(idx, 'description', e.target.value)}
@@ -438,12 +438,12 @@ export function Terminal({ isOpen, onClose, customCommands = [], editMode = fals
                           {expandedIndex === idx && (
                             <div className="space-y-2 pl-2 border-l border-accent/10 ml-1">
                               <div className="flex items-center justify-between">
-                                <Label className="text-accent/60 text-[10px] uppercase">Output Lines</Label>
+                                <Label className="text-accent/60 text-xs uppercase">Output Lines</Label>
                                 <Button
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => addOutputLine(idx)}
-                                  className="hover:bg-accent/10 gap-1 text-accent h-6 text-[10px]"
+                                  className="hover:bg-accent/10 gap-1 text-accent h-6 text-xs"
                                 >
                                   <Plus className="w-3 h-3" /> Line
                                 </Button>
@@ -543,7 +543,7 @@ export function Terminal({ isOpen, onClose, customCommands = [], editMode = fals
                 </div>
 
                 <div className="px-4 py-2 border-t border-accent/20">
-                  <div className="flex justify-between font-mono text-[10px] text-accent/40 uppercase tracking-wider">
+                  <div className="flex justify-between font-mono text-xs text-accent/40 uppercase tracking-wider">
                     <span>STATUS: CONNECTED</span>
                     <span>ACCESS: GRANTED</span>
                   </div>

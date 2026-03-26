@@ -311,7 +311,7 @@ export default function ReleasesSection({ releases, editMode, onUpdate, fontSize
                         </div>
                         <div className="mt-2">
                           <h3 className="text-sm font-bold line-clamp-2 leading-tight">{release.title}</h3>
-                          <p className="text-[10px] text-muted-foreground mt-0.5">
+                          <p className="text-xs text-muted-foreground mt-0.5">
                             {release.releaseDate
                               ? format(new Date(release.releaseDate), 'MMM yyyy')
                               : 'Upcoming'}
@@ -346,7 +346,7 @@ export default function ReleasesSection({ releases, editMode, onUpdate, fontSize
                       <div className="h-10 bg-primary/10 border-b border-primary/30 flex items-center justify-between px-4">
                         <div className="flex items-center gap-3">
                           <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                          <span className="font-mono text-[10px] text-primary/70 tracking-wider uppercase">RELEASE // {release.title.toUpperCase()}</span>
+                          <span className="font-mono text-xs text-primary/70 tracking-wider uppercase">RELEASE // {release.title.toUpperCase()}</span>
                         </div>
                         <CyberCloseButton
                           onClick={() => { triggerTransition(); setExpandedReleaseId(null) }}
@@ -408,7 +408,7 @@ export default function ReleasesSection({ releases, editMode, onUpdate, fontSize
                             )}
                           </div>
                         )}
-                        <div className="flex items-center gap-2 text-[9px] text-primary/40 pt-1 w-full">
+                        <div className="flex items-center gap-2 text-xs text-primary/40 pt-1 w-full">
                           <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-pulse" />
                           <span>STREAM ACTIVE</span>
                           <span className="ml-auto">NK-SYS v1.3.37</span>
@@ -518,7 +518,7 @@ export default function ReleasesSection({ releases, editMode, onUpdate, fontSize
                     )}
                     <div className="flex-1 min-w-0">
                       <h3 className="text-sm font-bold line-clamp-1">{release.title}</h3>
-                      <p className="text-[10px] text-muted-foreground">
+                      <p className="text-xs text-muted-foreground">
                         {release.releaseDate ? format(new Date(release.releaseDate), 'MMM yyyy') : 'Upcoming'}
                       </p>
                     </div>

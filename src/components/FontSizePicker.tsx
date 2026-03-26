@@ -21,11 +21,11 @@ export default function FontSizePicker({ value, onChange, label }: FontSizePicke
   return (
     <div className="inline-flex items-center gap-1.5 bg-card/80 border border-primary/20 px-2 py-1 rounded-sm">
       <TextAa size={14} className="text-primary/60 flex-shrink-0" />
-      {label && <span className="text-[9px] font-mono text-muted-foreground/60 mr-1">{label}</span>}
+      {label && <span className="text-xs font-mono text-muted-foreground/60 mr-1">{label}</span>}
       <select
         value={currentValue}
         onChange={(e) => onChange(e.target.value)}
-        className="bg-transparent text-[10px] font-mono text-foreground/80 border-none outline-none cursor-pointer"
+        className="bg-transparent text-xs font-mono text-foreground/80 border-none outline-none cursor-pointer"
       >
         {sizes.map((s) => (
           <option key={s.value} value={s.value} className="bg-card text-foreground">

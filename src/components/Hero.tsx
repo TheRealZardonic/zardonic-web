@@ -98,7 +98,7 @@ export default function Hero({ name, genres, editMode, onEdit, logoUrl, titleIma
 
         <div className="absolute top-8 left-8 hidden lg:block">
           <div className="hud-element p-3 bg-black/30 backdrop-blur-sm">
-            <div className="data-readout text-[9px] space-y-1">
+            <div className="data-readout text-xs space-y-1">
               <div>SYS: NK-MAIN</div>
               <div className="flex items-center gap-2">
                 <div className="w-1 h-1 bg-primary rounded-full animate-pulse"></div>
@@ -110,7 +110,7 @@ export default function Hero({ name, genres, editMode, onEdit, logoUrl, titleIma
 
         <div className="absolute bottom-8 right-8 hidden lg:block">
           <div className="hud-element p-3 bg-black/30 backdrop-blur-sm">
-            <div className="data-readout text-[9px] text-right space-y-1">
+            <div className="data-readout text-xs text-right space-y-1">
               <div>FREQ: 140-180</div>
               <div>MODE: HARD</div>
             </div>
@@ -261,7 +261,7 @@ export default function Hero({ name, genres, editMode, onEdit, logoUrl, titleIma
             >
               <Badge
                 variant="outline"
-                className="border-primary/40 text-primary/80 px-3 py-1 md:px-4 md:py-1.5 text-[9px] md:text-[10px] font-mono tracking-[0.08em] hover:bg-primary/5 hover:border-primary/60 transition-colors touch-manipulation"
+                className="border-primary/40 text-primary/80 px-3 py-1 md:px-4 md:py-1.5 text-xs md:text-xs font-mono tracking-[0.08em] hover:bg-primary/5 hover:border-primary/60 transition-colors touch-manipulation"
               >
                 {genre}
               </Badge>
@@ -272,7 +272,7 @@ export default function Hero({ name, genres, editMode, onEdit, logoUrl, titleIma
               onClick={onEdit}
               variant="outline"
               size="sm"
-              className="border-primary/40 text-primary/80 hover:bg-primary/10 text-[10px] font-mono"
+              className="border-primary/40 text-primary/80 hover:bg-primary/10 text-xs font-mono"
             >
               <PencilSimple size={12} className="mr-1" />
               Edit Info

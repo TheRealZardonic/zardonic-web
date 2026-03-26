@@ -274,13 +274,13 @@ export default function DatenschutzWindow({ isOpen, onClose, datenschutz, impres
                   <div className="flex border border-primary/30 overflow-hidden">
                     <button
                       onClick={() => setLang('de')}
-                      className={`px-2 py-0.5 text-[10px] font-mono transition-colors ${lang === 'de' ? 'bg-primary/20 text-primary' : 'text-primary/50 hover:text-primary/80'}`}
+                      className={`px-2 py-0.5 text-xs font-mono transition-colors ${lang === 'de' ? 'bg-primary/20 text-primary' : 'text-primary/50 hover:text-primary/80'}`}
                     >
                       DE
                     </button>
                     <button
                       onClick={() => setLang('en')}
-                      className={`px-2 py-0.5 text-[10px] font-mono transition-colors ${lang === 'en' ? 'bg-primary/20 text-primary' : 'text-primary/50 hover:text-primary/80'}`}
+                      className={`px-2 py-0.5 text-xs font-mono transition-colors ${lang === 'en' ? 'bg-primary/20 text-primary' : 'text-primary/50 hover:text-primary/80'}`}
                     >
                       EN
                     </button>
@@ -290,13 +290,13 @@ export default function DatenschutzWindow({ isOpen, onClose, datenschutz, impres
                   <div className="flex border border-primary/30 overflow-hidden">
                     <button
                       onClick={() => setEditLang('de')}
-                      className={`px-2 py-0.5 text-[10px] font-mono transition-colors ${editLang === 'de' ? 'bg-primary/20 text-primary' : 'text-primary/50 hover:text-primary/80'}`}
+                      className={`px-2 py-0.5 text-xs font-mono transition-colors ${editLang === 'de' ? 'bg-primary/20 text-primary' : 'text-primary/50 hover:text-primary/80'}`}
                     >
                       DE
                     </button>
                     <button
                       onClick={() => setEditLang('en')}
-                      className={`px-2 py-0.5 text-[10px] font-mono transition-colors ${editLang === 'en' ? 'bg-primary/20 text-primary' : 'text-primary/50 hover:text-primary/80'}`}
+                      className={`px-2 py-0.5 text-xs font-mono transition-colors ${editLang === 'en' ? 'bg-primary/20 text-primary' : 'text-primary/50 hover:text-primary/80'}`}
                     >
                       EN
                     </button>

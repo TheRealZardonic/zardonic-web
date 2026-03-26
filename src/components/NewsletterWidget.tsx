@@ -84,7 +84,7 @@ export default function NewsletterWidget({
       {status === 'error' && (
         <p className="text-[11px] text-red-400 font-mono">{errorMsg}</p>
       )}
-      <p className="text-[9px] text-foreground/30">Du kannst dich jederzeit abmelden.</p>
+      <p className="text-xs text-foreground/30">Du kannst dich jederzeit abmelden.</p>
     </div>
   )
 }

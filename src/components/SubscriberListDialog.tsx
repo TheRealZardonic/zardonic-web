@@ -104,7 +104,7 @@ export default function SubscriberListDialog({ open, onClose }: SubscriberListDi
             </div>
           ) : (
             <div className="space-y-0.5">
-              <div className="flex items-center gap-3 px-3 py-1.5 font-mono text-[10px] text-foreground/40 uppercase tracking-wider">
+              <div className="flex items-center gap-3 px-3 py-1.5 font-mono text-xs text-foreground/40 uppercase tracking-wider">
                 <span className="flex-1">Email</span>
                 <span className="w-24 text-center">Source</span>
                 <span className="w-32 text-right">Date</span>
@@ -120,11 +120,11 @@ export default function SubscriberListDialog({ open, onClose }: SubscriberListDi
                     {sub.email}
                   </span>
                   <span className="w-24 text-center">
-                    <span className="text-[10px] bg-primary/10 text-primary/70 px-1.5 py-0.5 rounded">
+                    <span className="text-xs bg-primary/10 text-primary/70 px-1.5 py-0.5 rounded">
                       {sub.source}
                     </span>
                   </span>
-                  <span className="w-32 text-right text-[10px] text-foreground/40">
+                  <span className="w-32 text-right text-xs text-foreground/40">
                     {formatDate(sub.date)}
                   </span>
                   <button

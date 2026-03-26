@@ -116,7 +116,7 @@ export default function ContactInboxDialog({ open, onClose }: Props) {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-sm font-semibold truncate">{msg.name}</span>
-                        <span className="text-[10px] text-foreground/40 shrink-0">
+                        <span className="text-xs text-foreground/40 shrink-0">
                           {formatDate(msg.date)}
                         </span>
                       </div>

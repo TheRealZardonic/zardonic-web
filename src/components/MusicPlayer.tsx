@@ -135,7 +135,7 @@ export default function MusicPlayer({ tracks, initialIndex = 0 }: MusicPlayerPro
         <div className="flex items-center gap-2 text-xs text-primary/70 tracking-wider">
           <MusicNote size={14} className="text-primary/50" />
           <span className="truncate uppercase">{currentTrack.title}</span>
-          <span className="ml-auto text-[9px] text-primary/40">
+          <span className="ml-auto text-xs text-primary/40">
             {currentIndex + 1}/{tracks.length}
           </span>
         </div>

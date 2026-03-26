@@ -152,7 +152,7 @@ export default function BlocklistManagerDialog({ open, onClose }: BlocklistManag
               BLOCKLIST MANAGER // HARD BLOCKS
             </span>
           </div>
-          <DialogClose className="text-primary/60 hover:text-primary transition-colors font-mono text-[9px] tracking-wider uppercase flex items-center gap-1">
+          <DialogClose className="text-primary/60 hover:text-primary transition-colors font-mono text-xs tracking-wider uppercase flex items-center gap-1">
             <X size={12} /> CLOSE
           </DialogClose>
         </div>
@@ -162,15 +162,15 @@ export default function BlocklistManagerDialog({ open, onClose }: BlocklistManag
           {/* Stats */}
           <div className="grid grid-cols-3 gap-3">
             <div className="border border-primary/20 bg-primary/5 p-3">
-              <p className="font-mono text-[10px] text-primary/50 uppercase tracking-wider mb-1">Total Blocked</p>
+              <p className="font-mono text-xs text-primary/50 uppercase tracking-wider mb-1">Total Blocked</p>
               <p className="font-mono text-[20px] text-foreground/90 font-bold">{totalBlocked}</p>
             </div>
             <div className="border border-orange-500/20 bg-orange-500/5 p-3">
-              <p className="font-mono text-[10px] text-orange-400/70 uppercase tracking-wider mb-1">Auto-Blocked</p>
+              <p className="font-mono text-xs text-orange-400/70 uppercase tracking-wider mb-1">Auto-Blocked</p>
               <p className="font-mono text-[20px] text-orange-400 font-bold">{autoBlocked}</p>
             </div>
             <div className="border border-blue-500/20 bg-blue-500/5 p-3">
-              <p className="font-mono text-[10px] text-blue-400/70 uppercase tracking-wider mb-1">Manual-Blocked</p>
+              <p className="font-mono text-xs text-blue-400/70 uppercase tracking-wider mb-1">Manual-Blocked</p>
               <p className="font-mono text-[20px] text-blue-400 font-bold">{manualBlocked}</p>
             </div>
           </div>
@@ -266,7 +266,7 @@ export default function BlocklistManagerDialog({ open, onClose }: BlocklistManag
             <div className="border border-primary/15 bg-primary/5 p-8 text-center">
               <CheckCircle size={32} className="text-green-400/50 mx-auto mb-2" />
               <p className="font-mono text-[12px] text-primary/50">No blocked IPs</p>
-              <p className="font-mono text-[10px] text-primary/40 mt-1">All clear! No hard blocks active.</p>
+              <p className="font-mono text-xs text-primary/40 mt-1">All clear! No hard blocks active.</p>
             </div>
           )}
 
@@ -274,11 +274,11 @@ export default function BlocklistManagerDialog({ open, onClose }: BlocklistManag
             <div className="border border-primary/20 overflow-hidden">
               {/* Table header */}
               <div className="bg-primary/10 border-b border-primary/20 px-4 py-2 grid grid-cols-[2fr,2fr,1.5fr,1fr,auto] gap-4">
-                <span className="font-mono text-[10px] text-primary/60 uppercase tracking-wider">IP Hash</span>
-                <span className="font-mono text-[10px] text-primary/60 uppercase tracking-wider">Reason</span>
-                <span className="font-mono text-[10px] text-primary/60 uppercase tracking-wider">Blocked At</span>
-                <span className="font-mono text-[10px] text-primary/60 uppercase tracking-wider">Expires</span>
-                <span className="font-mono text-[10px] text-primary/60 uppercase tracking-wider">Action</span>
+                <span className="font-mono text-xs text-primary/60 uppercase tracking-wider">IP Hash</span>
+                <span className="font-mono text-xs text-primary/60 uppercase tracking-wider">Reason</span>
+                <span className="font-mono text-xs text-primary/60 uppercase tracking-wider">Blocked At</span>
+                <span className="font-mono text-xs text-primary/60 uppercase tracking-wider">Expires</span>
+                <span className="font-mono text-xs text-primary/60 uppercase tracking-wider">Action</span>
               </div>
 
               {/* Table rows */}
@@ -301,14 +301,14 @@ export default function BlocklistManagerDialog({ open, onClose }: BlocklistManag
                     <p className="font-mono text-[11px] text-primary/60 truncate" title={entry.reason}>
                       {entry.reason}
                     </p>
-                    <p className="font-mono text-[10px] text-primary/50">{formatTime(entry.blockedAt)}</p>
-                    <p className="font-mono text-[10px] text-primary/50">{getExpiryTime(entry.blockedAt)}</p>
+                    <p className="font-mono text-xs text-primary/50">{formatTime(entry.blockedAt)}</p>
+                    <p className="font-mono text-xs text-primary/50">{getExpiryTime(entry.blockedAt)}</p>
                     <button
                       onClick={() => handleUnblock(entry.hashedIp)}
                       className="px-3 py-1.5 border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 transition-colors flex items-center gap-2"
                     >
                       <Trash size={12} className="text-red-400" />
-                      <span className="font-mono text-[9px] text-red-400 uppercase tracking-wider">Unblock</span>
+                      <span className="font-mono text-xs text-red-400 uppercase tracking-wider">Unblock</span>
                     </button>
                   </div>
                 ))}

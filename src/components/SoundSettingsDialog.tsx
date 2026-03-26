@@ -50,7 +50,7 @@ export default function SoundSettingsDialog({ settings, onSave, onClose }: Sound
           <div className="flex items-center justify-between space-x-2">
             <div className="flex-1">
               <Label className="text-xs font-bold">Default Muted</Label>
-              <p className="text-[10px] text-muted-foreground mt-0.5">Sounds muted by default on page load</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Sounds muted by default on page load</p>
             </div>
             <Switch
               checked={data.defaultMuted ?? true}
@@ -69,7 +69,7 @@ export default function SoundSettingsDialog({ settings, onSave, onClose }: Sound
                   placeholder="Default: none"
                   className="text-sm"
                 />
-                <p className="text-[10px] text-muted-foreground mt-0.5">Plays on terminal keystrokes</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Plays on terminal keystrokes</p>
               </div>
               <div>
                 <Label className="text-xs">Typing Sound</Label>
@@ -79,7 +79,7 @@ export default function SoundSettingsDialog({ settings, onSave, onClose }: Sound
                   placeholder="Default: texttyping.wav"
                   className="text-sm"
                 />
-                <p className="text-[10px] text-muted-foreground mt-0.5">Plays during typing animations</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Plays during typing animations</p>
               </div>
               <div>
                 <Label className="text-xs">Button Sound</Label>
@@ -89,7 +89,7 @@ export default function SoundSettingsDialog({ settings, onSave, onClose }: Sound
                   placeholder="Default: click.wav"
                   className="text-sm"
                 />
-                <p className="text-[10px] text-muted-foreground mt-0.5">Plays on button clicks</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Plays on button clicks</p>
               </div>
               <div>
                 <Label className="text-xs">Loading Finished Sound</Label>
@@ -99,7 +99,7 @@ export default function SoundSettingsDialog({ settings, onSave, onClose }: Sound
                   placeholder="Default: laodingfinished.mp3"
                   className="text-sm"
                 />
-                <p className="text-[10px] text-muted-foreground mt-0.5">Plays when page finishes loading</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Plays when page finishes loading</p>
               </div>
             </div>
           </div>
@@ -115,7 +115,7 @@ export default function SoundSettingsDialog({ settings, onSave, onClose }: Sound
                   placeholder="Default: NK - THRESHOLD.mp3"
                   className="text-sm"
                 />
-                <p className="text-[10px] text-muted-foreground mt-0.5">Background music that loops continuously</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Background music that loops continuously</p>
               </div>
               <div>
                 <Label className="text-xs">Background Music Volume</Label>
@@ -131,7 +131,7 @@ export default function SoundSettingsDialog({ settings, onSave, onClose }: Sound
                     {Math.round((data.backgroundMusicVolume ?? 0.3) * 100)}%
                   </span>
                 </div>
-                <p className="text-[10px] text-muted-foreground mt-0.5">Volume level for background music (0-100%)</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Volume level for background music (0-100%)</p>
               </div>
             </div>
           </div>

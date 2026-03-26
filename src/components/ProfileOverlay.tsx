@@ -128,7 +128,7 @@ export default function ProfileOverlay({ name, photoUrl, resolvePhoto, dataLines
           <div className="h-10 bg-primary/10 border-b border-primary/30 flex items-center justify-between px-4">
             <div className="flex items-center gap-3">
               <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              <span className="font-mono text-[10px] text-primary/70 tracking-wider uppercase">PROFILE // {name.toUpperCase()}</span>
+              <span className="font-mono text-xs text-primary/70 tracking-wider uppercase">PROFILE // {name.toUpperCase()}</span>
             </div>
             <CyberCloseButton
               onClick={onClose}
@@ -193,14 +193,14 @@ export default function ProfileOverlay({ name, photoUrl, resolvePhoto, dataLines
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3, delay: 0.2 }}
               >
-                <div className="text-[10px] text-primary/50 tracking-wider mb-3">
+                <div className="text-xs text-primary/50 tracking-wider mb-3">
                   {'>'} TERMINAL OUTPUT // PROFILE DATA
                 </div>
                 <div className="bg-black/50 border border-primary/20 p-4 h-[200px] max-h-[40vh] overflow-y-auto">
                   <ConsoleLines lines={dataLines} speed={CONSOLE_TYPING_SPEED_MS} delayBetween={CONSOLE_LINE_DELAY_MS} />
                 </div>
                 {children}
-                <div className="flex items-center gap-2 text-[9px] text-primary/40 pt-1">
+                <div className="flex items-center gap-2 text-xs text-primary/40 pt-1">
                   <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-pulse" />
                   <span>{sectionLabels?.sessionStatusText || 'SESSION ACTIVE'}</span>
                   <span className="ml-auto">NK-SYS v1.3.37</span>

@@ -10,7 +10,7 @@ interface CyberCloseButtonProps {
 export default function CyberCloseButton({ onClick, label = 'CLOSE', className = '' }: CyberCloseButtonProps) {
   return (
     <motion.button
-      className={`group relative flex items-center gap-2 px-3 py-1.5 border border-primary/40 bg-black/60 hover:bg-primary/20 hover:border-primary transition-all duration-200 font-mono text-[10px] tracking-widest text-primary/70 hover:text-primary z-[60] flex-shrink-0 ${className}`}
+      className={`group relative flex items-center gap-2 px-3 py-1.5 border border-primary/40 bg-black/60 hover:bg-primary/20 hover:border-primary transition-all duration-200 font-mono text-xs tracking-widest text-primary/70 hover:text-primary z-[60] flex-shrink-0 ${className}`}
       onClick={onClick}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}

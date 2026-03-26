@@ -75,28 +75,32 @@ import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { SwipeableGallery } from '@/components/SwipeableGallery'
-import { Terminal } from '@/components/Terminal'
 import { LoadingScreen } from '@/components/LoadingScreen'
 import { CircuitBackground } from '@/components/CircuitBackground'
 import AdminLoginDialog from '@/components/AdminLoginDialog'
 import EditControls from '@/components/EditControls'
 import ConfigEditorDialog from '@/components/ConfigEditorDialog'
 import { SpotifyEmbed } from '@/components/SpotifyEmbed'
-import StatsDashboard from '@/components/StatsDashboard'
 import { MediaBrowser } from '@/components/MediaBrowser'
 import EditableHeading from '@/components/EditableHeading'
-import SecurityIncidentsDashboard from '@/components/SecurityIncidentsDashboard'
-import SecuritySettingsDialog from '@/components/SecuritySettingsDialog'
-import BlocklistManagerDialog from '@/components/BlocklistManagerDialog'
-import AttackerProfileDialog from '@/components/AttackerProfileDialog'
 import { SystemMonitorHUD } from '@/components/SystemMonitorHUD'
 import ContactSection from '@/components/ContactSection'
 import ContactInboxDialog from '@/components/ContactInboxDialog'
 import SubscriberListDialog from '@/components/SubscriberListDialog'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import type { TerminalCommand, SectionLabels, ContactSettings } from '@/lib/types'
+import React, { Suspense } from 'react'
+
 import heroImage from '@/assets/images/meta_eyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ==.webp'
 import logoImage from '@/assets/images/meta_eyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ==.webp'
+
+// Code splitting for heavy components
+const Terminal = React.lazy(() => import('@/components/Terminal').then(m => ({ default: m.Terminal })))
+const StatsDashboard = React.lazy(() => import('@/components/StatsDashboard'))
+const SecurityIncidentsDashboard = React.lazy(() => import('@/components/SecurityIncidentsDashboard'))
+const SecuritySettingsDialog = React.lazy(() => import('@/components/SecuritySettingsDialog'))
+const BlocklistManagerDialog = React.lazy(() => import('@/components/BlocklistManagerDialog'))
+const AttackerProfileDialog = React.lazy(() => import('@/components/AttackerProfileDialog'))
 
 const CACHE_DURATION_MS = 24 * 60 * 60 * 1000 // 24 hours
 
@@ -1485,7 +1489,7 @@ In the end, Zardonic will unite listeners with Superstars.
                       </Button>
                     )}
 
-                    <div className="flex items-center gap-2 text-[9px] text-primary/40 pt-2">
+                    <div className="flex items-center gap-2 text-xs text-primary/40 pt-2">
                       <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-pulse" />
                       <span>SESSION ACTIVE</span>
                     </div>
@@ -2280,7 +2284,7 @@ In the end, Zardonic will unite listeners with Superstars.
                     title={label}
                   >
                     <Icon className="w-12 h-12" weight="fill" />
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">{label}</span>
+                    <span className="text-xs font-mono uppercase tracking-wider text-muted-foreground">{label}</span>
                   </motion.a>
                 ) : null
               ))}
@@ -2385,15 +2389,19 @@ In the end, Zardonic will unite listeners with Superstars.
         )}
       </AnimatePresence>
 
-      <Terminal 
-        isOpen={terminalOpen} 
-        onClose={() => setTerminalOpen(false)}
-        customCommands={terminalCommands}
-        editMode={editMode}
-        onSaveCommands={handleSaveTerminalCommands}
-      />
+      <Suspense fallback={null}>
+        <Terminal
+          isOpen={terminalOpen}
+          onClose={() => setTerminalOpen(false)}
+          customCommands={terminalCommands}
+          editMode={editMode}
+          onSaveCommands={handleSaveTerminalCommands}
+        />
+      </Suspense>
 
-      <StatsDashboard open={showStats} onClose={() => setShowStats(false)} />
+      <Suspense fallback={null}>
+        <StatsDashboard open={showStats} onClose={() => setShowStats(false)} />
+      </Suspense>
 
       <AnimatePresence>
         {cyberpunkOverlay && (
@@ -3582,7 +3590,7 @@ In the end, Zardonic will unite listeners with Superstars.
 
       {/* Security admin dialogs — only rendered when admin is logged in */}
       {isOwner && (
-        <>
+        <Suspense fallback={null}>
           <SecurityIncidentsDashboard
             open={showSecurityIncidents}
             onClose={() => setShowSecurityIncidents(false)}
@@ -3612,7 +3620,7 @@ In the end, Zardonic will unite listeners with Superstars.
             open={showSubscriberList}
             onClose={() => setShowSubscriberList(false)}
           />
-        </>
+        </Suspense>
       )}
 
       {/* Admin Login Dialogs */}

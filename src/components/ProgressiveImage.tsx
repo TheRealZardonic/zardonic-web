@@ -59,7 +59,7 @@ export default function ProgressiveImage({ src, alt, className, style, draggable
                 className="h-full bg-primary/80 animate-progress-bar"
               />
             </div>
-            <p className="text-[9px] font-mono text-primary/40 text-center mt-1 tracking-wider">LOADING...</p>
+            <p className="text-xs font-mono text-primary/40 text-center mt-1 tracking-wider">LOADING...</p>
           </div>
         </div>
       )}

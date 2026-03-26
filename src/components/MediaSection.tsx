@@ -140,7 +140,7 @@ function FileTreeView({ files, selectedFolder, onSelectFolder, selectedFile, onS
       ))}
 
       {files.length === 0 && (
-        <p className="text-primary/30 text-[10px] px-2 py-4">NO FILES AVAILABLE</p>
+        <p className="text-primary/30 text-xs px-2 py-4">NO FILES AVAILABLE</p>
       )}
     </div>
   )
@@ -190,7 +190,7 @@ function FileDetailPanel({ file, allFiles }: { file: MediaFile | null; allFiles:
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.2 }}
     >
-      <div className="text-[10px] text-primary/50 tracking-wider mb-2">
+      <div className="text-xs text-primary/50 tracking-wider mb-2">
         {'>'} FILE DATA // {file.name.toUpperCase()}
       </div>
 
@@ -245,25 +245,25 @@ function FileDetailPanel({ file, allFiles }: { file: MediaFile | null; allFiles:
                   transition={{ duration: 0.3, ease: 'easeOut' }}
                 />
               </div>
-              <p className="font-mono text-[9px] text-primary/50 tracking-wider">
+              <p className="font-mono text-xs text-primary/50 tracking-wider">
                 DOWNLOADING... {Math.round(dlProgress.progress * 100)}%
               </p>
             </div>
           )}
 
           {dlProgress.state === 'complete' && (
-            <p className="font-mono text-[9px] text-primary/70 tracking-wider">DOWNLOAD COMPLETE</p>
+            <p className="font-mono text-xs text-primary/70 tracking-wider">DOWNLOAD COMPLETE</p>
           )}
 
           {dlProgress.state === 'error' && (
-            <p className="font-mono text-[9px] text-destructive/70 tracking-wider">
+            <p className="font-mono text-xs text-destructive/70 tracking-wider">
               ERROR: {dlProgress.error || 'Download failed'}
             </p>
           )}
         </div>
       )}
 
-      <div className="flex items-center gap-2 text-[9px] text-primary/40 pt-2">
+      <div className="flex items-center gap-2 text-xs text-primary/40 pt-2">
         <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-pulse" />
         <span>FILE READY</span>
         <span className="ml-auto">NK-FS v1.0</span>
@@ -317,7 +317,7 @@ function MediaEditPanel({ files, onUpdate }: { files: MediaFile[]; onUpdate: (fi
             </Button>
           </div>
           <div>
-            <Label className="text-[10px]">Download URL</Label>
+            <Label className="text-xs">Download URL</Label>
             <Input
               value={file.url}
               onChange={(e) => updateFile(idx, { url: e.target.value })}
@@ -327,7 +327,7 @@ function MediaEditPanel({ files, onUpdate }: { files: MediaFile[]; onUpdate: (fi
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <Label className="text-[10px]">Folder (optional)</Label>
+              <Label className="text-xs">Folder (optional)</Label>
               <Input
                 value={file.folder || ''}
                 onChange={(e) => updateFile(idx, { folder: e.target.value || undefined })}
@@ -336,7 +336,7 @@ function MediaEditPanel({ files, onUpdate }: { files: MediaFile[]; onUpdate: (fi
               />
             </div>
             <div>
-              <Label className="text-[10px]">Type</Label>
+              <Label className="text-xs">Type</Label>
               <select
                 value={file.type || ''}
                 onChange={(e) => updateFile(idx, { type: (e.target.value || undefined) as MediaFile['type'] })}
@@ -349,7 +349,7 @@ function MediaEditPanel({ files, onUpdate }: { files: MediaFile[]; onUpdate: (fi
             </div>
           </div>
           <div>
-            <Label className="text-[10px]">Description (optional)</Label>
+            <Label className="text-xs">Description (optional)</Label>
             <Input
               value={file.description || ''}
               onChange={(e) => updateFile(idx, { description: e.target.value || undefined })}
@@ -427,7 +427,7 @@ function MediaOverlay({ files, editMode, onUpdate, onClose, sectionLabels }: {
           <div className="h-10 bg-primary/10 border-b border-primary/30 flex items-center justify-between px-4 flex-shrink-0">
             <div className="flex items-center gap-3">
               <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              <span className="font-mono text-[10px] text-primary/70 tracking-wider uppercase">
+              <span className="font-mono text-xs text-primary/70 tracking-wider uppercase">
                 {isEditing ? 'EDIT MEDIA FILES' : 'FILE EXPLORER // MEDIA ARCHIVE'}
               </span>
             </div>
@@ -454,7 +454,7 @@ function MediaOverlay({ files, editMode, onUpdate, onClose, sectionLabels }: {
             <div className="flex flex-col md:flex-row flex-1 min-h-0">
               {/* Left: Tree view */}
               <div className="md:w-2/5 border-b md:border-b-0 md:border-r border-primary/20 overflow-y-auto p-3 max-h-[200px] md:max-h-none">
-                <div className="text-[9px] text-primary/40 tracking-wider mb-2 px-2">DIRECTORY</div>
+                <div className="text-xs text-primary/40 tracking-wider mb-2 px-2">DIRECTORY</div>
                 <FileTreeView
                   files={files}
                   selectedFolder={selectedFolder}
@@ -552,13 +552,13 @@ export default function MediaSection({ mediaFiles = [], editMode, onUpdate, sect
                 <p className="font-mono text-sm text-foreground/90 group-hover:text-primary transition-colors tracking-wider">
                   OPEN MEDIA ARCHIVE
                 </p>
-                <p className="font-mono text-[10px] text-foreground/40 mt-1">
+                <p className="font-mono text-xs text-foreground/40 mt-1">
                   {mediaFiles.length > 0
                     ? `${mediaFiles.length} FILE${mediaFiles.length !== 1 ? 'S' : ''} AVAILABLE // PRESS KITS · LOGOS · ASSETS`
                     : 'PRESS KITS · LOGOS · ASSETS'}
                 </p>
               </div>
-              <div className="ml-auto hidden md:flex items-center gap-2 text-[9px] text-primary/40 font-mono">
+              <div className="ml-auto hidden md:flex items-center gap-2 text-xs text-primary/40 font-mono">
                 <div className="w-1.5 h-1.5 rounded-full bg-primary/40 animate-pulse" />
                 CLICK TO ACCESS
               </div>

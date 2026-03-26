@@ -380,13 +380,13 @@ export default function SecretTerminal({ isOpen, onClose, customCommands = [], s
                 <div className="flex border-b border-primary/20 bg-primary/5 flex-shrink-0">
                   <button
                     onClick={() => setEditTab('commands')}
-                    className={`flex items-center gap-2 px-4 py-2 font-mono text-[10px] tracking-wider transition-colors border-b-2 ${editTab === 'commands' ? 'text-primary border-primary' : 'text-primary/40 border-transparent hover:text-primary/70'}`}
+                    className={`flex items-center gap-2 px-4 py-2 font-mono text-xs tracking-wider transition-colors border-b-2 ${editTab === 'commands' ? 'text-primary border-primary' : 'text-primary/40 border-transparent hover:text-primary/70'}`}
                   >
                     <PencilSimple size={12} /> COMMANDS
                   </button>
                   <button
                     onClick={() => setEditTab('shortcut')}
-                    className={`flex items-center gap-2 px-4 py-2 font-mono text-[10px] tracking-wider transition-colors border-b-2 ${editTab === 'shortcut' ? 'text-primary border-primary' : 'text-primary/40 border-transparent hover:text-primary/70'}`}
+                    className={`flex items-center gap-2 px-4 py-2 font-mono text-xs tracking-wider transition-colors border-b-2 ${editTab === 'shortcut' ? 'text-primary border-primary' : 'text-primary/40 border-transparent hover:text-primary/70'}`}
                   >
                     <Keyboard size={12} /> KEY SEQUENCE
                   </button>
@@ -615,7 +615,7 @@ export default function SecretTerminal({ isOpen, onClose, customCommands = [], s
                             <div className="text-primary/60 tracking-[0.15em]">
                               {'[' + '■'.repeat(accessPhase % 4) + '□'.repeat(4 - accessPhase % 4) + ']'}
                             </div>
-                            <div className="text-primary/30 text-[9px] tracking-widest">{hexNoise}</div>
+                            <div className="text-primary/30 text-xs tracking-widest">{hexNoise}</div>
                           </motion.div>
                         ) : (
                           <motion.div
@@ -624,7 +624,7 @@ export default function SecretTerminal({ isOpen, onClose, customCommands = [], s
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                           >
-                            <div className="text-primary/50 text-[9px] tracking-widest text-right">{hexNoise}</div>
+                            <div className="text-primary/50 text-xs tracking-widest text-right">{hexNoise}</div>
                             {/* Segmented progress bar */}
                             <div className="relative w-full overflow-hidden">
                               <div className="text-primary/80 tracking-[0.05em] leading-none">{bar} {Math.round(pct * 100)}%</div>
@@ -636,7 +636,7 @@ export default function SecretTerminal({ isOpen, onClose, customCommands = [], s
                               />
                             </div>
                             {/* Fake stats */}
-                            <div className="text-primary/50 space-y-0.5 text-[9px] tracking-wider">
+                            <div className="text-primary/50 space-y-0.5 text-xs tracking-wider">
                               <div>TRANSFER RATE: <span className="text-primary/80">{fakeStats.rate} MB/s</span></div>
                               <div>ENCRYPTION: <span className="text-primary/80">{fakeStats.enc}</span></div>
                               <div>NODE: <span className="text-primary/80">{fakeStats.node}</span></div>

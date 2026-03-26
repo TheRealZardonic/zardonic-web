@@ -176,7 +176,7 @@ export default function AttackerProfileDialog({ open, onClose, hashedIp }: Attac
               ATTACKER PROFILE // DETAILED ANALYSIS
             </span>
           </div>
-          <DialogClose className="text-primary/60 hover:text-primary transition-colors font-mono text-[9px] tracking-wider uppercase flex items-center gap-1">
+          <DialogClose className="text-primary/60 hover:text-primary transition-colors font-mono text-xs tracking-wider uppercase flex items-center gap-1">
             <X size={12} /> CLOSE
           </DialogClose>
         </div>
@@ -202,11 +202,11 @@ export default function AttackerProfileDialog({ open, onClose, hashedIp }: Attac
               <div className="border border-primary/20 bg-primary/5 p-4 space-y-2">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-mono text-[10px] text-primary/50 uppercase">IP Hash (SHA-256)</p>
+                    <p className="font-mono text-xs text-primary/50 uppercase">IP Hash (SHA-256)</p>
                     <p className="font-mono text-[12px] text-foreground/90 mt-1">{hashedIp}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-mono text-[10px] text-primary/50 uppercase">Current Threat Score</p>
+                    <p className="font-mono text-xs text-primary/50 uppercase">Current Threat Score</p>
                     {(() => {
                       const lastEntry = profile.threatScoreHistory[profile.threatScoreHistory.length - 1]
                       const threatColor = lastEntry?.level
@@ -222,19 +222,19 @@ export default function AttackerProfileDialog({ open, onClose, hashedIp }: Attac
                 </div>
                 <div className="grid grid-cols-4 gap-4 pt-2 border-t border-primary/10">
                   <div>
-                    <p className="font-mono text-[10px] text-primary/50">Total Incidents</p>
+                    <p className="font-mono text-xs text-primary/50">Total Incidents</p>
                     <p className="font-mono text-[16px] text-foreground/90 font-bold">{profile.totalIncidents}</p>
                   </div>
                   <div>
-                    <p className="font-mono text-[10px] text-primary/50">First Seen</p>
+                    <p className="font-mono text-xs text-primary/50">First Seen</p>
                     <p className="font-mono text-[11px] text-foreground/80">{formatShortTime(profile.firstSeen)}</p>
                   </div>
                   <div>
-                    <p className="font-mono text-[10px] text-primary/50">Last Seen</p>
+                    <p className="font-mono text-xs text-primary/50">Last Seen</p>
                     <p className="font-mono text-[11px] text-foreground/80">{formatShortTime(profile.lastSeen)}</p>
                   </div>
                   <div>
-                    <p className="font-mono text-[10px] text-primary/50">UA Diversity</p>
+                    <p className="font-mono text-xs text-primary/50">UA Diversity</p>
                     <p className="font-mono text-[11px] text-foreground/80">{profile.userAgentAnalysis.diversity}</p>
                   </div>
                 </div>
@@ -255,7 +255,7 @@ export default function AttackerProfileDialog({ open, onClose, hashedIp }: Attac
                           <div className="flex items-center gap-2 mb-1">
                             <p className="font-mono text-[11px] text-foreground/90 uppercase">{pattern.type.replace(/_/g, ' ')}</p>
                             <span
-                              className="px-2 py-0.5 text-[9px] font-mono font-bold rounded"
+                              className="px-2 py-0.5 text-xs font-mono font-bold rounded"
                               style={{
                                 backgroundColor: SEVERITY_COLORS[pattern.severity as keyof typeof SEVERITY_COLORS] + '30',
                                 color: SEVERITY_COLORS[pattern.severity as keyof typeof SEVERITY_COLORS],
@@ -264,7 +264,7 @@ export default function AttackerProfileDialog({ open, onClose, hashedIp }: Attac
                               {pattern.severity.toUpperCase()}
                             </span>
                           </div>
-                          <p className="text-[10px] text-primary/60">{pattern.description}</p>
+                          <p className="text-xs text-primary/60">{pattern.description}</p>
                         </div>
                       </div>
                     ))}
@@ -385,14 +385,14 @@ export default function AttackerProfileDialog({ open, onClose, hashedIp }: Attac
 
                   {/* Top User-Agents table */}
                   <div className="border border-primary/10 overflow-hidden">
-                    <div className="bg-primary/10 px-3 py-2 font-mono text-[10px] text-primary/60 uppercase">
+                    <div className="bg-primary/10 px-3 py-2 font-mono text-xs text-primary/60 uppercase">
                       Top User-Agents
                     </div>
                     <div className="divide-y divide-primary/10 max-h-[180px] overflow-y-auto">
                       {profile.userAgentAnalysis.userAgents.slice(0, 10).map((ua, idx) => (
                         <div key={idx} className="px-3 py-2 flex items-center justify-between hover:bg-primary/5">
                           <div className="flex-1 mr-2">
-                            <p className="font-mono text-[10px] text-foreground/80 truncate" title={ua.userAgent}>
+                            <p className="font-mono text-xs text-foreground/80 truncate" title={ua.userAgent}>
                               {ua.userAgent}
                             </p>
                             <span className={`inline-block mt-1 px-1.5 py-0.5 text-[8px] font-mono rounded ${
@@ -419,7 +419,7 @@ export default function AttackerProfileDialog({ open, onClose, hashedIp }: Attac
                   Recent Incidents ({profile.incidents.length})
                 </h3>
                 <div className="border border-primary/10 overflow-hidden">
-                  <div className="bg-primary/10 px-3 py-2 grid grid-cols-[1fr,2fr,1fr,1fr,1fr] gap-2 font-mono text-[10px] text-primary/60 uppercase">
+                  <div className="bg-primary/10 px-3 py-2 grid grid-cols-[1fr,2fr,1fr,1fr,1fr] gap-2 font-mono text-xs text-primary/60 uppercase">
                     <span>Time</span>
                     <span>Type</span>
                     <span>Method</span>
@@ -429,14 +429,14 @@ export default function AttackerProfileDialog({ open, onClose, hashedIp }: Attac
                   <div className="divide-y divide-primary/10 max-h-[250px] overflow-y-auto">
                     {profile.incidents.slice().reverse().map((incident, idx) => (
                       <div key={idx} className="px-3 py-2 grid grid-cols-[1fr,2fr,1fr,1fr,1fr] gap-2 hover:bg-primary/5">
-                        <span className="font-mono text-[10px] text-primary/50">{formatShortTime(incident.timestamp)}</span>
-                        <span className="font-mono text-[10px] text-foreground/80 truncate" title={incident.key}>
+                        <span className="font-mono text-xs text-primary/50">{formatShortTime(incident.timestamp)}</span>
+                        <span className="font-mono text-xs text-foreground/80 truncate" title={incident.key}>
                           {incident.type.replace(/_/g, ' ')}
                         </span>
-                        <span className="font-mono text-[10px] text-primary/60">{incident.method}</span>
-                        <span className="font-mono text-[10px] text-foreground/80">{incident.threatScore || '—'}</span>
+                        <span className="font-mono text-xs text-primary/60">{incident.method}</span>
+                        <span className="font-mono text-xs text-foreground/80">{incident.threatScore || '—'}</span>
                         <span
-                          className="font-mono text-[9px] px-1.5 py-0.5 rounded w-fit"
+                          className="font-mono text-xs px-1.5 py-0.5 rounded w-fit"
                           style={{
                             backgroundColor: incident.threatLevel
                               ? THREAT_LEVEL_COLORS[incident.threatLevel as keyof typeof THREAT_LEVEL_COLORS] + '30'
@@ -478,18 +478,18 @@ export default function AttackerProfileDialog({ open, onClose, hashedIp }: Attac
                       <div className="grid grid-cols-3 gap-2 mt-2">
                         <div className="border border-red-500/20 bg-red-500/5 p-2 text-center">
                           <p className="text-red-400 text-lg font-bold">{blocked.length}</p>
-                          <p className="text-[9px] text-red-400/60 uppercase">BLOCKED</p>
+                          <p className="text-xs text-red-400/60 uppercase">BLOCKED</p>
                         </div>
                         <div className="border border-orange-500/20 bg-orange-500/5 p-2 text-center">
                           <p className="text-orange-400 text-lg font-bold">{tarpitted.length}</p>
-                          <p className="text-[9px] text-orange-400/60 uppercase">TARPITTED</p>
+                          <p className="text-xs text-orange-400/60 uppercase">TARPITTED</p>
                         </div>
                         <div className="border border-yellow-500/20 bg-yellow-500/5 p-2 text-center">
                           <p className="text-yellow-400 text-lg font-bold">{warned.length}</p>
-                          <p className="text-[9px] text-yellow-400/60 uppercase">GEWARNT</p>
+                          <p className="text-xs text-yellow-400/60 uppercase">GEWARNT</p>
                         </div>
                       </div>
-                      <p className="text-[10px] text-foreground/40 mt-2">
+                      <p className="text-xs text-foreground/40 mt-2">
                         IP Status: {blocked.length > 0 ? '🔴 War geblockt' : tarpitted.length > 0 ? '🟠 War getarpit' : '🟡 Überwacht'}
                       </p>
                     </div>

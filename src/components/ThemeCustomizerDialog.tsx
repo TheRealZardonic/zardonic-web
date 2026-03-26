@@ -506,7 +506,7 @@ export default function ThemeCustomizerDialog({
                 <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                 <span className="font-mono text-xs text-primary/70 tracking-wider uppercase">THEME CUSTOMIZER</span>
                 {draft.activePreset && (
-                  <span className="font-mono text-[9px] text-primary bg-primary/15 px-2 py-0.5 rounded">
+                  <span className="font-mono text-xs text-primary bg-primary/15 px-2 py-0.5 rounded">
                     {draft.activePreset}
                   </span>
                 )}
@@ -539,7 +539,7 @@ export default function ThemeCustomizerDialog({
               {/* PRESETS TAB */}
               {activeTab === 'presets' && (
                 <div className="space-y-3">
-                  <p className="font-mono text-[10px] text-muted-foreground/60 mb-4">
+                  <p className="font-mono text-xs text-muted-foreground/60 mb-4">
                     Select a cyberpunk design preset. You can further customize colors and fonts in the other tabs.
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -566,7 +566,7 @@ export default function ThemeCustomizerDialog({
                           />
                         </div>
                         <div className="font-mono text-xs text-primary/90">{preset.name}</div>
-                        <div className="font-mono text-[9px] text-muted-foreground/60">{preset.description}</div>
+                        <div className="font-mono text-xs text-muted-foreground/60">{preset.description}</div>
                       </button>
                     ))}
                   </div>
@@ -576,7 +576,7 @@ export default function ThemeCustomizerDialog({
               {/* COLORS TAB */}
               {activeTab === 'colors' && (
                 <div className="space-y-2">
-                  <p className="font-mono text-[10px] text-muted-foreground/60 mb-3">
+                  <p className="font-mono text-xs text-muted-foreground/60 mb-3">
                     Customize individual colors and border radius. Changes preview live.
                   </p>
                   <ColorInput label="Primary" value={draft.primary || 'oklch(0.50 0.22 25)'} onChange={v => updateColor('primary', v)} />
@@ -592,7 +592,7 @@ export default function ThemeCustomizerDialog({
                   <div className="pt-4 border-t border-primary/10">
                     <div className="flex items-center justify-between mb-2">
                       <Label className="font-mono text-xs text-muted-foreground">Border Radius</Label>
-                      <span className="font-mono text-[10px] text-primary/70">{(draft.borderRadius ?? 0.125).toFixed(3)}rem</span>
+                      <span className="font-mono text-xs text-primary/70">{(draft.borderRadius ?? 0.125).toFixed(3)}rem</span>
                     </div>
                     <input
                       type="range"
@@ -603,14 +603,14 @@ export default function ThemeCustomizerDialog({
                       onChange={e => setDraft(prev => ({ ...prev, borderRadius: parseFloat(e.target.value) }))}
                       className="w-full h-1.5 appearance-none bg-primary/20 rounded cursor-pointer accent-primary"
                     />
-                    <div className="flex justify-between text-[9px] text-muted-foreground/40 font-mono mt-1">
+                    <div className="flex justify-between text-xs text-muted-foreground/40 font-mono mt-1">
                       <span>SHARP</span>
                       <span>ROUNDED</span>
                     </div>
                     <div className="flex items-center gap-3 mt-2">
                       <div className="w-16 h-10 border border-primary/40 bg-primary/10" style={{ borderRadius: `${(draft.borderRadius ?? 0.125) * 16}px` }} />
                       <div className="w-20 h-8 border border-primary/40 bg-primary/10" style={{ borderRadius: `${(draft.borderRadius ?? 0.125) * 16}px` }} />
-                      <span className="font-mono text-[9px] text-muted-foreground/50">Preview</span>
+                      <span className="font-mono text-xs text-muted-foreground/50">Preview</span>
                     </div>
                   </div>
                 </div>
@@ -619,7 +619,7 @@ export default function ThemeCustomizerDialog({
               {/* FONTS TAB */}
               {activeTab === 'fonts' && (
                 <div className="space-y-4">
-                  <p className="font-mono text-[10px] text-muted-foreground/60 mb-3">
+                  <p className="font-mono text-xs text-muted-foreground/60 mb-3">
                     Choose from local and Google Fonts. Font previews are shown below each selector.
                   </p>
                   {[
@@ -662,7 +662,7 @@ export default function ThemeCustomizerDialog({
                   <div className="pt-4 border-t border-primary/10">
                     <div className="flex items-center justify-between mb-2">
                       <Label className="font-mono text-xs text-muted-foreground">Schriftgröße (Basis)</Label>
-                      <span className="font-mono text-[10px] text-primary/70">{Math.round((draft.fontSize ?? 1) * 100)}%</span>
+                      <span className="font-mono text-xs text-primary/70">{Math.round((draft.fontSize ?? 1) * 100)}%</span>
                     </div>
                     <input
                       type="range"
@@ -674,7 +674,7 @@ export default function ThemeCustomizerDialog({
                       className="w-full h-1.5 appearance-none bg-primary/20 rounded cursor-pointer accent-primary"
                       aria-label="Schriftgröße"
                     />
-                    <div className="flex justify-between text-[9px] text-muted-foreground/40 font-mono mt-1">
+                    <div className="flex justify-between text-xs text-muted-foreground/40 font-mono mt-1">
                       <span>KLEIN (75%)</span>
                       <span>NORMAL (100%)</span>
                       <span>GROß (150%)</span>
@@ -686,7 +686,7 @@ export default function ThemeCustomizerDialog({
               {/* EFFECTS TAB */}
               {activeTab === 'effects' && (
                 <div className="space-y-3">
-                  <p className="font-mono text-[10px] text-muted-foreground/60 mb-3">
+                  <p className="font-mono text-xs text-muted-foreground/60 mb-3">
                     Enable, disable, and adjust visual overlay effects.
                   </p>
                   {Object.entries(OVERLAY_LABELS).map(([key, { name, description }]) => {
@@ -696,7 +696,7 @@ export default function ThemeCustomizerDialog({
                         <div className="flex items-center justify-between">
                           <div>
                             <span className="font-mono text-xs text-foreground/90">{name}</span>
-                            <p className="font-mono text-[9px] text-muted-foreground/50">{description}</p>
+                            <p className="font-mono text-xs text-muted-foreground/50">{description}</p>
                           </div>
                           <button
                             onClick={() => updateOverlayEffect(key, { enabled: !effect.enabled })}
@@ -710,7 +710,7 @@ export default function ThemeCustomizerDialog({
                         </div>
                         {effect.enabled && (
                           <div className="flex items-center gap-3">
-                            <Label className="font-mono text-[10px] text-muted-foreground/60 w-16 flex-shrink-0">Intensity</Label>
+                            <Label className="font-mono text-xs text-muted-foreground/60 w-16 flex-shrink-0">Intensity</Label>
                             <input
                               type="range"
                               min="0.05"
@@ -720,7 +720,7 @@ export default function ThemeCustomizerDialog({
                               onChange={e => updateOverlayEffect(key, { intensity: parseFloat(e.target.value) })}
                               className="flex-1 h-1 appearance-none bg-primary/20 rounded cursor-pointer accent-primary"
                             />
-                            <span className="font-mono text-[10px] text-primary/70 w-8 text-right">
+                            <span className="font-mono text-xs text-primary/70 w-8 text-right">
                               {Math.round(effect.intensity * 100)}%
                             </span>
                           </div>
@@ -734,7 +734,7 @@ export default function ThemeCustomizerDialog({
               {/* VISIBILITY TAB */}
               {activeTab === 'visibility' && (
                 <div className="space-y-2">
-                  <p className="font-mono text-[10px] text-muted-foreground/60 mb-3">
+                  <p className="font-mono text-xs text-muted-foreground/60 mb-3">
                     Show or hide individual sections and effects.
                   </p>
                   {(Object.keys(SECTION_LABELS) as (keyof SectionVisibility)[]).map(key => {

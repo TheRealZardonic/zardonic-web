@@ -65,23 +65,23 @@ function FriendCard({ friend, editMode, onUpdate, onDelete, onSelect }: {
       <Card className="bg-card border-primary/30 p-4 space-y-3">
         <div className="space-y-2">
           <div>
-            <Label className="text-[10px]">Name</Label>
+            <Label className="text-xs">Name</Label>
             <Input value={editData.name} onChange={(e) => setEditData({ ...editData, name: e.target.value })} className="text-xs h-8" />
           </div>
           <div>
-            <Label className="text-[10px]">Photo URL</Label>
+            <Label className="text-xs">Photo URL</Label>
             <Input value={editData.photo || ''} onChange={(e) => setEditData({ ...editData, photo: e.target.value })} className="text-xs h-8" placeholder="https://..." />
           </div>
           <div>
-            <Label className="text-[10px]">Icon Photo URL (card thumbnail, optional)</Label>
+            <Label className="text-xs">Icon Photo URL (card thumbnail, optional)</Label>
             <Input value={editData.iconPhoto || ''} onChange={(e) => setEditData({ ...editData, iconPhoto: e.target.value || undefined })} className="text-xs h-8" placeholder="https://..." />
           </div>
           <div>
-            <Label className="text-[10px]">Profile Photo URL (overlay photo, optional)</Label>
+            <Label className="text-xs">Profile Photo URL (overlay photo, optional)</Label>
             <Input value={editData.profilePhoto || ''} onChange={(e) => setEditData({ ...editData, profilePhoto: e.target.value || undefined })} className="text-xs h-8" placeholder="https://..." />
           </div>
           <div>
-            <Label className="text-[10px]">Description</Label>
+            <Label className="text-xs">Description</Label>
             <textarea
               value={editData.description || ''}
               onChange={(e) => setEditData({ ...editData, description: e.target.value })}
@@ -91,27 +91,27 @@ function FriendCard({ friend, editMode, onUpdate, onDelete, onSelect }: {
             />
           </div>
           <div>
-            <Label className="text-[10px]">Main URL</Label>
+            <Label className="text-xs">Main URL</Label>
             <Input value={editData.url || ''} onChange={(e) => setEditData({ ...editData, url: e.target.value })} className="text-xs h-8" placeholder="https://..." />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <Label className="text-[10px]">Subject Label</Label>
+              <Label className="text-xs">Subject Label</Label>
               <Input value={editData.subjectLabel || ''} onChange={(e) => setEditData({ ...editData, subjectLabel: e.target.value })} className="text-xs h-8" placeholder="SUBJECT" />
             </div>
             <div>
-              <Label className="text-[10px]">Status Label</Label>
+              <Label className="text-xs">Status Label</Label>
               <Input value={editData.statusLabel || ''} onChange={(e) => setEditData({ ...editData, statusLabel: e.target.value })} className="text-xs h-8" placeholder="STATUS" />
             </div>
             <div className="col-span-2">
-              <Label className="text-[10px]">Status Value</Label>
+              <Label className="text-xs">Status Value</Label>
               <Input value={editData.statusValue || ''} onChange={(e) => setEditData({ ...editData, statusValue: e.target.value })} className="text-xs h-8" placeholder="ACTIVE" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
             {friendSocialIcons.map(({ key, label }) => (
               <div key={key}>
-                <Label className="text-[10px]">{label}</Label>
+                <Label className="text-xs">{label}</Label>
                 <Input
                   value={editData.socials?.[key] || ''}
                   onChange={(e) => setEditData({ ...editData, socials: { ...editData.socials, [key]: e.target.value } })}

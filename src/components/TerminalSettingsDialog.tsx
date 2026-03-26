@@ -146,21 +146,21 @@ export default function TerminalSettingsDialog({
         <div className="flex border-b border-primary/20 bg-primary/5 flex-shrink-0">
           <button
             onClick={() => setActiveTab('commands')}
-            className={`flex items-center gap-2 px-4 py-2 font-mono text-[10px] tracking-wider transition-colors border-b-2 ${activeTab === 'commands' ? 'text-primary border-primary' : 'text-primary/40 border-transparent hover:text-primary/70'}`}
+            className={`flex items-center gap-2 px-4 py-2 font-mono text-xs tracking-wider transition-colors border-b-2 ${activeTab === 'commands' ? 'text-primary border-primary' : 'text-primary/40 border-transparent hover:text-primary/70'}`}
           >
             <PencilSimple size={12} /> COMMANDS
           </button>
           <button
             onClick={() => setActiveTab('shortcut')}
-            className={`flex items-center gap-2 px-4 py-2 font-mono text-[10px] tracking-wider transition-colors border-b-2 ${activeTab === 'shortcut' ? 'text-primary border-primary' : 'text-primary/40 border-transparent hover:text-primary/70'}`}
+            className={`flex items-center gap-2 px-4 py-2 font-mono text-xs tracking-wider transition-colors border-b-2 ${activeTab === 'shortcut' ? 'text-primary border-primary' : 'text-primary/40 border-transparent hover:text-primary/70'}`}
           >
             <Keyboard size={12} /> KEY SEQUENCE
           </button>
           <button
             onClick={() => setActiveTab('morse')}
-            className={`flex items-center gap-2 px-4 py-2 font-mono text-[10px] tracking-wider transition-colors border-b-2 ${activeTab === 'morse' ? 'text-primary border-primary' : 'text-primary/40 border-transparent hover:text-primary/70'}`}
+            className={`flex items-center gap-2 px-4 py-2 font-mono text-xs tracking-wider transition-colors border-b-2 ${activeTab === 'morse' ? 'text-primary border-primary' : 'text-primary/40 border-transparent hover:text-primary/70'}`}
           >
-            <span className="font-mono text-[10px]">· –</span> MORSE CODE
+            <span className="font-mono text-xs">· –</span> MORSE CODE
           </button>
         </div>
 

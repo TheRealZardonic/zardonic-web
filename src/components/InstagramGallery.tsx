@@ -411,13 +411,13 @@ export default function InstagramGallery({ galleryImages = [], editMode, onUpdat
                       <Images size={16} weight="fill" className="text-primary" />
                       <span className="text-xs font-mono">{photos[mobileIndex].caption}</span>
                     </div>
-                    <div className="mt-1 flex gap-2 text-[9px] text-primary/60">
+                    <div className="mt-1 flex gap-2 text-xs text-primary/60">
                       <span>SECTOR: {String.fromCharCode(65 + (mobileIndex % 26))}</span>
                       <span>•</span>
                       <span>STATUS: ACTIVE</span>
                     </div>
                   </div>
-                  <span className="text-[10px] font-mono text-primary/50">{mobileIndex + 1}/{photos.length}</span>
+                  <span className="text-xs font-mono text-primary/50">{mobileIndex + 1}/{photos.length}</span>
                 </div>
 
                 {mobileIndex > 0 && (
@@ -496,7 +496,7 @@ export default function InstagramGallery({ galleryImages = [], editMode, onUpdat
                       <Images size={20} weight="fill" className="text-primary" />
                       <span className="text-xs font-mono line-clamp-2">{photo.caption}</span>
                     </div>
-                    <div className="mt-2 flex gap-2 text-[9px] text-primary/60">
+                    <div className="mt-2 flex gap-2 text-xs text-primary/60">
                       <span>SECTOR: {String.fromCharCode(65 + (index % 26))}</span>
                       <span>•</span>
                       <span>STATUS: ACTIVE</span>
@@ -558,7 +558,7 @@ export default function InstagramGallery({ galleryImages = [], editMode, onUpdat
                 <div className="flex items-center gap-2 text-white hud-text">
                   <Images size={20} weight="fill" className="text-primary" />
                   <span className="text-sm font-mono">{selectedImage.caption}</span>
-                  <span className="ml-auto text-[10px] text-primary/50 font-mono">
+                  <span className="ml-auto text-xs text-primary/50 font-mono">
                     {photos.findIndex(p => p.imageUrl === selectedImage.imageUrl) + 1}/{photos.length}
                   </span>
                 </div>

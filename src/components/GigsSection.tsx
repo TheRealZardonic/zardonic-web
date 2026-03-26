@@ -240,12 +240,12 @@ export default function GigsSection({ gigs, editMode, onUpdate, fontSizes, onFon
                               {format(new Date(gig.date), 'EEEE, MMMM d, yyyy')}
                             </time>
                             {gig.gigType && (
-                              <span className={`text-[10px] md:text-xs font-bold px-2 py-0.5 rounded uppercase tracking-wider ${gig.gigType === 'concert' ? 'bg-primary/20 text-primary' : 'bg-accent/20 text-accent'}`}>
+                              <span className={`text-xs md:text-xs font-bold px-2 py-0.5 rounded uppercase tracking-wider ${gig.gigType === 'concert' ? 'bg-primary/20 text-primary' : 'bg-accent/20 text-accent'}`}>
                                 {gig.gigType === 'concert' ? 'CONCERT' : 'DJ SET'}
                               </span>
                             )}
                             {gig.status && (
-                              <span className={`text-[10px] md:text-xs font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
+                              <span className={`text-xs md:text-xs font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
                                 gig.status === 'confirmed' ? 'bg-green-500/20 text-green-400' :
                                 gig.status === 'soldout' ? 'bg-yellow-500/20 text-yellow-400' :
                                 gig.status === 'cancelled' ? 'bg-red-500/20 text-red-400' :

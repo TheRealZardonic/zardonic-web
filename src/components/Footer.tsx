@@ -30,7 +30,7 @@ export default function Footer({ socialLinks, genres, label, onAdminLogin, onImp
         </div>
 
         <div className="absolute bottom-4 left-4">
-          <div className="font-mono text-[10px] md:text-xs text-primary/60 tracking-wider">
+          <div className="font-mono text-xs md:text-xs text-primary/60 tracking-wider">
             PROTOCOL: HELLFIRE
           </div>
         </div>
@@ -48,26 +48,26 @@ export default function Footer({ socialLinks, genres, label, onAdminLogin, onImp
               <span className="text-primary/40">&gt;</span> {genres?.join(' · ') || 'HARD TECHNO · CYBERPUNK · DNB · DARK ELECTRO'}
             </p>
             {label && (
-              <p className="text-[10px] md:text-xs">LABEL: {label}</p>
+              <p className="text-xs md:text-xs">LABEL: {label}</p>
             )}
-            <p className="text-[10px] md:text-xs">© {new Date().getFullYear()} NEUROKLAST. All rights reserved.</p>
+            <p className="text-xs md:text-xs">© {new Date().getFullYear()} NEUROKLAST. All rights reserved.</p>
             <div className="flex flex-col items-center gap-2 pt-2">
               <div className="flex items-center gap-3">
                 {onImpressum && (
                   <button
                     onClick={onImpressum}
-                    className="inline-block text-[10px] md:text-xs text-muted-foreground/60 hover:text-primary/80 transition-colors font-mono tracking-wider"
+                    className="inline-block text-xs md:text-xs text-muted-foreground/60 hover:text-primary/80 transition-colors font-mono tracking-wider"
                   >
                     IMPRESSUM
                   </button>
                 )}
                 {onImpressum && onDatenschutz && (
-                  <span className="text-muted-foreground/30 text-[10px]">|</span>
+                  <span className="text-muted-foreground/30 text-xs">|</span>
                 )}
                 {onDatenschutz && (
                   <button
                     onClick={onDatenschutz}
-                    className="inline-block text-[10px] md:text-xs text-muted-foreground/60 hover:text-primary/80 transition-colors font-mono tracking-wider"
+                    className="inline-block text-xs md:text-xs text-muted-foreground/60 hover:text-primary/80 transition-colors font-mono tracking-wider"
                   >
                     DATENSCHUTZ
                   </button>
@@ -76,7 +76,7 @@ export default function Footer({ socialLinks, genres, label, onAdminLogin, onImp
               {onAdminLogin && (
                 <button
                   onClick={onAdminLogin}
-                  className="inline-flex items-center gap-1 text-[10px] md:text-xs text-muted-foreground/30 hover:text-primary/60 transition-colors font-mono"
+                  className="inline-flex items-center gap-1 text-xs md:text-xs text-muted-foreground/30 hover:text-primary/60 transition-colors font-mono"
                   aria-label="Admin login"
                 >
                   <LockSimple size={12} />
@@ -87,7 +87,7 @@ export default function Footer({ socialLinks, genres, label, onAdminLogin, onImp
             <div className="pt-6">
               <button
                 onClick={scrollToTop}
-                className="inline-flex items-center gap-1.5 text-[10px] md:text-xs text-muted-foreground/50 hover:text-primary/80 transition-colors font-mono tracking-wider border border-primary/20 hover:border-primary/40 px-4 py-2"
+                className="inline-flex items-center gap-1.5 text-xs md:text-xs text-muted-foreground/50 hover:text-primary/80 transition-colors font-mono tracking-wider border border-primary/20 hover:border-primary/40 px-4 py-2"
                 aria-label="Back to top"
               >
                 <ArrowUp size={14} />

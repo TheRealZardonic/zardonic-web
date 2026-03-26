@@ -60,7 +60,7 @@ export default function SocialSection({
                   title={link.platform}
                 >
                   {Icon && <Icon className="w-12 h-12" weight="fill" />}
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">{link.platform}</span>
+                  <span className="text-xs font-mono uppercase tracking-wider text-muted-foreground">{link.platform}</span>
                 </motion.a>
               )
             })}

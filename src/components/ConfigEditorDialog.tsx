@@ -144,7 +144,7 @@ export default function ConfigEditorDialog({ open, onClose, overrides, onSave }:
                               {meta.label}
                               {overridden && <span className="text-primary ml-1">*</span>}
                             </Label>
-                            <p className="text-[10px] text-muted-foreground/60 font-mono">{meta.description}</p>
+                            <p className="text-xs text-muted-foreground/60 font-mono">{meta.description}</p>
                           </div>
                           <div className="sm:w-2/5">
                             <Input

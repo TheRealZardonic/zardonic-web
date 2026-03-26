@@ -108,7 +108,7 @@ export default function CyberpunkLoader({ onLoadComplete, precacheUrls = [] }: C
     >
       {/* Code rain background */}
       <div className="absolute inset-0 opacity-10 pointer-events-none overflow-hidden">
-        <div className="text-primary font-mono text-[10px] leading-tight">
+        <div className="text-primary font-mono text-xs leading-tight">
           {Array.from({ length: 50 }).map((_, i) => (
             <motion.div
               key={i}
@@ -135,7 +135,7 @@ export default function CyberpunkLoader({ onLoadComplete, precacheUrls = [] }: C
         {Array.from({ length: 8 }).map((_, i) => (
           <motion.div
             key={`hex-${i}`}
-            className="absolute text-primary/10 font-mono text-[9px]"
+            className="absolute text-primary/10 font-mono text-xs"
             style={{
               left: `${Math.random() * 90}%`,
               top: `${Math.random() * 90}%`,
@@ -211,7 +211,7 @@ export default function CyberpunkLoader({ onLoadComplete, precacheUrls = [] }: C
 
           {/* Extra code fragment line */}
           <motion.div
-            className="text-primary/20 font-mono text-[9px] tracking-wider"
+            className="text-primary/20 font-mono text-xs tracking-wider"
             animate={{ opacity: [0.1, 0.3, 0.1] }}
             transition={{ duration: 2, repeat: Infinity }}
           >
@@ -222,7 +222,7 @@ export default function CyberpunkLoader({ onLoadComplete, precacheUrls = [] }: C
 
       <div className="absolute bottom-8 left-0 right-0 text-center">
         <motion.div
-          className="text-muted-foreground/30 font-mono text-[10px] tracking-[0.08em]"
+          className="text-muted-foreground/30 font-mono text-xs tracking-[0.08em]"
           animate={{ opacity: [0.2, 0.4, 0.2] }}
           transition={{ duration: 2, repeat: Infinity }}
         >

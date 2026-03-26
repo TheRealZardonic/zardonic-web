@@ -27,10 +27,10 @@ function StatCard({ icon: Icon, label, value, sublabel }: { icon: React.Componen
       <CornerDecoration position="br" />
       <div className="flex items-center gap-2 text-primary/60 mb-2">
         <Icon size={16} />
-        <span className="text-[10px] tracking-wider uppercase">{label}</span>
+        <span className="text-xs tracking-wider uppercase">{label}</span>
       </div>
       <p className="text-2xl text-primary">{value}</p>
-      {sublabel && <p className="text-[9px] text-primary/40 mt-1">{sublabel}</p>}
+      {sublabel && <p className="text-xs text-primary/40 mt-1">{sublabel}</p>}
     </div>
   )
 }
@@ -76,7 +76,7 @@ function TopList({ items, limit = 5 }: { items: Record<string, number>; limit?: 
     .slice(0, limit)
 
   if (sorted.length === 0) {
-    return <p className="text-[10px] text-primary/30 font-mono">NO DATA YET</p>
+    return <p className="text-xs text-primary/30 font-mono">NO DATA YET</p>
   }
 
   const max = sorted[0][1]
@@ -85,7 +85,7 @@ function TopList({ items, limit = 5 }: { items: Record<string, number>; limit?: 
     <div className="space-y-1.5">
       {sorted.map(([name, count]) => (
         <div key={name} className="space-y-0.5">
-          <div className="flex justify-between text-[10px] font-mono">
+          <div className="flex justify-between text-xs font-mono">
             <span className="text-foreground/70 truncate mr-2">{name}</span>
             <span className="text-primary/60 flex-shrink-0">{count}</span>
           </div>
@@ -155,7 +155,7 @@ function HeatmapCanvas({ points }: { points: HeatmapPoint[] }) {
   }, [draw])
 
   if (points.length === 0) {
-    return <p className="text-[10px] text-primary/30 font-mono">NO HEATMAP DATA YET</p>
+    return <p className="text-xs text-primary/30 font-mono">NO HEATMAP DATA YET</p>
   }
 
   return (
@@ -166,7 +166,7 @@ function HeatmapCanvas({ points }: { points: HeatmapPoint[] }) {
         height={400}
         className="w-full h-64 border border-primary/10 bg-black/50"
       />
-      <div className="flex items-center gap-4 text-[9px] font-mono text-primary/40">
+      <div className="flex items-center gap-4 text-xs font-mono text-primary/40">
         <div className="flex items-center gap-1">
           <div className="w-3 h-3 rounded-full" style={{ background: 'radial-gradient(rgba(255,0,0,0.6), rgba(255,0,0,0))' }} />
           <span>HIGH ACTIVITY</span>
@@ -192,14 +192,14 @@ function ClickTable({ points }: { points: HeatmapPoint[] }) {
   }, [points])
 
   if (elementCounts.length === 0) {
-    return <p className="text-[10px] text-primary/30 font-mono">NO CLICK DATA YET</p>
+    return <p className="text-xs text-primary/30 font-mono">NO CLICK DATA YET</p>
   }
 
   const total = elementCounts.reduce((sum, [, c]) => sum + c, 0)
 
   return (
     <div className="border border-primary/10 overflow-hidden">
-      <table className="w-full text-[10px] font-mono">
+      <table className="w-full text-xs font-mono">
         <thead>
           <tr className="bg-primary/10 text-primary/70">
             <th className="text-left px-3 py-1.5 tracking-wider">ELEMENT</th>
@@ -393,7 +393,7 @@ export default function StatsDashboard({ open, onClose }: StatsDashboardProps) {
                     {'>'} Devices
                   </h3>
                   {Object.keys(data.devices).length === 0 ? (
-                    <p className="text-[10px] text-primary/30 font-mono">NO DATA YET</p>
+                    <p className="text-xs text-primary/30 font-mono">NO DATA YET</p>
                   ) : (
                     <div className="flex gap-4">
                       {Object.entries(data.devices).map(([device, count]) => (
@@ -401,7 +401,7 @@ export default function StatsDashboard({ open, onClose }: StatsDashboardProps) {
                           {device === 'mobile' ? <DeviceMobile size={16} className="text-primary/60" /> : <Desktop size={16} className="text-primary/60" />}
                           <div>
                             <p className="text-xs text-foreground/80 capitalize">{device}</p>
-                            <p className="text-[9px] text-primary/40">{count} visits</p>
+                            <p className="text-xs text-primary/40">{count} visits</p>
                           </div>
                         </div>
                       ))}
@@ -443,7 +443,7 @@ export default function StatsDashboard({ open, onClose }: StatsDashboardProps) {
                 <h3 className="text-xs text-primary/60 tracking-wider uppercase border-b border-primary/10 pb-1">
                   {'>'} Click Heatmap // {data.heatmap.length} Points
                 </h3>
-                <p className="text-[9px] font-mono text-primary/30">
+                <p className="text-xs font-mono text-primary/30">
                   Shows where users click on the page. Red areas = more clicks.
                 </p>
                 <HeatmapCanvas points={data.heatmap} />
@@ -469,7 +469,7 @@ export default function StatsDashboard({ open, onClose }: StatsDashboardProps) {
                 <Trash size={14} />
                 Reset Analytics
               </Button>
-              <div className="text-[9px] text-primary/40">
+              <div className="text-xs text-primary/40">
                 {data.firstTracked && <span>Data since {data.firstTracked}</span>}
               </div>
               <Button variant="outline" size="sm" onClick={onClose}>
@@ -480,7 +480,7 @@ export default function StatsDashboard({ open, onClose }: StatsDashboardProps) {
             {/* Active indicator */}
             <div className="h-8 bg-primary/5 border-t border-primary/10 flex items-center justify-center gap-2">
               <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-[10px] text-primary/40 tracking-widest uppercase">
+              <span className="text-xs text-primary/40 tracking-widest uppercase">
                 Analytics Module Active
               </span>
             </div>

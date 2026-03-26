@@ -136,7 +136,7 @@ export default function SecurityIncidentsDashboard({ open, onClose, onViewProfil
             >
               <Trash size={16} />
             </button>
-            <DialogClose className="text-primary/60 hover:text-primary transition-colors font-mono text-[9px] tracking-wider uppercase flex items-center gap-1">
+            <DialogClose className="text-primary/60 hover:text-primary transition-colors font-mono text-xs tracking-wider uppercase flex items-center gap-1">
               <X size={12} /> CLOSE
             </DialogClose>
           </div>
@@ -289,7 +289,7 @@ export default function SecurityIncidentsDashboard({ open, onClose, onViewProfil
                                     title="View attacker profile"
                                   >
                                     <Eye size={12} />
-                                    <span className="text-[10px] font-mono uppercase">Profile</span>
+                                    <span className="text-xs font-mono uppercase">Profile</span>
                                   </button>
                                 </td>
                               )}
@@ -300,18 +300,18 @@ export default function SecurityIncidentsDashboard({ open, onClose, onViewProfil
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono text-[11px]">
                                     {/* Threat assessment */}
                                     <div className="space-y-2">
-                                      <p className="text-primary/50 uppercase tracking-wider text-[10px] mb-2">Threat Assessment</p>
+                                      <p className="text-primary/50 uppercase tracking-wider text-xs mb-2">Threat Assessment</p>
                                       <div className="flex items-center gap-2">
                                         <span className="text-foreground/40 w-28">Level:</span>
                                         {inc.threatLevel ? (
-                                          <span className={`inline-block px-1.5 py-0.5 text-[9px] font-bold tracking-wider border ${threatColors[inc.threatLevel] || threatColors.CLEAN}`}>
+                                          <span className={`inline-block px-1.5 py-0.5 text-xs font-bold tracking-wider border ${threatColors[inc.threatLevel] || threatColors.CLEAN}`}>
                                             {inc.threatLevel} {inc.threatScore ? `(score: ${inc.threatScore})` : ''}
                                           </span>
                                         ) : <span className="text-foreground/30">—</span>}
                                       </div>
                                       <div className="flex items-center gap-2">
                                         <span className="text-foreground/40 w-28">Countermeasure:</span>
-                                        <span className={`inline-block px-1.5 py-0.5 text-[9px] font-bold tracking-wider border ${cmColors[cm] || cmColors.GELOGGT}`}>
+                                        <span className={`inline-block px-1.5 py-0.5 text-xs font-bold tracking-wider border ${cmColors[cm] || cmColors.GELOGGT}`}>
                                           {cm}
                                         </span>
                                       </div>
@@ -330,7 +330,7 @@ export default function SecurityIncidentsDashboard({ open, onClose, onViewProfil
                                     </div>
                                     {/* Request details */}
                                     <div className="space-y-2">
-                                      <p className="text-primary/50 uppercase tracking-wider text-[10px] mb-2">Request Details</p>
+                                      <p className="text-primary/50 uppercase tracking-wider text-xs mb-2">Request Details</p>
                                       <div className="flex items-center gap-2">
                                         <span className="text-foreground/40 w-28">Full target:</span>
                                         <span className="text-foreground/70 break-all">{inc.key}</span>
@@ -351,7 +351,7 @@ export default function SecurityIncidentsDashboard({ open, onClose, onViewProfil
                                   </div>
                                   <button
                                     onClick={() => toggleExpand(rowKey)}
-                                    className="mt-3 flex items-center gap-1 text-primary/40 hover:text-primary/70 transition-colors text-[10px]"
+                                    className="mt-3 flex items-center gap-1 text-primary/40 hover:text-primary/70 transition-colors text-xs"
                                   >
                                     <X size={10} /> COLLAPSE
                                   </button>
@@ -369,7 +369,7 @@ export default function SecurityIncidentsDashboard({ open, onClose, onViewProfil
           )}
 
           {/* Footer */}
-          <div className="flex items-center gap-2 text-[10px] text-primary/40 pt-2 border-t border-primary/10">
+          <div className="flex items-center gap-2 text-xs text-primary/40 pt-2 border-t border-primary/10">
             <div className="w-1.5 h-1.5 rounded-full bg-red-500/60 animate-pulse" />
             <span>THREAT MONITOR ACTIVE</span>
             <span className="ml-auto">

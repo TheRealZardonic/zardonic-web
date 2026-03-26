@@ -87,7 +87,7 @@ function ToggleRow({ label, description, checked, onChange, icon: Icon, badge }:
           <div className="flex items-center gap-2">
             <p className="font-mono text-[12px] text-foreground/85 uppercase tracking-wider">{label}</p>
             {badge && (
-              <span className="px-1.5 py-0.5 text-[9px] font-mono font-bold tracking-wider bg-red-500/20 text-red-400 border border-red-500/30 rounded">
+              <span className="px-1.5 py-0.5 text-xs font-mono font-bold tracking-wider bg-red-500/20 text-red-400 border border-red-500/30 rounded">
                 {badge}
               </span>
             )}
@@ -96,7 +96,7 @@ function ToggleRow({ label, description, checked, onChange, icon: Icon, badge }:
         </div>
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">
-        <span className={`font-mono text-[9px] tracking-wider ${checked ? 'text-green-400/70' : 'text-red-400/50'}`}>
+        <span className={`font-mono text-xs tracking-wider ${checked ? 'text-green-400/70' : 'text-red-400/50'}`}>
           {checked ? 'ACTIVE' : 'DISABLED'}
         </span>
         <button
@@ -148,11 +148,11 @@ function SliderRow({ label, description, value, onChange, min, max, step = 1, un
             step={step}
             className="w-24 bg-black/50 border border-primary/20 px-2 py-1 font-mono text-[12px] text-foreground/80 text-right focus:border-primary/50 focus:outline-none"
           />
-          {unit && <span className="text-[10px] font-mono text-primary/40 min-w-[2rem]">{unit}</span>}
+          {unit && <span className="text-xs font-mono text-primary/40 min-w-[2rem]">{unit}</span>}
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <span className="font-mono text-[9px] text-primary/30 w-12 text-right">{min}{unit}</span>
+        <span className="font-mono text-xs text-primary/30 w-12 text-right">{min}{unit}</span>
         <input
           type="range"
           min={min}
@@ -162,7 +162,7 @@ function SliderRow({ label, description, value, onChange, min, max, step = 1, un
           onChange={(e) => onChange(Number(e.target.value))}
           className="flex-1 h-1.5 accent-primary cursor-pointer"
         />
-        <span className="font-mono text-[9px] text-primary/30 w-12">{max}{unit}</span>
+        <span className="font-mono text-xs text-primary/30 w-12">{max}{unit}</span>
       </div>
     </div>
   )
@@ -249,7 +249,7 @@ export default function SecuritySettingsDialog({ open, onClose }: SecuritySettin
               SECURITY SETTINGS // SERVER-SIDE CONFIG
             </span>
           </div>
-          <DialogClose className="text-primary/60 hover:text-primary transition-colors font-mono text-[9px] tracking-wider uppercase flex items-center gap-1">
+          <DialogClose className="text-primary/60 hover:text-primary transition-colors font-mono text-xs tracking-wider uppercase flex items-center gap-1">
             <X size={12} /> CLOSE
           </DialogClose>
         </div>
@@ -279,7 +279,7 @@ export default function SecuritySettingsDialog({ open, onClose }: SecuritySettin
                     <p className="font-mono text-[12px] text-foreground/85 uppercase">
                       SECURITY LEVEL: {activeModules >= SECURITY_LEVEL_HIGH_THRESHOLD ? 'HIGH' : activeModules >= SECURITY_LEVEL_MEDIUM_THRESHOLD ? 'MEDIUM' : 'LOW'}
                     </p>
-                    <p className="font-mono text-[10px] text-primary/50 mt-0.5">
+                    <p className="font-mono text-xs text-primary/50 mt-0.5">
                       {activeModules}/{TOTAL_MODULES} defense modules active
                     </p>
                   </div>
@@ -296,7 +296,7 @@ export default function SecuritySettingsDialog({ open, onClose }: SecuritySettin
 
               {/* Info banner */}
               <div className="border border-primary/15 bg-primary/5 p-3">
-                <p className="font-mono text-[10px] text-primary/50 leading-relaxed">
+                <p className="font-mono text-xs text-primary/50 leading-relaxed">
                   These settings are persisted server-side in encrypted storage. Changes take effect immediately
                   and are not included in the public band-data JSON export.
                 </p>
@@ -458,7 +458,7 @@ export default function SecuritySettingsDialog({ open, onClose }: SecuritySettin
           )}
 
           {/* Footer */}
-          <div className="flex items-center gap-2 text-[9px] text-primary/40 pt-2 border-t border-primary/10">
+          <div className="flex items-center gap-2 text-xs text-primary/40 pt-2 border-t border-primary/10">
             <ShieldCheck size={10} className="text-primary/40" />
             <span>Settings stored in server-side encrypted storage (not in public JSON)</span>
           </div>

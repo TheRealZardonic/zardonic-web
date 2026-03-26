@@ -87,7 +87,7 @@ export function SystemMonitorHUD() {
   return (
     <>
       {/* Top Left Corner */}
-      <div className="pointer-events-none fixed left-2 top-2 z-40 font-mono text-[9px] leading-tight tracking-wider text-primary/60 sm:left-4 sm:top-4 sm:text-[10px]">
+      <div className="pointer-events-none fixed left-2 top-2 z-40 font-mono text-xs leading-tight tracking-wider text-primary/60 sm:left-4 sm:top-4 sm:text-xs">
         {HUD_SHOW_TIMESTAMP && (
           <div className="animate-pulse">
             <span className="text-primary/40">SYS_TIME:</span> {metrics.timestamp}
@@ -101,7 +101,7 @@ export function SystemMonitorHUD() {
       </div>
 
       {/* Top Right Corner */}
-      <div className="pointer-events-none fixed right-2 top-2 z-40 font-mono text-[9px] leading-tight tracking-wider text-primary/60 sm:right-4 sm:top-4 sm:text-[10px]">
+      <div className="pointer-events-none fixed right-2 top-2 z-40 font-mono text-xs leading-tight tracking-wider text-primary/60 sm:right-4 sm:top-4 sm:text-xs">
         {HUD_SHOW_UPTIME && (
           <div className="text-right">
             <span className="text-primary/40">UPTIME:</span> {metrics.uptime}
@@ -116,7 +116,7 @@ export function SystemMonitorHUD() {
 
       {/* Bottom Right Corner */}
       {HUD_SHOW_SCROLL_SPEED && (
-        <div className="pointer-events-none fixed bottom-2 right-2 z-40 font-mono text-[9px] leading-tight tracking-wider text-primary/60 sm:bottom-4 sm:right-4 sm:text-[10px]">
+        <div className="pointer-events-none fixed bottom-2 right-2 z-40 font-mono text-xs leading-tight tracking-wider text-primary/60 sm:bottom-4 sm:right-4 sm:text-xs">
           <div className="text-right">
             <span className="text-primary/40">DATA_RATE:</span> {metrics.scrollSpeed} KB/s
           </div>

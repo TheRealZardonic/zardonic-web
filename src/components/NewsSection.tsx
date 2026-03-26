@@ -134,7 +134,7 @@ export default function NewsSection({ news = [], editMode, onUpdate, sectionLabe
               <span className="corner-bl"></span>
               <span className="corner-br"></span>
               <div className="flex flex-col">
-                <div className="font-mono text-[10px] text-primary/60 tracking-wider whitespace-nowrap flex-shrink-0 mb-3">
+                <div className="font-mono text-xs text-primary/60 tracking-wider whitespace-nowrap flex-shrink-0 mb-3">
                   {(() => {
                     if (!item.date) return '---'
                     const d = new Date(item.date)
@@ -275,11 +275,11 @@ function NewsEditDialog({ item, onSave, onClose }: {
         <h3 className="font-mono text-sm text-primary tracking-wider">{item ? 'EDIT NEWS' : 'ADD NEWS'}</h3>
         <div className="space-y-3">
           <div>
-            <Label className="text-[10px]">Date Format</Label>
+            <Label className="text-xs">Date Format</Label>
             <div className="flex gap-2 mt-1">
               <button
                 onClick={() => handleDateTypeChange('month')}
-                className={`px-3 py-1 text-[10px] font-mono border transition-colors ${
+                className={`px-3 py-1 text-xs font-mono border transition-colors ${
                   dateType === 'month'
                     ? 'bg-primary/20 border-primary text-primary'
                     : 'border-border text-muted-foreground hover:border-primary/50'
@@ -289,7 +289,7 @@ function NewsEditDialog({ item, onSave, onClose }: {
               </button>
               <button
                 onClick={() => handleDateTypeChange('date')}
-                className={`px-3 py-1 text-[10px] font-mono border transition-colors ${
+                className={`px-3 py-1 text-xs font-mono border transition-colors ${
                   dateType === 'date'
                     ? 'bg-primary/20 border-primary text-primary'
                     : 'border-border text-muted-foreground hover:border-primary/50'
@@ -300,7 +300,7 @@ function NewsEditDialog({ item, onSave, onClose }: {
             </div>
           </div>
           <div>
-            <Label className="text-[10px]">{dateType === 'month' ? 'Month' : 'Date'}</Label>
+            <Label className="text-xs">{dateType === 'month' ? 'Month' : 'Date'}</Label>
             <Input
               type={dateType}
               value={formData.date}
@@ -309,7 +309,7 @@ function NewsEditDialog({ item, onSave, onClose }: {
             />
           </div>
           <div>
-            <Label className="text-[10px]">Text</Label>
+            <Label className="text-xs">Text</Label>
             <Input
               value={formData.text}
               onChange={(e) => setFormData({ ...formData, text: e.target.value })}
@@ -318,7 +318,7 @@ function NewsEditDialog({ item, onSave, onClose }: {
             />
           </div>
           <div>
-            <Label className="text-[10px]">Details (optional)</Label>
+            <Label className="text-xs">Details (optional)</Label>
             <textarea
               value={formData.details || ''}
               onChange={(e) => setFormData({ ...formData, details: e.target.value || undefined })}
@@ -328,7 +328,7 @@ function NewsEditDialog({ item, onSave, onClose }: {
             />
           </div>
           <div>
-            <Label className="text-[10px]">Image URL (optional)</Label>
+            <Label className="text-xs">Image URL (optional)</Label>
             <Input
               value={formData.photo || ''}
               onChange={(e) => setFormData({ ...formData, photo: e.target.value || undefined })}
@@ -346,7 +346,7 @@ function NewsEditDialog({ item, onSave, onClose }: {
             )}
           </div>
           <div>
-            <Label className="text-[10px]">Link (optional)</Label>
+            <Label className="text-xs">Link (optional)</Label>
             <Input
               value={formData.link || ''}
               onChange={(e) => setFormData({ ...formData, link: e.target.value || undefined })}
