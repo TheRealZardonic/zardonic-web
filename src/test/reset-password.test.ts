@@ -37,7 +37,7 @@ vi.mock('../../api/auth.js', () => ({
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Res = { status: ReturnType<typeof vi.fn>; json: ReturnType<typeof vi.fn>; end: ReturnType<typeof vi.fn> }
 
-function mockRes(): Res {
+function mockRes() {
   const res: Res = {
     status: vi.fn(),
     json: vi.fn(),
@@ -46,7 +46,7 @@ function mockRes(): Res {
   res.status.mockReturnValue(res)
   res.json.mockReturnValue(res)
   res.end.mockReturnValue(res)
-  return res
+  return res as unknown as VercelResponse
 }
 
 const { default: handler } = await import('../../api/reset-password.js')

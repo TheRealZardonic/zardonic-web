@@ -27,7 +27,7 @@ type MockRes = {
   setHeader: ReturnType<typeof vi.fn>
 }
 
-function mockRes(): MockRes {
+function mockRes() {
   const res: MockRes = {
     status: vi.fn(),
     json: vi.fn(),
@@ -36,7 +36,7 @@ function mockRes(): MockRes {
   res.status.mockReturnValue(res)
   res.json.mockReturnValue(res)
   res.setHeader.mockReturnValue(res)
-  return res
+  return res as unknown as VercelResponse
 }
 
 // ---------------------------------------------------------------------------

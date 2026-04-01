@@ -25,12 +25,12 @@ vi.mock('../../api/_fetch-retry.js', () => ({
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Res = { status: ReturnType<typeof vi.fn>; json: ReturnType<typeof vi.fn>; end: ReturnType<typeof vi.fn> }
 
-function mockRes(): Res {
+function mockRes() {
   const res: Res = { status: vi.fn(), json: vi.fn(), end: vi.fn() }
   res.status.mockReturnValue(res)
   res.json.mockReturnValue(res)
   res.end.mockReturnValue(res)
-  return res
+  return res as unknown as VercelResponse
 }
 
 function okResponse(data: unknown) {
