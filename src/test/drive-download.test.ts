@@ -14,7 +14,7 @@ vi.mock('../../api/_ratelimit.js', () => ({
 
 type Res = { status: ReturnType<typeof vi.fn>; json: ReturnType<typeof vi.fn>; redirect: ReturnType<typeof vi.fn> }
 
-function mockRes(): Res {
+function mockRes() {
   const res: Res = {
     status: vi.fn(),
     json: vi.fn(),
@@ -22,7 +22,7 @@ function mockRes(): Res {
   }
   res.status.mockReturnValue(res)
   res.json.mockReturnValue(res)
-  return res
+  return res as unknown as VercelResponse
 }
 
 const { default: handler } = await import('../../api/drive-download.js')

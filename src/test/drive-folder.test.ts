@@ -20,7 +20,7 @@ vi.stubGlobal('fetch', mockFetch)
 
 type Res = { status: ReturnType<typeof vi.fn>; json: ReturnType<typeof vi.fn>; setHeader: ReturnType<typeof vi.fn> }
 
-function mockRes(): Res {
+function mockRes() {
   const res: Res = {
     status: vi.fn(),
     json: vi.fn(),
@@ -28,7 +28,7 @@ function mockRes(): Res {
   }
   res.status.mockReturnValue(res)
   res.json.mockReturnValue(res)
-  return res
+  return res as unknown as VercelResponse
 }
 
 const { default: handler } = await import('../../api/drive-folder.js')
@@ -61,7 +61,7 @@ describe('Drive folder API (Google Drive v3)', () => {
   })
 
   it('blocks requests when rate limited', async () => {
-    mockApplyRateLimit.mockImplementation(async (_req: unknown, res: Res) => {
+    (mockApplyRateLimit as ReturnType<typeof vi.fn>).mockImplementation(async (_req: unknown, res: Res) => {
       res.status(429).json({ error: 'Too Many Requests' })
       return false
     })
