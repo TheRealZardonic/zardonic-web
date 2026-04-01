@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
+// Provide env vars so getRedis() doesn't throw before the Redis mock is used
+process.env.UPSTASH_REDIS_REST_URL = 'https://test.upstash.io'
+process.env.UPSTASH_REDIS_REST_TOKEN = 'test-token'
+
 const mockGet = vi.fn()
 const mockSet = vi.fn()
 const mockDel = vi.fn()

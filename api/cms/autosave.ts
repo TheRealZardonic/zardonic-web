@@ -31,8 +31,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const allowed = await applyRateLimit(req, res)
   if (!allowed) return
 
-  const kv = getRedis()
-
   try {
     if (req.method === 'GET') {
       // OWASP A03:2021 — Input validation
@@ -41,6 +39,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: 'Bad Request', details: ['key must start with zd-cms:'] })
       }
 
+      const kv = getRedis()
       const autoSaveKey = buildAutoSaveKey(keyParam)
       const value = await kv.get(autoSaveKey)
 
@@ -59,6 +58,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       const { key, value } = parsed.data
+      const kv = getRedis()
       const autoSaveKey = buildAutoSaveKey(key)
       await kv.set(autoSaveKey, value, { ex: AUTOSAVE_TTL })
 
@@ -72,6 +72,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: 'Bad Request', details: ['key must start with zd-cms:'] })
       }
 
+      const kv = getRedis()
       const autoSaveKey = buildAutoSaveKey(keyParam)
       await kv.del(autoSaveKey)
 
