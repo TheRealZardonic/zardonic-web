@@ -41,6 +41,7 @@ import {
   analyzeUserAgents,
   deleteProfile,
 } from '../../api/_attacker-profile.js'
+import type { AttackerProfile } from '../../api/_attacker-profile.js'
 
 describe('Attacker Profile Module', () => {
   beforeEach(() => {
@@ -67,11 +68,11 @@ describe('Attacker Profile Module', () => {
       const profile = await recordIncident(hashedIp, incident)
 
       expect(profile).toBeTruthy()
-      expect(profile.hashedIp).toBe(hashedIp)
-      expect(profile.totalIncidents).toBe(1)
-      expect(profile.attackTypes['honeytoken_access']).toBe(1)
-      expect(profile.threatScoreHistory).toHaveLength(1)
-      expect(profile.threatScoreHistory[0].score).toBe(5)
+      expect(profile!.hashedIp).toBe(hashedIp)
+      expect(profile!.totalIncidents).toBe(1)
+      expect(profile!.attackTypes['honeytoken_access']).toBe(1)
+      expect(profile!.threatScoreHistory).toHaveLength(1)
+      expect(profile!.threatScoreHistory[0].score).toBe(5)
       expect(mockKvSet).toHaveBeenCalledWith(
         `nk-profile:${hashedIp}`,
         expect.any(Object),
@@ -109,13 +110,13 @@ describe('Attacker Profile Module', () => {
 
       const profile = await recordIncident(hashedIp, newIncident)
 
-      expect(profile.totalIncidents).toBe(2)
-      expect(profile.attackTypes['honeytoken_access']).toBe(1)
-      expect(profile.attackTypes['robots_violation']).toBe(1)
-      expect(profile.userAgents['Mozilla/5.0']).toBe(1)
-      expect(profile.userAgents['curl/7.0']).toBe(1)
-      expect(profile.threatScoreHistory).toHaveLength(2)
-      expect(profile.lastSeen).toBe('2024-01-01T01:00:00Z')
+      expect(profile!.totalIncidents).toBe(2)
+      expect(profile!.attackTypes['honeytoken_access']).toBe(1)
+      expect(profile!.attackTypes['robots_violation']).toBe(1)
+      expect(profile!.userAgents['Mozilla/5.0']).toBe(1)
+      expect(profile!.userAgents['curl/7.0']).toBe(1)
+      expect(profile!.threatScoreHistory).toHaveLength(2)
+      expect(profile!.lastSeen).toBe('2024-01-01T01:00:00Z')
     })
 
     it('should limit threat score history to 100 entries', async () => {
@@ -147,8 +148,8 @@ describe('Attacker Profile Module', () => {
 
       const profile = await recordIncident(hashedIp, newIncident)
 
-      expect(profile.threatScoreHistory).toHaveLength(100)
-      expect(profile.threatScoreHistory[99].score).toBe(10)
+      expect(profile!.threatScoreHistory).toHaveLength(100)
+      expect(profile!.threatScoreHistory[99].score).toBe(10)
     })
 
     it('should handle errors gracefully', async () => {
@@ -201,9 +202,9 @@ describe('Attacker Profile Module', () => {
       const profile = await getProfile(hashedIp)
 
       expect(profile).toBeTruthy()
-      expect(profile.behavioralPatterns).toBeDefined()
-      expect(Array.isArray(profile.behavioralPatterns)).toBe(true)
-      expect(profile.behavioralPatterns.length).toBeGreaterThan(0)
+      expect(profile!.behavioralPatterns).toBeDefined()
+      expect(Array.isArray(profile!.behavioralPatterns)).toBe(true)
+      expect(profile!.behavioralPatterns.length).toBeGreaterThan(0)
     })
 
     it('should return null for non-existent profile', async () => {
@@ -290,7 +291,7 @@ describe('Attacker Profile Module', () => {
         },
       }
 
-      const analysis = analyzeUserAgents(profile)
+      const analysis = analyzeUserAgents(profile as unknown as AttackerProfile)
 
       expect(analysis.total).toBe(21)
       expect(analysis.unique).toBe(5)
@@ -310,7 +311,7 @@ describe('Attacker Profile Module', () => {
     it('should handle empty user agents', () => {
       const profile = { userAgents: {} }
 
-      const analysis = analyzeUserAgents(profile)
+      const analysis = analyzeUserAgents(profile as unknown as AttackerProfile)
 
       expect(analysis.total).toBe(0)
       expect(analysis.unique).toBe(0)
@@ -358,9 +359,9 @@ describe('Attacker Profile Module', () => {
 
       const result = await getProfile('test_hash')
 
-      const rapidEscalation = result.behavioralPatterns.find((p) => p.type === 'rapid_escalation')
+      const rapidEscalation = result!.behavioralPatterns.find((p) => p.type === 'rapid_escalation')
       expect(rapidEscalation).toBeDefined()
-      expect(rapidEscalation.severity).toBe('high')
+      expect(rapidEscalation!.severity).toBe('high')
     })
 
     it('should detect diverse attacks pattern', async () => {
@@ -377,9 +378,9 @@ describe('Attacker Profile Module', () => {
 
       const result = await getProfile('test_hash')
 
-      const diverseAttacks = result.behavioralPatterns.find((p) => p.type === 'diverse_attacks')
+      const diverseAttacks = result!.behavioralPatterns.find((p) => p.type === 'diverse_attacks')
       expect(diverseAttacks).toBeDefined()
-      expect(diverseAttacks.severity).toBe('high')
+      expect(diverseAttacks!.severity).toBe('high')
     })
 
     it('should detect UA rotation pattern', async () => {
@@ -396,9 +397,9 @@ describe('Attacker Profile Module', () => {
 
       const result = await getProfile('test_hash')
 
-      const uaRotation = result.behavioralPatterns.find((p) => p.type === 'ua_rotation')
+      const uaRotation = result!.behavioralPatterns.find((p) => p.type === 'ua_rotation')
       expect(uaRotation).toBeDefined()
-      expect(uaRotation.severity).toBe('medium')
+      expect(uaRotation!.severity).toBe('medium')
     })
 
     it('should detect persistent attacker pattern', async () => {
@@ -411,9 +412,9 @@ describe('Attacker Profile Module', () => {
 
       const result = await getProfile('test_hash')
 
-      const persistent = result.behavioralPatterns.find((p) => p.type === 'persistent')
+      const persistent = result!.behavioralPatterns.find((p) => p.type === 'persistent')
       expect(persistent).toBeDefined()
-      expect(persistent.severity).toBe('high')
+      expect(persistent!.severity).toBe('high')
     })
 
     it('should detect automated scan pattern', async () => {
@@ -433,9 +434,9 @@ describe('Attacker Profile Module', () => {
 
       const result = await getProfile('test_hash')
 
-      const automatedScan = result.behavioralPatterns.find((p) => p.type === 'automated_scan')
+      const automatedScan = result!.behavioralPatterns.find((p) => p.type === 'automated_scan')
       expect(automatedScan).toBeDefined()
-      expect(automatedScan.severity).toBe('high')
+      expect(automatedScan!.severity).toBe('high')
     })
   })
 })

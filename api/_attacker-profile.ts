@@ -46,7 +46,7 @@ interface IncidentEntry {
   threatLevel?: string
 }
 
-interface AttackerProfile {
+export interface AttackerProfile {
   hashedIp: string
   firstSeen: string
   lastSeen: string
