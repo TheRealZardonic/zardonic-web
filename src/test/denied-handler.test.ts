@@ -55,21 +55,15 @@ vi.mock('../../api/_honeytokens.js', () => ({
   setDefenseHeaders: mockSetDefenseHeaders,
 }))
 
-type Res = {
-  status: ReturnType<typeof vi.fn>
-  send: ReturnType<typeof vi.fn>
-  setHeader: ReturnType<typeof vi.fn>
-}
-
-function mockRes(): Res {
-  const res: Res = {
+function mockRes() {
+  const res = {
     status: vi.fn(),
     send: vi.fn(),
     setHeader: vi.fn(),
   }
   res.status.mockReturnValue(res)
   res.send.mockReturnValue(res)
-  return res
+  return res as unknown as VercelResponse
 }
 
 const { default: deniedHandler } = await import('../../api/denied.js')
@@ -87,7 +81,7 @@ describe('Denied handler: robots.txt access violation response', () => {
   })
 
   /** Run the handler with fake timers: start the async call, advance time, then await */
-  async function runHandler(req: Parameters<typeof deniedHandler>[0], res: Res) {
+  async function runHandler(req: Parameters<typeof deniedHandler>[0], res: VercelResponse) {
     const promise = deniedHandler(req, res)
     await vi.advanceTimersByTimeAsync(10000)
     return promise
@@ -108,7 +102,7 @@ describe('Denied handler: robots.txt access violation response', () => {
   it('flags the requesting IP as an attacker', async () => {
     const res = mockRes()
     await runHandler(
-      { method: 'GET', query: { _src: '/wp-admin/' }, headers: {}, url: '/api/denied' },
+      { method: 'GET', query: { _src: '/wp-admin/' }, headers: {}, url: '/api/denied' } as unknown as VercelRequest,
       res,
     )
     expect(mockMarkAttacker).toHaveBeenCalledWith('hashed-ip-test')
@@ -119,7 +113,7 @@ describe('Denied handler: robots.txt access violation response', () => {
     mockKvLtrim.mockResolvedValue('OK')
     const res = mockRes()
     await runHandler(
-      { method: 'GET', query: { _src: '/backup/db' }, headers: { 'user-agent': 'Scanner/2.0' }, url: '/api/denied' },
+      { method: 'GET', query: { _src: '/backup/db' }, headers: { 'user-agent': 'Scanner/2.0' }, url: '/api/denied' } as unknown as VercelRequest,
       res,
     )
     expect(mockKvLpush).toHaveBeenCalledWith(
@@ -132,7 +126,7 @@ describe('Denied handler: robots.txt access violation response', () => {
   it('injects entropy headers into the response', async () => {
     const res = mockRes()
     await runHandler(
-      { method: 'GET', query: {}, headers: {}, url: '/api/denied' },
+      { method: 'GET', query: {}, headers: {}, url: '/api/denied' } as unknown as VercelRequest,
       res,
     )
     expect(mockInjectEntropy).toHaveBeenCalledWith(res, 50)
@@ -142,10 +136,10 @@ describe('Denied handler: robots.txt access violation response', () => {
   it('includes navigation links in response for crawler recursion', async () => {
     const res = mockRes()
     await runHandler(
-      { method: 'GET', query: { _src: '/config/' }, headers: {}, url: '/api/denied' },
+      { method: 'GET', query: { _src: '/config/' }, headers: {}, url: '/api/denied' } as unknown as VercelRequest,
       res,
     )
-    const html = res.send.mock.calls[0][0] as string
+    const html = (res as any).send.mock.calls[0][0] as string
     expect(html).toContain('<a href=')
     expect(html).toMatch(/href="\/[a-z]+/)
   })
@@ -155,7 +149,7 @@ describe('Denied handler: robots.txt access violation response', () => {
     const res = mockRes()
     await expect(
       runHandler(
-        { method: 'GET', query: { _src: '/debug/' }, headers: {}, url: '/api/denied' },
+        { method: 'GET', query: { _src: '/debug/' }, headers: {}, url: '/api/denied' } as unknown as VercelRequest,
         res,
       ),
     ).resolves.not.toThrow()
@@ -166,7 +160,7 @@ describe('Denied handler: robots.txt access violation response', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     const res = mockRes()
     await runHandler(
-      { method: 'POST', query: { _src: '/phpmyadmin/index.php' }, headers: {}, url: '/api/denied' },
+      { method: 'POST', query: { _src: '/phpmyadmin/index.php' }, headers: {}, url: '/api/denied' } as unknown as VercelRequest,
       res,
     )
     expect(consoleSpy).toHaveBeenCalledWith(

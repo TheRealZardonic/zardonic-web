@@ -85,20 +85,20 @@ describe('Entropy Injection: isMarkedAttacker', () => {
 
   it('returns true when the IP hash is flagged in KV', async () => {
     mockKvGet.mockResolvedValue(true)
-    const result = await isMarkedAttacker({ headers: {} })
+    const result = await isMarkedAttacker({ headers: {} } as unknown as VercelRequest)
     expect(result).toBe(true)
     expect(mockKvGet).toHaveBeenCalledWith('nk-flagged:hashed-ip-1234')
   })
 
   it('returns false when the IP hash is not flagged', async () => {
     mockKvGet.mockResolvedValue(null)
-    const result = await isMarkedAttacker({ headers: {} })
+    const result = await isMarkedAttacker({ headers: {} } as unknown as VercelRequest)
     expect(result).toBe(false)
   })
 
   it('returns false when KV read fails', async () => {
     mockKvGet.mockRejectedValue(new Error('KV unavailable'))
-    const result = await isMarkedAttacker({ headers: {} })
+    const result = await isMarkedAttacker({ headers: {} } as unknown as VercelRequest)
     expect(result).toBe(false)
   })
 })
@@ -107,23 +107,23 @@ describe('Entropy Injection: isMarkedAttacker', () => {
 describe('Entropy Injection: injectEntropyHeaders', () => {
   it('injects 200 random headers by default', () => {
     const headers: Record<string, string> = {}
-    const res = { setHeader: vi.fn((k: string, v: string) => { headers[k] = v }) }
+    const res = { setHeader: vi.fn((k: string, v: string) => { headers[k] = v }) } as unknown as VercelResponse
     injectEntropyHeaders(res)
-    expect(res.setHeader).toHaveBeenCalledTimes(200)
+    expect((res as any).setHeader).toHaveBeenCalledTimes(200)
     // Check naming pattern
-    expect(res.setHeader).toHaveBeenCalledWith('X-Neural-Noise-000', expect.any(String))
-    expect(res.setHeader).toHaveBeenCalledWith('X-Neural-Noise-199', expect.any(String))
+    expect((res as any).setHeader).toHaveBeenCalledWith('X-Neural-Noise-000', expect.any(String))
+    expect((res as any).setHeader).toHaveBeenCalledWith('X-Neural-Noise-199', expect.any(String))
   })
 
   it('injects configurable number of headers', () => {
-    const res = { setHeader: vi.fn() }
+    const res = { setHeader: vi.fn() } as unknown as VercelResponse
     injectEntropyHeaders(res, 10)
-    expect(res.setHeader).toHaveBeenCalledTimes(10)
+    expect((res as any).setHeader).toHaveBeenCalledTimes(10)
   })
 
   it('generates hex values of expected length (32 hex chars = 16 bytes)', () => {
     const values: string[] = []
-    const res = { setHeader: vi.fn((_k: string, v: string) => { values.push(v) }) }
+    const res = { setHeader: vi.fn((_k: string, v: string) => { values.push(v) }) } as unknown as VercelResponse
     injectEntropyHeaders(res, 5)
     for (const val of values) {
       expect(val).toMatch(/^[0-9a-f]{32}$/)
@@ -132,7 +132,7 @@ describe('Entropy Injection: injectEntropyHeaders', () => {
 
   it('generates unique values across headers', () => {
     const values: string[] = []
-    const res = { setHeader: vi.fn((_k: string, v: string) => { values.push(v) }) }
+    const res = { setHeader: vi.fn((_k: string, v: string) => { values.push(v) }) } as unknown as VercelResponse
     injectEntropyHeaders(res, 50)
     const unique = new Set(values)
     // Cryptographically random — extremely unlikely to have duplicates
@@ -151,7 +151,7 @@ describe('Entropy Injection: triggerHoneytokenAlarm marks attacker', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
     await triggerHoneytokenAlarm(
-      { method: 'GET', headers: { 'user-agent': 'TestBot' } },
+      { method: 'GET', headers: { 'user-agent': 'TestBot' } } as unknown as VercelRequest,
       'admin_backup'
     )
 
@@ -183,52 +183,54 @@ describe('Taunting messages: TAUNT_MESSAGES and getRandomTaunt', () => {
 // ---------------------------------------------------------------------------
 describe('Defense headers: setDefenseHeaders', () => {
   it('sets X-Neural-Defense, X-Netrunner-Status, and X-Warning headers', () => {
-    const res = { setHeader: vi.fn() }
+    const res = { setHeader: vi.fn() } as unknown as VercelResponse
     setDefenseHeaders(res)
-    expect(res.setHeader).toHaveBeenCalledWith('X-Neural-Defense', 'Active. Target identified.')
-    expect(res.setHeader).toHaveBeenCalledWith('X-Netrunner-Status', 'Nice try, but you\'re barking up the wrong tree.')
-    expect(res.setHeader).toHaveBeenCalledWith('X-Warning', 'Stop poking the Baphomet. It might poke back.')
-    expect(res.setHeader).toHaveBeenCalledTimes(3)
+    expect((res as any).setHeader).toHaveBeenCalledWith('X-Neural-Defense', 'Active. Target identified.')
+    expect((res as any).setHeader).toHaveBeenCalledWith('X-Netrunner-Status', 'Nice try, but you\'re barking up the wrong tree.')
+    expect((res as any).setHeader).toHaveBeenCalledWith('X-Warning', 'Stop poking the Baphomet. It might poke back.')
+    expect((res as any).setHeader).toHaveBeenCalledTimes(3)
   })
 })
 
 // ---------------------------------------------------------------------------
 describe('Fingerprint pixel: serveFingerprintPixel', () => {
   it('returns a 200 PNG response with fingerprinting headers', () => {
-    const res = {
+    const resMock = {
       setHeader: vi.fn(),
       status: vi.fn(),
       send: vi.fn(),
     }
-    res.status.mockReturnValue(res)
-    res.send.mockReturnValue(res)
+    resMock.status.mockReturnValue(resMock)
+    resMock.send.mockReturnValue(resMock)
+    const res = resMock as unknown as VercelResponse
 
     serveFingerprintPixel(res)
 
-    expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'image/png')
-    expect(res.setHeader).toHaveBeenCalledWith('Cache-Control', 'no-store, no-cache, must-revalidate')
+    expect(resMock.setHeader).toHaveBeenCalledWith('Content-Type', 'image/png')
+    expect(resMock.setHeader).toHaveBeenCalledWith('Cache-Control', 'no-store, no-cache, must-revalidate')
     // Accept-CH header requests Client Hints for browser fingerprinting
-    expect(res.setHeader).toHaveBeenCalledWith('Accept-CH', expect.stringContaining('Sec-CH-UA'))
-    expect(res.setHeader).toHaveBeenCalledWith('Critical-CH', expect.stringContaining('Sec-CH-UA'))
+    expect(resMock.setHeader).toHaveBeenCalledWith('Accept-CH', expect.stringContaining('Sec-CH-UA'))
+    expect(resMock.setHeader).toHaveBeenCalledWith('Critical-CH', expect.stringContaining('Sec-CH-UA'))
     // Defense headers also set
-    expect(res.setHeader).toHaveBeenCalledWith('X-Neural-Defense', 'Active. Target identified.')
-    expect(res.status).toHaveBeenCalledWith(200)
-    expect(res.send).toHaveBeenCalledWith(expect.any(Buffer))
+    expect(resMock.setHeader).toHaveBeenCalledWith('X-Neural-Defense', 'Active. Target identified.')
+    expect(resMock.status).toHaveBeenCalledWith(200)
+    expect(resMock.send).toHaveBeenCalledWith(expect.any(Buffer))
   })
 
   it('sends a valid PNG (starts with PNG magic bytes)', () => {
-    const res = {
+    const resMock = {
       setHeader: vi.fn(),
       status: vi.fn(),
       send: vi.fn(),
     }
-    res.status.mockReturnValue(res)
-    res.send.mockReturnValue(res)
+    resMock.status.mockReturnValue(resMock)
+    resMock.send.mockReturnValue(resMock)
+    const res = resMock as unknown as VercelResponse
 
     serveFingerprintPixel(res)
 
-    expect(res.send).toHaveBeenCalledTimes(1)
-    const sentData: Buffer = res.send.mock.calls[0][0]
+    expect(resMock.send).toHaveBeenCalledTimes(1)
+    const sentData: Buffer = resMock.send.mock.calls[0][0]
     // PNG starts with \x89PNG
     expect(sentData[0]).toBe(0x89)
     expect(sentData[1]).toBe(0x50) // 'P'

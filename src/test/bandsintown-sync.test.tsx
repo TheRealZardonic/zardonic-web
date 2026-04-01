@@ -28,7 +28,7 @@ describe('Bandsintown sync issue', () => {
       new Response(JSON.stringify({ value: initialData }), { status: 200 })
     )
 
-    const { result } = renderHook(() => useKV('zardonic-site-data', { artistName: '', gigs: [] }))
+    const { result } = renderHook(() => useKV('zardonic-site-data', { artistName: '', gigs: [] as Array<{ id: string; venue: string; location: string; date: string; ticketUrl: string; support: string; lineup: string[] }> }))
 
     // Wait for initial load
     await waitFor(() => expect(result.current[2]).toBe(true))
@@ -64,7 +64,7 @@ describe('Bandsintown sync issue', () => {
       new Response(JSON.stringify({ value: null }), { status: 200 })
     )
 
-    const defaultData = { artistName: '', gigs: [] }
+    const defaultData = { artistName: '', gigs: [] as Array<{ id: string; venue: string; location: string; date: string; ticketUrl: string; support: string; lineup: string[] }> }
     const { result } = renderHook(() => useKV('zardonic-site-data', defaultData))
 
     // Wait for initial load (should use default value)

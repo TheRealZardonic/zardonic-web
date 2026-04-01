@@ -48,7 +48,7 @@ describe('downloadFile with Google Drive URLs', () => {
     vi.spyOn(document, 'createElement').mockImplementation((tagName: string) => {
       const element = originalCreateElement(tagName)
       if (tagName === 'a') {
-        element.click = clickSpy
+        element.click = clickSpy as unknown as () => void
       }
       return element
     })
