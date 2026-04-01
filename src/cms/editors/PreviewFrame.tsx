@@ -15,7 +15,7 @@ export default function PreviewFrame() {
 
   const refresh = () => setKey(k => k + 1)
 
-  const currentViewport = VIEWPORTS.find(v => v.id === viewport)!
+  const currentViewport = VIEWPORTS.find(v => v.id === viewport) ?? VIEWPORTS[0]
 
   return (
     <div className="flex flex-col h-full bg-[#0a0a0a]">

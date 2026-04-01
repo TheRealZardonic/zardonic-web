@@ -93,7 +93,7 @@ export default function MediaLibrary() {
           >
             <Upload size={14} /> Upload
           </button>
-          <input ref={fileInputRef} type="file" multiple accept="image/*,video/*,audio/*" className="hidden" onChange={(e) => { void handleFileChange(e) }} />
+          <input ref={fileInputRef} type="file" multiple accept="image/*,video/*,audio/*" className="hidden" aria-label="Upload media files" onChange={(e) => { void handleFileChange(e) }} />
         </div>
       </div>
 

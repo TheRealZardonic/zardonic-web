@@ -108,9 +108,11 @@ export default function NavigationEditor() {
             <button
               type="button"
               onClick={() => updateItem(index, { ...item, enabled: !item.enabled })}
-              className={`w-8 h-4 rounded-full transition-colors flex-shrink-0 ${item.enabled ? 'bg-red-500' : 'bg-zinc-600'}`}
+              className={`relative inline-flex w-10 h-5 rounded-full transition-colors flex-shrink-0 ${item.enabled ? 'bg-red-500' : 'bg-zinc-600'}`}
               aria-label={item.enabled ? 'Disable' : 'Enable'}
-            />
+            >
+              <span className={`inline-block w-4 h-4 bg-white rounded-full shadow transform transition-transform mt-0.5 ${item.enabled ? 'translate-x-5' : 'translate-x-0.5'}`} />
+            </button>
             <div className="flex-1 grid grid-cols-2 gap-2">
               <div>
                 <label className={labelClass}>Label</label>
