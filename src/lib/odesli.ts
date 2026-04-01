@@ -36,6 +36,7 @@ export interface OdesliResult {
   deezer?: string
   tidal?: string
   amazonMusic?: string
+  artwork?: string
 }
 
 export async function fetchOdesliLinks(streamingUrl: string): Promise<OdesliResult | null> {

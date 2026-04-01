@@ -110,7 +110,7 @@ async function trackResponseProgress(
   }
 
   const reader = response.body.getReader()
-  const chunks: Uint8Array[] = []
+  const chunks: Uint8Array<ArrayBuffer>[] = []
   let received = 0
 
   while (true) {

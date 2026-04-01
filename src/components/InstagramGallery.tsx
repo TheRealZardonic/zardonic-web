@@ -7,7 +7,7 @@ import { useTypingEffect } from '@/hooks/use-typing-effect'
 import { ChromaticText } from '@/components/ChromaticText'
 import ProgressiveImage from '@/components/ProgressiveImage'
 import { useOverlayTransition } from '@/components/OverlayTransition'
-import { loadCachedImage } from '@/lib/image-cache'
+import { cacheImage } from '@/lib/image-cache'
 import type { GalleryImage, SectionLabels } from '@/lib/types'
 import { toast } from 'sonner'
 
@@ -66,7 +66,7 @@ export default function InstagramGallery({ galleryImages = [], editMode, onUpdat
     if (!galleryImages || galleryImages.length === 0) return
     galleryImages.forEach((img) => {
       if (!cachedUrls[img.url]) {
-        loadCachedImage(img.url).then((cached) => {
+        cacheImage(img.url).then((cached: string) => {
           setCachedUrls((prev) => ({ ...prev, [img.url]: cached }))
         })
       }

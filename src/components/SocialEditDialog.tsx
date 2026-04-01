@@ -135,8 +135,8 @@ export default function SocialEditDialog({ socialLinks, onSave, onClose }: Socia
             <Input
               id="linktr"
               type="url"
-              value={formData.linktr || ''}
-              onChange={(e) => updateField('linktr', e.target.value)}
+              value={formData.linktree || ''}
+              onChange={(e) => updateField('linktree', e.target.value)}
               className="bg-secondary border-input"
               placeholder="https://linktr.ee/..."
             />

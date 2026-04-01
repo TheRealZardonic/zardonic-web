@@ -1,6 +1,7 @@
 import { kv } from '@vercel/kv'
 import { applyRateLimit } from './_ratelimit.js'
 import { terminalCommandSchema, validate } from './_schemas.js'
+import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 /**
  * Terminal command API — returns command output only when
@@ -17,7 +18,7 @@ const isKVConfigured = () => {
   return !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN)
 }
 
-export default async function handler(req, res) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') {
     return res.status(200).end()
   }

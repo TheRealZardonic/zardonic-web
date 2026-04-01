@@ -8,6 +8,15 @@ export interface SectionVisibility {
   creditHighlights?: boolean
   shell?: boolean
   contact?: boolean
+  news?: boolean
+  biography?: boolean
+  media?: boolean
+  social?: boolean
+  partnersAndFriends?: boolean
+  hudBackground?: boolean
+  audioVisualizer?: boolean
+  scanline?: boolean
+  systemMonitor?: boolean
 }
 
 export interface ThemeCustomization {
@@ -81,6 +90,8 @@ export interface SectionLabels {
   biography?: string
   musicPlayer?: string
   upcomingGigs?: string
+  gigs?: string
+  news?: string
   releases?: string
   gallery?: string
   connect?: string
@@ -90,6 +101,12 @@ export interface SectionLabels {
   shell?: string
   contact?: string
   headingPrefix?: string
+  collabs?: string
+  closeButtonText?: string
+  partnersAndFriends?: string
+  sessionStatusText?: string
+  profileStatusText?: string
+  profileFields?: Array<{ label: string; value: string }>
 }
 
 export interface ContactInfo {
@@ -133,6 +150,8 @@ export interface TerminalCommand {
   name: string
   description: string
   output: string[]
+  fileName?: string
+  fileUrl?: string
 }
 
 export interface MediaFile {
@@ -184,4 +203,218 @@ export interface ContactSettings {
   emailForwardTo?: string
   successMessage?: string
   showSection?: boolean
+}
+
+export interface Member {
+  name: string
+  photo?: string
+  bio?: string
+  role?: string
+  social?: Record<string, string>
+  subjectLabel?: string
+  statusLabel?: string
+  statusValue?: string
+}
+
+export interface Biography {
+  story: string
+  founded?: string
+  members?: (string | Member)[]
+  achievements?: string[]
+  collabs?: string[]
+  photos?: string[]
+  friends?: Friend[]
+}
+
+export interface FontSizeSettings {
+  biographyStory?: string
+  gigsText?: string
+  releasesText?: string
+  connectText?: string
+}
+
+export interface SocialLinks {
+  instagram?: string
+  facebook?: string
+  spotify?: string
+  youtube?: string
+  soundcloud?: string
+  bandcamp?: string
+  tiktok?: string
+  appleMusic?: string
+  twitter?: string
+  twitch?: string
+  beatport?: string
+  linktree?: string
+}
+
+export interface Gig {
+  id: string
+  venue: string
+  location: string
+  date: string
+  ticketUrl?: string
+  support?: string
+  lineup?: string[]
+  supportingArtists?: string[]
+  streetAddress?: string
+  postalCode?: string
+  soldOut?: boolean
+  startsAt?: string
+  description?: string
+  title?: string
+  gigType?: '' | 'concert' | 'dj'
+  allDay?: boolean
+  status?: '' | 'confirmed' | 'cancelled' | 'soldout' | 'announced'
+  eventLinks?: {
+    facebook?: string
+    instagram?: string
+    residentAdvisor?: string
+    other?: string
+  }
+  photo?: string
+}
+
+export interface HudTexts {
+  topLeft1?: string
+  topLeft2?: string
+  topLeftStatus?: string
+  topRight?: string
+  topRight1?: string
+  topRight2?: string
+  bottomLeft?: string
+  bottomLeft1?: string
+  bottomLeft2?: string
+  bottomRight?: string
+  bottomRight1?: string
+  bottomRight2?: string
+}
+
+export interface Datenschutz {
+  customText?: string
+  customTextEn?: string
+}
+
+export interface Impressum {
+  name: string
+  careOf?: string
+  street?: string
+  zipCity?: string
+  phone?: string
+  email?: string
+  responsibleName?: string
+  responsibleAddress?: string
+  nameEn?: string
+  careOfEn?: string
+  streetEn?: string
+  zipCityEn?: string
+  responsibleNameEn?: string
+  responsibleAddressEn?: string
+}
+
+export interface GalleryImage {
+  id: string
+  url: string
+  caption?: string
+}
+
+export interface NewsItem {
+  id: string
+  date: string
+  text: string
+  title?: string
+  image?: string
+  photo?: string
+  link?: string
+  details?: string
+}
+
+export interface OverlayEffect {
+  enabled: boolean
+  intensity: number
+}
+
+export interface OverlayEffects {
+  dotMatrix?: OverlayEffect
+  scanlines?: OverlayEffect
+  crt?: OverlayEffect
+  noise?: OverlayEffect
+  vignette?: OverlayEffect
+  chromatic?: OverlayEffect
+  movingScanline?: OverlayEffect
+}
+
+export interface ThemeSettings {
+  primary?: string
+  accent?: string
+  background?: string
+  card?: string
+  foreground?: string
+  mutedForeground?: string
+  border?: string
+  secondary?: string
+  fontBody?: string
+  fontMono?: string
+  fontHeading?: string
+  borderRadius?: number
+  fontSize?: number
+  overlayEffects?: OverlayEffects
+  activePreset?: string
+}
+
+export interface Release {
+  id: string
+  title: string
+  artwork?: string
+  year?: string
+  releaseDate?: string
+  featured?: boolean
+  type?: '' | 'album' | 'ep' | 'single' | 'remix' | 'compilation'
+  description?: string
+  tracks?: Array<{ title: string; duration?: string }>
+  streamingLinks?: {
+    spotify?: string
+    soundcloud?: string
+    bandcamp?: string
+    youtube?: string
+    appleMusic?: string
+    beatport?: string
+    deezer?: string
+    tidal?: string
+    amazonMusic?: string
+  }
+}
+
+export interface Friend {
+  id: string
+  name: string
+  photo?: string
+  iconPhoto?: string
+  profilePhoto?: string
+  description?: string
+  url?: string
+  subjectLabel?: string
+  statusLabel?: string
+  statusValue?: string
+  socials?: {
+    instagram?: string
+    facebook?: string
+    spotify?: string
+    soundcloud?: string
+    youtube?: string
+    website?: string
+    bandcamp?: string
+    tiktok?: string
+    appleMusic?: string
+  }
+}
+
+export interface SoundSettings {
+  defaultMuted?: boolean
+  terminalSound?: string
+  typingSound?: string
+  buttonSound?: string
+  loadingFinishedSound?: string
+  backgroundMusic?: string
+  backgroundMusicVolume?: number
 }

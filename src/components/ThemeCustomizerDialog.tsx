@@ -172,7 +172,7 @@ const OVERLAY_LABELS: Record<string, { name: string; description: string }> = {
   movingScanline: { name: 'Moving Scanline', description: 'CRT-Auffrischungslinie die sich bewegt' },
 }
 
-const SECTION_LABELS: Record<keyof SectionVisibility, string> = {
+const SECTION_LABELS: Partial<Record<keyof SectionVisibility, string>> = {
   news: 'News Section',
   biography: 'Biography Section',
   gallery: 'Gallery Section',

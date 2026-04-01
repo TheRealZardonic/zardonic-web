@@ -52,7 +52,7 @@ export default function ImpressumWindow({ isOpen, onClose, impressum, editMode, 
   }, [isOpen, onClose])
 
   const update = (field: keyof Impressum, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }))
+    setForm((prev: Impressum) => ({ ...prev, [field]: value }))
   }
 
   const handleSave = () => {

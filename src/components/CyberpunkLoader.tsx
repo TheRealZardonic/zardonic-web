@@ -6,7 +6,7 @@ import {
   LOADER_COMPLETE_DELAY_MS,
   LOADER_PROGRESS_INTERVAL_MS,
 } from '@/lib/config'
-import { loadCachedImage } from '@/lib/image-cache'
+import { cacheImage } from '@/lib/image-cache'
 
 interface CyberpunkLoaderProps {
   onLoadComplete: () => void
@@ -67,7 +67,7 @@ export default function CyberpunkLoader({ onLoadComplete, precacheUrls = [] }: C
     }
     setCachingDone(false)
     let cancelled = false
-    Promise.allSettled(precacheUrls.map(url => loadCachedImage(url)))
+    Promise.allSettled(precacheUrls.map(url => cacheImage(url)))
       .then(() => { if (!cancelled) setCachingDone(true) })
     return () => { cancelled = true }
   }, [precacheUrls])

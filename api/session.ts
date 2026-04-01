@@ -151,7 +151,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       // Check both legacy key and new zd-session key
-      let sessionData = await kv.get<SessionData>(`session:${token}`)
+      const sessionData = await kv.get<SessionData>(`session:${token}`)
       if (!sessionData) {
         // Also accept tokens created by the new auth.ts system
         const zdSession = await kv.get(`zd-session:${token}`)

@@ -77,7 +77,7 @@ function GLBModel({ scrollY }: { scrollY: number }) {
     try {
       const clonedScene = gltf.scene.clone()
       
-      clonedScene.traverse((child) => {
+      clonedScene.traverse((child: THREE.Object3D) => {
         if ((child as THREE.Mesh).isMesh) {
           const mesh = child as THREE.Mesh
           if (mesh.material) {

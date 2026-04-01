@@ -170,7 +170,7 @@ function FriendCard({ friend, editMode, onUpdate, onDelete, onSelect }: {
             )}
           </div>
           {friend.description && (
-            <p className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5"><SafeText fontSize={11}>{friend.description}</SafeText></p>
+            <p className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5"><SafeText fontSize={11} text={friend.description} /></p>
           )}
           {friend.socials && (
             <div className="flex gap-1.5 mt-2 flex-wrap justify-center">

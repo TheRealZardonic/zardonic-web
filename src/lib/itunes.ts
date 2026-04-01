@@ -11,6 +11,17 @@ export interface ITunesRelease {
   deezer?: string
   tidal?: string
   amazonMusic?: string
+  streamingLinks?: {
+    spotify?: string
+    soundcloud?: string
+    youtube?: string
+    bandcamp?: string
+    appleMusic?: string
+    deezer?: string
+    tidal?: string
+    amazonMusic?: string
+    beatport?: string
+  }
 }
 
 const ARTIST_NAME = 'Zardonic'

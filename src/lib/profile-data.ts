@@ -29,7 +29,7 @@ export function buildMemberDataLines(member: Member, sectionLabels?: SectionLabe
 
 /** Social icon definitions for friend profiles */
 export const FRIEND_SOCIAL_KEYS = [
-  'instagram', 'facebook', 'spotify', 'soundcloud', 'youtube', 'bandcamp', 'website',
+  'instagram', 'facebook', 'spotify', 'soundcloud', 'youtube', 'bandcamp', 'website', 'tiktok', 'appleMusic',
 ] as const
 
 type FriendSocialKey = (typeof FRIEND_SOCIAL_KEYS)[number]

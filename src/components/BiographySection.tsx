@@ -8,7 +8,7 @@ import ProgressiveImage from '@/components/ProgressiveImage'
 import ProfileOverlay from '@/components/ProfileOverlay'
 import { useOverlayTransition } from '@/components/OverlayTransition'
 import SafeText from '@/components/SafeText'
-import { loadCachedImage } from '@/lib/image-cache'
+import { cacheImage } from '@/lib/image-cache'
 import { buildMemberDataLines } from '@/lib/profile-data'
 import { trackInteraction } from '@/lib/analytics'
 import { useTrackSection } from '@/hooks/use-track-section'
@@ -95,7 +95,7 @@ export default function BiographySection({ biography = defaultBiography, editMod
       if (f.photo && f.photo.startsWith('http') && !cachedPhotos[f.photo]) urlsToCache.push(f.photo)
     }
     urlsToCache.forEach((url) => {
-      loadCachedImage(url).then((cached) => {
+      cacheImage(url).then((cached: string) => {
         setCachedPhotos((prev) => ({ ...prev, [url]: cached }))
       }).catch(() => { /* ignore failed cache attempts */ })
     })
@@ -256,9 +256,9 @@ export default function BiographySection({ biography = defaultBiography, editMod
                     </div>
                   )}
                   <div className="prose prose-invert max-w-none">
-                    {biography.story.split('\n\n').map((paragraph, index) => (
+                    {biography.story.split('\n\n').map((paragraph: string, index: number) => (
                       <p key={index} className={`${fontSizes?.biographyStory || 'text-sm md:text-base'} text-foreground/90 leading-relaxed mb-4 last:mb-0`}>
-                        <SafeText>{paragraph}</SafeText>
+                        <SafeText text={paragraph} />
                       </p>
                     ))}
                   </div>
@@ -280,7 +280,7 @@ export default function BiographySection({ biography = defaultBiography, editMod
                       Members
                     </h3>
                     <div className="space-y-3">
-                      {biography.members.map((rawMember, index) => {
+                      {biography.members.map((rawMember: string | Member, index: number) => {
                         const member = normalizeMember(rawMember)
                         return (
                           <button
@@ -326,7 +326,7 @@ export default function BiographySection({ biography = defaultBiography, editMod
                       {sectionLabels?.collabs || 'Collabs'}
                     </h3>
                     <ul className="space-y-3">
-                      {biography.collabs.map((collab, index) => (
+                      {biography.collabs.map((collab: string, index: number) => (
                         <li key={index} className="text-foreground/90 text-sm flex gap-2">
                           <span className="text-primary mt-1">◆</span>
                           <span className="flex-1">{collab}</span>
@@ -348,7 +348,7 @@ export default function BiographySection({ biography = defaultBiography, editMod
                       Achievements
                     </h3>
                     <ul className="space-y-3">
-                      {biography.achievements.map((achievement, index) => (
+                      {biography.achievements.map((achievement: string, index: number) => (
                         <li key={index} className="text-foreground/90 text-sm flex gap-2">
                           <span className="text-primary mt-1">•</span>
                           <span className="flex-1">{achievement}</span>

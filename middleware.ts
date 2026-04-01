@@ -19,7 +19,7 @@ import { Redis } from '@upstash/redis'
  * Redis round-trip costs almost nothing compared to a Serverless Function.
  */
 
-const SALT = process.env.RATE_LIMIT_SALT || 'zd-default-rate-limit-salt-change-me'
+const SALT = process.env.RATE_LIMIT_SALT
 
 /**
  * Hash an IP with SHA-256 + salt using the Web Crypto API (Edge-compatible).
@@ -49,6 +49,11 @@ const COOLDOWN_SECONDS = 300
 export default async function middleware(req: Request): Promise<Response | undefined> {
   // Skip when Redis is not configured (local development)
   if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+    return
+  }
+
+  if (!SALT) {
+    console.error('[middleware] RATE_LIMIT_SALT env var is not set. Skipping rate limiting.')
     return
   }
 

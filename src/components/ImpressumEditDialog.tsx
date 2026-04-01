@@ -31,7 +31,7 @@ export default function ImpressumEditDialog({ open, onOpenChange, impressum, onS
   }, [impressum])
 
   const update = (field: keyof Impressum, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }))
+    setForm((prev: Impressum) => ({ ...prev, [field]: value }))
   }
 
   const handleSave = () => {

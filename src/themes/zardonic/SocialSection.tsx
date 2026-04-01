@@ -1,10 +1,10 @@
 import { motion } from 'framer-motion'
-import { InstagramLogo, FacebookLogo, SpotifyLogo, YoutubeLogo, SoundcloudLogo, TiktokLogo } from '@phosphor-icons/react'
+import { InstagramLogo, FacebookLogo, SpotifyLogo, YoutubeLogo, SoundcloudLogo, TiktokLogo, type Icon as PhosphorIcon } from '@phosphor-icons/react'
 
 interface SocialLink {
   platform: string
   url: string
-  icon?: React.ComponentType<{ className?: string; weight?: string }>
+  icon?: PhosphorIcon
 }
 
 interface SocialSectionProps {

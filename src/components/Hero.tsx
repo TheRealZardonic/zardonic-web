@@ -6,12 +6,12 @@ import { CaretDown, PencilSimple } from '@phosphor-icons/react'
 import logoPng from '@/assets/images/baphomet no text.svg'
 import titlePng from '@/assets/images/titel.png'
 import {
-  HERO_LOGO_GLITCH_PROBABILITY,
-  HERO_LOGO_GLITCH_DURATION_MS,
-  HERO_LOGO_GLITCH_INTERVAL_MS,
-  HERO_TITLE_GLITCH_PROBABILITY,
-  HERO_TITLE_GLITCH_DURATION_MS,
-  HERO_TITLE_GLITCH_INTERVAL_MS,
+  LOGO_GLITCH_PROBABILITY,
+  LOGO_GLITCH_DURATION_MS,
+  LOGO_GLITCH_INTERVAL_MS,
+  SECTION_GLITCH_PROBABILITY,
+  SECTION_GLITCH_DURATION_MS,
+  SECTION_GLITCH_INTERVAL_MS,
 } from '@/lib/config'
 
 interface HeroProps {
@@ -29,18 +29,18 @@ export default function Hero({ name, genres, editMode, onEdit, logoUrl, titleIma
 
   useEffect(() => {
     const logoInterval = setInterval(() => {
-      if (Math.random() > HERO_LOGO_GLITCH_PROBABILITY) {
+      if (Math.random() > LOGO_GLITCH_PROBABILITY) {
         setGlitchLogo(true)
-        setTimeout(() => setGlitchLogo(false), HERO_LOGO_GLITCH_DURATION_MS)
+        setTimeout(() => setGlitchLogo(false), LOGO_GLITCH_DURATION_MS)
       }
-    }, HERO_LOGO_GLITCH_INTERVAL_MS)
+    }, LOGO_GLITCH_INTERVAL_MS)
 
     const titleInterval = setInterval(() => {
-      if (Math.random() > HERO_TITLE_GLITCH_PROBABILITY) {
+      if (Math.random() > SECTION_GLITCH_PROBABILITY) {
         setGlitchTitle(true)
-        setTimeout(() => setGlitchTitle(false), HERO_TITLE_GLITCH_DURATION_MS)
+        setTimeout(() => setGlitchTitle(false), SECTION_GLITCH_DURATION_MS)
       }
-    }, HERO_TITLE_GLITCH_INTERVAL_MS)
+    }, SECTION_GLITCH_INTERVAL_MS)
 
     return () => {
       clearInterval(logoInterval)

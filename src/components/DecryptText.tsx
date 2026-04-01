@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { get } from '@/lib/config'
+import { get, getString } from '@/lib/config'
 
 interface DecryptTextProps {
   children: string
@@ -33,7 +33,7 @@ export function DecryptText({ children, className = '', delay = 0 }: DecryptText
 
     const duration = get('TEXT_DECRYPT_DURATION_MS')
     const charDelay = get('TEXT_DECRYPT_CHAR_DELAY_MS')
-    const decryptChars = get('TEXT_DECRYPT_CHARS')
+    const decryptChars = getString('TEXT_DECRYPT_CHARS')
 
     const targetText = children
     const chars = decryptChars.split('')

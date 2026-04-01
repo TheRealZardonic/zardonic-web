@@ -42,7 +42,7 @@ const socialPlatforms = [
   { key: 'youtube' as keyof SocialLinks, icon: youtubeIcon, label: 'YouTube' },
   { key: 'tiktok' as keyof SocialLinks, icon: linkIcon, label: 'TikTok' },
   { key: 'twitter' as keyof SocialLinks, icon: linkIcon, label: 'Twitter' },
-  { key: 'linktr' as keyof SocialLinks, icon: linkIcon, label: 'Linktree' },
+  { key: 'linktree' as keyof SocialLinks, icon: linkIcon, label: 'Linktree' },
   { key: 'bandcamp' as keyof SocialLinks, icon: bandcampIcon, label: 'Bandcamp' }
 ]
 

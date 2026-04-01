@@ -229,7 +229,7 @@ export default function DatenschutzWindow({ isOpen, onClose, datenschutz, impres
       if (/^\d+\.\s/.test(trimmed)) {
         return (
           <h2 key={i} className="text-primary text-base mb-2 tracking-wider mt-4">
-            <SafeText>{trimmed}</SafeText>
+            <SafeText text={trimmed} />
           </h2>
         )
       }
@@ -238,14 +238,14 @@ export default function DatenschutzWindow({ isOpen, onClose, datenschutz, impres
         return (
           <ul key={i} className="text-foreground/80 text-xs leading-relaxed list-disc pl-4 space-y-1">
             {items.map((item, j) => (
-              <li key={j}><SafeText fontSize={12}>{item.replace(/^- /, '')}</SafeText></li>
+              <li key={j}><SafeText fontSize={12} text={item.replace(/^- /, '')} /></li>
             ))}
           </ul>
         )
       }
       return (
         <p key={i} className="text-foreground/80 text-xs leading-relaxed">
-          <SafeText fontSize={12}>{trimmed}</SafeText>
+          <SafeText fontSize={12} text={trimmed} />
         </p>
       )
     })

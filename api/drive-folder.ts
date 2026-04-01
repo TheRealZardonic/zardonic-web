@@ -10,8 +10,9 @@
 
 import { applyRateLimit } from './_ratelimit.js'
 import { driveFolderQuerySchema, validate } from './_schemas.js'
+import type { VercelRequest, VercelResponse } from '@vercel/node'
 
-export default async function handler(req, res) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
@@ -47,7 +48,7 @@ export default async function handler(req, res) {
     const data = await response.json()
     const files = data.files || []
 
-    const images = files.map((file) => {
+    const images = files.map((file: { id: string; name: string; mimeType: string }) => {
       const driveImageUrl = `https://lh3.googleusercontent.com/d/${file.id}`
       const resizeUrl = `https://wsrv.nl/?url=${encodeURIComponent(driveImageUrl)}&w=800&q=80`
       return {

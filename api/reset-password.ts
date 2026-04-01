@@ -5,6 +5,7 @@ import { hashPassword } from './auth.js'
 import { applyRateLimit } from './_ratelimit.js'
 import { resetPasswordSchema, confirmResetPasswordSchema, validate } from './_schemas.js'
 import { Resend } from 'resend'
+import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 // Check if KV is properly configured
 const isKVConfigured = () => {
@@ -14,7 +15,7 @@ const isKVConfigured = () => {
 const RESET_TOKEN_TTL = 600 // 10 minutes
 const RESET_TOKEN_KEY = 'admin-reset-token'
 
-export default async function handler(req, res) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') {
     return res.status(200).end()
   }

@@ -144,12 +144,13 @@ export default function ReleasesSection({ releases, editMode, onUpdate, fontSize
             try {
               const odesliLinks = await fetchOdesliLinks(appleMusicUrl)
               if (odesliLinks) {
+                const existing = release.streamingLinks || {}
                 release.streamingLinks = {
-                  ...release.streamingLinks,
-                  spotify: release.streamingLinks.spotify || odesliLinks.spotify,
-                  soundcloud: release.streamingLinks.soundcloud || odesliLinks.soundcloud,
-                  youtube: release.streamingLinks.youtube || odesliLinks.youtube,
-                  bandcamp: release.streamingLinks.bandcamp || odesliLinks.bandcamp,
+                  ...existing,
+                  spotify: existing.spotify || odesliLinks.spotify,
+                  soundcloud: existing.soundcloud || odesliLinks.soundcloud,
+                  youtube: existing.youtube || odesliLinks.youtube,
+                  bandcamp: existing.bandcamp || odesliLinks.bandcamp,
                 }
               }
             } catch (e) {
