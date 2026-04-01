@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // ---------------------------------------------------------------------------
 // Mock @vercel/kv (for reset-password handler) and @upstash/redis (for kv handler)
@@ -78,7 +79,7 @@ describe('Rate limiting integration', () => {
       mockApplyRateLimit.mockResolvedValue(true)
       mockKvGet.mockResolvedValue({ name: 'test' })
       const res = mockRes()
-      await kvHandler({ method: 'GET', query: { key: 'zardonic-band-data' }, body: {}, headers: {} }, res)
+      await kvHandler({ method: 'GET', query: { key: 'zardonic-band-data' }, body: {}, headers: {} } as unknown as VercelRequest, res)
       expect(mockApplyRateLimit).toHaveBeenCalled()
       expect(res.json).toHaveBeenCalledWith({ value: { name: 'test' } })
     })
@@ -93,7 +94,7 @@ describe('Rate limiting integration', () => {
         return false
       })
       const res = mockRes()
-      await kvHandler({ method: 'GET', query: { key: 'band-data' }, body: {}, headers: {} }, res)
+      await kvHandler({ method: 'GET', query: { key: 'band-data' }, body: {}, headers: {} } as unknown as VercelRequest, res)
       expect(res.status).toHaveBeenCalledWith(429)
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'Too Many Requests' }))
       // KV should not be called
@@ -102,7 +103,7 @@ describe('Rate limiting integration', () => {
 
     it('does not rate limit OPTIONS requests', async () => {
       const res = mockRes()
-      await kvHandler({ method: 'OPTIONS', query: {}, body: {}, headers: {} }, res)
+      await kvHandler({ method: 'OPTIONS', query: {}, body: {}, headers: {} } as unknown as VercelRequest, res)
       expect(res.status).toHaveBeenCalledWith(200)
       expect(mockApplyRateLimit).not.toHaveBeenCalled()
     })
@@ -118,7 +119,7 @@ describe('Rate limiting integration', () => {
         query: {},
         body: { key: 'band-data', value: 'test' },
         headers: {},
-      }, res)
+      } as unknown as VercelRequest, res)
       expect(res.status).toHaveBeenCalledWith(429)
       expect(mockKvSet).not.toHaveBeenCalled()
     })
@@ -134,7 +135,7 @@ describe('Rate limiting integration', () => {
         query: {},
         body: { email: 'wrong@example.com' },
         headers: {},
-      }, res)
+      } as unknown as VercelRequest, res)
       expect(mockApplyRateLimit).toHaveBeenCalled()
       // Should succeed (even for wrong email — returns same message)
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }))
@@ -154,7 +155,7 @@ describe('Rate limiting integration', () => {
         query: {},
         body: { email: 'admin@example.com' },
         headers: {},
-      }, res)
+      } as unknown as VercelRequest, res)
       expect(res.status).toHaveBeenCalledWith(429)
     })
   })

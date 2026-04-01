@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // ---------------------------------------------------------------------------
 // Mock @vercel/kv
@@ -57,7 +58,7 @@ describe('iTunes handler – 429 retry via fetchWithRetry', () => {
     mockFetchWithRetry.mockResolvedValue(okResponse(itunesData))
 
     const res = mockRes()
-    await itunesHandler({ query: { term: 'NEUROKLAST', entity: 'album' }, headers: {} }, res)
+    await itunesHandler({ query: { term: 'NEUROKLAST', entity: 'album' }, headers: {} } as unknown as VercelRequest, res)
 
     expect(mockFetchWithRetry).toHaveBeenCalledTimes(1)
     expect(res.status).toHaveBeenCalledWith(200)
@@ -68,7 +69,7 @@ describe('iTunes handler – 429 retry via fetchWithRetry', () => {
     mockFetchWithRetry.mockResolvedValue(okResponse({ resultCount: 0, results: [] }))
 
     const res = mockRes()
-    await itunesHandler({ query: { term: 'NEUROKLAST', entity: 'song' }, headers: {} }, res)
+    await itunesHandler({ query: { term: 'NEUROKLAST', entity: 'song' }, headers: {} } as unknown as VercelRequest, res)
 
     expect(mockFetchWithRetry).toHaveBeenCalledTimes(1)
     expect(mockFetchWithRetry.mock.calls[0][0]).toContain('itunes.apple.com')
@@ -82,7 +83,7 @@ describe('iTunes handler – 429 retry via fetchWithRetry', () => {
       .mockResolvedValueOnce(okResponse(albumData))
 
     const res = mockRes()
-    await itunesHandler({ query: { term: 'NEUROKLAST', entity: 'all' }, headers: {} }, res)
+    await itunesHandler({ query: { term: 'NEUROKLAST', entity: 'all' }, headers: {} } as unknown as VercelRequest, res)
 
     expect(mockFetchWithRetry).toHaveBeenCalledTimes(2)
     expect(res.status).toHaveBeenCalledWith(200)
@@ -95,7 +96,7 @@ describe('iTunes handler – 429 retry via fetchWithRetry', () => {
     mockFetchWithRetry.mockResolvedValue({ ok: false, status: 429, headers: { get: vi.fn() } })
 
     const res = mockRes()
-    await itunesHandler({ query: { term: 'NEUROKLAST', entity: 'album' }, headers: {} }, res)
+    await itunesHandler({ query: { term: 'NEUROKLAST', entity: 'album' }, headers: {} } as unknown as VercelRequest, res)
 
     expect(res.status).toHaveBeenCalledWith(500)
   })
@@ -118,7 +119,7 @@ describe('Odesli handler – 429 retry via fetchWithRetry', () => {
     mockFetchWithRetry.mockResolvedValue(okResponse(odesliData))
 
     const res = mockRes()
-    await odesliHandler({ query: { url: 'https://open.spotify.com/track/123' }, headers: {} }, res)
+    await odesliHandler({ query: { url: 'https://open.spotify.com/track/123' }, headers: {} } as unknown as VercelRequest, res)
 
     expect(mockFetchWithRetry).toHaveBeenCalledTimes(1)
     expect(mockFetchWithRetry.mock.calls[0][0]).toContain('api.song.link')
@@ -130,7 +131,7 @@ describe('Odesli handler – 429 retry via fetchWithRetry', () => {
     mockFetchWithRetry.mockResolvedValue({ ok: false, status: 429, headers: { get: vi.fn() } })
 
     const res = mockRes()
-    await odesliHandler({ query: { url: 'https://open.spotify.com/track/123' }, headers: {} }, res)
+    await odesliHandler({ query: { url: 'https://open.spotify.com/track/123' }, headers: {} } as unknown as VercelRequest, res)
 
     expect(res.status).toHaveBeenCalledWith(500)
   })

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // ---------------------------------------------------------------------------
 // Mock rate limiter
@@ -35,45 +36,45 @@ describe('Drive download API', () => {
 
   it('rejects non-GET methods with 405', async () => {
     const res = mockRes()
-    await handler({ method: 'POST', query: {}, headers: {} }, res)
+    await handler({ method: 'POST', query: {}, headers: {} } as unknown as VercelRequest, res)
     expect(res.status).toHaveBeenCalledWith(405)
     expect(res.json).toHaveBeenCalledWith({ error: 'Method not allowed' })
   })
 
   it('returns 400 for missing fileId', async () => {
     const res = mockRes()
-    await handler({ method: 'GET', query: {}, headers: {} }, res)
+    await handler({ method: 'GET', query: {}, headers: {} } as unknown as VercelRequest, res)
     expect(res.status).toHaveBeenCalledWith(400)
   })
 
   it('returns 400 for invalid fileId format', async () => {
     const res = mockRes()
-    await handler({ method: 'GET', query: { fileId: '../../../etc/passwd' }, headers: {} }, res)
+    await handler({ method: 'GET', query: { fileId: '../../../etc/passwd' }, headers: {} } as unknown as VercelRequest, res)
     expect(res.status).toHaveBeenCalledWith(400)
   })
 
   it('stops if rate limited', async () => {
     mockApplyRateLimit.mockResolvedValue(false)
     const res = mockRes()
-    await handler({ method: 'GET', query: { fileId: 'abc123' }, headers: {} }, res)
+    await handler({ method: 'GET', query: { fileId: 'abc123' }, headers: {} } as unknown as VercelRequest, res)
     expect(res.redirect).not.toHaveBeenCalled()
   })
 
   it('redirects to Google Drive download URL with 307 status', async () => {
     const res = mockRes()
-    await handler({ method: 'GET', query: { fileId: 'abc123' }, headers: {} }, res)
+    await handler({ method: 'GET', query: { fileId: 'abc123' }, headers: {} } as unknown as VercelRequest, res)
     expect(res.redirect).toHaveBeenCalledWith(307, 'https://drive.google.com/uc?export=download&id=abc123')
   })
 
   it('properly encodes fileId in redirect URL', async () => {
     const res = mockRes()
-    await handler({ method: 'GET', query: { fileId: 'test_file-123' }, headers: {} }, res)
+    await handler({ method: 'GET', query: { fileId: 'test_file-123' }, headers: {} } as unknown as VercelRequest, res)
     expect(res.redirect).toHaveBeenCalledWith(307, 'https://drive.google.com/uc?export=download&id=test_file-123')
   })
 
   it('always redirects regardless of file size', async () => {
     const res = mockRes()
-    await handler({ method: 'GET', query: { fileId: 'largeFileId' }, headers: {} }, res)
+    await handler({ method: 'GET', query: { fileId: 'largeFileId' }, headers: {} } as unknown as VercelRequest, res)
     expect(res.redirect).toHaveBeenCalledWith(307, 'https://drive.google.com/uc?export=download&id=largeFileId')
   })
 })

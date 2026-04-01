@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // ---------------------------------------------------------------------------
 // Mock @vercel/kv (for canary-alerts.ts)
@@ -166,7 +167,7 @@ describe('Canary Alerts API: GET /api/canary-alerts', () => {
 
   it('returns 405 for non-GET methods', async () => {
     const res = mockRes()
-    await canaryAlertsHandler({ method: 'POST', headers: {} }, res)
+    await canaryAlertsHandler({ method: 'POST', headers: {} } as unknown as VercelRequest, res)
     expect(res.status).toHaveBeenCalledWith(405)
   })
 
@@ -177,7 +178,7 @@ describe('Canary Alerts API: GET /api/canary-alerts', () => {
     ]
     mockKvLrange.mockResolvedValue(alertData)
     const res = mockRes()
-    await canaryAlertsHandler({ method: 'GET', headers: {} }, res)
+    await canaryAlertsHandler({ method: 'GET', headers: {} } as unknown as VercelRequest, res)
     expect(res.json).toHaveBeenCalledWith({
       alerts: [
         { token: 'abc123', hashedIp: 'hash1', timestamp: '2026-01-01T00:00:00Z' },
@@ -189,20 +190,20 @@ describe('Canary Alerts API: GET /api/canary-alerts', () => {
   it('returns empty array when no alerts exist', async () => {
     mockKvLrange.mockResolvedValue([])
     const res = mockRes()
-    await canaryAlertsHandler({ method: 'GET', headers: {} }, res)
+    await canaryAlertsHandler({ method: 'GET', headers: {} } as unknown as VercelRequest, res)
     expect(res.json).toHaveBeenCalledWith({ alerts: [] })
   })
 
   it('handles KV errors gracefully', async () => {
     mockKvLrange.mockRejectedValue(new Error('KV error'))
     const res = mockRes()
-    await canaryAlertsHandler({ method: 'GET', headers: {} }, res)
+    await canaryAlertsHandler({ method: 'GET', headers: {} } as unknown as VercelRequest, res)
     expect(res.status).toHaveBeenCalledWith(500)
   })
 
   it('returns 200 for OPTIONS (CORS preflight)', async () => {
     const res = mockRes()
-    await canaryAlertsHandler({ method: 'OPTIONS', headers: {} }, res)
+    await canaryAlertsHandler({ method: 'OPTIONS', headers: {} } as unknown as VercelRequest, res)
     expect(res.status).toHaveBeenCalledWith(200)
   })
 })

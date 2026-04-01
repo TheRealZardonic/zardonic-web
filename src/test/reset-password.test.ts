@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // ---------------------------------------------------------------------------
 // Mock @vercel/kv — must be declared before importing the handler
@@ -66,41 +67,41 @@ describe('Reset Password API handler', () => {
 
   it('OPTIONS returns 200', async () => {
     const res = mockRes()
-    await handler({ method: 'OPTIONS', query: {}, body: {}, headers: {} }, res)
+    await handler({ method: 'OPTIONS', query: {}, body: {}, headers: {} } as unknown as VercelRequest, res)
     expect(res.status).toHaveBeenCalledWith(200)
     expect(res.end).toHaveBeenCalled()
   })
 
   it('returns 405 for GET', async () => {
     const res = mockRes()
-    await handler({ method: 'GET', query: {}, body: {}, headers: {} }, res)
+    await handler({ method: 'GET', query: {}, body: {}, headers: {} } as unknown as VercelRequest, res)
     expect(res.status).toHaveBeenCalledWith(405)
   })
 
   it('returns 503 when KV is not configured', async () => {
     delete process.env.KV_REST_API_URL
     const res = mockRes()
-    await handler({ method: 'POST', query: {}, body: { email: 'admin@example.com' }, headers: {} }, res)
+    await handler({ method: 'POST', query: {}, body: { email: 'admin@example.com' }, headers: {} } as unknown as VercelRequest, res)
     expect(res.status).toHaveBeenCalledWith(503)
   })
 
   it('returns 503 when ADMIN_RESET_EMAIL is not set', async () => {
     delete process.env.ADMIN_RESET_EMAIL
     const res = mockRes()
-    await handler({ method: 'POST', query: {}, body: { email: 'admin@example.com' }, headers: {} }, res)
+    await handler({ method: 'POST', query: {}, body: { email: 'admin@example.com' }, headers: {} } as unknown as VercelRequest, res)
     expect(res.status).toHaveBeenCalledWith(503)
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'Password reset is not configured' }))
   })
 
   it('returns 400 when body is missing', async () => {
     const res = mockRes()
-    await handler({ method: 'POST', query: {}, body: null, headers: {} }, res)
+    await handler({ method: 'POST', query: {}, body: null, headers: {} } as unknown as VercelRequest, res)
     expect(res.status).toHaveBeenCalledWith(400)
   })
 
   it('returns 400 when email is missing', async () => {
     const res = mockRes()
-    await handler({ method: 'POST', query: {}, body: {}, headers: {} }, res)
+    await handler({ method: 'POST', query: {}, body: {}, headers: {} } as unknown as VercelRequest, res)
     expect(res.status).toHaveBeenCalledWith(400)
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'Required' }))
   })
@@ -108,7 +109,7 @@ describe('Reset Password API handler', () => {
   it('resets password when email matches', async () => {
     mockKvSet.mockResolvedValue('OK')
     const res = mockRes()
-    await handler({ method: 'POST', query: {}, body: { email: 'admin@example.com' }, headers: {} }, res)
+    await handler({ method: 'POST', query: {}, body: { email: 'admin@example.com' }, headers: {} } as unknown as VercelRequest, res)
     expect(mockKvSet).toHaveBeenCalledWith('admin-reset-token', expect.any(String), expect.objectContaining({ ex: 600 }))
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true, message: expect.stringContaining('reset link') }))
   })
@@ -116,14 +117,14 @@ describe('Reset Password API handler', () => {
   it('resets password with case-insensitive email match', async () => {
     mockKvSet.mockResolvedValue('OK')
     const res = mockRes()
-    await handler({ method: 'POST', query: {}, body: { email: 'Admin@Example.COM' }, headers: {} }, res)
+    await handler({ method: 'POST', query: {}, body: { email: 'Admin@Example.COM' }, headers: {} } as unknown as VercelRequest, res)
     expect(mockKvSet).toHaveBeenCalledWith('admin-reset-token', expect.any(String), expect.objectContaining({ ex: 600 }))
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true, message: expect.stringContaining('reset link') }))
   })
 
   it('returns same success message for non-matching email (prevents enumeration)', async () => {
     const res = mockRes()
-    await handler({ method: 'POST', query: {}, body: { email: 'wrong@example.com' }, headers: {} }, res)
+    await handler({ method: 'POST', query: {}, body: { email: 'wrong@example.com' }, headers: {} } as unknown as VercelRequest, res)
     expect(mockKvDel).not.toHaveBeenCalled()
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }))
   })
@@ -132,7 +133,7 @@ describe('Reset Password API handler', () => {
     mockKvSet.mockRejectedValue(new Error('KV failure'))
     const res = mockRes()
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-    await handler({ method: 'POST', query: {}, body: { email: 'admin@example.com' }, headers: {} }, res)
+    await handler({ method: 'POST', query: {}, body: { email: 'admin@example.com' }, headers: {} } as unknown as VercelRequest, res)
     expect(res.status).toHaveBeenCalledWith(500)
     consoleSpy.mockRestore()
   })

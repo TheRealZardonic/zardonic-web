@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // ---------------------------------------------------------------------------
 // Mock @upstash/redis
@@ -90,7 +91,7 @@ describe('Denied handler: robots.txt access violation response', () => {
     const promise = deniedHandler(req, res)
     await vi.advanceTimersByTimeAsync(10000)
     return promise
-  }
+  } as unknown as VercelRequest
 
   it('returns 403 with HTML content', async () => {
     const res = mockRes()

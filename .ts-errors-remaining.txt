@@ -1,0 +1,94 @@
+src/test/auth-security.test.ts(63,19): error TS2345: Argument of type '{ method: string; body: { newPassword: string; }; headers: { cookie: string; 'user-agent': string; }; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/auth-security.test.ts(85,19): error TS2345: Argument of type '{ method: string; body: { currentPassword: string; newPassword: string; }; headers: { cookie: string; 'user-agent': string; }; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/auth-security.test.ts(121,19): error TS2345: Argument of type '{ method: string; body: { currentPassword: string; newPassword: string; }; headers: { cookie: string; 'user-agent': string; }; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/auth-security.test.ts(155,19): error TS2345: Argument of type '{ method: string; body: { password: string; }; headers: { 'user-agent': string; }; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/auth-security.test.ts(190,19): error TS2345: Argument of type '{ method: string; body: { password: string; }; headers: { 'user-agent': string; 'x-forwarded-for': string; }; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/auth-security.test.ts(218,19): error TS2345: Argument of type '{ method: string; headers: { cookie: string; 'user-agent': string; }; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/bandsintown-sync.test.tsx(58,39): error TS2339: Property 'id' does not exist on type 'never'.
+src/test/configurable-security.test.ts(169,31): error TS2345: Argument of type '{ method: string; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/configurable-security.test.ts(180,31): error TS2345: Argument of type '{ method: string; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/configurable-security.test.ts(192,31): error TS2345: Argument of type '{ method: string; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/configurable-security.test.ts(199,31): error TS2345: Argument of type '{ method: string; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/configurable-security.test.ts(205,31): error TS2345: Argument of type '{ method: string; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/denied-handler.test.ts(90,40): error TS2345: Argument of type 'Res' is not assignable to parameter of type 'VercelResponse'.
+src/test/denied-handler.test.ts(98,7): error TS2345: Argument of type '{ method: string; query: { _src: string; }; headers: { 'user-agent': string; }; url: string; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/denied-handler.test.ts(110,7): error TS2345: Argument of type '{ method: string; query: { _src: string; }; headers: {}; url: string; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/denied-handler.test.ts(121,7): error TS2345: Argument of type '{ method: string; query: { _src: string; }; headers: { 'user-agent': string; }; url: string; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/denied-handler.test.ts(134,7): error TS2345: Argument of type '{ method: string; query: {}; headers: {}; url: string; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/denied-handler.test.ts(144,7): error TS2345: Argument of type '{ method: string; query: { _src: string; }; headers: {}; url: string; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/denied-handler.test.ts(157,9): error TS2345: Argument of type '{ method: string; query: { _src: string; }; headers: {}; url: string; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/denied-handler.test.ts(168,7): error TS2345: Argument of type '{ method: string; query: { _src: string; }; headers: {}; url: string; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/download-utils.test.ts(51,9): error TS2322: Type 'Mock<Procedure | Constructable>' is not assignable to type '() => void'.
+src/test/drive-download.test.ts(38,19): error TS2345: Argument of type '{ method: string; query: {}; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/drive-download.test.ts(45,19): error TS2345: Argument of type '{ method: string; query: {}; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/drive-download.test.ts(51,19): error TS2345: Argument of type '{ method: string; query: { fileId: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/drive-download.test.ts(58,19): error TS2345: Argument of type '{ method: string; query: { fileId: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/drive-download.test.ts(64,19): error TS2345: Argument of type '{ method: string; query: { fileId: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/drive-download.test.ts(70,19): error TS2345: Argument of type '{ method: string; query: { fileId: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/drive-download.test.ts(76,19): error TS2345: Argument of type '{ method: string; query: { fileId: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/drive-folder.test.ts(45,19): error TS2345: Argument of type '{ method: string; query: {}; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/drive-folder.test.ts(52,19): error TS2345: Argument of type '{ method: string; query: {}; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/drive-folder.test.ts(58,19): error TS2345: Argument of type '{ method: string; query: { folderId: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/drive-folder.test.ts(64,7): error TS2348: Value of type 'Mock<Procedure | Constructable>' is not callable. Did you mean to include 'new'?
+src/test/drive-folder.test.ts(68,19): error TS2345: Argument of type '{ method: string; query: { folderId: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/drive-folder.test.ts(79,19): error TS2345: Argument of type '{ method: string; query: { folderId: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/drive-folder.test.ts(103,19): error TS2345: Argument of type '{ method: string; query: { folderId: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/drive-folder.test.ts(132,19): error TS2345: Argument of type '{ method: string; query: { folderId: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/drive-folder.test.ts(139,19): error TS2345: Argument of type '{ method: string; query: { folderId: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/drive-folder.test.ts(147,19): error TS2345: Argument of type '{ method: string; query: { folderId: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/drive-folder.test.ts(158,19): error TS2345: Argument of type '{ method: string; query: { folderId: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/drive-folder.test.ts(172,19): error TS2345: Argument of type '{ method: string; query: { folderId: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/drive-folder.test.ts(180,19): error TS2345: Argument of type '{ method: string; query: { folderId: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/entropy-injection.test.ts(87,43): error TS2345: Argument of type '{ headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/entropy-injection.test.ts(94,43): error TS2345: Argument of type '{ headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/entropy-injection.test.ts(100,43): error TS2345: Argument of type '{ headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/entropy-injection.test.ts(110,26): error TS2345: Argument of type '{ setHeader: Mock<(k: string, v: string) => void>; }' is not assignable to parameter of type 'VercelResponse'.
+src/test/entropy-injection.test.ts(119,26): error TS2345: Argument of type '{ setHeader: Mock<Procedure>; }' is not assignable to parameter of type 'VercelResponse'.
+src/test/entropy-injection.test.ts(126,26): error TS2345: Argument of type '{ setHeader: Mock<(_k: string, v: string) => void>; }' is not assignable to parameter of type 'VercelResponse'.
+src/test/entropy-injection.test.ts(135,26): error TS2345: Argument of type '{ setHeader: Mock<(_k: string, v: string) => void>; }' is not assignable to parameter of type 'VercelResponse'.
+src/test/entropy-injection.test.ts(153,7): error TS2345: Argument of type '{ method: string; headers: { 'user-agent': string; }; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/entropy-injection.test.ts(186,23): error TS2345: Argument of type '{ setHeader: Mock<Procedure>; }' is not assignable to parameter of type 'VercelResponse'.
+src/test/entropy-injection.test.ts(205,27): error TS2345: Argument of type '{ setHeader: Mock<Procedure>; status: Mock<Procedure>; send: Mock<Procedure>; }' is not assignable to parameter of type 'VercelResponse'.
+src/test/entropy-injection.test.ts(227,27): error TS2345: Argument of type '{ setHeader: Mock<Procedure>; status: Mock<Procedure>; send: Mock<Procedure>; }' is not assignable to parameter of type 'VercelResponse'.
+src/test/itunes-odesli-retry.test.ts(60,25): error TS2345: Argument of type '{ query: { term: string; entity: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/itunes-odesli-retry.test.ts(71,25): error TS2345: Argument of type '{ query: { term: string; entity: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/itunes-odesli-retry.test.ts(85,25): error TS2345: Argument of type '{ query: { term: string; entity: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/itunes-odesli-retry.test.ts(98,25): error TS2345: Argument of type '{ query: { term: string; entity: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/itunes-odesli-retry.test.ts(121,25): error TS2345: Argument of type '{ query: { url: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/itunes-odesli-retry.test.ts(133,25): error TS2345: Argument of type '{ query: { url: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/rate-limit.test.ts(81,23): error TS2345: Argument of type '{ method: string; query: { key: string; }; body: {}; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/rate-limit.test.ts(89,9): error TS2348: Value of type 'Mock<Procedure | Constructable>' is not callable. Did you mean to include 'new'?
+src/test/rate-limit.test.ts(96,23): error TS2345: Argument of type '{ method: string; query: { key: string; }; body: {}; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/rate-limit.test.ts(105,23): error TS2345: Argument of type '{ method: string; query: {}; body: {}; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/rate-limit.test.ts(112,9): error TS2348: Value of type 'Mock<Procedure | Constructable>' is not callable. Did you mean to include 'new'?
+src/test/rate-limit.test.ts(116,23): error TS2345: Argument of type '{ method: string; query: {}; body: { key: string; value: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/rate-limit.test.ts(132,26): error TS2345: Argument of type '{ method: string; query: {}; body: { email: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/rate-limit.test.ts(145,9): error TS2348: Value of type 'Mock<Procedure | Constructable>' is not callable. Did you mean to include 'new'?
+src/test/rate-limit.test.ts(152,26): error TS2345: Argument of type '{ method: string; query: {}; body: { email: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/rate-limit.test.ts(211,58): error TS2339: Property 'split' does not exist on type 'never'.
+src/test/ratelimit.test.ts(113,46): error TS2345: Argument of type 'MockRes' is not assignable to parameter of type 'VercelResponse'.
+src/test/ratelimit.test.ts(122,46): error TS2345: Argument of type 'MockRes' is not assignable to parameter of type 'VercelResponse'.
+src/test/ratelimit.test.ts(134,46): error TS2345: Argument of type 'MockRes' is not assignable to parameter of type 'VercelResponse'.
+src/test/reset-password.test.ts(69,19): error TS2345: Argument of type '{ method: string; query: {}; body: {}; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/reset-password.test.ts(76,19): error TS2345: Argument of type '{ method: string; query: {}; body: {}; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/reset-password.test.ts(83,19): error TS2345: Argument of type '{ method: string; query: {}; body: { email: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/reset-password.test.ts(90,19): error TS2345: Argument of type '{ method: string; query: {}; body: { email: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/reset-password.test.ts(97,19): error TS2345: Argument of type '{ method: string; query: {}; body: null; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/reset-password.test.ts(103,19): error TS2345: Argument of type '{ method: string; query: {}; body: {}; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/reset-password.test.ts(111,19): error TS2345: Argument of type '{ method: string; query: {}; body: { email: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/reset-password.test.ts(119,19): error TS2345: Argument of type '{ method: string; query: {}; body: { email: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/reset-password.test.ts(126,19): error TS2345: Argument of type '{ method: string; query: {}; body: { email: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/reset-password.test.ts(135,19): error TS2345: Argument of type '{ method: string; query: {}; body: { email: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/terminal-api.test.ts(52,19): error TS2345: Argument of type '{ method: string; body: {}; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/terminal-api.test.ts(59,19): error TS2345: Argument of type '{ method: string; body: {}; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/terminal-api.test.ts(65,19): error TS2345: Argument of type '{ method: string; body: null; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/terminal-api.test.ts(71,19): error TS2345: Argument of type '{ method: string; body: {}; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/terminal-api.test.ts(77,19): error TS2345: Argument of type '{ method: string; body: { command: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/terminal-api.test.ts(84,19): error TS2345: Argument of type '{ method: string; body: { command: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/terminal-api.test.ts(96,19): error TS2345: Argument of type '{ method: string; body: { command: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/terminal-api.test.ts(108,19): error TS2345: Argument of type '{ method: string; body: { command: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/terminal-api.test.ts(115,19): error TS2345: Argument of type '{ method: string; body: { command: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/terminal-api.test.ts(129,19): error TS2345: Argument of type '{ method: string; body: { command: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/terminal-api.test.ts(136,19): error TS2345: Argument of type '{ method: string; body: { command: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/terminal-api.test.ts(144,19): error TS2345: Argument of type '{ method: string; body: { command: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
+src/test/terminal-api.test.ts(152,19): error TS2345: Argument of type '{ method: string; body: { command: string; }; headers: {}; }' is not assignable to parameter of type 'VercelRequest'.
