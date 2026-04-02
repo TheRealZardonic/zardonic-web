@@ -183,7 +183,7 @@ export async function loadSiteData(): Promise<SanitySiteData> {
     gigs,
     members,
     friends,
-    news,
+    _news,
     gallery,
     mediaFiles,
     creditHighlights,

@@ -160,7 +160,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           : undefined
 
         // Fetch cross-platform links via Odesli
-        let streamingLinks: Record<string, string> = {}
+        const streamingLinks: Record<string, string> = {}
         const appleMusicUrl = track.collectionViewUrl || track.trackViewUrl
         if (appleMusicUrl) {
           streamingLinks.appleMusic = appleMusicUrl
