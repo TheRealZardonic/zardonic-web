@@ -55,6 +55,21 @@ export function SpotifyEmbed({
   const initializedRef = useRef(false)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  const handleConsent = useCallback(() => setIsLoaded(true), [])
+
+  const handleConsentKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      setIsLoaded(true)
+    }
+  }, [])
+
+  const handleRetry = useCallback(() => {
+    setHasError(false)
+    initializedRef.current = false
+    setIsLoaded(false)
+  }, [])
+
   const createPlayer = useCallback(
     (IFrameAPI: SpotifyIFrameAPI) => {
       if (!containerRef.current || initializedRef.current) return
@@ -145,8 +160,8 @@ export function SpotifyEmbed({
         aria-label="Load Spotify Player"
         className={`flex flex-col items-center justify-center bg-black/40 border border-primary/20 cursor-pointer hover:bg-primary/5 hover:border-primary/50 transition-all group ${className}`}
         style={{ width, height }}
-        onClick={() => setIsLoaded(true)}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsLoaded(true) } }}
+        onClick={handleConsent}
+        onKeyDown={handleConsentKeyDown}
       >
         <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center group-hover:scale-110 group-hover:bg-primary/30 transition-transform">
           <Play weight="fill" className="w-8 h-8 text-primary ml-1" />
@@ -174,7 +189,7 @@ export function SpotifyEmbed({
           Spotify player could not be loaded.
         </p>
         <button
-          onClick={() => { setHasError(false); initializedRef.current = false; setIsLoaded(false) }}
+          onClick={handleRetry}
           className="mt-3 font-mono text-xs text-primary hover:underline"
         >
           Try again
