@@ -7,7 +7,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
  * @example
  * ```ts
  * setSiteData((data) => {
- *   if (!data) return SKIP_UPDATE as any
+ *   if (!data) return SKIP_UPDATE
  *   return { ...data, newField: 'value' }
  * })
  * ```

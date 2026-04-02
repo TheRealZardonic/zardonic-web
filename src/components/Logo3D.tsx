@@ -43,7 +43,7 @@ function GLBModel({ scrollY }: { scrollY: number }) {
   const groupRef = useRef<Group>(null)
   const [model, setModel] = useState<THREE.Object3D | null>(null)
   const [error, setError] = useState(false)
-  const [gltf, setGltf] = useState<any>(null)
+  const [gltf, setGltf] = useState<{ scene: THREE.Object3D } | null>(null)
 
   useEffect(() => {
     let mounted = true

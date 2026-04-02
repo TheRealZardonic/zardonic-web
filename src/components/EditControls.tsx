@@ -293,7 +293,7 @@ export default function EditControls({
             >
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-bold font-mono uppercase">Section Visibility</h3>
-                <button onClick={() => setShowVisibilityPanel(false)} className="text-muted-foreground hover:text-foreground">
+                <button onClick={() => setShowVisibilityPanel(false)} className="text-muted-foreground hover:text-foreground" aria-label="Close section visibility panel">
                   <X size={20} />
                 </button>
               </div>
@@ -332,7 +332,7 @@ export default function EditControls({
             >
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-bold font-mono uppercase">Theme</h3>
-                <button onClick={() => setShowThemePanel(false)} className="text-muted-foreground hover:text-foreground">
+                <button onClick={() => setShowThemePanel(false)} className="text-muted-foreground hover:text-foreground" aria-label="Close theme panel">
                   <X size={20} />
                 </button>
               </div>
@@ -581,7 +581,7 @@ export default function EditControls({
             >
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-bold font-mono uppercase">Animations</h3>
-                <button onClick={() => setShowAnimationPanel(false)} className="text-muted-foreground hover:text-foreground">
+                <button onClick={() => setShowAnimationPanel(false)} className="text-muted-foreground hover:text-foreground" aria-label="Close animation panel">
                   <X size={20} />
                 </button>
               </div>
@@ -721,7 +721,7 @@ export default function EditControls({
             >
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-bold font-mono uppercase">Progressive Overlay Modes</h3>
-                <button onClick={() => setShowProgressiveModesPanel(false)} className="text-muted-foreground hover:text-foreground">
+                <button onClick={() => setShowProgressiveModesPanel(false)} className="text-muted-foreground hover:text-foreground" aria-label="Close progressive modes panel">
                   <X size={20} />
                 </button>
               </div>
@@ -763,7 +763,7 @@ export default function EditControls({
             >
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-bold font-mono uppercase">Reorder Sections</h3>
-                <button onClick={() => setShowReorderPanel(false)} className="text-muted-foreground hover:text-foreground">
+                <button onClick={() => setShowReorderPanel(false)} className="text-muted-foreground hover:text-foreground" aria-label="Close reorder panel">
                   <X size={20} />
                 </button>
               </div>
@@ -776,6 +776,7 @@ export default function EditControls({
                         onClick={() => moveSectionUp(index)}
                         disabled={index === 0}
                         className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+                        aria-label={`Move ${sectionDisplayNames[section] ?? section} up`}
                         title="Move up"
                       >
                         <ArrowUp size={16} />
@@ -784,6 +785,7 @@ export default function EditControls({
                         onClick={() => moveSectionDown(index)}
                         disabled={index === currentOrder.length - 1}
                         className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+                        aria-label={`Move ${sectionDisplayNames[section] ?? section} down`}
                         title="Move down"
                       >
                         <ArrowDown size={16} />
@@ -823,6 +825,7 @@ export default function EditControls({
                 className="bg-secondary hover:bg-secondary/80 active:scale-90 w-10 h-10 md:w-12 md:h-12 rounded-full shadow-lg transition-all touch-manipulation"
                 size="icon"
                 title="Export data as JSON"
+                aria-label="Export data as JSON"
               >
                 <Export size={18} weight="bold" />
               </Button>
@@ -831,6 +834,7 @@ export default function EditControls({
                 className="bg-secondary hover:bg-secondary/80 active:scale-90 w-10 h-10 md:w-12 md:h-12 rounded-full shadow-lg transition-all touch-manipulation"
                 size="icon"
                 title="Import data from JSON file"
+                aria-label="Import data from JSON file"
               >
                 <ArrowSquareIn size={18} weight="bold" />
               </Button>
@@ -839,6 +843,7 @@ export default function EditControls({
                 className="bg-secondary hover:bg-secondary/80 active:scale-90 w-10 h-10 md:w-12 md:h-12 rounded-full shadow-lg transition-all touch-manipulation"
                 size="icon"
                 title="Toggle section visibility"
+                aria-label="Toggle section visibility"
               >
                 {Object.values(vis).some((v) => v === false) ? (
                   <EyeSlash size={18} weight="bold" />
@@ -851,6 +856,7 @@ export default function EditControls({
                 className="bg-secondary hover:bg-secondary/80 active:scale-90 w-10 h-10 md:w-12 md:h-12 rounded-full shadow-lg transition-all touch-manipulation"
                 size="icon"
                 title="Customize theme, colors, fonts"
+                aria-label="Customize theme, colors, fonts"
               >
                 <Palette size={18} weight="bold" />
               </Button>
@@ -859,6 +865,7 @@ export default function EditControls({
                 className="bg-secondary hover:bg-secondary/80 active:scale-90 w-10 h-10 md:w-12 md:h-12 rounded-full shadow-lg transition-all touch-manipulation"
                 size="icon"
                 title="Animation settings"
+                aria-label="Animation settings"
               >
                 <GearSix size={18} weight="bold" />
               </Button>
@@ -867,6 +874,7 @@ export default function EditControls({
                 className="bg-secondary hover:bg-secondary/80 active:scale-90 w-10 h-10 md:w-12 md:h-12 rounded-full shadow-lg transition-all touch-manipulation"
                 size="icon"
                 title="Progressive overlay loading modes"
+                aria-label="Progressive overlay loading modes"
               >
                 <Sliders size={18} weight="bold" />
               </Button>
@@ -875,6 +883,7 @@ export default function EditControls({
                 className="bg-secondary hover:bg-secondary/80 active:scale-90 w-10 h-10 md:w-12 md:h-12 rounded-full shadow-lg transition-all touch-manipulation"
                 size="icon"
                 title="Reorder sections"
+                aria-label="Reorder sections"
               >
                 <ArrowsVertical size={18} weight="bold" />
               </Button>
@@ -884,6 +893,7 @@ export default function EditControls({
                   className="bg-secondary hover:bg-secondary/80 active:scale-90 w-10 h-10 md:w-12 md:h-12 rounded-full shadow-lg transition-all touch-manipulation"
                   size="icon"
                   title="View site statistics"
+                  aria-label="View site statistics"
                 >
                   <ChartLine size={18} weight="bold" />
                 </Button>
@@ -894,6 +904,7 @@ export default function EditControls({
                   className="bg-secondary hover:bg-secondary/80 active:scale-90 w-10 h-10 md:w-12 md:h-12 rounded-full shadow-lg transition-all touch-manipulation"
                   size="icon"
                   title="Security incidents"
+                  aria-label="Security incidents"
                 >
                   <ShieldWarning size={18} weight="bold" />
                 </Button>
@@ -904,6 +915,7 @@ export default function EditControls({
                   className="bg-secondary hover:bg-secondary/80 active:scale-90 w-10 h-10 md:w-12 md:h-12 rounded-full shadow-lg transition-all touch-manipulation"
                   size="icon"
                   title="Security settings"
+                  aria-label="Security settings"
                 >
                   <ShieldCheck size={18} weight="bold" />
                 </Button>
@@ -914,6 +926,7 @@ export default function EditControls({
                   className="bg-secondary hover:bg-secondary/80 active:scale-90 w-10 h-10 md:w-12 md:h-12 rounded-full shadow-lg transition-all touch-manipulation"
                   size="icon"
                   title="Manage blocklist"
+                  aria-label="Manage blocklist"
                 >
                   <ProhibitInset size={18} weight="bold" />
                 </Button>
@@ -924,6 +937,7 @@ export default function EditControls({
                   className="bg-secondary hover:bg-secondary/80 active:scale-90 w-10 h-10 md:w-12 md:h-12 rounded-full shadow-lg transition-all touch-manipulation"
                   size="icon"
                   title="Contact inbox"
+                  aria-label="Contact inbox"
                 >
                   <Envelope size={18} weight="bold" />
                 </Button>
@@ -934,6 +948,7 @@ export default function EditControls({
                   className="bg-secondary hover:bg-secondary/80 active:scale-90 w-10 h-10 md:w-12 md:h-12 rounded-full shadow-lg transition-all touch-manipulation"
                   size="icon"
                   title="Subscriber list"
+                  aria-label="Subscriber list"
                 >
                   <Users size={18} weight="bold" />
                 </Button>
@@ -950,6 +965,7 @@ export default function EditControls({
                 className="bg-secondary hover:bg-secondary/80 active:scale-90 w-10 h-10 md:w-12 md:h-12 rounded-full shadow-lg transition-all touch-manipulation"
                 size="icon"
                 title={hasPassword ? 'Change admin password' : 'Set admin password'}
+                aria-label={hasPassword ? 'Change admin password' : 'Set admin password'}
               >
                 <Key size={18} weight="bold" />
               </Button>
@@ -970,6 +986,7 @@ export default function EditControls({
                 onClick={onToggleEdit}
                 className="bg-destructive hover:bg-destructive/90 active:scale-90 w-14 h-14 md:w-16 md:h-16 rounded-full shadow-xl transition-all touch-manipulation"
                 size="icon"
+                aria-label="Exit edit mode"
               >
                 <X size={24} weight="bold" />
               </Button>
@@ -986,6 +1003,7 @@ export default function EditControls({
                 onClick={onToggleEdit}
                 className="bg-primary hover:bg-accent active:scale-90 w-14 h-14 md:w-16 md:h-16 rounded-full shadow-xl transition-all touch-manipulation"
                 size="icon"
+                aria-label="Enter edit mode"
               >
                 <Pencil size={24} weight="bold" />
               </Button>

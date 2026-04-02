@@ -22,7 +22,6 @@ vi.mock('../../api/_fetch-retry.js', () => ({
   fetchWithRetry: (...args: unknown[]) => mockFetchWithRetry(...args),
 }))
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Res = { status: ReturnType<typeof vi.fn>; json: ReturnType<typeof vi.fn>; end: ReturnType<typeof vi.fn> }
 
 function mockRes() {

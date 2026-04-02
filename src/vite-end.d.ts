@@ -11,11 +11,11 @@ declare module 'three/addons/loaders/GLTFLoader.js' {
   export interface GLTF {
     scene: Group
     scenes: Group[]
-    animations: any[]
-    cameras: any[]
-    asset: any
-    parser: any
-    userData: any
+    animations: unknown[]
+    cameras: unknown[]
+    asset: unknown
+    parser: unknown
+    userData: Record<string, unknown>
   }
 
   export class GLTFLoader extends Loader {

@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
-import { useLocalStorage } from '@/hooks/use-local-storage'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useKV, SKIP_UPDATE } from '@/hooks/use-kv'
 import { useKonami } from '@/hooks/use-konami'
-import { useAnalytics, trackClick, trackPageView, trackHeatmapClick, trackRedirect } from '@/hooks/use-analytics'
-import { fetchITunesReleases, type ITunesRelease } from '@/lib/itunes'
+import { trackPageView, trackHeatmapClick } from '@/hooks/use-analytics'
+import { fetchITunesReleases } from '@/lib/itunes'
 import { fetchOdesliLinks } from '@/lib/odesli'
 import { fetchBandsintownEvents } from '@/lib/bandsintown'
 import { toDirectImageUrl, normalizeImageUrl } from '@/lib/image-cache'
@@ -19,12 +18,6 @@ import { loginWithPassword, setupPassword, validateSession, hashPassword } from 
 import { getSyncTimestamps, updateReleasesSync, updateGigsSync } from '@/lib/sync'
 import type { AdminSettings } from '@/lib/types'
 import {
-  Play,
-  Pause,
-  SkipBack,
-  SkipForward,
-  SpeakerHigh,
-  SpeakerX,
   List,
   X,
   InstagramLogo,
@@ -40,14 +33,6 @@ import {
   Upload,
   Trash,
   Plus,
-  CaretLeft,
-  CaretRight,
-  GearSix,
-  ChartLine,
-  Download,
-  FolderOpen,
-  Terminal as TerminalIcon,
-  Check,
   User,
   SoundcloudLogo,
   TiktokLogo,
@@ -64,16 +49,12 @@ import {
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Slider } from '@/components/ui/slider'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
 import { Toaster } from '@/components/ui/sonner'
 import { toast } from 'sonner'
 import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
-import { Switch } from '@/components/ui/switch'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { SwipeableGallery } from '@/components/SwipeableGallery'
 import { LoadingScreen } from '@/components/LoadingScreen'
 import { CircuitBackground } from '@/components/CircuitBackground'
@@ -194,12 +175,6 @@ export interface SiteData {
   }
 }
 
-interface AnalyticsData {
-  pageViews: number
-  sectionViews: { [key: string]: number }
-  clicks: { [key: string]: number }
-  visitors: { date: string; count: number }[]
-}
 
 const OVERLAY_LOADING_TEXTS = [
   '> ACCESSING PROFILE...',
@@ -393,8 +368,7 @@ In the end, Zardonic will unite listeners with Superstars.
 
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0)
-  const [volume, setVolume] = useState([80])
-  const [progress, setProgress] = useState(0)
+  const [volume] = useState([80])
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [editMode, setEditMode] = useState(false)
   const [showConfigEditor, setShowConfigEditor] = useState(false)
@@ -589,7 +563,7 @@ In the end, Zardonic will unite listeners with Superstars.
   const [galleryIndex, setGalleryIndex] = useState<number | null>(null)
   const [editingGig, setEditingGig] = useState<Gig | null>(null)
   const [editingRelease, setEditingRelease] = useState<Release | null>(null)
-  const [cyberpunkOverlay, setCyberpunkOverlay] = useState<{type: 'gig' | 'release' | 'member' | 'impressum' | 'privacy' | 'contact', data?: any} | null>(null)
+  const [cyberpunkOverlay, setCyberpunkOverlay] = useState<{type: 'gig' | 'release' | 'member' | 'impressum' | 'privacy' | 'contact', data?: unknown} | null>(null)
   const [language, setLanguage] = useState<'en' | 'de'>('en')
   const [iTunesFetching, setITunesFetching] = useState(false)
   const [bandsintownFetching, setBandsintownFetching] = useState(false)
@@ -723,7 +697,7 @@ In the end, Zardonic will unite listeners with Superstars.
       setSiteData((data) => {
         if (!data) {
           console.warn('siteData is undefined during iTunes sync, skipping update')
-          return SKIP_UPDATE as any
+          return SKIP_UPDATE
         }
         const existingIds = new Set(data.releases.map(r => r.id))
         const newReleases: Release[] = iTunesReleases
@@ -791,7 +765,7 @@ In the end, Zardonic will unite listeners with Superstars.
       setSiteData((data) => {
         if (!data) {
           console.warn('siteData is undefined during Bandsintown sync, skipping update')
-          return SKIP_UPDATE as any
+          return SKIP_UPDATE
         }
         const existingIds = new Set(data.gigs.map(g => g.id))
         const newGigs: Gig[] = events
@@ -920,7 +894,7 @@ In the end, Zardonic will unite listeners with Superstars.
     setSiteData((data) => {
       if (!data) {
         console.warn('siteData is undefined during gig save, skipping update')
-        return SKIP_UPDATE as any
+        return SKIP_UPDATE
       }
       const gigIndex = data.gigs.findIndex(g => g.id === gig.id)
       if (gigIndex >= 0) {
@@ -958,7 +932,7 @@ In the end, Zardonic will unite listeners with Superstars.
     setSiteData((data) => {
       if (!data) {
         console.warn('siteData is undefined during release save, skipping update')
-        return SKIP_UPDATE as any
+        return SKIP_UPDATE
       }
       const releaseIndex = data.releases.findIndex(r => r.id === release.id)
       if (releaseIndex >= 0) {
@@ -981,7 +955,7 @@ In the end, Zardonic will unite listeners with Superstars.
     setSiteData((data) => {
       if (!data) {
         console.warn('siteData is undefined during gallery image delete, skipping update')
-        return SKIP_UPDATE as any
+        return SKIP_UPDATE
       }
       const newGallery = [...data.gallery]
       newGallery.splice(index, 1)
