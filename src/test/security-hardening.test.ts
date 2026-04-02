@@ -137,7 +137,8 @@ describe('vercel.json Content-Security-Policy', () => {
     const scriptSrc = cspHeader.value.match(/script-src ([^;]+)/)
     expect(scriptSrc).toBeTruthy()
     expect(scriptSrc[1]).not.toContain("'unsafe-inline'")
-    expect(scriptSrc[1].trim()).toBe("'self'")
+    // Spotify IFrame API requires its own origin in script-src (two-click GDPR consent)
+    expect(scriptSrc[1].trim()).toBe("'self' https://open.spotify.com")
   })
 
   it('allows inline styles', () => {
@@ -156,8 +157,8 @@ describe('vercel.json Content-Security-Policy', () => {
     expect(connectSrcValue).toContain("'self'")
     expect(connectSrcValue).not.toContain('*')
     // Verify only known trusted origins are present
-    const allowed = ["'self'", 'https://api.spotify.com', 'https://api.song.link',
-      'https://rest.bandsintown.com', 'https://itunes.apple.com', 'https://wsrv.nl']
+    const allowed = ["'self'", 'https://api.spotify.com', 'https://open.spotify.com',
+      'https://api.song.link', 'https://rest.bandsintown.com', 'https://itunes.apple.com', 'https://wsrv.nl']
     const domains = connectSrcValue.split(/\s+/)
     for (const domain of domains) {
       expect(allowed).toContain(domain)
