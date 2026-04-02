@@ -43,14 +43,16 @@ function GLBModel({ scrollY }: { scrollY: number }) {
   const groupRef = useRef<Group>(null)
   const [model, setModel] = useState<THREE.Object3D | null>(null)
   const [error, setError] = useState(false)
-  const [gltf, setGltf] = useState<any>(null)
+  const [gltf, setGltf] = useState<{ scene: THREE.Object3D } | null>(null)
 
   useEffect(() => {
     let mounted = true
 
     const loadModel = async () => {
       try {
-        const loadedGltf = await useGLTF.preload(modelFile)
+        // useGLTF.preload is typed as void-returning but actually returns the cached GLTF
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const loadedGltf = await (useGLTF.preload(modelFile) as unknown as Promise<{ scene: THREE.Object3D }>)
         if (mounted) {
           setGltf(loadedGltf)
         }

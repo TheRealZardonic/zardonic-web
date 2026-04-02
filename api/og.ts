@@ -67,17 +67,24 @@ interface ContentMeta {
   hash: string
 }
 
+/** Minimal shape of the site-data blob stored in Redis (only fields used here). */
+interface SiteDataBlob {
+  name?: string
+  logoUrl?: string
+  news?: Array<{ id: string; text?: string; details?: string; photo?: string }>
+  gigs?: Array<{ id: string; venue?: string; location?: string; date?: string; photo?: string }>
+  releases?: Array<{ id: string; title?: string; type?: string; description?: string; artwork?: string }>
+}
+
 /**
  * Look up the content item and return { title, description, image, hash }.
  * `hash` is the SPA fragment the browser should navigate to.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function resolveContent(data: any, type: string, id: string): ContentMeta | null {
+function resolveContent(data: SiteDataBlob, type: string, id: string): ContentMeta | null {
   if (!data || !type || !id) return null
 
   if (type === 'news') {
-    const items: any[] = data.news || []
-    const item = items.find((n: any) => n.id === id)
+    const item = (data.news ?? []).find((n) => n.id === id)
     if (!item) return null
     return {
       title: plainText(item.text, 70) || FALLBACK_TITLE,
@@ -88,8 +95,7 @@ function resolveContent(data: any, type: string, id: string): ContentMeta | null
   }
 
   if (type === 'gig') {
-    const items: any[] = data.gigs || []
-    const item = items.find((g: any) => g.id === id)
+    const item = (data.gigs ?? []).find((g) => g.id === id)
     if (!item) return null
     const dateStr = fmtDate(item.date)
     return {
@@ -101,8 +107,7 @@ function resolveContent(data: any, type: string, id: string): ContentMeta | null
   }
 
   if (type === 'release') {
-    const items: any[] = data.releases || []
-    const item = items.find((r: any) => r.id === id)
+    const item = (data.releases ?? []).find((r) => r.id === id)
     if (!item) return null
     const typeLabel = item.type ? ` (${esc(item.type).toUpperCase()})` : ''
     return {
@@ -177,17 +182,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(302).end()
   }
 
-  let data: unknown = null
+  let data: SiteDataBlob | null = null
   try {
     const redis = getRedis()
     if (redis) {
-      data = await redis.get('zardonic-band-data')
+      data = await redis.get<SiteDataBlob>('zardonic-band-data')
     }
   } catch {
     // Redis unavailable — fall through to fallback
   }
 
-  const meta = resolveContent(data, type, id)
+  const meta = resolveContent(data ?? {}, type, id)
 
   if (!meta) {
     const fallback: ContentMeta = {

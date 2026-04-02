@@ -1,0 +1,69 @@
+import React from 'react'
+import LanguageSwitcher from '@/components/LanguageSwitcher'
+import { Lock } from '@phosphor-icons/react'
+
+interface AppFooterProps {
+  artistName: string
+  isOwner: boolean
+  adminPasswordHash: string
+  setShowLoginDialog: (v: boolean) => void
+  setShowSetupDialog: (v: boolean) => void
+  setCyberpunkOverlay: (overlay: { type: 'impressum' | 'privacy' | 'contact' } | null) => void
+  setLanguage: (lang: 'en' | 'de') => void
+}
+
+export default function AppFooter({
+  artistName,
+  isOwner,
+  adminPasswordHash,
+  setShowLoginDialog,
+  setShowSetupDialog,
+  setCyberpunkOverlay,
+  setLanguage,
+}: AppFooterProps) {
+  return (
+    <footer className="py-12 px-4 border-t border-border noise-effect">
+      <div className="container mx-auto text-center space-y-4">
+        <div className="flex justify-center gap-6 flex-wrap">
+          <button
+            onClick={() => {
+              setLanguage('en')
+              setCyberpunkOverlay({ type: 'impressum' })
+            }}
+            className="text-sm text-muted-foreground hover:text-primary transition-colors uppercase tracking-wide font-mono hover-chromatic cursor-pointer"
+          >
+            Impressum
+          </button>
+          <button
+            onClick={() => {
+              setLanguage('en')
+              setCyberpunkOverlay({ type: 'privacy' })
+            }}
+            className="text-sm text-muted-foreground hover:text-primary transition-colors uppercase tracking-wide font-mono hover-chromatic cursor-pointer"
+          >
+            Privacy Policy / Datenschutz-erklärung
+          </button>
+          <button
+            onClick={() => setCyberpunkOverlay({ type: 'contact' })}
+            className="text-sm text-muted-foreground hover:text-primary transition-colors uppercase tracking-wide font-mono hover-chromatic cursor-pointer"
+          >
+            Contact
+          </button>
+          {!isOwner && (
+            <button
+              onClick={() => adminPasswordHash ? setShowLoginDialog(true) : setShowSetupDialog(true)}
+              className="text-sm text-muted-foreground/40 hover:text-primary/60 transition-colors font-mono cursor-pointer"
+              title="Admin"
+            >
+              <Lock size={14} />
+            </button>
+          )}
+          <LanguageSwitcher />
+        </div>
+        <p className="text-sm text-muted-foreground uppercase tracking-wide font-mono hover-chromatic">
+          © {new Date().getFullYear()} {artistName}
+        </p>
+      </div>
+    </footer>
+  )
+}

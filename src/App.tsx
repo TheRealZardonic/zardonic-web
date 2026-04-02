@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
-import { useLocalStorage } from '@/hooks/use-local-storage'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useKV, SKIP_UPDATE } from '@/hooks/use-kv'
 import { useKonami } from '@/hooks/use-konami'
-import { useAnalytics, trackClick, trackPageView, trackHeatmapClick, trackRedirect } from '@/hooks/use-analytics'
-import { fetchITunesReleases, type ITunesRelease } from '@/lib/itunes'
+import { trackPageView, trackHeatmapClick } from '@/hooks/use-analytics'
+import { fetchITunesReleases } from '@/lib/itunes'
 import { fetchOdesliLinks } from '@/lib/odesli'
 import { fetchBandsintownEvents } from '@/lib/bandsintown'
 import { toDirectImageUrl, normalizeImageUrl } from '@/lib/image-cache'
@@ -19,12 +18,6 @@ import { loginWithPassword, setupPassword, validateSession, hashPassword } from 
 import { getSyncTimestamps, updateReleasesSync, updateGigsSync } from '@/lib/sync'
 import type { AdminSettings } from '@/lib/types'
 import {
-  Play,
-  Pause,
-  SkipBack,
-  SkipForward,
-  SpeakerHigh,
-  SpeakerX,
   List,
   X,
   InstagramLogo,
@@ -40,14 +33,6 @@ import {
   Upload,
   Trash,
   Plus,
-  CaretLeft,
-  CaretRight,
-  GearSix,
-  ChartLine,
-  Download,
-  FolderOpen,
-  Terminal as TerminalIcon,
-  Check,
   User,
   SoundcloudLogo,
   TiktokLogo,
@@ -64,16 +49,12 @@ import {
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Slider } from '@/components/ui/slider'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
 import { Toaster } from '@/components/ui/sonner'
 import { toast } from 'sonner'
 import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
-import { Switch } from '@/components/ui/switch'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { SwipeableGallery } from '@/components/SwipeableGallery'
 import { LoadingScreen } from '@/components/LoadingScreen'
 import { CircuitBackground } from '@/components/CircuitBackground'
@@ -89,6 +70,12 @@ import ContactInboxDialog from '@/components/ContactInboxDialog'
 import SubscriberListDialog from '@/components/SubscriberListDialog'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import type { TerminalCommand, SectionLabels, ContactSettings } from '@/lib/types'
+import AppNavBar from '@/components/AppNavBar'
+import AppHeroSection from '@/components/AppHeroSection'
+import ShellSection from '@/components/ShellSection'
+import CreditHighlightsSection from '@/components/CreditHighlightsSection'
+import GallerySection from '@/components/GallerySection'
+import AppFooter from '@/components/AppFooter'
 import React, { Suspense } from 'react'
 
 import heroImage from '@/assets/images/meta_eyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ==.webp'
@@ -194,12 +181,13 @@ export interface SiteData {
   }
 }
 
-interface AnalyticsData {
-  pageViews: number
-  sectionViews: { [key: string]: number }
-  clicks: { [key: string]: number }
-  visitors: { date: string; count: number }[]
-}
+/** Discriminated union so TypeScript narrows `data` to the correct type per overlay variant. */
+type CyberpunkOverlayState =
+  | { type: 'impressum' | 'privacy' | 'contact'; data?: never }
+  | { type: 'gig'; data: Gig }
+  | { type: 'release'; data: Release }
+  | { type: 'member'; data: Member }
+
 
 const OVERLAY_LOADING_TEXTS = [
   '> ACCESSING PROFILE...',
@@ -393,8 +381,7 @@ In the end, Zardonic will unite listeners with Superstars.
 
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0)
-  const [volume, setVolume] = useState([80])
-  const [progress, setProgress] = useState(0)
+  const [volume] = useState([80])
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [editMode, setEditMode] = useState(false)
   const [showConfigEditor, setShowConfigEditor] = useState(false)
@@ -589,7 +576,7 @@ In the end, Zardonic will unite listeners with Superstars.
   const [galleryIndex, setGalleryIndex] = useState<number | null>(null)
   const [editingGig, setEditingGig] = useState<Gig | null>(null)
   const [editingRelease, setEditingRelease] = useState<Release | null>(null)
-  const [cyberpunkOverlay, setCyberpunkOverlay] = useState<{type: 'gig' | 'release' | 'member' | 'impressum' | 'privacy' | 'contact', data?: any} | null>(null)
+  const [cyberpunkOverlay, setCyberpunkOverlay] = useState<CyberpunkOverlayState | null>(null)
   const [language, setLanguage] = useState<'en' | 'de'>('en')
   const [iTunesFetching, setITunesFetching] = useState(false)
   const [bandsintownFetching, setBandsintownFetching] = useState(false)
@@ -723,7 +710,7 @@ In the end, Zardonic will unite listeners with Superstars.
       setSiteData((data) => {
         if (!data) {
           console.warn('siteData is undefined during iTunes sync, skipping update')
-          return SKIP_UPDATE as any
+          return SKIP_UPDATE
         }
         const existingIds = new Set(data.releases.map(r => r.id))
         const newReleases: Release[] = iTunesReleases
@@ -791,7 +778,7 @@ In the end, Zardonic will unite listeners with Superstars.
       setSiteData((data) => {
         if (!data) {
           console.warn('siteData is undefined during Bandsintown sync, skipping update')
-          return SKIP_UPDATE as any
+          return SKIP_UPDATE
         }
         const existingIds = new Set(data.gigs.map(g => g.id))
         const newGigs: Gig[] = events
@@ -920,7 +907,7 @@ In the end, Zardonic will unite listeners with Superstars.
     setSiteData((data) => {
       if (!data) {
         console.warn('siteData is undefined during gig save, skipping update')
-        return SKIP_UPDATE as any
+        return SKIP_UPDATE
       }
       const gigIndex = data.gigs.findIndex(g => g.id === gig.id)
       if (gigIndex >= 0) {
@@ -958,7 +945,7 @@ In the end, Zardonic will unite listeners with Superstars.
     setSiteData((data) => {
       if (!data) {
         console.warn('siteData is undefined during release save, skipping update')
-        return SKIP_UPDATE as any
+        return SKIP_UPDATE
       }
       const releaseIndex = data.releases.findIndex(r => r.id === release.id)
       if (releaseIndex >= 0) {
@@ -981,7 +968,7 @@ In the end, Zardonic will unite listeners with Superstars.
     setSiteData((data) => {
       if (!data) {
         console.warn('siteData is undefined during gallery image delete, skipping update')
-        return SKIP_UPDATE as any
+        return SKIP_UPDATE
       }
       const newGallery = [...data.gallery]
       newGallery.splice(index, 1)
@@ -1015,174 +1002,26 @@ In the end, Zardonic will unite listeners with Superstars.
       <Toaster />
       <audio ref={audioRef} src={currentTrack?.url} />
 
-      <motion.nav
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-        className="fixed top-0 left-0 right-0 z-50 bg-background/98 backdrop-blur-sm border-b border-border scanline-effect"
-        style={{ position: 'fixed', top: 0 }}
-      >
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <motion.div
-            className="text-2xl md:text-3xl font-bold tracking-tighter text-foreground uppercase"
-            whileHover={{ filter: 'drop-shadow(2px 0 0 rgba(255,0,100,0.3)) drop-shadow(-2px 0 0 rgba(0,255,255,0.3))' }}
-          >
-            {editMode ? (
-              <Input
-                value={siteData.artistName}
-                onChange={(e) => setSiteData((data) => data ? { ...data, artistName: e.target.value } : data)}
-                className="w-48 bg-transparent border-border text-foreground"
-              />
-            ) : (
-              <img 
-                src={logoImage} 
-                alt={siteData.artistName} 
-                className="h-10 md:h-12 w-auto object-contain logo-glitch brightness-110 hover-chromatic-image"
-              />
-            )}
-          </motion.div>
+      <AppNavBar
+        artistName={siteData.artistName}
+        editMode={editMode}
+        setSiteData={setSiteData}
+        isOwner={isOwner}
+        setEditMode={setEditMode}
+        adminPasswordHash={adminPasswordHash || ''}
+        setShowLoginDialog={setShowLoginDialog}
+        mobileMenuOpen={mobileMenuOpen}
+        setMobileMenuOpen={setMobileMenuOpen}
+        scrollToSection={scrollToSection}
+      />
 
-          <div className="hidden md:flex items-center gap-6">
-            {['bio', 'music', 'gigs', 'releases', 'gallery', 'connect'].map((section) => (
-              <button
-                key={section}
-                onClick={() => scrollToSection(section)}
-                className="text-sm uppercase tracking-wide hover:text-primary transition-colors font-mono hover-chromatic hover-glitch"
-              >
-                {section}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-4">
-            {isOwner ? (
-              <Button
-                size="sm"
-                variant={editMode ? 'default' : 'outline'}
-                onClick={() => setEditMode(!editMode)}
-              >
-                <Pencil className="w-4 h-4" />
-              </Button>
-            ) : adminPasswordHash ? (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setShowLoginDialog(true)}
-              >
-                Login
-              </Button>
-            ) : null}
-            
-            <button
-              className="md:hidden text-foreground"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <List className="w-6 h-6" />}
-            </button>
-          </div>
-        </div>
-
-        <AnimatePresence>
-          {mobileMenuOpen && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="md:hidden bg-card/95 border-t border-border overflow-hidden"
-            >
-              <div className="container mx-auto px-4 py-4 flex flex-col gap-4">
-                {['bio', 'music', 'gigs', 'releases', 'gallery', 'connect'].map((section) => (
-                  <button
-                    key={section}
-                    onClick={() => scrollToSection(section)}
-                    className="text-left text-sm uppercase tracking-wide hover:text-primary transition-colors font-mono"
-                  >
-                    {section}
-                  </button>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.nav>
-
-      <section className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden scanline-effect">
-        <div className="absolute inset-0 bg-black" />
-        
-        <div className="absolute inset-0 noise-effect" />
-        
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={contentLoaded ? { opacity: 1 } : { opacity: 0 }}
-          transition={{ duration: 0.15 }}
-          className="relative z-10 text-center px-4"
-        >
-          <motion.div 
-            className="mb-8 relative"
-            initial={{ opacity: 1 }}
-            animate={contentLoaded ? { opacity: 1 } : { opacity: 0 }}
-          >
-            <div className="relative mx-auto w-fit hero-logo-glitch">
-              <img 
-                src={logoImage} 
-                alt={siteData.artistName} 
-                className="h-32 md:h-48 lg:h-64 w-auto object-contain brightness-110 hover-chromatic-image"
-              />
-              <img 
-                src={logoImage} 
-                alt="" 
-                aria-hidden="true"
-                className="absolute inset-0 h-32 md:h-48 lg:h-64 w-auto object-contain brightness-110 hero-logo-r"
-              />
-              <img 
-                src={logoImage} 
-                alt="" 
-                aria-hidden="true"
-                className="absolute inset-0 h-32 md:h-48 lg:h-64 w-auto object-contain brightness-110 hero-logo-b"
-              />
-            </div>
-          </motion.div>
-
-          {editMode && (
-            <div className="mt-8">
-              <label className="cursor-pointer">
-                <Button variant="outline" size="lg" asChild>
-                  <span>
-                    <Upload className="w-5 h-5 mr-2" />
-                    Upload Hero Image
-                  </span>
-                </Button>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => handleImageUpload(e, 'hero')}
-                />
-              </label>
-            </div>
-          )}
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={contentLoaded ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-            transition={{ delay: 1.2, duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="mt-12 flex gap-4 justify-center flex-wrap"
-          >
-            <Button onClick={() => scrollToSection('music')} size="lg" className="uppercase font-mono hover-glitch hover-noise relative cyber-border">
-              <span className="hover-chromatic">Listen Now</span>
-            </Button>
-            <Button onClick={() => scrollToSection('gigs')} size="lg" variant="outline" className="uppercase font-mono hover-glitch hover-noise relative cyber-border">
-              <span className="hover-chromatic">Tour Dates</span>
-            </Button>
-            <Button asChild size="lg" variant="outline" className="uppercase font-mono hover-glitch hover-noise relative cyber-border">
-              <a href="https://zardonic.channl.co/merch" target="_blank" rel="noopener noreferrer">
-                <Storefront className="w-5 h-5 mr-2" />
-                <span className="hover-chromatic">Merch</span>
-              </a>
-            </Button>
-          </motion.div>
-        </motion.div>
-      </section>
+      <AppHeroSection
+        contentLoaded={contentLoaded}
+        editMode={editMode}
+        handleImageUpload={handleImageUpload}
+        scrollToSection={scrollToSection}
+        artistName={siteData.artistName}
+      />
 
       <div className="flex flex-col">
 
@@ -1278,350 +1117,25 @@ In the end, Zardonic will unite listeners with Superstars.
       )}
       </div>
 
-      <div style={{ order: getSectionOrder('shell') }}>
-      {vis.shell !== false && (
-      <>
-      <Separator className="bg-border" />
-      <section id="shell" className="py-24 px-4 scanline-effect crt-effect">
-        <div className="container mx-auto max-w-4xl">
-          <motion.div
-            initial={{ opacity: 0, x: -30, filter: 'blur(10px)', clipPath: 'polygon(0 0, 0 0, 0 100%, 0 100%)' }}
-            whileInView={{ opacity: 1, x: 0, filter: 'blur(0px)', clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' }}
-            viewport={{ once: true }}
-            transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
-          >
-            <div className="flex items-center justify-between mb-12 flex-wrap gap-4">
-              <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-data-corrupt" data-text={sectionLabels.shell || 'SHELL'}>
-                <EditableHeading
-                  text={sectionLabels.shell || ''}
-                  defaultText="SHELL"
-                  editMode={editMode}
-                  onChange={(v) => updateSectionLabel('shell', v)}
-                  glitchEnabled={adminSettings?.glitchTextSettings?.enabled !== false}
-                  glitchIntervalMs={adminSettings?.glitchTextSettings?.intervalMs}
-                  glitchDurationMs={adminSettings?.glitchTextSettings?.durationMs}
-                />
-              </h2>
-              {editMode && (
-                <Button onClick={() => {
-                  const members = adminSettings?.shellMembers || (adminSettings?.shellMember ? [adminSettings.shellMember] : [])
-                  setAdminSettings((prev) => ({
-                    ...(prev || {}),
-                    shellMembers: [...members, { name: 'New Member', role: '', bio: '' }],
-                  }))
-                }} className="gap-2">
-                  <Plus className="w-4 h-4" />
-                  Add Member
-                </Button>
-              )}
-            </div>
+      <ShellSection
+        editMode={editMode}
+        adminSettings={adminSettings}
+        setAdminSettings={setAdminSettings}
+        sectionOrder={getSectionOrder('shell')}
+        visible={vis.shell !== false}
+        sectionLabel={sectionLabels.shell || ''}
+        updateSectionLabel={updateSectionLabel}
+      />
 
-            <div className="space-y-12">
-              {(adminSettings?.shellMembers || (adminSettings?.shellMember ? [adminSettings.shellMember] : [])).map((member, memberIndex) => (
-                <div key={memberIndex} className="grid md:grid-cols-[280px_1fr] gap-8 items-start">
-                  <motion.div
-                    className="relative aspect-square bg-muted border border-primary/30 overflow-hidden cyber-card"
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.6, delay: 0.1 }}
-                  >
-                    {member?.photo ? (
-                      <img
-                        src={member.photo}
-                        alt={member.name || 'Member'}
-                        className="w-full h-full object-cover glitch-image hover-chromatic-image"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <User className="w-20 h-20 text-muted-foreground" />
-                      </div>
-                    )}
-                    {editMode && (
-                      <div className="absolute bottom-2 right-2 flex gap-1">
-                        <label className="cursor-pointer">
-                          <Upload className="w-6 h-6 text-primary bg-background/80 p-1 rounded" />
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0]
-                              if (file) {
-                                const reader = new FileReader()
-                                reader.onloadend = () => {
-                                  setAdminSettings((prev) => {
-                                    const members = [...(prev?.shellMembers || (prev?.shellMember ? [prev.shellMember] : []))]
-                                    members[memberIndex] = { ...members[memberIndex], photo: reader.result as string }
-                                    return { ...(prev || {}), shellMembers: members }
-                                  })
-                                }
-                                reader.readAsDataURL(file)
-                              }
-                            }}
-                          />
-                        </label>
-                      </div>
-                    )}
-                    <div className="absolute top-0 left-0 w-3 h-3 border-t border-l border-primary/60" />
-                    <div className="absolute top-0 right-0 w-3 h-3 border-t border-r border-primary/60" />
-                    <div className="absolute bottom-0 left-0 w-3 h-3 border-b border-l border-primary/60" />
-                    <div className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-primary/60" />
-                  </motion.div>
-
-                  <motion.div
-                    className="space-y-4"
-                    initial={{ opacity: 0, x: 20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.6, delay: 0.2 }}
-                  >
-                    <div className="data-label mb-2">// PROFILE.DATA.STREAM [{String(memberIndex).padStart(2, '0')}]</div>
-                    <div className="cyber-grid p-4">
-                      <div className="data-label mb-2">Subject</div>
-                      {editMode ? (
-                        <Input
-                          value={member?.name || ''}
-                          onChange={(e) => setAdminSettings((prev) => {
-                            const members = [...(prev?.shellMembers || (prev?.shellMember ? [prev.shellMember] : []))]
-                            members[memberIndex] = { ...members[memberIndex], name: e.target.value }
-                            return { ...(prev || {}), shellMembers: members }
-                          })}
-                          className="bg-card border-border font-mono text-xl"
-                          placeholder="Member name"
-                        />
-                      ) : (
-                        <p className="text-xl font-bold font-mono hover-chromatic">{member?.name || 'Unknown'}</p>
-                      )}
-                    </div>
-
-                    <div className="cyber-grid p-4">
-                      <div className="data-label mb-2">Role</div>
-                      {editMode ? (
-                        <Input
-                          value={member?.role || ''}
-                          onChange={(e) => setAdminSettings((prev) => {
-                            const members = [...(prev?.shellMembers || (prev?.shellMember ? [prev.shellMember] : []))]
-                            members[memberIndex] = { ...members[memberIndex], role: e.target.value }
-                            return { ...(prev || {}), shellMembers: members }
-                          })}
-                          className="bg-card border-border font-mono"
-                          placeholder="Member role"
-                        />
-                      ) : (
-                        <p className="text-muted-foreground font-mono">{member?.role || ''}</p>
-                      )}
-                    </div>
-
-                    <div className="cyber-grid p-4">
-                      <div className="data-label mb-2">Bio</div>
-                      {editMode ? (
-                        <Textarea
-                          value={member?.bio || ''}
-                          onChange={(e) => setAdminSettings((prev) => {
-                            const members = [...(prev?.shellMembers || (prev?.shellMember ? [prev.shellMember] : []))]
-                            members[memberIndex] = { ...members[memberIndex], bio: e.target.value }
-                            return { ...(prev || {}), shellMembers: members }
-                          })}
-                          className="bg-card border-border font-mono min-h-[100px]"
-                          placeholder="Member bio"
-                        />
-                      ) : (
-                        <p className="text-foreground/90 leading-relaxed font-mono text-sm">{member?.bio || ''}</p>
-                      )}
-                    </div>
-
-                    {editMode && (
-                      <div className="cyber-grid p-4">
-                        <div className="data-label mb-2">Social Links</div>
-                        <div className="space-y-2">
-                          {(['instagram', 'spotify', 'youtube', 'soundcloud', 'twitter', 'website'] as const).map((platform) => (
-                            <div key={platform} className="flex gap-2 items-center">
-                              <Label className="font-mono text-xs w-24">{platform}</Label>
-                              <Input
-                                value={member?.social?.[platform] || ''}
-                                onChange={(e) => setAdminSettings((prev) => {
-                                  const members = [...(prev?.shellMembers || (prev?.shellMember ? [prev.shellMember] : []))]
-                                  members[memberIndex] = {
-                                    ...members[memberIndex],
-                                    social: { ...(members[memberIndex]?.social || {}), [platform]: e.target.value },
-                                  }
-                                  return { ...(prev || {}), shellMembers: members }
-                                })}
-                                className="bg-card border-border font-mono text-xs flex-1"
-                                placeholder={`https://${platform}.com/...`}
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {!editMode && member?.social && (
-                      <div className="flex flex-wrap gap-3 pt-2">
-                        {Object.entries(member.social).filter(([, url]) => url).map(([platform, url]) => (
-                          <a
-                            key={platform}
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs font-mono text-muted-foreground hover:text-primary transition-colors uppercase tracking-wider hover-chromatic"
-                          >
-                            [{platform}]
-                          </a>
-                        ))}
-                      </div>
-                    )}
-
-                    {editMode && (
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        className="mt-2"
-                        onClick={() => setAdminSettings((prev) => {
-                          const members = [...(prev?.shellMembers || (prev?.shellMember ? [prev.shellMember] : []))]
-                          members.splice(memberIndex, 1)
-                          return { ...(prev || {}), shellMembers: members }
-                        })}
-                      >
-                        <Trash className="w-4 h-4 mr-1" />
-                        Remove Member
-                      </Button>
-                    )}
-
-                    <div className="flex items-center gap-2 text-xs text-primary/40 pt-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-pulse" />
-                      <span>SESSION ACTIVE</span>
-                    </div>
-                  </motion.div>
-                </div>
-              ))}
-
-              {(adminSettings?.shellMembers || (adminSettings?.shellMember ? [adminSettings.shellMember] : [])).length === 0 && !editMode && (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground font-mono">No members configured</p>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        </div>
-      </section>
-      </>
-      )}
-      </div>
-
-      <div style={{ order: getSectionOrder('creditHighlights') }}>
-      {vis.creditHighlights !== false && (
-      <>
-      <section className="py-16 px-4 bg-card/50 noise-effect overflow-hidden">
-        <div className="container mx-auto max-w-6xl">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="text-center"
-          >
-            <div className="data-label mb-6">
-              {editMode ? (
-                <Input
-                  value={sectionLabels.creditHighlights || ''}
-                  onChange={(e) => updateSectionLabel('creditHighlights', e.target.value)}
-                  placeholder="// CREDIT.HIGHLIGHTS"
-                  className="bg-transparent border-border font-mono text-xs text-center max-w-xs mx-auto"
-                />
-              ) : (
-                <>// {sectionLabels.creditHighlights || 'CREDIT.HIGHLIGHTS'}</>
-              )}
-            </div>
-
-            {editMode && (
-              <div className="mb-8 space-y-3 max-w-xl mx-auto text-left">
-                {siteData.creditHighlights.map((highlight, index) => (
-                  <div key={index} className="flex items-end gap-2">
-                    <div className="flex-1 space-y-1">
-                      <Label className="font-mono text-xs">Image URL</Label>
-                      <Input
-                        value={highlight.src}
-                        onChange={(e) => {
-                          const updated = [...siteData.creditHighlights]
-                          updated[index] = { ...updated[index], src: e.target.value }
-                          setSiteData((data) => data ? { ...data, creditHighlights: updated } : data)
-                        }}
-                        onBlur={(e) => {
-                          // Normalize the URL when the user leaves the field
-                          const normalized = normalizeImageUrl(e.target.value)
-                          if (normalized !== e.target.value) {
-                            const updated = [...siteData.creditHighlights]
-                            updated[index] = { ...updated[index], src: normalized }
-                            setSiteData((data) => data ? { ...data, creditHighlights: updated } : data)
-                          }
-                        }}
-                        placeholder="https://drive.google.com/file/d/... or image URL"
-                        className="bg-card border-border font-mono text-xs"
-                      />
-                    </div>
-                    <div className="w-32 space-y-1">
-                      <Label className="font-mono text-xs">Label</Label>
-                      <Input
-                        value={highlight.alt}
-                        onChange={(e) => {
-                          const updated = [...siteData.creditHighlights]
-                          updated[index] = { ...updated[index], alt: e.target.value }
-                          setSiteData((data) => data ? { ...data, creditHighlights: updated } : data)
-                        }}
-                        placeholder="Name"
-                        className="bg-card border-border font-mono text-xs"
-                      />
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => {
-                        const updated = siteData.creditHighlights.filter((_, i) => i !== index)
-                        setSiteData((data) => data ? { ...data, creditHighlights: updated } : data)
-                      }}
-                    >
-                      <Trash className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ))}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setSiteData((data) => data ? { ...data, creditHighlights: [...data.creditHighlights, { src: '', alt: '' }] } : data)
-                  }}
-                  className="font-mono"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Logo
-                </Button>
-              </div>
-            )}
-
-            <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12 opacity-60 hover:opacity-90 transition-opacity duration-500">
-              {siteData.creditHighlights.filter(logo => logo.src).map((logo, index) => (
-                <motion.img
-                  key={`credit-${index}`}
-                  src={toDirectImageUrl(logo.src) || logo.src}
-                  alt={logo.alt}
-                  className="h-10 md:h-14 w-auto object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity duration-300 hover-chromatic-image"
-                  initial={{ opacity: 0, y: 10 }}
-                  whileInView={{ opacity: 0.7, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  whileHover={{ opacity: 1 }}
-                  loading="lazy"
-                />
-              ))}
-            </div>
-          </motion.div>
-        </div>
-      </section>
-      </>
-      )}
-      </div>
+      <CreditHighlightsSection
+        siteData={siteData}
+        editMode={editMode}
+        setSiteData={setSiteData}
+        sectionOrder={getSectionOrder('creditHighlights')}
+        visible={vis.creditHighlights !== false}
+        sectionLabel={sectionLabels.creditHighlights || ''}
+        updateSectionLabel={updateSectionLabel}
+      />
 
       <div style={{ order: getSectionOrder('music') }}>
       {vis.music !== false && (
@@ -2036,143 +1550,19 @@ In the end, Zardonic will unite listeners with Superstars.
       )}
       </div>
 
-      <div style={{ order: getSectionOrder('gallery') }}>
-      {vis.gallery !== false && (
-      <>
-      <Separator className="bg-border" />
-      <section id="gallery" className="py-24 px-4 crt-effect">
-        <div className="container mx-auto max-w-6xl">
-          <motion.div
-            initial={{ opacity: 0, x: -30, filter: 'blur(10px)', clipPath: 'polygon(0 0, 0 0, 0 100%, 0 100%)' }}
-            whileInView={{ opacity: 1, x: 0, filter: 'blur(0px)', clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' }}
-            viewport={{ once: true }}
-            transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
-          >
-            <div className="flex items-center justify-between mb-12">
-              <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-data-corrupt" data-text="GALLERY">
-                <EditableHeading
-                  text={sectionLabels.gallery || ''}
-                  defaultText="GALLERY"
-                  editMode={editMode}
-                  onChange={(v) => updateSectionLabel('gallery', v)}
-                  glitchEnabled={adminSettings?.glitchTextSettings?.enabled !== false}
-                  glitchIntervalMs={adminSettings?.glitchTextSettings?.intervalMs}
-                  glitchDurationMs={adminSettings?.glitchTextSettings?.durationMs}
-                />
-              </h2>
-              {editMode && (
-                <div className="flex gap-2">
-                  <label className="cursor-pointer">
-                    <Button className="gap-2" asChild>
-                      <span>
-                        <Upload className="w-4 h-4" />
-                        Add Image
-                      </span>
-                    </Button>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handleImageUpload(e, 'gallery')}
-                    />
-                  </label>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button className="gap-2" variant="outline">
-                        <Plus className="w-4 h-4" />
-                        Add URL
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Add Image from URL</DialogTitle>
-                      </DialogHeader>
-                      <form onSubmit={(e) => {
-                        e.preventDefault()
-                        const formData = new FormData(e.currentTarget)
-                        const url = formData.get('imageUrl') as string
-                        if (url && siteData) {
-                          // Normalize the URL (convert Google Drive to wsrv.nl)
-                          const normalizedUrl = normalizeImageUrl(url)
-                          setSiteData({ ...siteData, gallery: [...siteData.gallery, normalizedUrl] })
-                          toast.success('Image URL added to gallery')
-                          e.currentTarget.reset()
-                        }
-                      }}>
-                        <div className="space-y-4">
-                          <div>
-                            <Label htmlFor="imageUrl">Image URL (supports Google Drive links)</Label>
-                            <Input
-                              id="imageUrl"
-                              name="imageUrl"
-                              type="url"
-                              placeholder="https://drive.google.com/file/d/..."
-                              className="mt-2"
-                            />
-                          </div>
-                          <Button type="submit">Add Image</Button>
-                        </div>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              )}
-            </div>
-
-            {siteData.gallery.length === 0 ? (
-              <Card className="p-12 text-center bg-card/50 border-border">
-                <p className="text-xl text-muted-foreground uppercase tracking-wide font-mono">
-                  Gallery coming soon
-                </p>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {siteData.gallery.map((image, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, clipPath: 'inset(0 0 100% 0)' }}
-                    whileInView={{ opacity: 1, clipPath: 'inset(0 0 0% 0)' }}
-                    viewport={{ once: true }}
-                    transition={{ 
-                      duration: 0.6,
-                      delay: index * 0.08,
-                      ease: [0.25, 0.46, 0.45, 0.94]
-                    }}
-                    className="aspect-square bg-muted overflow-hidden cursor-pointer relative group glitch-image"
-                    onClick={() => setGalleryIndex(index)}
-                  >
-                    <img 
-                      src={toDirectImageUrl(image) || image} 
-                      alt={`Gallery ${index + 1}`} 
-                      className="w-full h-full object-cover hover-chromatic-image" 
-                      crossOrigin="anonymous"
-                    />
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <MagnifyingGlassPlus className="w-8 h-8 text-foreground" />
-                    </div>
-                    {editMode && (
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          deleteGalleryImage(index)
-                        }}
-                      >
-                        <Trash className="w-3 h-3" />
-                      </Button>
-                    )}
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </motion.div>
-        </div>
-      </section>
-      </>
-      )}
-      </div>
+      <GallerySection
+        siteData={siteData}
+        editMode={editMode}
+        setSiteData={setSiteData}
+        sectionOrder={getSectionOrder('gallery')}
+        visible={vis.gallery !== false}
+        sectionLabel={sectionLabels.gallery || ''}
+        updateSectionLabel={updateSectionLabel}
+        setGalleryIndex={setGalleryIndex}
+        deleteGalleryImage={deleteGalleryImage}
+        handleImageUpload={handleImageUpload}
+        adminSettings={adminSettings}
+      />
 
       <div style={{ order: getSectionOrder('media') }}>
       <Separator className="bg-border" />
@@ -2335,49 +1725,15 @@ In the end, Zardonic will unite listeners with Superstars.
 
       </div>{/* end flex container for reorderable sections */}
 
-      <footer className="py-12 px-4 border-t border-border noise-effect">
-        <div className="container mx-auto text-center space-y-4">
-          <div className="flex justify-center gap-6 flex-wrap">
-            <button
-              onClick={() => {
-                setLanguage('en')
-                setCyberpunkOverlay({ type: 'impressum' })
-              }}
-              className="text-sm text-muted-foreground hover:text-primary transition-colors uppercase tracking-wide font-mono hover-chromatic cursor-pointer"
-            >
-              Impressum
-            </button>
-            <button
-              onClick={() => {
-                setLanguage('en')
-                setCyberpunkOverlay({ type: 'privacy' })
-              }}
-              className="text-sm text-muted-foreground hover:text-primary transition-colors uppercase tracking-wide font-mono hover-chromatic cursor-pointer"
-            >
-              Privacy Policy / Datenschutz-erklärung
-            </button>
-            <button
-              onClick={() => setCyberpunkOverlay({ type: 'contact' })}
-              className="text-sm text-muted-foreground hover:text-primary transition-colors uppercase tracking-wide font-mono hover-chromatic cursor-pointer"
-            >
-              Contact
-            </button>
-            {!isOwner && (
-              <button
-                onClick={() => adminPasswordHash ? setShowLoginDialog(true) : setShowSetupDialog(true)}
-                className="text-sm text-muted-foreground/40 hover:text-primary/60 transition-colors font-mono cursor-pointer"
-                title="Admin"
-              >
-                <Lock size={14} />
-              </button>
-            )}
-            <LanguageSwitcher />
-          </div>
-          <p className="text-sm text-muted-foreground uppercase tracking-wide font-mono hover-chromatic">
-            © {new Date().getFullYear()} {siteData.artistName}
-          </p>
-        </div>
-      </footer>
+      <AppFooter
+        artistName={siteData?.artistName || ''}
+        isOwner={isOwner}
+        adminPasswordHash={adminPasswordHash || ''}
+        setShowLoginDialog={setShowLoginDialog}
+        setShowSetupDialog={setShowSetupDialog}
+        setCyberpunkOverlay={setCyberpunkOverlay}
+        setLanguage={setLanguage}
+      />
 
       <AnimatePresence>
         {galleryIndex !== null && siteData && (
