@@ -181,6 +181,13 @@ export interface SiteData {
   }
 }
 
+/** Discriminated union so TypeScript narrows `data` to the correct type per overlay variant. */
+type CyberpunkOverlayState =
+  | { type: 'impressum' | 'privacy' | 'contact'; data?: never }
+  | { type: 'gig'; data: Gig }
+  | { type: 'release'; data: Release }
+  | { type: 'member'; data: Member }
+
 
 const OVERLAY_LOADING_TEXTS = [
   '> ACCESSING PROFILE...',
@@ -569,7 +576,7 @@ In the end, Zardonic will unite listeners with Superstars.
   const [galleryIndex, setGalleryIndex] = useState<number | null>(null)
   const [editingGig, setEditingGig] = useState<Gig | null>(null)
   const [editingRelease, setEditingRelease] = useState<Release | null>(null)
-  const [cyberpunkOverlay, setCyberpunkOverlay] = useState<{type: 'gig' | 'release' | 'member' | 'impressum' | 'privacy' | 'contact', data?: unknown} | null>(null)
+  const [cyberpunkOverlay, setCyberpunkOverlay] = useState<CyberpunkOverlayState | null>(null)
   const [language, setLanguage] = useState<'en' | 'de'>('en')
   const [iTunesFetching, setITunesFetching] = useState(false)
   const [bandsintownFetching, setBandsintownFetching] = useState(false)

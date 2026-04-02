@@ -8,7 +8,7 @@ interface AppFooterProps {
   adminPasswordHash: string
   setShowLoginDialog: (v: boolean) => void
   setShowSetupDialog: (v: boolean) => void
-  setCyberpunkOverlay: (overlay: { type: 'gig' | 'release' | 'member' | 'impressum' | 'privacy' | 'contact'; data?: unknown } | null) => void
+  setCyberpunkOverlay: (overlay: { type: 'impressum' | 'privacy' | 'contact' } | null) => void
   setLanguage: (lang: 'en' | 'de') => void
 }
 

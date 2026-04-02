@@ -50,7 +50,9 @@ function GLBModel({ scrollY }: { scrollY: number }) {
 
     const loadModel = async () => {
       try {
-        const loadedGltf = await useGLTF.preload(modelFile)
+        // useGLTF.preload is typed as void-returning but actually returns the cached GLTF
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const loadedGltf = await (useGLTF.preload(modelFile) as unknown as Promise<{ scene: THREE.Object3D }>)
         if (mounted) {
           setGltf(loadedGltf)
         }
