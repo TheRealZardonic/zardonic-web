@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react'
  * Debounces a callback function
  * Useful for performance-sensitive operations like scroll handlers
  */
-export function useDebounce<T extends (...args: any[]) => any>(
+export function useDebounce<T extends (...args: unknown[]) => unknown>(
   callback: T,
   delay: number
 ): T {

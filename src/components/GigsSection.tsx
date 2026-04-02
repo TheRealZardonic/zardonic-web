@@ -12,6 +12,7 @@ import { format, isPast } from 'date-fns'
 import { toast } from 'sonner'
 import { useTypingEffect } from '@/hooks/use-typing-effect'
 import { useTrackSection } from '@/hooks/use-track-section'
+import { fetchBandsintownEvents } from '@/lib/bandsintown'
 
 interface GigsSectionProps {
   gigs: Gig[]
@@ -64,8 +65,22 @@ export default function GigsSection({ gigs, editMode, onUpdate, fontSizes, onFon
   const loadGigsFromAPI = async (isAutoLoad = false) => {
     setIsLoading(true)
     try {
-      const apiGigs: Gig[] = []
-      
+      const bandsintownEvents = await fetchBandsintownEvents()
+      const apiGigs: Gig[] = bandsintownEvents.map(event => ({
+        id: event.id,
+        venue: event.venue,
+        location: event.location,
+        date: event.date,
+        ticketUrl: event.ticketUrl,
+        lineup: event.lineup,
+        streetAddress: event.streetAddress,
+        postalCode: event.postalCode,
+        soldOut: event.soldOut,
+        startsAt: event.startsAt,
+        description: event.description,
+        title: event.title,
+      }))
+
       if (apiGigs.length > 0) {
         const currentGigs = gigs || []
         const existingIds = new Set(currentGigs.map(g => g.id))

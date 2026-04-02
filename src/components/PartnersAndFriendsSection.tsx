@@ -12,6 +12,7 @@ import { useState, useRef, useMemo } from 'react'
 import { useTypingEffect } from '@/hooks/use-typing-effect'
 import { ChromaticText } from '@/components/ChromaticText'
 import type { Friend, SectionLabels } from '@/lib/types'
+import type { ComponentType, SVGAttributes } from 'react'
 import { toDirectImageUrl } from '@/lib/image-cache'
 import { buildFriendDataLines } from '@/lib/profile-data'
 import {
@@ -27,7 +28,7 @@ interface PartnersAndFriendsSectionProps {
   onLabelChange?: (key: keyof SectionLabels, value: string) => void
 }
 
-const friendSocialIcons: { key: keyof NonNullable<Friend['socials']>; icon: any; label: string }[] = [
+const friendSocialIcons: { key: keyof NonNullable<Friend['socials']>; icon: ComponentType<SVGAttributes<SVGSVGElement> & { size?: number; className?: string }>; label: string }[] = [
   { key: 'instagram', icon: InstagramLogo, label: 'Instagram' },
   { key: 'facebook', icon: FacebookLogo, label: 'Facebook' },
   { key: 'spotify', icon: SpotifyLogo, label: 'Spotify' },

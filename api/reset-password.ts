@@ -115,18 +115,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           `,
         })
         
-        console.log(`[SECURITY] Password reset email sent to ${resetEmail}`)
+        console.warn(`[SECURITY] Password reset email sent to ${resetEmail}`)
       } catch (emailError) {
         // Log email failure but still return success to prevent email enumeration
         const errorMessage = emailError instanceof Error ? emailError.message : 'Unknown error'
         console.error('[SECURITY] Failed to send reset email:', errorMessage)
         // Fall back to logging that a token was generated (without exposing the token itself)
-        console.log(`[SECURITY] Password reset token generated (expires in ${RESET_TOKEN_TTL}s) - retrieve from KV: ${RESET_TOKEN_KEY}`)
+        console.warn(`[SECURITY] Password reset token generated (expires in ${RESET_TOKEN_TTL}s) - retrieve from KV: ${RESET_TOKEN_KEY}`)
       }
     } else {
       // No email service configured - log that token is available in KV
-      console.log(`[SECURITY] Password reset token generated (expires in ${RESET_TOKEN_TTL}s) - retrieve from KV: ${RESET_TOKEN_KEY}`)
-      console.log(`[SECURITY] Set RESEND_API_KEY environment variable to enable email delivery`)
+      console.warn(`[SECURITY] Password reset token generated (expires in ${RESET_TOKEN_TTL}s) - retrieve from KV: ${RESET_TOKEN_KEY}`)
+      console.warn(`[SECURITY] Set RESEND_API_KEY environment variable to enable email delivery`)
     }
 
     return res.json({ success: true, message: 'If the email matches, a reset link has been generated.' })

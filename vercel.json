@@ -42,5 +42,11 @@
     { "source": "/sitemap-extended.xml", "destination": "/api/sitemap-trap" },
     { "source": "/sitemap.xml", "destination": "/api/sitemap-trap" },
     { "source": "/share/:type/:id", "destination": "/api/og?type=:type&id=:id" }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron-refresh",
+      "schedule": "0 6 * * *"
+    }
   ]
 }

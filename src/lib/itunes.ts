@@ -26,6 +26,19 @@ export interface ITunesRelease {
 
 const ARTIST_NAME = 'Zardonic'
 
+/** Shape of a single result from the iTunes Search API */
+interface ITunesApiTrack {
+  collectionId?: number
+  collectionName?: string
+  artistName?: string
+  collectionArtistName?: string
+  artworkUrl100?: string
+  artworkUrl60?: string
+  releaseDate?: string
+  collectionViewUrl?: string
+  trackViewUrl?: string
+}
+
 export async function fetchITunesReleases(): Promise<ITunesRelease[]> {
   try {
     const [songsRes, albumsRes] = await Promise.all([
@@ -46,7 +59,7 @@ export async function fetchITunesReleases(): Promise<ITunesRelease[]> {
 
     const releasesMap = new Map<string, ITunesRelease>()
 
-    results.forEach((track: any) => {
+    results.forEach((track: ITunesApiTrack) => {
       if (!track.collectionId || !track.collectionName) return
 
       // Filter to only results where the artist matches Zardonic

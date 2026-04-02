@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
-import { Play } from '@phosphor-icons/react'
+import { Play, Warning } from '@phosphor-icons/react'
 
 declare global {
   interface Window {
@@ -39,6 +39,8 @@ interface SpotifyEmbedProps {
   className?: string
 }
 
+const SCRIPT_LOAD_TIMEOUT_MS = 15_000
+
 export function SpotifyEmbed({
   uri,
   width = '100%',
@@ -47,14 +49,36 @@ export function SpotifyEmbed({
   className,
 }: SpotifyEmbedProps) {
   const [isLoaded, setIsLoaded] = useState(false)
+  const [hasError, setHasError] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const controllerRef = useRef<SpotifyEmbedController | null>(null)
   const initializedRef = useRef(false)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const handleConsent = useCallback(() => setIsLoaded(true), [])
+
+  const handleConsentKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      setIsLoaded(true)
+    }
+  }, [])
+
+  const handleRetry = useCallback(() => {
+    setHasError(false)
+    initializedRef.current = false
+    setIsLoaded(false)
+  }, [])
 
   const createPlayer = useCallback(
     (IFrameAPI: SpotifyIFrameAPI) => {
       if (!containerRef.current || initializedRef.current) return
       initializedRef.current = true
+
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
 
       const options: SpotifyEmbedOptions = {
         uri,
@@ -63,9 +87,13 @@ export function SpotifyEmbed({
         theme,
       }
 
-      IFrameAPI.createController(containerRef.current, options, (controller) => {
-        controllerRef.current = controller
-      })
+      try {
+        IFrameAPI.createController(containerRef.current, options, (controller) => {
+          controllerRef.current = controller
+        })
+      } catch {
+        setHasError(true)
+      }
     },
     [uri, width, height, theme],
   )
@@ -98,13 +126,25 @@ export function SpotifyEmbed({
       const script = document.createElement('script')
       script.src = 'https://open.spotify.com/embed/iframe-api/v1'
       script.async = true
+      script.onerror = () => setHasError(true)
       document.body.appendChild(script)
     } else {
       // Script exists but API not ready yet — wait for callback
       setupCallback()
     }
 
+    // Timeout: if the SDK hasn't initialized after 15s, show error
+    timeoutRef.current = setTimeout(() => {
+      if (!initializedRef.current) {
+        setHasError(true)
+      }
+    }, SCRIPT_LOAD_TIMEOUT_MS)
+
     return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
       if (controllerRef.current) {
         controllerRef.current.destroy()
         controllerRef.current = null
@@ -115,9 +155,13 @@ export function SpotifyEmbed({
   if (!isLoaded) {
     return (
       <div
+        role="button"
+        tabIndex={0}
+        aria-label="Load Spotify Player"
         className={`flex flex-col items-center justify-center bg-black/40 border border-primary/20 cursor-pointer hover:bg-primary/5 hover:border-primary/50 transition-all group ${className}`}
         style={{ width, height }}
-        onClick={() => setIsLoaded(true)}
+        onClick={handleConsent}
+        onKeyDown={handleConsentKeyDown}
       >
         <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center group-hover:scale-110 group-hover:bg-primary/30 transition-transform">
           <Play weight="fill" className="w-8 h-8 text-primary ml-1" />
@@ -129,6 +173,27 @@ export function SpotifyEmbed({
             This may transmit your IP address to Spotify servers.
           </span>
         </p>
+      </div>
+    )
+  }
+
+  if (hasError) {
+    return (
+      <div
+        className={`flex flex-col items-center justify-center bg-black/40 border border-destructive/30 ${className}`}
+        style={{ width, height }}
+        role="alert"
+      >
+        <Warning className="w-10 h-10 text-destructive/70 mb-3" />
+        <p className="font-mono text-sm text-muted-foreground text-center px-4">
+          Spotify player could not be loaded.
+        </p>
+        <button
+          onClick={handleRetry}
+          className="mt-3 font-mono text-xs text-primary hover:underline"
+        >
+          Try again
+        </button>
       </div>
     )
   }

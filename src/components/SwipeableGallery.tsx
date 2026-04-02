@@ -19,7 +19,7 @@ export const SwipeableGallery = memo(function SwipeableGallery({ images, initial
     setPage([newIndex, newDirection])
   }, [currentIndex, images.length])
 
-  const handleDragEnd = useCallback((_e: any, { offset, velocity }: PanInfo) => {
+  const handleDragEnd = useCallback((_e: MouseEvent | TouchEvent | PointerEvent, { offset, velocity }: PanInfo) => {
     const swipe = swipeConfidenceThreshold(offset.x, velocity.x)
 
     if (swipe < -swipeConfidenceTolerance) {

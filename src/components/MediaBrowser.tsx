@@ -82,7 +82,7 @@ function MediaOverlay({
         onClick={onClose}
       />
 
-      <div className="fixed inset-0 z-[101] flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[101] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Media Browser">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -98,7 +98,7 @@ function MediaOverlay({
             <span className="text-accent text-sm tracking-wider">
               {'>'} MEDIA_BROWSER v1.0
             </span>
-            <Button variant="ghost" size="icon" onClick={onClose}>
+            <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close media browser">
               <X className="w-5 h-5 text-accent" />
             </Button>
           </div>
@@ -111,6 +111,8 @@ function MediaOverlay({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className="flex flex-col items-center justify-center h-[calc(100%-3rem)] gap-4"
+                role="status"
+                aria-label="Loading files"
               >
                 <motion.div
                   className="text-accent text-sm tracking-wider"
@@ -136,65 +138,75 @@ function MediaOverlay({
                 className="flex h-[calc(100%-3rem)]"
               >
                 {/* File tree */}
-                <div className="w-1/3 border-r border-primary/30 overflow-y-auto p-3">
+                <nav className="w-1/3 border-r border-primary/30 overflow-y-auto p-3" aria-label="File tree">
                   <div className="text-accent/60 text-xs tracking-wider mb-3">
                     FILE TREE
                   </div>
-                  {Object.keys(folders).map((folder) => (
-                    <div key={folder} className="mb-1">
+                  <div role="tree">
+                    {Object.keys(folders).map((folder) => (
+                      <div key={folder} className="mb-1" role="treeitem" aria-expanded={expandedFolders.has(folder)}>
+                        <button
+                          className="flex items-center gap-2 w-full text-left px-2 py-1 text-sm text-foreground hover:bg-accent/10 transition-colors"
+                          onClick={() => toggleFolder(folder)}
+                          aria-label={`${expandedFolders.has(folder) ? 'Collapse' : 'Expand'} folder ${folder}`}
+                        >
+                          <Folder
+                            className="w-4 h-4 text-accent shrink-0"
+                            weight={expandedFolders.has(folder) ? 'fill' : 'regular'}
+                          />
+                          <span className="truncate tracking-wider">{folder}</span>
+                        </button>
+                        <AnimatePresence>
+                          {expandedFolders.has(folder) && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="overflow-hidden pl-4"
+                              role="group"
+                            >
+                              {folders[folder].map((f) => (
+                                <button
+                                  key={f.id}
+                                  className={`flex items-center gap-2 w-full text-left px-2 py-1 text-sm transition-colors ${
+                                    selectedFile?.id === f.id
+                                      ? 'bg-accent/20 text-accent'
+                                      : 'text-foreground hover:bg-accent/10'
+                                  }`}
+                                  onClick={() => setSelectedFile(f)}
+                                  role="treeitem"
+                                  aria-selected={selectedFile?.id === f.id}
+                                  aria-label={`File: ${f.name}`}
+                                >
+                                  <File className="w-4 h-4 shrink-0" aria-hidden="true" />
+                                  <span className="truncate">{f.name}</span>
+                                </button>
+                              ))}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    ))}
+                    {rootFiles.map((f) => (
                       <button
-                        className="flex items-center gap-2 w-full text-left px-2 py-1 text-sm text-foreground hover:bg-accent/10 transition-colors"
-                        onClick={() => toggleFolder(folder)}
+                        key={f.id}
+                        className={`flex items-center gap-2 w-full text-left px-2 py-1 text-sm transition-colors ${
+                          selectedFile?.id === f.id
+                            ? 'bg-accent/20 text-accent'
+                            : 'text-foreground hover:bg-accent/10'
+                        }`}
+                        onClick={() => setSelectedFile(f)}
+                        role="treeitem"
+                        aria-selected={selectedFile?.id === f.id}
+                        aria-label={`File: ${f.name}`}
                       >
-                        <Folder
-                          className="w-4 h-4 text-accent shrink-0"
-                          weight={expandedFolders.has(folder) ? 'fill' : 'regular'}
-                        />
-                        <span className="truncate tracking-wider">{folder}</span>
+                        <File className="w-4 h-4 shrink-0" aria-hidden="true" />
+                        <span className="truncate">{f.name}</span>
                       </button>
-                      <AnimatePresence>
-                        {expandedFolders.has(folder) && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden pl-4"
-                          >
-                            {folders[folder].map((f) => (
-                              <button
-                                key={f.id}
-                                className={`flex items-center gap-2 w-full text-left px-2 py-1 text-sm transition-colors ${
-                                  selectedFile?.id === f.id
-                                    ? 'bg-accent/20 text-accent'
-                                    : 'text-foreground hover:bg-accent/10'
-                                }`}
-                                onClick={() => setSelectedFile(f)}
-                              >
-                                <File className="w-4 h-4 shrink-0" />
-                                <span className="truncate">{f.name}</span>
-                              </button>
-                            ))}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  ))}
-                  {rootFiles.map((f) => (
-                    <button
-                      key={f.id}
-                      className={`flex items-center gap-2 w-full text-left px-2 py-1 text-sm transition-colors ${
-                        selectedFile?.id === f.id
-                          ? 'bg-accent/20 text-accent'
-                          : 'text-foreground hover:bg-accent/10'
-                      }`}
-                      onClick={() => setSelectedFile(f)}
-                    >
-                      <File className="w-4 h-4 shrink-0" />
-                      <span className="truncate">{f.name}</span>
-                    </button>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                </nav>
 
                 {/* File detail */}
                 <div className="flex-1 p-6 overflow-y-auto">
@@ -234,8 +246,9 @@ function MediaOverlay({
                         rel="noopener noreferrer"
                         download
                         className="inline-flex items-center gap-2 mt-4 px-4 py-2 border border-accent/50 text-accent text-sm tracking-wider hover:bg-accent/10 transition-colors"
+                        aria-label={`Download ${selectedFile.name}`}
                       >
-                        <DownloadSimple className="w-4 h-4" />
+                        <DownloadSimple className="w-4 h-4" aria-hidden="true" />
                         DOWNLOAD
                       </a>
                     </motion.div>
@@ -283,7 +296,9 @@ function EditPanel({
     ])
   }, [])
 
-  const removeFile = useCallback((id: string) => {
+  const removeFile = useCallback((id: string, fileName: string) => {
+    const confirmed = window.confirm(`Delete file "${fileName || 'Untitled'}"? This action cannot be undone.`)
+    if (!confirmed) return
     setDraft((prev) => prev.filter((f) => f.id !== id))
   }, [])
 
@@ -323,7 +338,7 @@ function EditPanel({
           <span className="text-accent text-sm tracking-wider">
             EDIT MEDIA FILES
           </span>
-          <Button variant="ghost" size="icon" onClick={onClose}>
+          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close edit panel">
             <X className="w-5 h-5 text-accent" />
           </Button>
         </div>
@@ -341,7 +356,8 @@ function EditPanel({
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => removeFile(file.id)}
+                  onClick={() => removeFile(file.id, file.name)}
+                  aria-label={`Delete file ${file.name || 'Untitled'}`}
                 >
                   <Trash className="w-4 h-4 text-destructive" />
                 </Button>
@@ -386,6 +402,7 @@ function EditPanel({
                   onChange={(e) =>
                     updateField(file.id, 'type', e.target.value)
                   }
+                  aria-label="File type"
                   className="w-full bg-transparent border border-primary/30 text-foreground font-mono text-sm px-3 py-2"
                 >
                   <option value="download">Download</option>

@@ -15,6 +15,29 @@ export interface BandsintownEvent {
   title?: string
 }
 
+/** Shape of a single event from the Bandsintown REST API */
+interface BandsintownApiEvent {
+  id: string | number
+  datetime?: string
+  starts_at?: string
+  url?: string
+  sold_out?: boolean
+  description?: string
+  title?: string
+  lineup?: string[]
+  offers?: { url?: string }[]
+  venue?: {
+    name?: string
+    city?: string
+    region?: string
+    country?: string
+    street_address?: string
+    postal_code?: string
+    latitude?: string
+    longitude?: string
+  }
+}
+
 const ARTIST_NAME = 'Zardonic'
 
 export async function fetchBandsintownEvents(): Promise<BandsintownEvent[]> {
@@ -41,7 +64,7 @@ export async function fetchBandsintownEvents(): Promise<BandsintownEvent[]> {
       return []
     }
 
-    return data.map((event: any) => ({
+    return data.map((event: BandsintownApiEvent) => ({
       id: `bit-${event.id}`,
       venue: event.venue?.name || 'TBA',
       location: [event.venue?.city, event.venue?.region, event.venue?.country]
