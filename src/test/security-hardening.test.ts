@@ -127,6 +127,10 @@ describe('vercel.json Content-Security-Policy', () => {
     expect(cspHeader.value).toContain('https://rest.bandsintown.com')
     expect(cspHeader.value).toContain('https://itunes.apple.com')
     expect(cspHeader.value).toContain('https://wsrv.nl')
+    // Sanity Content Lake (CMS)
+    expect(cspHeader.value).toContain('https://unz85dqo.api.sanity.io')
+    expect(cspHeader.value).toContain('https://unz85dqo.apicdn.sanity.io')
+    expect(cspHeader.value).toContain('https://cdn.sanity.io')
   })
 
   it('restricts default-src to self', () => {
@@ -158,7 +162,8 @@ describe('vercel.json Content-Security-Policy', () => {
     expect(connectSrcValue).not.toContain('*')
     // Verify only known trusted origins are present
     const allowed = ["'self'", 'https://api.spotify.com', 'https://open.spotify.com',
-      'https://api.song.link', 'https://rest.bandsintown.com', 'https://itunes.apple.com', 'https://wsrv.nl']
+      'https://api.song.link', 'https://rest.bandsintown.com', 'https://itunes.apple.com', 'https://wsrv.nl',
+      'https://unz85dqo.api.sanity.io', 'https://unz85dqo.apicdn.sanity.io', 'https://cdn.sanity.io']
     const domains = connectSrcValue.split(/\s+/)
     for (const domain of domains) {
       expect(allowed).toContain(domain)
