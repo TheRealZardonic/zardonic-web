@@ -23,3 +23,7 @@ jobs:
         run: npm audit --audit-level=moderate
       - name: Run tests
         run: npm test
+      - name: notify vercel
+        uses: vercel/repository-dispatch/actions/status@v1
+        with:
+          name: Vercel - zardonic-industrial: lint

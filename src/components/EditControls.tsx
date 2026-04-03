@@ -37,10 +37,7 @@ interface EditControlsProps {
   hasPassword: boolean
   onChangePassword: (password: string) => Promise<void>
   onSetPassword: (password: string) => Promise<void>
-  siteData?: SiteData
-  onImportData?: (data: SiteData) => void
-  adminSettings?: AdminSettings
-  onAdminSettingsChange?: (settings: AdminSettings) => void
+  adminSettings?: AdminSettings | null
   onOpenConfigEditor?: () => void
   onOpenStats?: () => void
   onOpenSecurityIncidents?: () => void
@@ -56,10 +53,7 @@ export default function EditControls({
   hasPassword,
   onChangePassword,
   onSetPassword,
-  siteData,
-  onImportData,
   adminSettings,
-  onAdminSettingsChange,
   onOpenConfigEditor,
   onOpenStats,
   onOpenSecurityIncidents,
@@ -266,13 +260,6 @@ export default function EditControls({
 
   return (
     <>
-      <input
-        ref={importInputRef}
-        type="file"
-        accept=".json,application/json"
-        className="hidden"
-        onChange={handleImportFile}
-      />
 
       {/* Section Visibility Panel */}
       <AnimatePresence>

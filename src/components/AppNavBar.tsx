@@ -10,7 +10,6 @@ import { Pencil, List, X } from '@phosphor-icons/react'
 interface AppNavBarProps {
   artistName: string
   editMode: boolean
-  setSiteData: (updater: ((data: SiteData | undefined) => SiteData | typeof SKIP_UPDATE | undefined) | SiteData) => void
   isOwner: boolean
   setEditMode: (v: boolean) => void
   adminPasswordHash: string
@@ -23,7 +22,6 @@ interface AppNavBarProps {
 export default function AppNavBar({
   artistName,
   editMode,
-  setSiteData,
   isOwner,
   setEditMode,
   adminPasswordHash,
@@ -45,19 +43,11 @@ export default function AppNavBar({
           className="text-2xl md:text-3xl font-bold tracking-tighter text-foreground uppercase"
           whileHover={{ filter: 'drop-shadow(2px 0 0 rgba(255,0,100,0.3)) drop-shadow(-2px 0 0 rgba(0,255,255,0.3))' }}
         >
-          {editMode ? (
-            <Input
-              value={artistName}
-              onChange={(e) => setSiteData((data) => data ? { ...data, artistName: e.target.value } : data)}
-              className="w-48 bg-transparent border-border text-foreground"
-            />
-          ) : (
             <img 
               src={logoImage} 
               alt={artistName} 
               className="h-10 md:h-12 w-auto object-contain logo-glitch brightness-110 hover-chromatic-image"
             />
-          )}
         </motion.div>
 
         <div className="hidden md:flex items-center gap-6">

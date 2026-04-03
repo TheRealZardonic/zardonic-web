@@ -7,27 +7,22 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import EditableHeading from '@/components/EditableHeading'
 import { User, Plus, Upload, Trash } from '@phosphor-icons/react'
-import { SKIP_UPDATE } from '@/hooks/use-kv'
 import type { AdminSettings, SectionLabels } from '@/lib/types'
 
 interface ShellSectionProps {
   editMode: boolean
   adminSettings: AdminSettings | undefined
-  setAdminSettings: (updater: AdminSettings | ((current: AdminSettings | undefined) => AdminSettings | undefined | typeof SKIP_UPDATE)) => void
   sectionOrder: number
   visible: boolean
   sectionLabel: string
-  updateSectionLabel: (key: keyof SectionLabels, value: string) => void
 }
 
 export default function ShellSection({
   editMode,
   adminSettings,
-  setAdminSettings,
   sectionOrder,
   visible,
   sectionLabel,
-  updateSectionLabel,
 }: ShellSectionProps) {
   return (
     <div style={{ order: sectionOrder }}>
@@ -48,24 +43,11 @@ export default function ShellSection({
                 text={sectionLabel || ''}
                 defaultText="SHELL"
                 editMode={editMode}
-                onChange={(v) => updateSectionLabel('shell', v)}
                 glitchEnabled={adminSettings?.glitchTextSettings?.enabled !== false}
                 glitchIntervalMs={adminSettings?.glitchTextSettings?.intervalMs}
                 glitchDurationMs={adminSettings?.glitchTextSettings?.durationMs}
               />
             </h2>
-            {editMode && (
-              <Button onClick={() => {
-                const members = adminSettings?.shellMembers || (adminSettings?.shellMember ? [adminSettings.shellMember] : [])
-                setAdminSettings((prev) => ({
-                  ...(prev || {}),
-                  shellMembers: [...members, { name: 'New Member', role: '', bio: '' }],
-                }))
-              }} className="gap-2">
-                <Plus className="w-4 h-4" />
-                Add Member
-              </Button>
-            )}
           </div>
 
           <div className="space-y-12">
@@ -87,32 +69,6 @@ export default function ShellSection({
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <User className="w-20 h-20 text-muted-foreground" />
-                    </div>
-                  )}
-                  {editMode && (
-                    <div className="absolute bottom-2 right-2 flex gap-1">
-                      <label className="cursor-pointer">
-                        <Upload className="w-6 h-6 text-primary bg-background/80 p-1 rounded" />
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0]
-                            if (file) {
-                              const reader = new FileReader()
-                              reader.onloadend = () => {
-                                setAdminSettings((prev) => {
-                                  const members = [...(prev?.shellMembers || (prev?.shellMember ? [prev.shellMember] : []))]
-                                  members[memberIndex] = { ...members[memberIndex], photo: reader.result as string }
-                                  return { ...(prev || {}), shellMembers: members }
-                                })
-                              }
-                              reader.readAsDataURL(file)
-                            }
-                          }}
-                        />
-                      </label>
                     </div>
                   )}
                   <div className="absolute top-0 left-0 w-3 h-3 border-t border-l border-primary/60" />

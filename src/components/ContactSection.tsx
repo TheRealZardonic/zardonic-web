@@ -21,9 +21,7 @@ const TITLE_TYPING_START_DELAY_MS = 200
 interface ContactSectionProps {
   contactSettings?: ContactSettings
   editMode?: boolean
-  onUpdate?: (settings: ContactSettings) => void
   sectionLabels?: SectionLabels
-  onLabelChange?: (key: keyof SectionLabels, value: string) => void
 }
 
 type FormStatus = 'idle' | 'loading' | 'success' | 'error'
@@ -34,9 +32,7 @@ const inputClass =
 export default function ContactSection({
   contactSettings,
   editMode,
-  onUpdate,
   sectionLabels,
-  onLabelChange,
 }: ContactSectionProps) {
   const { t } = useLocale()
   const [glitchActive, setGlitchActive] = useState(false)
@@ -114,15 +110,6 @@ export default function ContactSection({
             </ChromaticText>
             <span className="animate-pulse">_</span>
           </motion.h2>
-          {editMode && onLabelChange && (
-            <input
-              type="text"
-              value={sectionLabels?.contact || ''}
-              onChange={(e) => onLabelChange('contact', e.target.value)}
-              placeholder={t('contact.defaultTitle')}
-              className="bg-transparent border border-primary/30 px-2 py-1 text-xs font-mono text-primary w-32 focus:outline-none focus:border-primary"
-            />
-          )}
         </div>
 
         <Separator className="mb-8 bg-primary/10" />

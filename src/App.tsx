@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useKV, SKIP_UPDATE } from '@/hooks/use-kv'
+import { loadSiteData, loadAdminSettings } from '@/lib/sanity.loader'
 import { useKonami } from '@/hooks/use-konami'
 import { trackPageView, trackHeatmapClick } from '@/hooks/use-analytics'
 import { fetchITunesReleases } from '@/lib/itunes'
@@ -281,103 +282,23 @@ function App() {
     return () => document.removeEventListener('click', handleClick)
   }, [])
 
-  const [siteData, setSiteData] = useKV<SiteData>('zardonic-site-data', {
-    artistName: 'ZARDONIC',
-    heroImage: heroImage,
-    bio: `The clash of disparate elements activates innovation, and every generation brings us timeless figures who accidentally spark a new revolutionary sound within the music world. Chuck Berry mixed jazz, blues, gospel and country music to create Rock N Roll. A few decades later, Ozzy Osbourne turned up the gain to create Heavy Metal. And since the early 2000s, Federico Ágreda Álvarez, the masked performer known to the world as DJ and producer Zardonic, has harnessed the power of the nexus between Drum & Bass and Heavy Metal to create the sound that is now known as Metal & Bass.
+  const [siteData, setSiteData] = useState<SiteData | undefined>(undefined)
+  const [adminSettings, setAdminSettings] = useState<AdminSettings | undefined>(undefined)
 
-Born and raised in Venezuela, inspired by America, and based in Germany with a passport book stamped into oblivion, he also represents a union of cultures. In his music, these elements charge forward on a collision course towards a future without creative or spiritual borders. Instead, the award-winning artist draws an inimitable energy from this confluence. Following a prolific string of releases, high-profile remixes and video game collaborations, packed shows on multiple continents, and 100 million-plus streams, he realizes the power and potential of his vision like never before on his 2023 full-length offering Superstars [MNRK HEAVY].
-
-"It's been a long road trying to find the perfect flashpoint between the metal and electronic worlds," he states about his third MNRK studio album, which follows Antihero (2015) and Become (2018). "To me, music is a direct translation of human emotion. I'm all about bringing sounds and people together with no boundaries at all. I don't like limits, so my approach is to be limitless."
-
-Boundlessness has defined his output since day one. Zardonic has cultivated an expansive catalogue of original tracks and remixes for platinum icons, leaving his imprint on Pop Evil, Fear Factory, Bullet For My Valentine and Sonic Syndicate, among others. He has also contributed music to soundtracks for videogames such as Superhot: Mind Control Delete and Redout 2, plus features on All Elite Wrestling, TNT and NBC Sports.
-
-He's the rare force of nature who can earn praise from both YourEDM and Metal Injection. Renowned as "Venezuela's Top DJ Act," he has impressively toppled Beatport's Drum & Bass Releases of the Week and Amazon's Hard Rock Bestsellers at #1. Not to mention, he even appeared in Warlocks Vs Shadows, standing out as "the first Latin American musician to ever be featured as a playable character in a video game.", and if you're a music producer yourself, chances are you've already used a few of his hundreds of factory presets and artist packs he's created for Arturia, Brainworx, Slate Digital, BABY Audio, GForce Software, and many more.
-
-As if reflecting progression in palpable form, Zardonic's signature mask has evolved with him.
-
-"To some extent, every mask marks the end of an era in my life and my way of approaching music," he notes. "The mask from the Become album and recent tours received a lot of battle damage. I had to constantly glue it back together. The paint scraped off. It wore a lot of scars with pride, yet it was a huge weight on my shoulders because no longer want to these scars to rule my decisions. Hence, the new mask is the exact opposite: shiny, sparkly and full of life. You could say I'm constantly resurrecting the Zardonic character, so to speak."
-
-The new album features an assortment of international talents from the Drum & Bass and Hard Rock worlds, including UK singer/songwriter Reebz, featured on the single "Bitter", as well as Nazareth singer Carl Sentance, Toronto Is Broken, Daedric, Hevy, Bruno Balanta from The Qemists, Rage guitarist Jean Bormann, Blitz Union, Norwegian Blackjazz virtuosos SHINING, The Surgery & MC Reptile, Mechanical Vein, Camo MC, and Omnimar. "I am humbled to have such a strong relationship with a group of amazing people. I could spend hours writing about them, but they know that if we're working together, it's because they mean a great deal to me. My most important thing is being able to genuinely connect with the people I work with. If I can't have fun with an artist, there's simply no point in it, and I am glad to call these amazing Superstars my friends."
-
-In the end, Zardonic will unite listeners with Superstars.
-
-"At the core of everything, I try to breathe life into people," he leaves off. "I'm blessed enough to be able to do what I love the most, and that is Music. Music is my own form of self-healing. It allows me to float above the darkness. Maybe, it will do the same for you."`,
-    tracks: [
-      {
-        id: '1',
-        title: 'Revelation',
-        artist: 'ZARDONIC',
-        url: '',
-        artwork: '',
-      },
-    ],
-    gigs: [
-      {
-        id: '1',
-        venue: 'Kulturzentrum Schlachthof',
-        location: 'Wiesbaden, Germany',
-        date: '2025-03-15',
-        ticketUrl: 'https://example.com/tickets/wiesbaden',
-        support: 'The Qemists, Counterstrike'
-      },
-      {
-        id: '2',
-        venue: 'Matrix Club',
-        location: 'Berlin, Germany',
-        date: '2025-04-22',
-        ticketUrl: 'https://example.com/tickets/berlin',
-        support: 'Current Value, Forbidden Society'
-      },
-      {
-        id: '3',
-        venue: 'Glazart',
-        location: 'Paris, France',
-        date: '2025-05-10',
-        ticketUrl: 'https://example.com/tickets/paris',
-        support: 'Pythius, Forbidden Society'
-      },
-      {
-        id: '4',
-        venue: 'Rebellion',
-        location: 'Manchester, UK',
-        date: '2025-06-05',
-        ticketUrl: 'https://example.com/tickets/manchester',
-        support: 'Signal, The Qemists'
-      },
-      {
-        id: '5',
-        venue: 'DNA Lounge',
-        location: 'San Francisco, USA',
-        date: '2025-07-18',
-        ticketUrl: 'https://example.com/tickets/sanfrancisco',
-        support: 'Evol Intent, Counterstrike'
-      }
-    ],
-    releases: [],
-    gallery: [],
-    instagramFeed: [],
-    members: [],
-    mediaFiles: [],
-    creditHighlights: [
-      { src: 'https://images.zoogletools.com/s:bzglfiles/u/154437/0f55903209332a56b6137578b492e543373fdc6c/original/sega-logo.png/!!/b%3AW1sicmVzaXplIiw2NjBdLFsibWF4Il0sWyJ3ZSJdXQ%3D%3D/meta%3AeyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ%3D%3D.png', alt: 'SEGA' },
-      { src: 'https://images.zoogletools.com/s:bzglfiles/u/154437/4b65d0d33e1113b5511272580e87828768cfc2d1/original/7fdd8d8997a41afbdd8381c287d9a984.png/!!/b%3AW1sicmVzaXplIiw2NjBdLFsibWF4Il0sWyJ3ZSJdXQ%3D%3D/meta%3AeyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ%3D%3D.png', alt: 'Sonic Syndicate' },
-      { src: 'https://images.zoogletools.com/s:bzglfiles/u/154437/6eb32362aa0c4fdcce4fa319b7fa721d1fab0989/original/fearfactory-logo-svg.png/!!/b%3AW1sicmVzaXplIiw2NjBdLFsibWF4Il0sWyJ3ZSJdXQ%3D%3D/meta%3AeyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ%3D%3D.png', alt: 'Fear Factory' },
-      { src: 'https://images.zoogletools.com/s:bzglfiles/u/154437/5021ea146b63ef5ffaa3fa82ca588a2abacc85db/original/citypng-com-white-aew-all-elite-wrestling-logo-4000x4000.png/!!/b%3AW1siZXh0cmFjdCIseyJsZWZ0IjoyOSwidG9wIjo4NjIsIndpZHRoIjozOTcxLCJoZWlnaHQiOjIyMzN9XSxbInJlc2l6ZSIsNjYwXSxbIm1heCJdLFsid2UiXV0%3D/meta%3AeyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ%3D%3D.png', alt: 'AEW' },
-      { src: 'https://images.zoogletools.com/s:bzglfiles/u/154437/682412f8e4ef237f862a19771c88a5a24db05ef0/original/pop-evil-5c8c4556e6b4f.png/!!/b%3AW1siZXh0cmFjdCIseyJsZWZ0IjoxOTIsInRvcCI6MCwid2lkdGgiOjQxMywiaGVpZ2h0IjozMTB9XSxbInJlc2l6ZSIsNjYwXSxbIm1heCJdLFsid2UiXV0%3D/meta%3AeyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ%3D%3D.png', alt: 'Pop Evil' },
-      { src: 'https://images.zoogletools.com/s:bzglfiles/u/154437/e43afa6931b42622a32c143ea820b45b4bf22772/original/bfmv.png/!!/b%3AW1siZXh0cmFjdCIseyJsZWZ0IjoxMTksInRvcCI6MjUsIndpZHRoIjo4NjcsImhlaWdodCI6NjgyfV0sWyJyZXNpemUiLDY2MF0sWyJtYXgiXSxbIndlIl1d/meta%3AeyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ%3D%3D.png', alt: 'Bullet For My Valentine' },
-    ],
-    social: {
-      instagram: 'https://instagram.com/zfrederickx',
-      facebook: 'https://facebook.com/ZardonicOfficial',
-      spotify: 'https://open.spotify.com/artist/7BqEidErPMNiUXCRE0dV2n',
-      youtube: 'https://youtube.com/@ZardonicOfficial',
-      soundcloud: 'https://soundcloud.com/zardonic',
-      bandcamp: 'https://zardonic.bandcamp.com',
-      tiktok: 'https://tiktok.com/@zardonic',
-      appleMusic: 'https://music.apple.com/artist/zardonic/271263343',
-    },
-  })
+  useEffect(() => {
+    let mounted = true
+    Promise.all([loadSiteData(), loadAdminSettings()])
+      .then(([data, settings]) => {
+        if (mounted) {
+          setSiteData(data as SiteData)
+          setAdminSettings(settings)
+        }
+      })
+      .catch(err => {
+        console.error('Failed to load Sanity data:', err)
+      })
+    return () => { mounted = false }
+  }, [])
 
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0)
@@ -394,8 +315,6 @@ In the end, Zardonic will unite listeners with Superstars.
   const [showContactInbox, setShowContactInbox] = useState(false)
   const [showSubscriberList, setShowSubscriberList] = useState(false)
 
-  // Admin settings (persisted in Redis)
-  const [adminSettings, setAdminSettings] = useKV<AdminSettings>('zardonic-admin-settings', {})
   const vis = adminSettings?.sectionVisibility ?? {}
   const anim = adminSettings?.animations ?? {}
   const sectionLabels = adminSettings?.sectionLabels ?? {}
@@ -409,23 +328,6 @@ In the end, Zardonic will unite listeners with Superstars.
     return idx >= 0 ? idx : DEFAULT_SECTION_ORDER.indexOf(section)
   }, [sectionOrder])
 
-  const updateSectionLabel = useCallback((key: keyof SectionLabels, value: string) => {
-    setAdminSettings((prev) => ({
-      ...(prev || {}),
-      sectionLabels: {
-        ...(prev?.sectionLabels || {}),
-        [key]: value,
-      },
-    }))
-  }, [setAdminSettings])
-
-  const handleSaveTerminalCommands = useCallback((commands: TerminalCommand[]) => {
-    setAdminSettings((prev) => ({
-      ...(prev || {}),
-      terminalCommands: commands,
-    }))
-    toast.success('Terminal commands saved')
-  }, [setAdminSettings])
 
   // Apply theme customizations to CSS variables
   useEffect(() => {
@@ -574,8 +476,6 @@ In the end, Zardonic will unite listeners with Superstars.
     return urls
   }, [siteData])
   const [galleryIndex, setGalleryIndex] = useState<number | null>(null)
-  const [editingGig, setEditingGig] = useState<Gig | null>(null)
-  const [editingRelease, setEditingRelease] = useState<Release | null>(null)
   const [cyberpunkOverlay, setCyberpunkOverlay] = useState<CyberpunkOverlayState | null>(null)
   const [language, setLanguage] = useState<'en' | 'de'>('en')
   const [iTunesFetching, setITunesFetching] = useState(false)
@@ -708,10 +608,7 @@ In the end, Zardonic will unite listeners with Superstars.
       }
 
       setSiteData((data) => {
-        if (!data) {
-          console.warn('siteData is undefined during iTunes sync, skipping update')
-          return SKIP_UPDATE
-        }
+        if (!data) return data
         const existingIds = new Set(data.releases.map(r => r.id))
         const newReleases: Release[] = iTunesReleases
           .filter(r => !existingIds.has(r.id))
@@ -776,10 +673,7 @@ In the end, Zardonic will unite listeners with Superstars.
       }
 
       setSiteData((data) => {
-        if (!data) {
-          console.warn('siteData is undefined during Bandsintown sync, skipping update')
-          return SKIP_UPDATE
-        }
+        if (!data) return data
         const existingIds = new Set(data.gigs.map(g => g.id))
         const newGigs: Gig[] = events
           .filter(e => !existingIds.has(e.id))
@@ -867,116 +761,6 @@ In the end, Zardonic will unite listeners with Superstars.
     }, 100)
   }
 
-  const saveChanges = () => {
-    toast.success('Changes saved successfully')
-  }
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'hero' | 'gallery') => {
-    const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        const imageUrl = reader.result as string
-        if (type === 'hero') {
-          setSiteData((data) => data ? { ...data, heroImage: imageUrl } : data)
-          toast.success('Hero image updated')
-        } else {
-          setSiteData((data) => data ? { ...data, gallery: [...data.gallery, imageUrl] } : data)
-          toast.success('Image added to gallery')
-        }
-      }
-      reader.readAsDataURL(file)
-    }
-  }
-
-  const addGig = () => {
-    const newGig: Gig = {
-      id: Date.now().toString(),
-      venue: 'New Venue',
-      location: 'City, Country',
-      date: new Date().toISOString().split('T')[0],
-      ticketUrl: '',
-      support: '',
-      lineup: [],
-    }
-    setSiteData((data) => data ? { ...data, gigs: [...data.gigs, newGig] } : data)
-    setEditingGig(newGig)
-  }
-
-  const saveGig = (gig: Gig) => {
-    setSiteData((data) => {
-      if (!data) {
-        console.warn('siteData is undefined during gig save, skipping update')
-        return SKIP_UPDATE
-      }
-      const gigIndex = data.gigs.findIndex(g => g.id === gig.id)
-      if (gigIndex >= 0) {
-        const newGigs = [...data.gigs]
-        newGigs[gigIndex] = gig
-        return { ...data, gigs: newGigs }
-      }
-      return data
-    })
-    setEditingGig(null)
-    toast.success('Gig saved')
-  }
-
-  const deleteGig = (id: string) => {
-    setSiteData((data) => data ? { ...data, gigs: data.gigs.filter(g => g.id !== id) } : data)
-    toast.success('Gig deleted')
-  }
-
-  const addRelease = () => {
-    const newRelease: Release = {
-      id: Date.now().toString(),
-      title: 'New Release',
-      artwork: '',
-      year: new Date().getFullYear().toString(),
-      spotify: '',
-      soundcloud: '',
-      youtube: '',
-      bandcamp: ''
-    }
-    setSiteData((data) => data ? { ...data, releases: [...data.releases, newRelease] } : data)
-    setEditingRelease(newRelease)
-  }
-
-  const saveRelease = (release: Release) => {
-    setSiteData((data) => {
-      if (!data) {
-        console.warn('siteData is undefined during release save, skipping update')
-        return SKIP_UPDATE
-      }
-      const releaseIndex = data.releases.findIndex(r => r.id === release.id)
-      if (releaseIndex >= 0) {
-        const newReleases = [...data.releases]
-        newReleases[releaseIndex] = release
-        return { ...data, releases: newReleases }
-      }
-      return data
-    })
-    setEditingRelease(null)
-    toast.success('Release saved')
-  }
-
-  const deleteRelease = (id: string) => {
-    setSiteData((data) => data ? { ...data, releases: data.releases.filter(r => r.id !== id) } : data)
-    toast.success('Release deleted')
-  }
-
-  const deleteGalleryImage = (index: number) => {
-    setSiteData((data) => {
-      if (!data) {
-        console.warn('siteData is undefined during gallery image delete, skipping update')
-        return SKIP_UPDATE
-      }
-      const newGallery = [...data.gallery]
-      newGallery.splice(index, 1)
-      return { ...data, gallery: newGallery }
-    })
-    toast.success('Image removed')
-  }
-
   const currentTrack = siteData?.tracks[currentTrackIndex]
 
   if (!siteData) {
@@ -1005,7 +789,6 @@ In the end, Zardonic will unite listeners with Superstars.
       <AppNavBar
         artistName={siteData.artistName}
         editMode={editMode}
-        setSiteData={setSiteData}
         isOwner={isOwner}
         setEditMode={setEditMode}
         adminPasswordHash={adminPasswordHash || ''}
@@ -1018,7 +801,6 @@ In the end, Zardonic will unite listeners with Superstars.
       <AppHeroSection
         contentLoaded={contentLoaded}
         editMode={editMode}
-        handleImageUpload={handleImageUpload}
         scrollToSection={scrollToSection}
         artistName={siteData.artistName}
       />
@@ -1043,29 +825,12 @@ In the end, Zardonic will unite listeners with Superstars.
                 text={sectionLabels.biography || ''}
                 defaultText="BIOGRAPHY"
                 editMode={editMode}
-                onChange={(v) => updateSectionLabel('biography', v)}
                 glitchEnabled={adminSettings?.glitchTextSettings?.enabled !== false}
                 glitchIntervalMs={adminSettings?.glitchTextSettings?.intervalMs}
                 glitchDurationMs={adminSettings?.glitchTextSettings?.durationMs}
               />
             </h2>
             
-            {editMode ? (
-              <div className="space-y-4">
-                <Textarea
-                  value={siteData.bio}
-                  onChange={(e) => {
-                    const newBio = e.target.value
-                    setSiteData((data) => data ? { ...data, bio: newBio } : data)
-                  }}
-                  className="min-h-[300px] font-mono bg-card border-border text-foreground"
-                />
-                <Button onClick={saveChanges}>
-                  <FloppyDisk className="w-4 h-4 mr-2" />
-                  Save Bio
-                </Button>
-              </div>
-            ) : (
               <div>
                 <motion.div
                   initial={{ opacity: 0, x: -30 }}
@@ -1109,7 +874,6 @@ In the end, Zardonic will unite listeners with Superstars.
                   </Button>
                 </motion.div>
               </div>
-            )}
           </motion.div>
         </div>
       </section>
@@ -1120,21 +884,17 @@ In the end, Zardonic will unite listeners with Superstars.
       <ShellSection
         editMode={editMode}
         adminSettings={adminSettings}
-        setAdminSettings={setAdminSettings}
         sectionOrder={getSectionOrder('shell')}
         visible={vis.shell !== false}
         sectionLabel={sectionLabels.shell || ''}
-        updateSectionLabel={updateSectionLabel}
       />
 
       <CreditHighlightsSection
         siteData={siteData}
         editMode={editMode}
-        setSiteData={setSiteData}
         sectionOrder={getSectionOrder('creditHighlights')}
         visible={vis.creditHighlights !== false}
         sectionLabel={sectionLabels.creditHighlights || ''}
-        updateSectionLabel={updateSectionLabel}
       />
 
       <div style={{ order: getSectionOrder('music') }}>
@@ -1154,7 +914,6 @@ In the end, Zardonic will unite listeners with Superstars.
                 text={sectionLabels.musicPlayer || ''}
                 defaultText="MUSIC PLAYER"
                 editMode={editMode}
-                onChange={(v) => updateSectionLabel('musicPlayer', v)}
                 glitchEnabled={adminSettings?.glitchTextSettings?.enabled !== false}
                 glitchIntervalMs={adminSettings?.glitchTextSettings?.intervalMs}
                 glitchDurationMs={adminSettings?.glitchTextSettings?.durationMs}
@@ -1206,29 +965,11 @@ In the end, Zardonic will unite listeners with Superstars.
                   text={sectionLabels.upcomingGigs || ''}
                   defaultText="UPCOMING GIGS"
                   editMode={editMode}
-                  onChange={(v) => updateSectionLabel('upcomingGigs', v)}
                   glitchEnabled={adminSettings?.glitchTextSettings?.enabled !== false}
                   glitchIntervalMs={adminSettings?.glitchTextSettings?.intervalMs}
                   glitchDurationMs={adminSettings?.glitchTextSettings?.durationMs}
                 />
               </h2>
-              {editMode && (
-                <div className="flex gap-2">
-                  <Button onClick={addGig} className="gap-2">
-                    <Plus className="w-4 h-4" />
-                    Add Gig
-                  </Button>
-                  <Button 
-                    onClick={() => handleFetchBandsintownEvents(false)} 
-                    variant="outline" 
-                    className="gap-2"
-                    disabled={bandsintownFetching}
-                  >
-                    <ArrowsClockwise className={`w-4 h-4 ${bandsintownFetching ? 'animate-spin' : ''}`} />
-                    Sync Gigs
-                  </Button>
-                </div>
-              )}
             </div>
 
             {bandsintownFetching && siteData.gigs.length === 0 ? (
@@ -1325,24 +1066,6 @@ In the end, Zardonic will unite listeners with Superstars.
                           )}
                         </div>
 
-                        <div className="flex gap-2">
-                          {editMode && (
-                            <>
-                              <Button variant="outline" size="sm" onClick={(e) => {
-                                e.stopPropagation()
-                                setEditingGig(gig)
-                              }}>
-                                <Pencil className="w-4 h-4" />
-                              </Button>
-                              <Button variant="destructive" size="sm" onClick={(e) => {
-                                e.stopPropagation()
-                                deleteGig(gig.id)
-                              }}>
-                                <Trash className="w-4 h-4" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
                       </div>
                     </Card>
                   </motion.div>
@@ -1374,29 +1097,11 @@ In the end, Zardonic will unite listeners with Superstars.
                   text={sectionLabels.releases || ''}
                   defaultText="RELEASES"
                   editMode={editMode}
-                  onChange={(v) => updateSectionLabel('releases', v)}
                   glitchEnabled={adminSettings?.glitchTextSettings?.enabled !== false}
                   glitchIntervalMs={adminSettings?.glitchTextSettings?.intervalMs}
                   glitchDurationMs={adminSettings?.glitchTextSettings?.durationMs}
                 />
               </h2>
-              {editMode && (
-                <div className="flex gap-2">
-                  <Button onClick={addRelease} className="gap-2">
-                    <Plus className="w-4 h-4" />
-                    Add Release
-                  </Button>
-                  <Button 
-                    onClick={() => handleFetchITunesReleases(false)} 
-                    variant="outline" 
-                    className="gap-2"
-                    disabled={iTunesFetching}
-                  >
-                    <ArrowsClockwise className={`w-4 h-4 ${iTunesFetching ? 'animate-spin' : ''}`} />
-                    Sync Releases
-                  </Button>
-                </div>
-              )}
             </div>
 
             {(iTunesFetching || !hasAutoLoaded) && siteData.releases.length === 0 ? (
@@ -1479,35 +1184,10 @@ In the end, Zardonic will unite listeners with Superstars.
                             {release.artwork && (
                               <img src={release.artwork} alt={release.title} className="w-full h-full object-cover glitch-image hover-chromatic-image" />
                             )}
-                            {editMode && (
-                              <div className="absolute top-2 right-2 flex gap-1">
-                                <Button variant="destructive" size="sm" onClick={(e) => {
-                                  e.stopPropagation()
-                                  deleteRelease(release.id)
-                                }}>
-                                  <Trash className="w-3 h-3" />
-                                </Button>
-                              </div>
-                            )}
                           </div>
                           <div className="p-4">
                             <h3 className="font-bold uppercase text-sm mb-1 truncate font-mono hover-chromatic">{release.title}</h3>
                             <p className="text-xs text-muted-foreground mb-3 font-mono">{release.year}</p>
-                            
-                            {editMode && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="w-full mt-3"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setEditingRelease(release)
-                                }}
-                              >
-                                <Pencil className="w-3 h-3 mr-2" />
-                                Edit
-                              </Button>
-                            )}
                           </div>
                         </Card>
                       </motion.div>
@@ -1553,14 +1233,10 @@ In the end, Zardonic will unite listeners with Superstars.
       <GallerySection
         siteData={siteData}
         editMode={editMode}
-        setSiteData={setSiteData}
         sectionOrder={getSectionOrder('gallery')}
         visible={vis.gallery !== false}
         sectionLabel={sectionLabels.gallery || ''}
-        updateSectionLabel={updateSectionLabel}
         setGalleryIndex={setGalleryIndex}
-        deleteGalleryImage={deleteGalleryImage}
-        handleImageUpload={handleImageUpload}
         adminSettings={adminSettings}
       />
 
@@ -1576,18 +1252,6 @@ In the end, Zardonic will unite listeners with Superstars.
           description: f.size,
         })) || []}
         editMode={editMode}
-        onUpdate={(files) => {
-          setSiteData((data) => data ? {
-            ...data,
-            mediaFiles: files.map(f => ({
-              id: f.id,
-              name: f.name,
-              url: f.url,
-              type: (f.type === 'download' ? 'zip' : f.type || 'zip') as 'image' | 'pdf' | 'zip',
-              size: f.description || '',
-            })),
-          } : data)
-        }}
       />
       </div>
 
@@ -1609,41 +1273,12 @@ In the end, Zardonic will unite listeners with Superstars.
                 text={sectionLabels.connect || ''}
                 defaultText="CONNECT"
                 editMode={editMode}
-                onChange={(v) => updateSectionLabel('connect', v)}
                 glitchEnabled={adminSettings?.glitchTextSettings?.enabled !== false}
                 glitchIntervalMs={adminSettings?.glitchTextSettings?.intervalMs}
                 glitchDurationMs={adminSettings?.glitchTextSettings?.durationMs}
               />
             </h2>
 
-            {editMode && (
-              <div className="mb-8 space-y-4 max-w-md mx-auto text-left">
-                {([
-                  { key: 'instagram', label: 'Instagram' },
-                  { key: 'facebook', label: 'Facebook' },
-                  { key: 'spotify', label: 'Spotify' },
-                  { key: 'youtube', label: 'YouTube' },
-                  { key: 'soundcloud', label: 'SoundCloud' },
-                  { key: 'bandcamp', label: 'Bandcamp' },
-                  { key: 'tiktok', label: 'TikTok' },
-                  { key: 'appleMusic', label: 'Apple Music' },
-                  { key: 'twitter', label: 'Twitter / X' },
-                  { key: 'twitch', label: 'Twitch' },
-                  { key: 'beatport', label: 'Beatport' },
-                  { key: 'linktree', label: 'Linktree' },
-                ] as { key: keyof typeof siteData.social; label: string }[]).map(({ key, label }) => (
-                  <div key={key}>
-                    <Label className="font-mono">{label}</Label>
-                    <Input
-                      value={siteData.social[key] || ''}
-                      onChange={(e) => setSiteData((data) => data ? { ...data, social: { ...data.social, [key]: e.target.value } } : data)}
-                      className="bg-card border-border"
-                      placeholder={`https://${label.toLowerCase().replace(/\s.*/, '')}.com/...`}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
 
             <div className="flex flex-wrap justify-center gap-6">
               {([
@@ -1716,9 +1351,7 @@ In the end, Zardonic will unite listeners with Superstars.
         <ContactSection
           contactSettings={contactSettings}
           editMode={editMode}
-          onUpdate={(settings: ContactSettings) => setAdminSettings((prev) => ({ ...(prev || {}), contactSettings: settings }))}
           sectionLabels={sectionLabels}
-          onLabelChange={(key, value) => setAdminSettings((prev) => ({ ...(prev || {}), sectionLabels: { ...(prev?.sectionLabels || {}), [key]: value } }))}
         />
       )}
       </div>
@@ -1909,17 +1542,7 @@ In the end, Zardonic will unite listeners with Superstars.
                                 </h2>
                               </motion.div>
 
-                              {editMode ? (
-                                <div className="space-y-4">
-                                  <div className="data-label mb-2">Custom Impressum Content (HTML supported)</div>
-                                  <Textarea
-                                    value={adminSettings?.legalContent?.impressumCustom || ''}
-                                    onChange={(e) => setAdminSettings((prev) => ({ ...(prev || {}), legalContent: { ...(prev?.legalContent || {}), impressumCustom: e.target.value } }))}
-                                    className="bg-card border-border font-mono text-sm min-h-[300px]"
-                                    placeholder="Enter custom Impressum text here. Leave empty for default content."
-                                  />
-                                </div>
-                              ) : adminSettings?.legalContent?.impressumCustom ? (
+                              {adminSettings?.legalContent?.impressumCustom ? (
                                 <div className="cyber-grid p-4">
                                   <div className="font-mono text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">
                                     {adminSettings.legalContent.impressumCustom}
@@ -2100,17 +1723,7 @@ In the end, Zardonic will unite listeners with Superstars.
                                 </div>
                               </motion.div>
 
-                              {editMode ? (
-                                <div className="space-y-4">
-                                  <div className="data-label mb-2">Custom Privacy/Datenschutz Content</div>
-                                  <Textarea
-                                    value={adminSettings?.legalContent?.privacyCustom || ''}
-                                    onChange={(e) => setAdminSettings((prev) => ({ ...(prev || {}), legalContent: { ...(prev?.legalContent || {}), privacyCustom: e.target.value } }))}
-                                    className="bg-card border-border font-mono text-sm min-h-[300px]"
-                                    placeholder="Enter custom privacy policy text here. Leave empty for default content."
-                                  />
-                                </div>
-                              ) : adminSettings?.legalContent?.privacyCustom ? (
+                              {adminSettings?.legalContent?.privacyCustom ? (
                                 <div className="cyber-grid p-4">
                                   <div className="font-mono text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">
                                     {adminSettings.legalContent.privacyCustom}
@@ -2327,27 +1940,10 @@ In the end, Zardonic will unite listeners with Superstars.
                                 >
                                   <div className="data-label mb-3">Management</div>
                                   <div className="space-y-2 font-mono text-sm">
-                                    {editMode ? (
-                                      <>
-                                        <Input
-                                          value={adminSettings?.contactInfo?.managementName || 'Federico Augusto Ágreda Álvarez'}
-                                          onChange={(e) => setAdminSettings((prev) => ({ ...(prev || {}), contactInfo: { ...(prev?.contactInfo || {}), managementName: e.target.value } }))}
-                                          className="bg-card border-border font-mono text-sm"
-                                          placeholder="Management name"
-                                        />
-                                        <Input
-                                          value={adminSettings?.contactInfo?.managementEmail || 'info@zardonic.net'}
-                                          onChange={(e) => setAdminSettings((prev) => ({ ...(prev || {}), contactInfo: { ...(prev?.contactInfo || {}), managementEmail: e.target.value } }))}
-                                          className="bg-card border-border font-mono text-sm"
-                                          placeholder="Management email"
-                                        />
-                                      </>
-                                    ) : (
                                       <>
                                         <p>{adminSettings?.contactInfo?.managementName || 'Federico Augusto Ágreda Álvarez'}</p>
                                         <p>E-Mail: <a href={`mailto:${adminSettings?.contactInfo?.managementEmail || 'info@zardonic.net'}`} className="text-primary hover:underline">{adminSettings?.contactInfo?.managementEmail || 'info@zardonic.net'}</a></p>
                                       </>
-                                    )}
                                   </div>
                                 </motion.div>
 
@@ -2359,16 +1955,7 @@ In the end, Zardonic will unite listeners with Superstars.
                                 >
                                   <div className="data-label mb-3">Booking</div>
                                   <div className="space-y-2 font-mono text-sm">
-                                    {editMode ? (
-                                      <Input
-                                        value={adminSettings?.contactInfo?.bookingEmail || 'booking@zardonic.net'}
-                                        onChange={(e) => setAdminSettings((prev) => ({ ...(prev || {}), contactInfo: { ...(prev?.contactInfo || {}), bookingEmail: e.target.value } }))}
-                                        className="bg-card border-border font-mono text-sm"
-                                        placeholder="Booking email"
-                                      />
-                                    ) : (
                                       <p>E-Mail: <a href={`mailto:${adminSettings?.contactInfo?.bookingEmail || 'booking@zardonic.net'}`} className="text-primary hover:underline">{adminSettings?.contactInfo?.bookingEmail || 'booking@zardonic.net'}</a></p>
-                                    )}
                                   </div>
                                 </motion.div>
 
@@ -2380,16 +1967,7 @@ In the end, Zardonic will unite listeners with Superstars.
                                 >
                                   <div className="data-label mb-3">Press / Media</div>
                                   <div className="space-y-2 font-mono text-sm">
-                                    {editMode ? (
-                                      <Input
-                                        value={adminSettings?.contactInfo?.pressEmail || 'press@zardonic.net'}
-                                        onChange={(e) => setAdminSettings((prev) => ({ ...(prev || {}), contactInfo: { ...(prev?.contactInfo || {}), pressEmail: e.target.value } }))}
-                                        className="bg-card border-border font-mono text-sm"
-                                        placeholder="Press email"
-                                      />
-                                    ) : (
                                       <p>E-Mail: <a href={`mailto:${adminSettings?.contactInfo?.pressEmail || 'press@zardonic.net'}`} className="text-primary hover:underline">{adminSettings?.contactInfo?.pressEmail || 'press@zardonic.net'}</a></p>
-                                    )}
                                   </div>
                                 </motion.div>
 
@@ -2803,118 +2381,6 @@ In the end, Zardonic will unite listeners with Superstars.
         )}
       </AnimatePresence>
 
-      <Dialog open={editingGig !== null} onOpenChange={() => setEditingGig(null)}>
-        <DialogContent className="bg-background border-border">
-          <DialogHeader>
-            <DialogTitle className="uppercase tracking-wide font-mono">Edit Gig</DialogTitle>
-          </DialogHeader>
-          {editingGig && (
-            <div className="space-y-4">
-              <div>
-                <Label className="font-mono">Venue</Label>
-                <Input
-                  value={editingGig.venue}
-                  onChange={(e) => setEditingGig({ ...editingGig, venue: e.target.value })}
-                  className="bg-card border-border"
-                />
-              </div>
-              <div>
-                <Label className="font-mono">Location</Label>
-                <Input
-                  value={editingGig.location}
-                  onChange={(e) => setEditingGig({ ...editingGig, location: e.target.value })}
-                  className="bg-card border-border"
-                />
-              </div>
-              <div>
-                <Label className="font-mono">Date</Label>
-                <Input
-                  type="date"
-                  value={editingGig.date}
-                  onChange={(e) => setEditingGig({ ...editingGig, date: e.target.value })}
-                  className="bg-card border-border"
-                />
-              </div>
-              <div>
-                <Label className="font-mono">Support</Label>
-                <Input
-                  value={editingGig.support || ''}
-                  onChange={(e) => setEditingGig({ ...editingGig, support: e.target.value })}
-                  className="bg-card border-border"
-                />
-              </div>
-              <div>
-                <Label className="font-mono">Ticket URL</Label>
-                <Input
-                  value={editingGig.ticketUrl || ''}
-                  onChange={(e) => setEditingGig({ ...editingGig, ticketUrl: e.target.value })}
-                  className="bg-card border-border"
-                />
-              </div>
-              <Button onClick={() => saveGig(editingGig)} className="w-full">
-                <FloppyDisk className="w-4 h-4 mr-2" />
-                Save Gig
-              </Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={editingRelease !== null} onOpenChange={() => setEditingRelease(null)}>
-        <DialogContent className="bg-background border-border">
-          <DialogHeader>
-            <DialogTitle className="uppercase tracking-wide font-mono">Edit Release</DialogTitle>
-          </DialogHeader>
-          {editingRelease && (
-            <div className="space-y-4">
-              <div>
-                <Label className="font-mono">Title</Label>
-                <Input
-                  value={editingRelease.title}
-                  onChange={(e) => setEditingRelease({ ...editingRelease, title: e.target.value })}
-                  className="bg-card border-border"
-                />
-              </div>
-              <div>
-                <Label className="font-mono">Year</Label>
-                <Input
-                  value={editingRelease.year}
-                  onChange={(e) => setEditingRelease({ ...editingRelease, year: e.target.value })}
-                  className="bg-card border-border"
-                />
-              </div>
-              <div>
-                <Label className="font-mono">Artwork URL</Label>
-                <Input
-                  value={editingRelease.artwork}
-                  onChange={(e) => setEditingRelease({ ...editingRelease, artwork: e.target.value })}
-                  className="bg-card border-border"
-                />
-              </div>
-              <div>
-                <Label className="font-mono">Spotify URL</Label>
-                <Input
-                  value={editingRelease.spotify || ''}
-                  onChange={(e) => setEditingRelease({ ...editingRelease, spotify: e.target.value })}
-                  className="bg-card border-border"
-                />
-              </div>
-              <div>
-                <Label className="font-mono">YouTube URL</Label>
-                <Input
-                  value={editingRelease.youtube || ''}
-                  onChange={(e) => setEditingRelease({ ...editingRelease, youtube: e.target.value })}
-                  className="bg-card border-border"
-                />
-              </div>
-              <Button onClick={() => saveRelease(editingRelease)} className="w-full">
-                <FloppyDisk className="w-4 h-4 mr-2" />
-                Save Release
-              </Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
 
       {isOwner && (
         <EditControls
@@ -2923,10 +2389,7 @@ In the end, Zardonic will unite listeners with Superstars.
           hasPassword={!!adminPasswordHash}
           onChangePassword={handleSetAdminPassword}
           onSetPassword={handleSetAdminPassword}
-          siteData={siteData}
-          onImportData={(imported) => setSiteData(imported)}
           adminSettings={adminSettings}
-          onAdminSettingsChange={(settings) => setAdminSettings(settings)}
           onOpenConfigEditor={() => setShowConfigEditor(true)}
           onOpenStats={() => setShowStats(true)}
           onOpenSecurityIncidents={() => setShowSecurityIncidents(true)}

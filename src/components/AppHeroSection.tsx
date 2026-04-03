@@ -7,7 +7,6 @@ import { Upload, Storefront } from '@phosphor-icons/react'
 interface AppHeroSectionProps {
   contentLoaded: boolean
   editMode: boolean
-  handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>, type: 'hero' | 'gallery') => void
   scrollToSection: (id: string) => void
   artistName: string
 }
@@ -15,7 +14,6 @@ interface AppHeroSectionProps {
 export default function AppHeroSection({
   contentLoaded,
   editMode,
-  handleImageUpload,
   scrollToSection,
   artistName,
 }: AppHeroSectionProps) {
