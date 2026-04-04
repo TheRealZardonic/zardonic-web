@@ -27,13 +27,10 @@ export const sanityClient = createClient({
   dataset,
   apiVersion,
   useCdn: true,
-  fetch: async (url, init) => {
-    // Always proxy Sanity API calls through our Vercel function
-    // to bypass CORS since we can't configure the Sanity dashboard directly.
-    const proxyUrl = `/api/sanity-proxy?url=${encodeURIComponent(url.toString())}`
-
-    return fetch(proxyUrl, init)
-  }
+  // We route through our own domain to bypass CORS restrictions
+  // since we can't configure the Sanity dashboard directly.
+  useProjectHostname: false,
+  apiHost: '/api/sanity'
 })
 
 /**

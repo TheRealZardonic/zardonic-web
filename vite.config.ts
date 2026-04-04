@@ -128,6 +128,11 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite: (path: string) => path.replace(/^\/api\/spotify/, ''),
         },
+        '/api/sanity': {
+          target: 'https://unz85dqo.apicdn.sanity.io',
+          changeOrigin: true,
+          rewrite: (path: string) => path.replace(/^\/api\/sanity/, ''),
+        },
       },
     },
   };
