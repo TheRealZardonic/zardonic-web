@@ -41,7 +41,8 @@
     { "source": "/.git/:p*", "destination": "/api/denied?_src=/.git/:p*" },
     { "source": "/sitemap-extended.xml", "destination": "/api/sitemap-trap" },
     { "source": "/sitemap.xml", "destination": "/api/sitemap-trap" },
-    { "source": "/share/:type/:id", "destination": "/api/og?type=:type&id=:id" }
+    { "source": "/share/:type/:id", "destination": "/api/og?type=:type&id=:id" },
+    { "source": "/api/sanity/:path*", "destination": "https://unz85dqo.apicdn.sanity.io/:path*" }
   ],
   "crons": [
     {
