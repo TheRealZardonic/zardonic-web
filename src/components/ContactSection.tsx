@@ -19,7 +19,7 @@ const TITLE_TYPING_SPEED_MS = 80
 const TITLE_TYPING_START_DELAY_MS = 200
 
 interface ContactSectionProps {
-  onUpdate?: any;
+  onUpdate?: (settings: ContactSettings) => void
   contactSettings?: ContactSettings
   editMode?: boolean
   sectionLabels?: SectionLabels

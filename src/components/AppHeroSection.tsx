@@ -39,6 +39,7 @@ export default function AppHeroSection({
               src={logoImage} 
               alt={artistName} 
               className="h-32 md:h-48 lg:h-64 w-auto object-contain brightness-110 hover-chromatic-image"
+              fetchPriority="high"
             />
             <img 
               src={logoImage} 

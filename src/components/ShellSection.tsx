@@ -10,7 +10,7 @@ import { User, Plus, Upload, Trash } from '@phosphor-icons/react'
 import type { AdminSettings, SectionLabels } from '@/lib/types'
 
 interface ShellSectionProps {
-  setAdminSettings?: any;
+  setAdminSettings?: (settings: AdminSettings) => void
   editMode: boolean
   adminSettings: AdminSettings | undefined
   sectionOrder: number
@@ -66,6 +66,8 @@ export default function ShellSection({ setAdminSettings,
                       src={member.photo}
                       alt={member.name || 'Member'}
                       className="w-full h-full object-cover glitch-image hover-chromatic-image"
+                      loading="lazy"
+                      decoding="async"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
@@ -91,11 +93,12 @@ export default function ShellSection({ setAdminSettings,
                     {editMode ? (
                       <Input
                         value={member?.name || ''}
-                        onChange={(e) => (setAdminSettings as any)((prev: any) => {
-                          const members = [...(prev?.shellMembers || (prev?.shellMember ? [prev.shellMember] : []))]
+                        onChange={(e) => {
+                          const prev = adminSettings ?? {} as AdminSettings
+                          const members = [...(prev.shellMembers || (prev.shellMember ? [prev.shellMember] : []))]
                           members[memberIndex] = { ...members[memberIndex], name: e.target.value }
-                          return { ...(prev || {}), shellMembers: members }
-                        })}
+                          setAdminSettings?.({ ...prev, shellMembers: members })
+                        }}
                         className="bg-card border-border font-mono text-xl"
                         placeholder="Member name"
                       />
@@ -109,11 +112,12 @@ export default function ShellSection({ setAdminSettings,
                     {editMode ? (
                       <Input
                         value={member?.role || ''}
-                        onChange={(e) => (setAdminSettings as any)((prev: any) => {
-                          const members = [...(prev?.shellMembers || (prev?.shellMember ? [prev.shellMember] : []))]
+                        onChange={(e) => {
+                          const prev = adminSettings ?? {} as AdminSettings
+                          const members = [...(prev.shellMembers || (prev.shellMember ? [prev.shellMember] : []))]
                           members[memberIndex] = { ...members[memberIndex], role: e.target.value }
-                          return { ...(prev || {}), shellMembers: members }
-                        })}
+                          setAdminSettings?.({ ...prev, shellMembers: members })
+                        }}
                         className="bg-card border-border font-mono"
                         placeholder="Member role"
                       />
@@ -127,11 +131,12 @@ export default function ShellSection({ setAdminSettings,
                     {editMode ? (
                       <Textarea
                         value={member?.bio || ''}
-                        onChange={(e) => (setAdminSettings as any)((prev: any) => {
-                          const members = [...(prev?.shellMembers || (prev?.shellMember ? [prev.shellMember] : []))]
+                        onChange={(e) => {
+                          const prev = adminSettings ?? {} as AdminSettings
+                          const members = [...(prev.shellMembers || (prev.shellMember ? [prev.shellMember] : []))]
                           members[memberIndex] = { ...members[memberIndex], bio: e.target.value }
-                          return { ...(prev || {}), shellMembers: members }
-                        })}
+                          setAdminSettings?.({ ...prev, shellMembers: members })
+                        }}
                         className="bg-card border-border font-mono min-h-[100px]"
                         placeholder="Member bio"
                       />
@@ -149,14 +154,15 @@ export default function ShellSection({ setAdminSettings,
                             <Label className="font-mono text-xs w-24">{platform}</Label>
                             <Input
                               value={member?.social?.[platform] || ''}
-                              onChange={(e) => (setAdminSettings as any)((prev: any) => {
-                                const members = [...(prev?.shellMembers || (prev?.shellMember ? [prev.shellMember] : []))]
-                                members[memberIndex] = {
-                                  ...members[memberIndex],
-                                  social: { ...(members[memberIndex]?.social || {}), [platform]: e.target.value },
-                                }
-                                return { ...(prev || {}), shellMembers: members }
-                              })}
+                              onChange={(e) => {
+                              const prev = adminSettings ?? {} as AdminSettings
+                              const members = [...(prev.shellMembers || (prev.shellMember ? [prev.shellMember] : []))]
+                              members[memberIndex] = {
+                                ...members[memberIndex],
+                                social: { ...(members[memberIndex]?.social || {}), [platform]: e.target.value },
+                              }
+                              setAdminSettings?.({ ...prev, shellMembers: members })
+                            }}
                               className="bg-card border-border font-mono text-xs flex-1"
                               placeholder={`https://${platform}.com/...`}
                             />
@@ -187,11 +193,12 @@ export default function ShellSection({ setAdminSettings,
                       variant="destructive"
                       size="sm"
                       className="mt-2"
-                      onClick={() => (setAdminSettings as any)((prev: any) => {
-                        const members = [...(prev?.shellMembers || (prev?.shellMember ? [prev.shellMember] : []))]
+                      onClick={() => {
+                        const prev = adminSettings ?? {} as AdminSettings
+                        const members = [...(prev.shellMembers || (prev.shellMember ? [prev.shellMember] : []))]
                         members.splice(memberIndex, 1)
-                        return { ...(prev || {}), shellMembers: members }
-                      })}
+                        setAdminSettings?.({ ...prev, shellMembers: members })
+                      }}
                     >
                       <Trash className="w-4 h-4 mr-1" />
                       Remove Member

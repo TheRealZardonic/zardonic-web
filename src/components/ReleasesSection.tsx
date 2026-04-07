@@ -515,7 +515,7 @@ export default function ReleasesSection({ releases, editMode, onUpdate, fontSize
                 {sortedReleases.map((release) => (
                   <Card key={release.id} className="p-4 bg-card/50 border-border flex items-center gap-4">
                     {release.artwork && (
-                      <img src={release.artwork} alt={release.title} className="w-16 h-16 object-cover flex-shrink-0 border border-border" />
+                      <img src={release.artwork} alt={release.title} className="w-16 h-16 object-cover flex-shrink-0 border border-border" loading="lazy" decoding="async" />
                     )}
                     <div className="flex-1 min-w-0">
                       <h3 className="text-sm font-bold line-clamp-1">{release.title}</h3>

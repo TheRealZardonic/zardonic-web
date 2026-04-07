@@ -212,6 +212,8 @@ export default function GigsSection({ gigs, editMode, onUpdate, onRefresh, fontS
                             src={gig.photo}
                             alt={gig.venue}
                             className="flex-shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-md object-cover border border-border"
+                            loading="lazy"
+                            decoding="async"
                           />
                         )}
                         <div className="flex-shrink-0 pt-1">

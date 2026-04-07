@@ -127,7 +127,7 @@ export default function AppReleasesSection({ releases, sectionOrder, visible, ed
                           <div className="data-label absolute top-2 left-2 z-10">// REL.{release.year}</div>
                           <div className="aspect-square bg-muted relative">
                             {release.artwork && (
-                              <img src={release.artwork} alt={release.title} className="w-full h-full object-cover glitch-image hover-chromatic-image" />
+                              <img src={release.artwork} alt={release.title} className="w-full h-full object-cover glitch-image hover-chromatic-image" loading="lazy" decoding="async" />
                             )}
                           </div>
                           <div className="p-4">
