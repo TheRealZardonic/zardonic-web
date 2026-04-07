@@ -20,7 +20,6 @@ const TITLE_TYPING_START_DELAY_MS = 200
 
 interface ContactSectionProps {
   onUpdate?: any;
-  onUpdate?: any;
   contactSettings?: ContactSettings
   editMode?: boolean
   sectionLabels?: SectionLabels
@@ -31,7 +30,7 @@ type FormStatus = 'idle' | 'loading' | 'success' | 'error'
 const inputClass =
   'flex-1 bg-transparent border border-primary/30 px-3 py-2 text-xs font-mono text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary'
 
-export default function ContactSection({ onUpdate, onUpdate,
+export default function ContactSection({ onUpdate,
   contactSettings,
   editMode,
   sectionLabels,

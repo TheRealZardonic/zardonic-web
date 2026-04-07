@@ -72,12 +72,16 @@ export default defineConfig(({ mode }) => {
     build: {
       rollupOptions: {
         output: {
-          manualChunks: {
-            'vendor-react': ['react', 'react-dom'],
-            'vendor-motion': ['framer-motion'],
-            'vendor-three': ['three'],
-            'vendor-icons': ['@phosphor-icons/react'],
-            'vendor-ui': ['@radix-ui/react-dialog', '@radix-ui/react-separator', '@radix-ui/react-slot'],
+          manualChunks(id: string) {
+            if (id.includes('/node_modules/react') || id.includes('/node_modules/react-dom')) return 'vendor-react'
+            if (id.includes('/node_modules/framer-motion')) return 'vendor-motion'
+            if (id.includes('/node_modules/three')) return 'vendor-three'
+            if (id.includes('/node_modules/@phosphor-icons')) return 'vendor-icons'
+            if (
+              id.includes('/node_modules/@radix-ui/react-dialog') ||
+              id.includes('/node_modules/@radix-ui/react-separator') ||
+              id.includes('/node_modules/@radix-ui/react-slot')
+            ) return 'vendor-ui'
           },
         },
       },

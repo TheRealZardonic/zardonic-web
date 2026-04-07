@@ -11,7 +11,6 @@ import type { AdminSettings, SectionLabels } from '@/lib/types'
 
 interface ShellSectionProps {
   setAdminSettings?: any;
-  setAdminSettings?: any;
   editMode: boolean
   adminSettings: AdminSettings | undefined
   sectionOrder: number
@@ -19,7 +18,7 @@ interface ShellSectionProps {
   sectionLabel: string
 }
 
-export default function ShellSection({ setAdminSettings, setAdminSettings,
+export default function ShellSection({ setAdminSettings,
   editMode,
   adminSettings,
   sectionOrder,
