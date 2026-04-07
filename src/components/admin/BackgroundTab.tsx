@@ -64,7 +64,7 @@ export default function BackgroundTab({
             HUD Texts
           </h3>
           <p className="font-mono text-xs text-muted-foreground">
-            Customise the data readouts shown in the corners of the Cyberpunk HUD background.
+            Customize the data readouts shown in the corners of the Cyberpunk HUD background.
           </p>
           {([
             { key: 'topLeft1', label: 'Top-left line 1', placeholder: 'SYSTEM: ONLINE' },

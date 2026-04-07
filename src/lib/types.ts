@@ -204,6 +204,14 @@ export interface AdminSettings {
     durationMs?: number
   }
   loaderTexts?: LoaderTexts
+  hudTexts?: HudTexts
+  colorPresets?: CustomColorPreset[]
+}
+
+export interface CustomColorPreset {
+  id: string
+  name: string
+  theme: ThemeCustomization
 }
 
 export interface ContactMessage {

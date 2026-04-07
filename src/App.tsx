@@ -5,7 +5,7 @@ import { useKV } from '@/hooks/use-kv'
 import { useKonami } from '@/hooks/use-konami'
 import { trackPageView, trackHeatmapClick } from '@/hooks/use-analytics'
 import { useAdminAuth } from '@/hooks/use-admin-auth'
-import type { AdminSettings, BackgroundType, SectionLabels } from '@/lib/types'
+import type { AdminSettings, BackgroundType, HudTexts, SectionLabels } from '@/lib/types'
 import { useAppTheme } from '@/hooks/use-app-theme'
 import { useSiteDataSync } from '@/hooks/use-site-data-sync'
 import type { SiteData, CyberpunkOverlayState } from '@/lib/app-types'
@@ -46,10 +46,10 @@ import { SectionErrorBoundary } from '@/components/SectionErrorBoundary'
 import { useDocumentTitle } from '@/hooks/use-document-title'
 
 /** Render the correct background component based on the configured type */
-function BackgroundLayer({ type }: { type: BackgroundType | undefined }) {
+function BackgroundLayer({ type, hudTexts }: { type: BackgroundType | undefined; hudTexts?: HudTexts }) {
   const bg = type ?? 'circuit'
   if (bg === 'circuit') return <CircuitBackground />
-  if (bg === 'cyberpunk-hud') return <CyberpunkBackground />
+  if (bg === 'cyberpunk-hud') return <CyberpunkBackground hudTexts={hudTexts} />
   if (bg === 'matrix') return <Suspense fallback={null}><MatrixRain /></Suspense>
   if (bg === 'stars') return <Suspense fallback={null}><StarField /></Suspense>
   // 'minimal' – no decorative background
@@ -267,7 +267,7 @@ function App() {
       {anim.crtEnabled !== false && <div className="crt-vignette" />}
       {anim.scanlineEnabled !== false && <div className="crt-scanline-bg" />}
       {anim.noiseEnabled !== false && <div className="full-page-noise periodic-noise-glitch" />}
-      {anim.circuitBackgroundEnabled !== false && <BackgroundLayer type={anim.backgroundType} />}
+      {anim.circuitBackgroundEnabled !== false && <BackgroundLayer type={anim.backgroundType} hudTexts={adminSettings?.hudTexts} />}
       <SystemMonitorHUD />
       
       <Toaster />

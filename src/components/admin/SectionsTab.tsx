@@ -104,7 +104,7 @@ export default function SectionsTab({
         </div>
         <Button
           onClick={() =>
-            setAdminSettings?.({ ...adminSettings, sectionOrder: [...DEFAULT_SECTION_ORDER] })
+            setAdminSettings?.({ ...(adminSettings ?? {}), sectionOrder: [...DEFAULT_SECTION_ORDER] })
           }
           variant="outline"
           size="sm"
