@@ -22,6 +22,7 @@ import { isHardBlocked } from './_blocklist.js'
 const ALLOWED_PUBLIC_READ_KEYS = new Set([
   'band-data',
   'site-config',
+  'admin:settings',
 ])
 
 // Constant-time string comparison to prevent timing attacks on hash comparison.
@@ -146,6 +147,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
           })
         }
         return res.json({ value: safeConfig })
+      }
+
+      // Strip sensitive fields from public admin:settings reads.
+      // terminalCommands and configOverrides may contain secrets;
+      // contactInfo.emailForwardTo is a private email address.
+      if (key === 'admin:settings' && isPublicRead && !isAuthenticated && value && typeof value === 'object') {
+        const { terminalCommands: _tc, configOverrides: _co, ...safeSettings } = value as Record<string, unknown>
+        if (safeSettings.contactInfo && typeof safeSettings.contactInfo === 'object') {
+          const { emailForwardTo: _ef, ...safeContactInfo } = safeSettings.contactInfo as Record<string, unknown>
+          safeSettings.contactInfo = safeContactInfo
+        }
+        return res.json({ value: safeSettings })
       }
 
       return res.json({ value: value ?? null })

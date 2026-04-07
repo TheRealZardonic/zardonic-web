@@ -5,7 +5,7 @@ import { Lock } from '@phosphor-icons/react'
 interface AppFooterProps {
   artistName: string
   isOwner: boolean
-  adminPasswordHash: string
+  hasPassword: boolean
   setShowLoginDialog: (v: boolean) => void
   setShowSetupDialog: (v: boolean) => void
   setCyberpunkOverlay: (overlay: { type: 'impressum' | 'privacy' | 'contact' } | null) => void
@@ -15,7 +15,7 @@ interface AppFooterProps {
 export default function AppFooter({
   artistName,
   isOwner,
-  adminPasswordHash,
+  hasPassword,
   setShowLoginDialog,
   setShowSetupDialog,
   setCyberpunkOverlay,
@@ -51,7 +51,7 @@ export default function AppFooter({
           </button>
           {!isOwner && (
             <button
-              onClick={() => adminPasswordHash ? setShowLoginDialog(true) : setShowSetupDialog(true)}
+              onClick={() => hasPassword ? setShowLoginDialog(true) : setShowSetupDialog(true)}
               className="text-sm text-muted-foreground/40 hover:text-primary/60 transition-colors font-mono cursor-pointer"
               title="Admin"
             >

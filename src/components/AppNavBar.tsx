@@ -1,6 +1,5 @@
 import React from 'react'
 import logoImage from '@/assets/images/meta_eyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ==.webp'
-import { SKIP_UPDATE } from '@/hooks/use-kv'
 import type { SiteData } from '@/App'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Input } from '@/components/ui/input'
@@ -12,7 +11,7 @@ interface AppNavBarProps {
   editMode: boolean
   isOwner: boolean
   setEditMode: (v: boolean) => void
-  adminPasswordHash: string
+  hasPassword: boolean
   setShowLoginDialog: (v: boolean) => void
   mobileMenuOpen: boolean
   setMobileMenuOpen: (v: boolean) => void
@@ -24,7 +23,7 @@ export default function AppNavBar({
   editMode,
   isOwner,
   setEditMode,
-  adminPasswordHash,
+  hasPassword,
   setShowLoginDialog,
   mobileMenuOpen,
   setMobileMenuOpen,
@@ -71,7 +70,7 @@ export default function AppNavBar({
             >
               <Pencil className="w-4 h-4" />
             </Button>
-          ) : adminPasswordHash ? (
+          ) : hasPassword ? (
             <Button
               size="sm"
               variant="outline"
