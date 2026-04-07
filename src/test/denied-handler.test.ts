@@ -56,14 +56,14 @@ vi.mock('../../api/_honeytokens.js', () => ({
 }))
 
 function mockRes() {
-  const res = {
+  const res: any = {
     status: vi.fn(),
     send: vi.fn(),
     setHeader: vi.fn(),
   }
   res.status.mockReturnValue(res)
   res.send.mockReturnValue(res)
-  return res as unknown as VercelResponse
+  return res as unknown as unknown as VercelResponse
 }
 
 const { default: deniedHandler } = await import('../../api/denied.js')

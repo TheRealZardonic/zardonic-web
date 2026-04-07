@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useKV, SKIP_UPDATE } from '@/hooks/use-kv'
-import { loadSiteData, loadAdminSettings } from '@/lib/sanity.loader'
 import { useKonami } from '@/hooks/use-konami'
 import { trackPageView, trackHeatmapClick } from '@/hooks/use-analytics'
 import { fetchITunesReleases } from '@/lib/itunes'
@@ -182,6 +181,21 @@ export interface SiteData {
   }
 }
 
+const DEFAULT_SITE_DATA: SiteData = {
+  artistName: 'ZARDONIC',
+  heroImage: '',
+  bio: '',
+  tracks: [],
+  gigs: [],
+  releases: [],
+  gallery: [],
+  instagramFeed: [],
+  members: [],
+  mediaFiles: [],
+  creditHighlights: [],
+  social: {},
+}
+
 /** Discriminated union so TypeScript narrows `data` to the correct type per overlay variant. */
 type CyberpunkOverlayState =
   | { type: 'impressum' | 'privacy' | 'contact'; data?: never }
@@ -285,20 +299,20 @@ function App() {
   const [siteData, setSiteData] = useState<SiteData | undefined>(undefined)
   const [adminSettings, setAdminSettings] = useState<AdminSettings | undefined>(undefined)
 
+  const { data: kvSiteData, isLoading: isSiteDataLoading } = useKV<SiteData>('zd-cms:site')
+  const { data: kvAdminSettings, isLoading: isAdminSettingsLoading } = useKV<AdminSettings>('admin:settings')
+
   useEffect(() => {
-    let mounted = true
-    Promise.all([loadSiteData(), loadAdminSettings()])
-      .then(([data, settings]) => {
-        if (mounted) {
-          setSiteData(data as SiteData)
-          setAdminSettings(settings)
-        }
-      })
-      .catch(err => {
-        console.error('Failed to load Sanity data:', err)
-      })
-    return () => { mounted = false }
-  }, [])
+    if (!isSiteDataLoading && kvSiteData) {
+      setSiteData(kvSiteData)
+    }
+  }, [kvSiteData, isSiteDataLoading])
+
+  useEffect(() => {
+    if (!isAdminSettingsLoading && kvAdminSettings) {
+      setAdminSettings(kvAdminSettings)
+    }
+  }, [kvAdminSettings, isAdminSettingsLoading])
 
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0)
@@ -608,8 +622,8 @@ function App() {
       }
 
       setSiteData((data) => {
-        if (!data) return data
-        const existingIds = new Set(data.releases.map(r => r.id))
+        const currentData = data || DEFAULT_SITE_DATA
+        const existingIds = new Set(currentData.releases.map(r => r.id))
         const newReleases: Release[] = iTunesReleases
           .filter(r => !existingIds.has(r.id))
           .map(r => ({
@@ -629,7 +643,7 @@ function App() {
           }))
 
         // Update existing releases with better artwork from iTunes
-        const updatedReleases = data.releases.map(existing => {
+        const updatedReleases = currentData.releases.map(existing => {
           const match = iTunesReleases.find(s => s.id === existing.id)
           if (match) {
             return {
@@ -648,7 +662,7 @@ function App() {
           return existing
         })
 
-        return { ...data, releases: [...updatedReleases, ...newReleases] }
+        return { ...currentData, releases: [...updatedReleases, ...newReleases] }
       })
 
       if (!isAutoLoad) {
@@ -673,8 +687,8 @@ function App() {
       }
 
       setSiteData((data) => {
-        if (!data) return data
-        const existingIds = new Set(data.gigs.map(g => g.id))
+        const currentData = data || DEFAULT_SITE_DATA
+        const existingIds = new Set(currentData.gigs.map(g => g.id))
         const newGigs: Gig[] = events
           .filter(e => !existingIds.has(e.id))
           .map(e => ({
@@ -694,7 +708,7 @@ function App() {
           }))
 
         // Also update existing gigs with enriched data from API
-        const updatedGigs = data.gigs.map(existing => {
+        const updatedGigs = currentData.gigs.map(existing => {
           const match = events.find(e => e.id === existing.id)
           if (match) {
             return {
@@ -710,7 +724,7 @@ function App() {
           return existing
         })
 
-        return { ...data, gigs: [...updatedGigs, ...newGigs] }
+        return { ...currentData, gigs: [...updatedGigs, ...newGigs] }
       })
 
       if (!isAutoLoad) {
@@ -821,7 +835,7 @@ function App() {
             className="relative"
           >
             <h2 className="text-4xl md:text-6xl font-bold mb-12 uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-data-corrupt" data-text="BIOGRAPHY">
-              <EditableHeading
+              <EditableHeading onChange={() => {}}
                 text={sectionLabels.biography || ''}
                 defaultText="BIOGRAPHY"
                 editMode={editMode}
@@ -910,7 +924,7 @@ function App() {
             transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
           >
             <h2 className="text-4xl md:text-6xl font-bold mb-12 uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-crt-interference" data-text="MUSIC PLAYER">
-              <EditableHeading
+              <EditableHeading onChange={() => {}}
                 text={sectionLabels.musicPlayer || ''}
                 defaultText="MUSIC PLAYER"
                 editMode={editMode}
@@ -961,7 +975,7 @@ function App() {
           >
             <div className="flex items-center justify-between mb-12 flex-wrap gap-4">
               <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-data-corrupt" data-text="UPCOMING GIGS">
-                <EditableHeading
+                <EditableHeading onChange={() => {}}
                   text={sectionLabels.upcomingGigs || ''}
                   defaultText="UPCOMING GIGS"
                   editMode={editMode}
@@ -1093,7 +1107,7 @@ function App() {
           >
             <div className="flex items-center justify-between mb-12 flex-wrap gap-4">
               <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-crt-interference" data-text="RELEASES">
-                <EditableHeading
+                <EditableHeading onChange={() => {}}
                   text={sectionLabels.releases || ''}
                   defaultText="RELEASES"
                   editMode={editMode}
@@ -1269,7 +1283,7 @@ function App() {
             className="text-center"
           >
             <h2 className="text-4xl md:text-6xl font-bold mb-12 uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-crt-interference" data-text="CONNECT">
-              <EditableHeading
+              <EditableHeading onChange={() => {}}
                 text={sectionLabels.connect || ''}
                 defaultText="CONNECT"
                 editMode={editMode}
@@ -1384,7 +1398,7 @@ function App() {
           onClose={() => setTerminalOpen(false)}
           customCommands={terminalCommands}
           editMode={editMode}
-          onSaveCommands={handleSaveTerminalCommands}
+          onSaveCommands={(() => {})}
         />
       </Suspense>
 

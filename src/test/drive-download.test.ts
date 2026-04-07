@@ -22,7 +22,7 @@ function mockRes() {
   }
   res.status.mockReturnValue(res)
   res.json.mockReturnValue(res)
-  return res as unknown as VercelResponse
+  return res as unknown as unknown as VercelResponse
 }
 
 const { default: handler } = await import('../../api/drive-download.js')

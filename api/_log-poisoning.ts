@@ -1,7 +1,12 @@
-import { kv } from '@vercel/kv'
+import { Redis } from '@upstash/redis'
+const kv = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL || '',
+  token: process.env.UPSTASH_REDIS_REST_TOKEN || ''
+})
 import { randomBytes } from 'node:crypto'
 import { getClientIp, hashIp } from './_ratelimit.js'
 import { recordIncident } from './_attacker-profile.js'
+import { logSecurityEvent } from './_security-logger.js'
 
 /**
  * Log Poisoning — inject deceptive data into responses that corrupts
@@ -17,6 +22,25 @@ import { recordIncident } from './_attacker-profile.js'
  */
 
 const KV_SETTINGS_KEY = 'nk-security-settings'
+
+interface VercelLikeRequest {
+  method?: string
+  url?: string
+  headers: Record<string, string | string[] | undefined>
+}
+
+interface VercelLikeResponse {
+  setHeader(key: string, value: string): VercelLikeResponse
+}
+
+interface FakeServerHeader {
+  name: string
+  value: string | (() => string)
+}
+
+interface SecuritySettings {
+  logPoisoningEnabled?: boolean
+}
 
 /**
  * Fake internal paths that look like juicy targets.
@@ -38,7 +62,7 @@ const FAKE_INTERNAL_PATHS = [
 /**
  * Fake server information to mislead attacker reconnaissance.
  */
-const FAKE_SERVER_HEADERS = [
+const FAKE_SERVER_HEADERS: FakeServerHeader[] = [
   { name: 'X-Powered-By', value: 'Express/4.18.2' },
   { name: 'X-AspNet-Version', value: '4.0.30319' },
   { name: 'X-Backend', value: 'Apache/2.4.54 (Ubuntu)' },
@@ -65,7 +89,7 @@ const TERMINAL_POISON_STRINGS = [
  * Inject poisoned log entries into response headers.
  * Scanners that log response headers will collect misleading data.
  */
-export function injectLogPoisonHeaders(res) {
+export function injectLogPoisonHeaders(res: VercelLikeResponse): void {
   // Fake server identity to confuse fingerprinting
   const fakeHeader = FAKE_SERVER_HEADERS[Math.floor(Math.random() * FAKE_SERVER_HEADERS.length)]
   const value = typeof fakeHeader.value === 'function' ? fakeHeader.value() : fakeHeader.value
@@ -87,7 +111,7 @@ export function injectLogPoisonHeaders(res) {
  * Generate a poisoned response body with fake internal data.
  * This makes the attacker's automated reports full of noise.
  */
-export function generatePoisonedErrorBody() {
+export function generatePoisonedErrorBody(): Record<string, unknown> {
   return {
     error: 'Internal Server Error',
     trace: `at Handler.process (${FAKE_INTERNAL_PATHS[Math.floor(Math.random() * FAKE_INTERNAL_PATHS.length)]})`,
@@ -107,9 +131,9 @@ export function generatePoisonedErrorBody() {
  * Check if log poisoning should be applied to this request.
  * Returns true for flagged attackers when log poisoning is enabled.
  */
-export async function shouldPoisonLogs(hashedIp) {
+export async function shouldPoisonLogs(hashedIp: string): Promise<boolean> {
   try {
-    const settings = await kv.get(KV_SETTINGS_KEY).catch(() => null)
+    const settings = await kv.get<SecuritySettings>(KV_SETTINGS_KEY).catch(() => null)
     if (!settings?.logPoisoningEnabled) return false
 
     // Check if IP is flagged as attacker
@@ -124,7 +148,7 @@ export async function shouldPoisonLogs(hashedIp) {
  * Apply full log poisoning to a response for a flagged attacker.
  * Records the incident and injects poisoned headers.
  */
-export async function applyLogPoisoning(req, res) {
+export async function applyLogPoisoning(req: VercelLikeRequest, res: VercelLikeResponse): Promise<boolean> {
   const ip = getClientIp(req)
   const hashedIp = hashIp(ip)
 
@@ -137,13 +161,24 @@ export async function applyLogPoisoning(req, res) {
       type: 'log_poisoning_applied',
       method: req.method,
       url: req.url,
-      userAgent: (req.headers?.['user-agent'] || '').slice(0, 200),
+      userAgent: (req.headers?.['user-agent'] as string || '').slice(0, 200),
       timestamp: new Date().toISOString(),
     })
   } catch { /* ignore */ }
 
   // Inject poisoned headers
   injectLogPoisonHeaders(res)
+
+  // Unified structured log — previously this function had zero logging
+  await logSecurityEvent({
+    event: 'LOG_POISONING_APPLIED',
+    severity: 'info',
+    hashedIp,
+    userAgent: (req.headers?.['user-agent'] as string || '').slice(0, 200),
+    method: req.method,
+    url: req.url,
+    countermeasure: 'LOG_POISON',
+  })
 
   return true
 }

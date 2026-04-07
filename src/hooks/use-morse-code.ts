@@ -20,8 +20,10 @@ export function useMorseCode({ targetCode, onMatch }: MorseCodeOptions): MorseCo
   const targetRef = useRef(targetCode)
   const matchRef = useRef(onMatch)
 
-  targetRef.current = targetCode
-  matchRef.current = onMatch
+  useEffect(() => {
+    targetRef.current = targetCode
+    matchRef.current = onMatch
+  })
 
   const clearIdleTimer = useCallback(() => {
     if (idleTimer.current) {

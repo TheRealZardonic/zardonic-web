@@ -1,5 +1,5 @@
 /**
- * Honeypot sitemap — api/sitemap-trap.js
+ * Honeypot sitemap — api/sitemap-trap.ts
  *
  * Serves a syntactically valid XML sitemap that references known honeypot
  * paths. Legitimate site visitors never request this file; its URL is listed
@@ -12,25 +12,40 @@
  * GET /sitemap-extended.xml  (rewritten by vercel.json)
  */
 
-const TRAP_URLS = [
-  'https://neuroklast.com/admin/backup',
-  'https://neuroklast.com/admin/export',
-  'https://neuroklast.com/data/export',
-  'https://neuroklast.com/config/env',
-  'https://neuroklast.com/config/database',
-  'https://neuroklast.com/backup/latest',
-  'https://neuroklast.com/debug/logs',
-  'https://neuroklast.com/internal/api',
-  'https://neuroklast.com/private/keys',
-  'https://neuroklast.com/logs/access',
+interface VercelRequest {
+  method?: string
+  body?: Record<string, unknown>
+  query?: Record<string, string | string[]>
+  headers: Record<string, string | string[] | undefined>
+}
+
+interface VercelResponse {
+  setHeader(key: string, value: string): VercelResponse
+  status(code: number): VercelResponse
+  send(data: unknown): VercelResponse
+}
+
+const BASE_URL = process.env.SITE_URL || ''
+
+const TRAP_PATHS = [
+  '/admin/backup',
+  '/admin/export',
+  '/data/export',
+  '/config/env',
+  '/config/database',
+  '/backup/latest',
+  '/debug/logs',
+  '/internal/api',
+  '/private/keys',
+  '/logs/access',
 ]
 
 // Generated once at module initialisation so the XML stays consistent
 // for the lifetime of the serverless function instance
 const LASTMOD = new Date().toISOString().slice(0, 10)
 
-export default async function handler(req, res) {
-  const urlEntries = TRAP_URLS.map(loc => `  <url>\n    <loc>${loc}</loc>\n    <lastmod>${LASTMOD}</lastmod>\n  </url>`).join('\n')
+export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
+  const urlEntries = TRAP_PATHS.map(path => `  <url>\n    <loc>${BASE_URL}${path}</loc>\n    <lastmod>${LASTMOD}</lastmod>\n  </url>`).join('\n')
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -39,5 +54,5 @@ ${urlEntries}
 
   res.setHeader('Content-Type', 'application/xml; charset=utf-8')
   res.setHeader('Cache-Control', 'public, max-age=3600')
-  return res.status(200).send(xml)
+  res.status(200).send(xml)
 }

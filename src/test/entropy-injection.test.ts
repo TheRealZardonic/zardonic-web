@@ -107,7 +107,7 @@ describe('Entropy Injection: isMarkedAttacker', () => {
 describe('Entropy Injection: injectEntropyHeaders', () => {
   it('injects 200 random headers by default', () => {
     const headers: Record<string, string> = {}
-    const res = { setHeader: vi.fn((k: string, v: string) => { headers[k] = v }) } as unknown as VercelResponse
+    const res: any = { setHeader: vi.fn((k: string, v: string) => { headers[k] = v }) } as unknown as unknown as VercelResponse
     injectEntropyHeaders(res)
     expect((res as any).setHeader).toHaveBeenCalledTimes(200)
     // Check naming pattern
@@ -116,14 +116,14 @@ describe('Entropy Injection: injectEntropyHeaders', () => {
   })
 
   it('injects configurable number of headers', () => {
-    const res = { setHeader: vi.fn() } as unknown as VercelResponse
+    const res: any = { setHeader: vi.fn() } as unknown as unknown as VercelResponse
     injectEntropyHeaders(res, 10)
     expect((res as any).setHeader).toHaveBeenCalledTimes(10)
   })
 
   it('generates hex values of expected length (32 hex chars = 16 bytes)', () => {
     const values: string[] = []
-    const res = { setHeader: vi.fn((_k: string, v: string) => { values.push(v) }) } as unknown as VercelResponse
+    const res: any = { setHeader: vi.fn((_k: string, v: string) => { values.push(v) }) } as unknown as unknown as VercelResponse
     injectEntropyHeaders(res, 5)
     for (const val of values) {
       expect(val).toMatch(/^[0-9a-f]{32}$/)
@@ -132,7 +132,7 @@ describe('Entropy Injection: injectEntropyHeaders', () => {
 
   it('generates unique values across headers', () => {
     const values: string[] = []
-    const res = { setHeader: vi.fn((_k: string, v: string) => { values.push(v) }) } as unknown as VercelResponse
+    const res: any = { setHeader: vi.fn((_k: string, v: string) => { values.push(v) }) } as unknown as unknown as VercelResponse
     injectEntropyHeaders(res, 50)
     const unique = new Set(values)
     // Cryptographically random — extremely unlikely to have duplicates
@@ -183,7 +183,7 @@ describe('Taunting messages: TAUNT_MESSAGES and getRandomTaunt', () => {
 // ---------------------------------------------------------------------------
 describe('Defense headers: setDefenseHeaders', () => {
   it('sets X-Neural-Defense, X-Netrunner-Status, and X-Warning headers', () => {
-    const res = { setHeader: vi.fn() } as unknown as VercelResponse
+    const res: any = { setHeader: vi.fn() } as unknown as unknown as VercelResponse
     setDefenseHeaders(res)
     expect((res as any).setHeader).toHaveBeenCalledWith('X-Neural-Defense', 'Active. Target identified.')
     expect((res as any).setHeader).toHaveBeenCalledWith('X-Netrunner-Status', 'Nice try, but you\'re barking up the wrong tree.')
@@ -202,7 +202,7 @@ describe('Fingerprint pixel: serveFingerprintPixel', () => {
     }
     resMock.status.mockReturnValue(resMock)
     resMock.send.mockReturnValue(resMock)
-    const res = resMock as unknown as VercelResponse
+    const res = resMock as unknown as unknown as VercelResponse
 
     serveFingerprintPixel(res)
 
@@ -225,7 +225,7 @@ describe('Fingerprint pixel: serveFingerprintPixel', () => {
     }
     resMock.status.mockReturnValue(resMock)
     resMock.send.mockReturnValue(resMock)
-    const res = resMock as unknown as VercelResponse
+    const res = resMock as unknown as unknown as VercelResponse
 
     serveFingerprintPixel(res)
 

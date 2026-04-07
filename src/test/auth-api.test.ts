@@ -53,7 +53,7 @@ type MockRes = {
 }
 
 function mockRes(): MockRes {
-  const res: MockRes = {
+  const res: any = {
     status: vi.fn(),
     json: vi.fn(),
     setHeader: vi.fn(),
@@ -76,22 +76,22 @@ const LEGACY_SHA256_OF_PASSWORD = '5e884898da28047151d0e56f8dc6292773603d0d6aabb
 // ---------------------------------------------------------------------------
 describe('getSessionFromCookie()', () => {
   it('extracts token from zd-session cookie', () => {
-    const req = { headers: { cookie: 'zd-session=mytoken123' } } as any
+    const req: any = { headers: { cookie: 'zd-session=mytoken123' } } as any
     expect(getSessionFromCookie(req)).toBe('mytoken123')
   })
 
   it('extracts token from cookie with other cookies before it', () => {
-    const req = { headers: { cookie: 'other=x; zd-session=tok2; another=y' } } as any
+    const req: any = { headers: { cookie: 'other=x; zd-session=tok2; another=y' } } as any
     expect(getSessionFromCookie(req)).toBe('tok2')
   })
 
   it('returns null when cookie not present', () => {
-    const req = { headers: {} } as any
+    const req: any = { headers: {} } as any
     expect(getSessionFromCookie(req)).toBeNull()
   })
 
   it('returns null when zd-session is absent from cookies', () => {
-    const req = { headers: { cookie: 'other=val' } } as any
+    const req: any = { headers: { cookie: 'other=val' } } as any
     expect(getSessionFromCookie(req)).toBeNull()
   })
 })

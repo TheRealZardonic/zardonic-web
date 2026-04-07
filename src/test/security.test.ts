@@ -100,47 +100,47 @@ describe('Security: KV API key validation', () => {
 
   it('rejects GET with overly long key', async () => {
     const res = mockRes()
-    await kvHandler({ method: 'GET', query: { key: 'a'.repeat(201) }, body: {}, headers: {} } as unknown as VercelRequest, res as unknown as VercelResponse)
+    await kvHandler({ method: 'GET', query: { key: 'a'.repeat(201) }, body: {}, headers: {} } as unknown as VercelRequest, res as unknown as unknown as VercelResponse)
     expect(res.status).toHaveBeenCalledWith(400)
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'key must be 200 characters or less' }))
   })
 
   it('rejects GET with key containing newline characters', async () => {
     const res = mockRes()
-    await kvHandler({ method: 'GET', query: { key: 'test\nkey' }, body: {}, headers: {} } as unknown as VercelRequest, res as unknown as VercelResponse)
+    await kvHandler({ method: 'GET', query: { key: 'test\nkey' }, body: {}, headers: {} } as unknown as VercelRequest, res as unknown as unknown as VercelResponse)
     expect(res.status).toHaveBeenCalledWith(400)
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'Must not contain control characters' }))
   })
 
   it('rejects GET with key containing carriage return', async () => {
     const res = mockRes()
-    await kvHandler({ method: 'GET', query: { key: 'test\rkey' }, body: {}, headers: {} } as unknown as VercelRequest, res as unknown as VercelResponse)
+    await kvHandler({ method: 'GET', query: { key: 'test\rkey' }, body: {}, headers: {} } as unknown as VercelRequest, res as unknown as unknown as VercelResponse)
     expect(res.status).toHaveBeenCalledWith(400)
   })
 
   it('rejects GET with key containing null byte', async () => {
     const res = mockRes()
-    await kvHandler({ method: 'GET', query: { key: 'test\0key' }, body: {}, headers: {} } as unknown as VercelRequest, res as unknown as VercelResponse)
+    await kvHandler({ method: 'GET', query: { key: 'test\0key' }, body: {}, headers: {} } as unknown as VercelRequest, res as unknown as unknown as VercelResponse)
     expect(res.status).toHaveBeenCalledWith(400)
   })
 
   it('rejects POST with overly long key', async () => {
     const res = mockRes()
-    await kvHandler({ method: 'POST', query: {}, body: { key: 'a'.repeat(201), value: 'test' }, headers: {} } as unknown as VercelRequest, res as unknown as VercelResponse)
+    await kvHandler({ method: 'POST', query: {}, body: { key: 'a'.repeat(201), value: 'test' }, headers: {} } as unknown as VercelRequest, res as unknown as unknown as VercelResponse)
     expect(res.status).toHaveBeenCalledWith(400)
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'key must be 200 characters or less' }))
   })
 
   it('rejects POST with key containing newline', async () => {
     const res = mockRes()
-    await kvHandler({ method: 'POST', query: {}, body: { key: 'test\nkey', value: 'x' }, headers: {} } as unknown as VercelRequest, res as unknown as VercelResponse)
+    await kvHandler({ method: 'POST', query: {}, body: { key: 'test\nkey', value: 'x' }, headers: {} } as unknown as VercelRequest, res as unknown as unknown as VercelResponse)
     expect(res.status).toHaveBeenCalledWith(400)
   })
 
   it('rejects POST writes to analytics key prefix', async () => {
     mockKvGet.mockResolvedValue(null) // no password
     const res = mockRes()
-    await kvHandler({ method: 'POST', query: {}, body: { key: 'nk-analytics:evil', value: 'x' }, headers: {} } as unknown as VercelRequest, res as unknown as VercelResponse)
+    await kvHandler({ method: 'POST', query: {}, body: { key: 'nk-analytics:evil', value: 'x' }, headers: {} } as unknown as VercelRequest, res as unknown as unknown as VercelResponse)
     expect(res.status).toHaveBeenCalledWith(403)
     expect(mockKvSet).not.toHaveBeenCalled()
   })
@@ -148,7 +148,7 @@ describe('Security: KV API key validation', () => {
   it('rejects POST writes to heatmap key prefix', async () => {
     mockKvGet.mockResolvedValue(null)
     const res = mockRes()
-    await kvHandler({ method: 'POST', query: {}, body: { key: 'nk-heatmap', value: 'x' }, headers: {} } as unknown as VercelRequest, res as unknown as VercelResponse)
+    await kvHandler({ method: 'POST', query: {}, body: { key: 'nk-heatmap', value: 'x' }, headers: {} } as unknown as VercelRequest, res as unknown as unknown as VercelResponse)
     expect(res.status).toHaveBeenCalledWith(403)
     expect(mockKvSet).not.toHaveBeenCalled()
   })
@@ -156,7 +156,7 @@ describe('Security: KV API key validation', () => {
   it('rejects POST writes to image cache key prefix', async () => {
     mockKvGet.mockResolvedValue(null)
     const res = mockRes()
-    await kvHandler({ method: 'POST', query: {}, body: { key: 'img-cache:evil', value: 'x' }, headers: {} } as unknown as VercelRequest, res as unknown as VercelResponse)
+    await kvHandler({ method: 'POST', query: {}, body: { key: 'img-cache:evil', value: 'x' }, headers: {} } as unknown as VercelRequest, res as unknown as unknown as VercelResponse)
     expect(res.status).toHaveBeenCalledWith(403)
     expect(mockKvSet).not.toHaveBeenCalled()
   })
@@ -166,7 +166,7 @@ describe('Security: KV API key validation', () => {
     mockKvGet.mockResolvedValue(null)
     mockKvSet.mockResolvedValue('OK')
     const res = mockRes()
-    await kvHandler({ method: 'POST', query: {}, body: { key: 'band-data', value: { name: 'test' } }, headers: {} } as unknown as VercelRequest, res as unknown as VercelResponse)
+    await kvHandler({ method: 'POST', query: {}, body: { key: 'band-data', value: { name: 'test' } }, headers: {} } as unknown as VercelRequest, res as unknown as unknown as VercelResponse)
     expect(res.json).toHaveBeenCalledWith({ success: true })
   })
 })
@@ -326,7 +326,7 @@ describe('Security: Honeytoken detection', () => {
     vi.mocked(isHoneytoken).mockReturnValueOnce(true)
 
     const res = mockRes()
-    await kvHandler({ method: 'GET', query: { key: 'admin_backup' }, body: {}, headers: {} } as unknown as VercelRequest, res as unknown as VercelResponse)
+    await kvHandler({ method: 'GET', query: { key: 'admin_backup' }, body: {}, headers: {} } as unknown as VercelRequest, res as unknown as unknown as VercelResponse)
     expect(res.status).toHaveBeenCalledWith(403)
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'ACCESS_DENIED', message: expect.any(String) }))
     expect(triggerHoneytokenAlarm).toHaveBeenCalled()
@@ -343,7 +343,7 @@ describe('Security: Honeytoken detection', () => {
       query: {},
       body: { key: 'admin_backup', value: 'evil' },
       headers: {},
-    } as unknown as VercelRequest, res as unknown as VercelResponse)
+    } as unknown as VercelRequest, res as unknown as unknown as VercelResponse)
     expect(res.status).toHaveBeenCalledWith(403)
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'ACCESS_DENIED', message: expect.any(String) }))
     expect(triggerHoneytokenAlarm).toHaveBeenCalled()
@@ -366,7 +366,7 @@ describe('Security: Entropy injection for flagged attackers', () => {
 
     mockKvGet.mockResolvedValue({ name: 'test' })
     const res = mockRes()
-    await kvHandler({ method: 'GET', query: { key: 'zardonic-band-data' }, body: {}, headers: {} } as unknown as VercelRequest, res as unknown as VercelResponse)
+    await kvHandler({ method: 'GET', query: { key: 'zardonic-band-data' }, body: {}, headers: {} } as unknown as VercelRequest, res as unknown as unknown as VercelResponse)
 
     expect(isMarkedAttacker).toHaveBeenCalled()
     expect(injectEntropyHeaders).toHaveBeenCalledWith(res)
@@ -381,7 +381,7 @@ describe('Security: Entropy injection for flagged attackers', () => {
 
     mockKvGet.mockResolvedValue({ name: 'test' })
     const res = mockRes()
-    await kvHandler({ method: 'GET', query: { key: 'band-data' }, body: {}, headers: {} } as unknown as VercelRequest, res as unknown as VercelResponse)
+    await kvHandler({ method: 'GET', query: { key: 'band-data' }, body: {}, headers: {} } as unknown as VercelRequest, res as unknown as unknown as VercelResponse)
 
     expect(isMarkedAttacker).toHaveBeenCalled()
     expect(injectEntropyHeaders).not.toHaveBeenCalled()

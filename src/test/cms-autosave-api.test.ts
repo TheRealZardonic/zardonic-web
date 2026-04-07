@@ -31,7 +31,7 @@ vi.mock('../../api/auth.ts', () => ({
 type MockRes = { status: ReturnType<typeof vi.fn>; json: ReturnType<typeof vi.fn>; setHeader: ReturnType<typeof vi.fn>; end: ReturnType<typeof vi.fn> }
 
 function mockRes(): MockRes {
-  const res: MockRes = { status: vi.fn(), json: vi.fn(), setHeader: vi.fn(), end: vi.fn() }
+  const res: any = { status: vi.fn(), json: vi.fn(), setHeader: vi.fn(), end: vi.fn() }
   res.status.mockReturnValue(res)
   res.json.mockReturnValue(res)
   res.setHeader.mockReturnValue(res)
@@ -52,14 +52,14 @@ beforeEach(() => {
 describe('GET /api/cms/autosave', () => {
   it('returns 401 when not authenticated', async () => {
     vi.mocked(validateSession).mockResolvedValueOnce(false)
-    const req = { method: 'GET', headers: {}, query: { key: 'zd-cms:hero' } } as never
+    const req: any = { method: 'GET', headers: {}, query: { key: 'zd-cms:hero' } } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.status).toHaveBeenCalledWith(401)
   })
 
   it('returns 400 for key without zd-cms: prefix', async () => {
-    const req = { method: 'GET', headers: {}, query: { key: 'hero' } } as never
+    const req: any = { method: 'GET', headers: {}, query: { key: 'hero' } } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.status).toHaveBeenCalledWith(400)
@@ -67,7 +67,7 @@ describe('GET /api/cms/autosave', () => {
 
   it('returns autosave data', async () => {
     mockGet.mockResolvedValueOnce({ headline: 'Draft' })
-    const req = { method: 'GET', headers: {}, query: { key: 'zd-cms:hero' } } as never
+    const req: any = { method: 'GET', headers: {}, query: { key: 'zd-cms:hero' } } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.json).toHaveBeenCalledWith({ value: { headline: 'Draft' } })
@@ -77,21 +77,21 @@ describe('GET /api/cms/autosave', () => {
 describe('POST /api/cms/autosave', () => {
   it('returns 401 when not authenticated', async () => {
     vi.mocked(validateSession).mockResolvedValueOnce(false)
-    const req = { method: 'POST', headers: {}, body: { key: 'zd-cms:hero', value: {} } } as never
+    const req: any = { method: 'POST', headers: {}, body: { key: 'zd-cms:hero', value: {} } } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.status).toHaveBeenCalledWith(401)
   })
 
   it('returns 400 for key without zd-cms: prefix', async () => {
-    const req = { method: 'POST', headers: {}, body: { key: 'hero', value: {} } } as never
+    const req: any = { method: 'POST', headers: {}, body: { key: 'hero', value: {} } } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.status).toHaveBeenCalledWith(400)
   })
 
   it('saves autosave with TTL', async () => {
-    const req = { method: 'POST', headers: {}, body: { key: 'zd-cms:hero', value: { headline: 'x' } } } as never
+    const req: any = { method: 'POST', headers: {}, body: { key: 'zd-cms:hero', value: { headline: 'x' } } } as never
     const res = mockRes()
     await handler(req, res)
     expect(mockSet).toHaveBeenCalled()
@@ -102,14 +102,14 @@ describe('POST /api/cms/autosave', () => {
 describe('DELETE /api/cms/autosave', () => {
   it('returns 401 when not authenticated', async () => {
     vi.mocked(validateSession).mockResolvedValueOnce(false)
-    const req = { method: 'DELETE', headers: {}, query: { key: 'zd-cms:hero' } } as never
+    const req: any = { method: 'DELETE', headers: {}, query: { key: 'zd-cms:hero' } } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.status).toHaveBeenCalledWith(401)
   })
 
   it('deletes autosave', async () => {
-    const req = { method: 'DELETE', headers: {}, query: { key: 'zd-cms:hero' } } as never
+    const req: any = { method: 'DELETE', headers: {}, query: { key: 'zd-cms:hero' } } as never
     const res = mockRes()
     await handler(req, res)
     expect(mockDel).toHaveBeenCalled()

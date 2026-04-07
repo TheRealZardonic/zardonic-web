@@ -1,6 +1,6 @@
 import { Suspense, useEffect } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ErrorBoundary } from 'react-error-boundary'
+import { ErrorBoundary, FallbackProps } from 'react-error-boundary'
 import { Toaster } from 'sonner'
 import { useCmsAuth } from './hooks/useCmsAuth'
 import { useCmsRoute } from './hooks/useCmsRoute'
@@ -29,7 +29,7 @@ function CmsLoadingFallback() {
   )
 }
 
-function CmsErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) {
+function CmsErrorFallback({ error, resetErrorBoundary }: { error: any; resetErrorBoundary: () => void }) {
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-8">
       <div className="max-w-md w-full border border-red-500/30 rounded bg-[#111] p-6 space-y-4">
@@ -93,7 +93,7 @@ function CmsInner({ logout }: { logout: () => Promise<void> }) {
   )
 }
 
-export function CmsApp() {
+export default function CmsApp() {
   return (
     <QueryClientProvider client={queryClient}>
       <ErrorBoundary FallbackComponent={CmsErrorFallback}>

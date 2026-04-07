@@ -1,9 +1,14 @@
-import { kv } from '@vercel/kv'
-import { randomBytes, createHash } from 'node:crypto'
+import { Redis } from '@upstash/redis'
+const kv = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL || '',
+  token: process.env.UPSTASH_REDIS_REST_TOKEN || ''
+})
+import { randomBytes } from 'node:crypto'
 import { getClientIp, hashIp } from './_ratelimit.js'
-import { recordIncident } from './_attacker-profile.js'
-import { incrementThreatScore, THREAT_REASONS } from './_threat-score.js'
+import { recordIncident, addForensicData } from './_attacker-profile.js'
+import { incrementThreatScore } from './_threat-score.js'
 import { sendSecurityAlert } from './_alerting.js'
+import { logSecurityEvent } from './_security-logger.js'
 
 /**
  * Canary Documents — trackable decoy files placed in tarpit directories.
@@ -27,8 +32,76 @@ const CANARY_TOKEN_PREFIX = 'nk-canary:'
 const CANARY_ALERTS_KEY = 'nk-canary-alerts'
 const CANARY_TOKEN_TTL = 604800 // 7 days
 
+interface VercelLikeRequest {
+  method?: string
+  url?: string
+  query?: Record<string, string | string[]>
+  body?: Record<string, unknown>
+  headers: Record<string, string | string[] | undefined>
+}
+
+interface VercelLikeResponse {
+  setHeader(key: string, value: string | number): VercelLikeResponse
+  status(code: number): VercelLikeResponse
+  json(data: unknown): VercelLikeResponse
+  end(): VercelLikeResponse
+  send(data: unknown): VercelLikeResponse
+}
+
+interface CanaryDocument {
+  path: string
+  description: string
+  contentType: string
+}
+
+interface CanaryTokenMetadata {
+  token: string
+  hashedIp: string
+  userAgent: string
+  downloadedAt: string
+  documentPath: string
+  opened: boolean
+  openedAt?: string
+  openerFingerprint?: unknown
+}
+
+interface SecuritySettings {
+  alertingEnabled?: boolean
+  canaryDocumentsEnabled?: boolean
+  canaryPhoneHomeOnOpen?: boolean
+  canaryCollectFingerprint?: boolean
+  canaryAlertOnCallback?: boolean
+}
+
+interface JsFingerprint {
+  timezone: string | null
+  language: string | null
+  platform: string | null
+  cores: number | null
+  memory: number | null
+  screenWidth: number | null
+  screenHeight: number | null
+  colorDepth: number | null
+  touchSupport: boolean | null
+  canvasHash: string | null
+  realIp: string | null
+}
+
+interface CanaryFingerprint {
+  token: string
+  hashedIp: string
+  openerIp: string
+  downloaderIp: string
+  userAgent: string
+  acceptLanguage: string
+  event: string
+  timestamp: string
+  documentPath: string
+  jsFingerprint: JsFingerprint | null
+}
+
 /** Available canary document types and their tarpit paths */
-export const CANARY_DOCUMENTS = {
+export const CANARY_DOCUMENTS: Record<string, CanaryDocument> = {
   'db-export.html': {
     path: '/admin/backup/db-export.html',
     description: 'Database export (HTML)',
@@ -60,15 +133,15 @@ export const CANARY_DOCUMENTS = {
  * Generate a unique canary token for tracking a document download.
  * The token is stored in KV with metadata about the download event.
  */
-export async function generateCanaryToken(req) {
+export async function generateCanaryToken(req: VercelLikeRequest): Promise<string> {
   const token = randomBytes(16).toString('hex')
   const ip = getClientIp(req)
   const hashedIp = hashIp(ip)
 
-  const metadata = {
+  const metadata: CanaryTokenMetadata = {
     token,
     hashedIp,
-    userAgent: (req.headers?.['user-agent'] || '').slice(0, 200),
+    userAgent: (req.headers?.['user-agent'] as string || '').slice(0, 200),
     downloadedAt: new Date().toISOString(),
     documentPath: req.url || '/',
     opened: false,
@@ -88,12 +161,29 @@ export async function generateCanaryToken(req) {
  *
  * The document looks like a legitimate admin page but contains:
  * - External image/script references to the canary callback endpoint
+ *   (only when `canaryPhoneHomeOnOpen` is enabled)
  * - JavaScript that collects browser fingerprint data
+ *   (only when `canaryCollectFingerprint` is enabled)
  * - WebRTC STUN request to discover real IP behind VPN/proxy
  * - Canvas fingerprinting for cross-session correlation
  */
-export function generateCanaryHtml(token, documentName) {
+export function generateCanaryHtml(token: string, documentName: string, settings?: SecuritySettings): string {
   const callbackUrl = `/api/canary-callback?t=${token}`
+  const phoneHome = settings?.canaryPhoneHomeOnOpen !== false
+  const collectFingerprint = settings?.canaryCollectFingerprint !== false
+
+  // Tracking pixel — fires on page load, works even without JavaScript.
+  // Allowed by `img-src 'self'` in the Content-Security-Policy.
+  const trackingPixel = phoneHome
+    ? `\n<img src="${callbackUrl}&e=img" width="1" height="1" style="position:absolute;left:-9999px" alt="">`
+    : ''
+
+  // Fingerprinting script — loaded as an external same-origin resource so
+  // it is permitted by `script-src 'self'` in the CSP.  Inline `<script>`
+  // blocks would be rejected by browsers enforcing the policy.
+  const fingerprintScript = collectFingerprint
+    ? `\n<script src="/api/canary-script?t=${token}"></script>`
+    : ''
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -122,33 +212,13 @@ th{background:#16213e;color:#e94560}
 <tr><td>Backup Encryption</td><td>AES-256-GCM</td></tr>
 </table>
 <p class="warn">⚠ This document is monitored. Unauthorized access will be logged and reported.</p>
-<p class="footer">Document ID: ${token} | Generated: ${new Date().toISOString()}</p>
-<img src="${callbackUrl}&e=img" width="1" height="1" style="position:absolute;left:-9999px" alt="">
-<script>
-(function(){
-  var d={t:"${token}",ts:Date.now(),tz:Intl.DateTimeFormat().resolvedOptions().timeZone,
-    lang:navigator.language,plat:navigator.platform,cores:navigator.hardwareConcurrency||0,
-    mem:navigator.deviceMemory||0,sw:screen.width,sh:screen.height,cd:screen.colorDepth,
-    touch:'ontouchstart'in window};
-  try{var c=document.createElement('canvas');var g=c.getContext('2d');
-    g.textBaseline='top';g.font='14px Arial';g.fillText('fp',2,2);
-    d.cvs=c.toDataURL().slice(-32)}catch(e){}
-  try{var r=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'},{urls:'stun:stun.services.mozilla.com'}]});
-    r.createDataChannel('');r.createOffer().then(function(o){r.setLocalDescription(o)});
-    r.onicecandidate=function(e){if(e.candidate){
-      var m=e.candidate.candidate.match(/([0-9]{1,3}(\\.[0-9]{1,3}){3})/);
-      if(m){d.realIp=m[1];send()}}}}catch(e){}
-  function send(){var x=new XMLHttpRequest();x.open('POST',"${callbackUrl}&e=js");
-    x.setRequestHeader('Content-Type','application/json');x.send(JSON.stringify(d))}
-  setTimeout(send,2000);
-})();
-</script>
+<p class="footer">Document ID: ${token} | Generated: ${new Date().toISOString()}</p>${trackingPixel}${fingerprintScript}
 </body>
 </html>`
 }
 
 /** Escape HTML special characters */
-function escapeHtml(str) {
+function escapeHtml(str: string): string {
   return String(str)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -161,7 +231,7 @@ function escapeHtml(str) {
  * Handle a canary callback — invoked when an attacker opens a canary document.
  * Logs the attacker's fingerprint data and triggers alerts.
  */
-export async function handleCanaryCallback(req, res) {
+export async function handleCanaryCallback(req: VercelLikeRequest, res: VercelLikeResponse): Promise<unknown> {
   const token = req.query?.t
   if (!token || typeof token !== 'string' || !/^[a-f0-9]{32}$/.test(token)) {
     return res.status(404).json({ error: 'Not found' })
@@ -171,22 +241,22 @@ export async function handleCanaryCallback(req, res) {
   const hashedIp = hashIp(ip)
 
   // Retrieve canary token metadata
-  let tokenData = null
+  let tokenData: CanaryTokenMetadata | null = null
   try {
-    tokenData = await kv.get(`${CANARY_TOKEN_PREFIX}${token}`)
+    tokenData = await kv.get<CanaryTokenMetadata>(`${CANARY_TOKEN_PREFIX}${token}`)
   } catch {
     // KV failure — continue anyway
   }
 
   // Collect fingerprint data from the callback
-  const fingerprint = {
+  const fingerprint: CanaryFingerprint = {
     token,
     hashedIp,
     openerIp: hashedIp,
     downloaderIp: tokenData?.hashedIp || 'unknown',
-    userAgent: (req.headers?.['user-agent'] || '').slice(0, 200),
-    acceptLanguage: (req.headers?.['accept-language'] || '').slice(0, 100),
-    event: req.query?.e || 'unknown',
+    userAgent: (req.headers?.['user-agent'] as string || '').slice(0, 200),
+    acceptLanguage: (req.headers?.['accept-language'] as string || '').slice(0, 100),
+    event: (req.query?.e as string) || 'unknown',
     timestamp: new Date().toISOString(),
     documentPath: tokenData?.documentPath || 'unknown',
     // JS fingerprint data from POST body
@@ -211,7 +281,7 @@ export async function handleCanaryCallback(req, res) {
       colorDepth: typeof req.body.cd === 'number' ? req.body.cd : null,
       touchSupport: typeof req.body.touch === 'boolean' ? req.body.touch : null,
       canvasHash: typeof req.body.cvs === 'string' ? req.body.cvs.slice(0, 64) : null,
-      realIp: isValidIp ? hashIp(rawRealIp) : null,
+      realIp: isValidIp ? hashIp(rawRealIp as string) : null,
     }
   }
 
@@ -227,23 +297,15 @@ export async function handleCanaryCallback(req, res) {
     } catch { /* ignore */ }
   }
 
-  // Persist canary alert
+  // Persist canary alert (legacy list for canary-alerts admin endpoint)
   try {
     await kv.lpush(CANARY_ALERTS_KEY, JSON.stringify(fingerprint))
     await kv.ltrim(CANARY_ALERTS_KEY, 0, 499)
   } catch { /* ignore */ }
 
-  // Log for SIEM
-  console.error('[CANARY CALLBACK]', JSON.stringify({
-    token,
-    hashedIp,
-    event: fingerprint.event,
-    timestamp: fingerprint.timestamp,
-  }))
-
-  // Increment threat score
+  // Increment threat score — pass UA for richer log context
   try {
-    await incrementThreatScore(hashedIp, 'canary_document_opened', 5)
+    await incrementThreatScore(hashedIp, 'canary_document_opened', 5, fingerprint.userAgent)
   } catch { /* ignore */ }
 
   // Record incident
@@ -258,10 +320,25 @@ export async function handleCanaryCallback(req, res) {
     })
   } catch { /* ignore */ }
 
+  // Persist forensic data in attacker profile for dashboard display
+  try {
+    await addForensicData(hashedIp, {
+      token,
+      event: fingerprint.event,
+      timestamp: fingerprint.timestamp,
+      documentPath: fingerprint.documentPath,
+      userAgent: fingerprint.userAgent,
+      acceptLanguage: fingerprint.acceptLanguage,
+      openerIp: fingerprint.openerIp,
+      downloaderIp: fingerprint.downloaderIp,
+      jsFingerprint: fingerprint.jsFingerprint,
+    })
+  } catch { /* ignore */ }
+
   // Send alert if enabled
   try {
-    const settings = await kv.get(KV_SETTINGS_KEY).catch(() => null)
-    if (settings?.alertingEnabled) {
+    const settings = await kv.get<SecuritySettings>(KV_SETTINGS_KEY).catch(() => null)
+    if (settings?.alertingEnabled && settings?.canaryAlertOnCallback !== false) {
       await sendSecurityAlert({
         type: 'CANARY DOCUMENT OPENED',
         token,
@@ -274,6 +351,24 @@ export async function handleCanaryCallback(req, res) {
       })
     }
   } catch { /* ignore */ }
+
+  // Unified structured log — full fingerprint detail for SIEM and admin dashboard
+  await logSecurityEvent({
+    event: 'CANARY_CALLBACK',
+    severity: 'high',
+    hashedIp,
+    userAgent: fingerprint.userAgent,
+    method: req.method,
+    countermeasure: 'CANARY_FINGERPRINTED',
+    details: {
+      token,
+      callbackEvent: fingerprint.event,
+      documentPath: fingerprint.documentPath,
+      downloaderIp: fingerprint.downloaderIp,
+      acceptLanguage: fingerprint.acceptLanguage,
+      jsFingerprint: fingerprint.jsFingerprint,
+    },
+  })
 
   // Return a 1x1 transparent pixel for image callbacks, or 204 for JS callbacks
   if (req.query?.e === 'img') {
@@ -293,26 +388,42 @@ export async function handleCanaryCallback(req, res) {
  * Serve a canary document for a given tarpit path.
  * Returns true if the path matched a canary document, false otherwise.
  */
-export async function serveCanaryDocument(req, res) {
+export async function serveCanaryDocument(req: VercelLikeRequest, res: VercelLikeResponse): Promise<boolean> {
   // Check if canary documents are enabled
+  let settings: SecuritySettings | null = null
   try {
-    const settings = await kv.get(KV_SETTINGS_KEY).catch(() => null)
+    settings = await kv.get<SecuritySettings>(KV_SETTINGS_KEY).catch(() => null)
     if (!settings?.canaryDocumentsEnabled) return false
   } catch {
     return false
   }
 
-  const path = req.url || req.query?._src || '/'
+  const path = (req.query?._src as string) || req.url || '/'
   const matchedDoc = Object.entries(CANARY_DOCUMENTS).find(([, doc]) => path.endsWith(doc.path) || path.includes(doc.path))
 
   if (!matchedDoc) return false
 
   const [docName, docInfo] = matchedDoc
   const token = await generateCanaryToken(req)
-  const html = generateCanaryHtml(token, docName)
+  const html = generateCanaryHtml(token, docName, settings)
+
+  // Unified structured log for when a canary document is served to an attacker
+  const ip = getClientIp(req)
+  const hashedIp = hashIp(ip)
+  await logSecurityEvent({
+    event: 'CANARY_DOCUMENT_SERVED',
+    severity: 'high',
+    hashedIp,
+    userAgent: (req.headers?.['user-agent'] as string || '').slice(0, 200),
+    method: req.method,
+    url: path,
+    countermeasure: 'CANARY_TRAP',
+    details: { documentName: docName, documentPath: docInfo.path, token },
+  })
 
   res.setHeader('Content-Type', docInfo.contentType)
   res.setHeader('Content-Disposition', `inline; filename="${docName}"`)
   res.setHeader('Cache-Control', 'no-store')
-  return res.status(200).send(html)
+  res.status(200).send(html)
+  return true
 }

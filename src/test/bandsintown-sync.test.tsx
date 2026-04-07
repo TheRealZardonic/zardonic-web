@@ -38,14 +38,14 @@ describe('Bandsintown sync issue', () => {
     act(() => {
       const setSiteData = result.current[1]
       setSiteData((data) => {
-        // This is the pattern used in handleFetchBandsintownEvents
-        if (!data) return data as any // This is the bug!
+        // Use a default empty structure if data is falsy
+        const currentData = data || { artistName: 'ZARDONIC', gigs: [] }
         
         const newGigs = [
           { id: 'bit-123', venue: 'New Venue', location: 'New City', date: '2025-02-01', ticketUrl: '', support: '', lineup: [] },
         ]
         
-        return { ...data, gigs: [...data.gigs, ...newGigs] }
+        return { ...currentData, gigs: [...currentData.gigs, ...newGigs] }
       })
     })
 
@@ -75,13 +75,13 @@ describe('Bandsintown sync issue', () => {
     act(() => {
       const setSiteData = result.current[1]
       setSiteData((data) => {
-        if (!data) return data as any // Bug: returns undefined
+        const currentData = data || defaultData
         
         const newGigs = [
           { id: 'bit-123', venue: 'New Venue', location: 'New City', date: '2025-02-01', ticketUrl: '', support: '', lineup: [] },
         ]
         
-        return { ...data, gigs: [...data.gigs, ...newGigs] }
+        return { ...currentData, gigs: [...currentData.gigs, ...newGigs] }
       })
     })
 

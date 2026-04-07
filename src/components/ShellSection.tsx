@@ -10,6 +10,8 @@ import { User, Plus, Upload, Trash } from '@phosphor-icons/react'
 import type { AdminSettings, SectionLabels } from '@/lib/types'
 
 interface ShellSectionProps {
+  setAdminSettings?: any;
+  setAdminSettings?: any;
   editMode: boolean
   adminSettings: AdminSettings | undefined
   sectionOrder: number
@@ -17,7 +19,7 @@ interface ShellSectionProps {
   sectionLabel: string
 }
 
-export default function ShellSection({
+export default function ShellSection({ setAdminSettings, setAdminSettings,
   editMode,
   adminSettings,
   sectionOrder,
@@ -39,7 +41,7 @@ export default function ShellSection({
         >
           <div className="flex items-center justify-between mb-12 flex-wrap gap-4">
             <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-data-corrupt" data-text={sectionLabel || 'SHELL'}>
-              <EditableHeading
+              <EditableHeading onChange={() => {}}  onChange={() => {}}  onChange={() => {}}
                 text={sectionLabel || ''}
                 defaultText="SHELL"
                 editMode={editMode}
@@ -90,7 +92,7 @@ export default function ShellSection({
                     {editMode ? (
                       <Input
                         value={member?.name || ''}
-                        onChange={(e) => setAdminSettings((prev) => {
+                        onChange={(e) => (setAdminSettings as any)((prev: any) => {
                           const members = [...(prev?.shellMembers || (prev?.shellMember ? [prev.shellMember] : []))]
                           members[memberIndex] = { ...members[memberIndex], name: e.target.value }
                           return { ...(prev || {}), shellMembers: members }
@@ -108,7 +110,7 @@ export default function ShellSection({
                     {editMode ? (
                       <Input
                         value={member?.role || ''}
-                        onChange={(e) => setAdminSettings((prev) => {
+                        onChange={(e) => (setAdminSettings as any)((prev: any) => {
                           const members = [...(prev?.shellMembers || (prev?.shellMember ? [prev.shellMember] : []))]
                           members[memberIndex] = { ...members[memberIndex], role: e.target.value }
                           return { ...(prev || {}), shellMembers: members }
@@ -126,7 +128,7 @@ export default function ShellSection({
                     {editMode ? (
                       <Textarea
                         value={member?.bio || ''}
-                        onChange={(e) => setAdminSettings((prev) => {
+                        onChange={(e) => (setAdminSettings as any)((prev: any) => {
                           const members = [...(prev?.shellMembers || (prev?.shellMember ? [prev.shellMember] : []))]
                           members[memberIndex] = { ...members[memberIndex], bio: e.target.value }
                           return { ...(prev || {}), shellMembers: members }
@@ -148,7 +150,7 @@ export default function ShellSection({
                             <Label className="font-mono text-xs w-24">{platform}</Label>
                             <Input
                               value={member?.social?.[platform] || ''}
-                              onChange={(e) => setAdminSettings((prev) => {
+                              onChange={(e) => (setAdminSettings as any)((prev: any) => {
                                 const members = [...(prev?.shellMembers || (prev?.shellMember ? [prev.shellMember] : []))]
                                 members[memberIndex] = {
                                   ...members[memberIndex],
@@ -186,7 +188,7 @@ export default function ShellSection({
                       variant="destructive"
                       size="sm"
                       className="mt-2"
-                      onClick={() => setAdminSettings((prev) => {
+                      onClick={() => (setAdminSettings as any)((prev: any) => {
                         const members = [...(prev?.shellMembers || (prev?.shellMember ? [prev.shellMember] : []))]
                         members.splice(memberIndex, 1)
                         return { ...(prev || {}), shellMembers: members }

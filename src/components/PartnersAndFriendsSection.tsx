@@ -184,7 +184,7 @@ function FriendCard({ friend, editMode, onUpdate, onDelete, onSelect }: {
                     className="text-muted-foreground/60 hover:text-primary transition-colors"
                     title={label}
                   >
-                    <Icon size={16} weight="fill" />
+                    <Icon size={16} weight={"fill" as any} />
                   </span>
                 )
               })}
@@ -330,7 +330,7 @@ export default function PartnersAndFriendsSection({ friends = [], editMode, onUp
                     className="text-primary/60 hover:text-primary transition-colors"
                     title={label}
                   >
-                    <Icon size={22} weight="fill" />
+                    <Icon size={22} weight={"fill" as any} />
                   </a>
                 ))}
               </div>

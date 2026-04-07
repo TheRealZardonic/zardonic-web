@@ -2,25 +2,101 @@ import { z } from 'zod'
 
 /**
  * Zod schemas for strict input validation on all API endpoints.
+ *
+ * Every piece of user input MUST pass through one of these schemas before
+ * the API handler processes it.  This prevents injection, type confusion,
+ * unexpected data shapes, and unbounded payloads.
+ *
+ * Usage pattern:
+ *   const { success, data, error } = validate(mySchema, req.body)
+ *   if (!success) return res.status(400).json({ error })
  */
 
-// ---------------------------------------------------------------------------
-// Shared primitives
-// ---------------------------------------------------------------------------
+// ─── Shared primitives ────────────────────────────────────────────────────────
 
-/** Safe string: printable, no control characters, bounded length */
-const safeString = (maxLen = 200) =>
+/**
+ * A safe, bounded string: printable characters only (no control chars),
+ * with a configurable maximum length.
+ *
+ * Exported so other modules can compose it into their own schemas.
+ */
+export const safeString = (maxLen = 200) =>
   z.string().max(maxLen).regex(/^[^\n\r\0]*$/, 'Must not contain control characters')
 
-/** KV key: bounded length, no control characters */
-export const kvKeySchema = z.string({ required_error: 'key is required' })
-  .max(200, 'key must be 200 characters or less')
-  .regex(/^[^\n\r\0]*$/, 'Must not contain control characters')
+/** KV key: alphanumeric + hyphens/underscores/dots/colons, max 200 chars. */
+export const kvKeySchema = safeString(200)
   .min(1, 'key is required')
 
-// ---------------------------------------------------------------------------
-// Analytics API — POST body
-// ---------------------------------------------------------------------------
+// ─── KV API ───────────────────────────────────────────────────────────────────
+
+/** POST /api/kv — request body */
+export const kvPostSchema = z.object({
+  key: kvKeySchema,
+  value: z.unknown().refine((v) => v !== undefined, 'value is required'),
+})
+
+/** GET /api/kv — query params */
+export const kvGetQuerySchema = z.object({
+  key: kvKeySchema,
+})
+
+// ─── Auth API ─────────────────────────────────────────────────────────────────
+
+/** POST /api/auth — login */
+export const authLoginSchema = z.object({
+  password: z.string().min(1, 'password is required').max(200),
+})
+
+/** POST /api/auth — login with optional TOTP code */
+export const authLoginTotpSchema = z.object({
+  password: z.string().min(1, 'password is required').max(200),
+  totpCode: z.string().length(6, 'TOTP code must be 6 digits').regex(/^\d{6}$/, 'TOTP code must be 6 digits').optional(),
+})
+
+/** POST /api/auth — initial admin setup */
+export const authSetupSchema = z.object({
+  password: z.string().min(8, 'Password must be at least 8 characters').max(200),
+  action: z.literal('setup'),
+  setupToken: z.string().max(200).optional(),
+})
+
+/** POST /api/auth — password change */
+export const authChangePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'current password is required').max(200),
+  newPassword: z.string().min(8, 'New password must be at least 8 characters').max(200),
+})
+
+/** POST /api/auth — TOTP verification */
+export const totpVerifySchema = z.object({
+  action: z.literal('totp-verify'),
+  code: z.string().length(6, 'TOTP code must be 6 digits').regex(/^\d{6}$/, 'TOTP code must be 6 digits'),
+})
+
+/** POST /api/auth — TOTP disable */
+export const totpSetupSchema = z.object({
+  action: z.literal('totp-disable'),
+  password: z.string().min(1, 'password is required').max(200),
+  code: z.string().length(6, 'TOTP code must be 6 digits').regex(/^\d{6}$/, 'TOTP code must be 6 digits'),
+})
+
+// ─── Reset password API ───────────────────────────────────────────────────────
+
+/** POST /api/reset-password — request a reset link */
+export const resetPasswordSchema = z.object({
+  email: z
+    .string()
+    .min(1, 'email is required')
+    .max(254, 'Email too long')
+    .email('Invalid email format'),
+})
+
+/** POST /api/reset-password — confirm reset with token */
+export const confirmResetPasswordSchema = z.object({
+  token: z.string().min(1, 'token is required').max(200),
+  newPassword: z.string().min(8, 'New password must be at least 8 characters').max(200),
+})
+
+// ─── Analytics API ────────────────────────────────────────────────────────────
 
 const analyticsMetaSchema = z.object({
   referrer: safeString().optional(),
@@ -35,14 +111,13 @@ const analyticsMetaSchema = z.object({
 }).optional()
 
 const heatmapSchema = z.object({
-  // x: normalized viewport width (0–1)
   x: z.number().min(0).max(1),
-  // y: normalized document height (0–2 allows tracking clicks below the fold when page is scrollable)
   y: z.number().min(0).max(2),
   page: safeString().optional(),
   elementTag: safeString(100).optional(),
 }).optional()
 
+/** POST /api/analytics */
 export const analyticsPostSchema = z.object({
   type: z.enum(['page_view', 'section_view', 'interaction', 'click']),
   target: safeString().optional(),
@@ -50,197 +125,108 @@ export const analyticsPostSchema = z.object({
   heatmap: heatmapSchema,
 })
 
-// ---------------------------------------------------------------------------
-// KV API
-// ---------------------------------------------------------------------------
+// ─── Google Drive API ─────────────────────────────────────────────────────────
 
-export const kvPostSchema = z.object({
-  key: kvKeySchema,
-  value: z.unknown().refine((v) => v !== undefined, 'value is required'),
+/** GET /api/drive-folder — query params */
+export const driveFolderQuerySchema = z.object({
+  folderId: z.string().min(1, 'folderId parameter is required').regex(/^[A-Za-z0-9_-]+$/, 'Invalid folderId format'),
 })
 
-export const kvGetQuerySchema = z.object({
-  key: kvKeySchema,
+/** GET /api/drive-download — query params */
+export const driveDownloadQuerySchema = z.object({
+  // fileId is validated via regex to only allow [A-Za-z0-9_-]+ to prevent
+  // directory traversal and injection attacks.
+  fileId: z.string().min(1, 'fileId parameter is required').regex(/^[A-Za-z0-9_-]+$/, 'Invalid fileId format'),
 })
 
-// ---------------------------------------------------------------------------
-// Auth API
-// ---------------------------------------------------------------------------
+// ─── iTunes / Odesli API ──────────────────────────────────────────────────────
 
-export const authLoginSchema = z.object({
-  password: z.string().min(1, 'password is required').max(200),
-})
-
-export const authLoginTotpSchema = z.object({
-  password: z.string().min(1, 'password is required').max(200),
-  totpCode: z.string().length(6, 'TOTP code must be 6 digits').regex(/^\d{6}$/, 'TOTP code must be 6 digits').optional(),
-})
-
-export const authSetupSchema = z.object({
-  password: z.string().min(8, 'Password must be at least 8 characters').max(200),
-  action: z.literal('setup'),
-  setupToken: z.string().max(200).optional(),
-})
-
-export const authChangePasswordSchema = z.object({
-  currentPassword: z.string().min(1, 'current password is required').max(200),
-  newPassword: z.string().min(8, 'New password must be at least 8 characters').max(200),
-})
-
-export const totpVerifySchema = z.object({
-  action: z.literal('totp-verify'),
-  code: z.string().length(6, 'TOTP code must be 6 digits').regex(/^\d{6}$/, 'TOTP code must be 6 digits'),
-})
-
-export const totpSetupSchema = z.object({
-  action: z.literal('totp-disable'),
-  password: z.string().min(1, 'password is required').max(200),
-  code: z.string().length(6, 'TOTP code must be 6 digits').regex(/^\d{6}$/, 'TOTP code must be 6 digits'),
-})
-
-// ---------------------------------------------------------------------------
-// iTunes API
-// ---------------------------------------------------------------------------
-
+/** GET /api/itunes — query params */
 export const itunesQuerySchema = z.object({
   term: z.string().min(1, 'Search term is required').max(200),
   entity: z.enum(['song', 'album', 'all']).optional(),
-  limit: z.coerce.number().int().min(1).max(200).optional(),
 })
 
-// ---------------------------------------------------------------------------
-// Spotify API
-// ---------------------------------------------------------------------------
-
-// OWASP A03:2021 — Strict ID validation prevents injection via Spotify ID parameter
-export const spotifyQuerySchema = z.object({
-  action: z.enum(['artist', 'top-tracks', 'albums', 'search']),
-  id: z.string().max(100).regex(/^[A-Za-z0-9]+$/, 'Invalid Spotify ID').optional(),
-  query: z.string().max(200).optional(),
-  market: z.string().length(2).regex(/^[A-Z]{2}$/).optional(),
-}).refine(
-  (data) => {
-    if (['artist', 'top-tracks', 'albums'].includes(data.action)) return !!data.id
-    if (data.action === 'search') return !!data.query
-    return true
-  },
-  { message: 'id is required for artist/top-tracks/albums; query is required for search' }
-)
-
-// ---------------------------------------------------------------------------
-// Odesli API
-// ---------------------------------------------------------------------------
-
+/** GET /api/odesli — query params */
 export const odesliQuerySchema = z.object({
   url: z.string().min(1, 'A streaming URL is required').max(2000).url('Invalid URL'),
-  userCountry: z.string().length(2).regex(/^[A-Z]{2}$/).optional(),
 })
 
-// ---------------------------------------------------------------------------
-// Image proxy API — GET query
-// ---------------------------------------------------------------------------
+// ─── Image proxy API ──────────────────────────────────────────────────────────
 
+/** GET /api/image-proxy — query params */
 export const imageProxyQuerySchema = z.object({
   url: z.string().min(1, 'url parameter is required').max(2000),
 })
 
-// ---------------------------------------------------------------------------
-// Terminal API — POST body
-// ---------------------------------------------------------------------------
+// ─── Bandsintown API ──────────────────────────────────────────────────────────
 
+/** GET /api/bandsintown — query params */
+export const bandsintownQuerySchema = z.object({
+  artist: z.string().min(1, 'artist is required').max(200),
+  app_id: z.string().min(1, 'app_id is required').max(200),
+  /** Optional: include past events. Accepts 'true'/'false' string. Default: false */
+  include_past: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((v) => v === 'true')
+    .default(false),
+})
+
+// ─── Setlist.fm API ───────────────────────────────────────────────────────────
+
+/** GET /api/setlistfm — query params */
+export const setlistfmQuerySchema = z.object({
+  mbid: z
+    .string()
+    .min(1, 'mbid parameter is required')
+    .regex(
+      /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/,
+      'Invalid MBID format — must be a valid UUID (e.g. 4b585938-f271-45e2-b19a-91215b125e38)',
+    ),
+  p: z
+    .string()
+    .optional()
+    .transform((v) => (v ? parseInt(v, 10) : 1))
+    .pipe(z.number().int().min(1).max(100)),
+})
+
+// ─── Terminal API ─────────────────────────────────────────────────────────────
+
+/** POST /api/terminal */
 export const terminalCommandSchema = z.object({
   command: z.string().min(1, 'command is required').max(100)
     .regex(/^[a-z0-9_-]+$/, 'Invalid command format'),
 })
 
-// ---------------------------------------------------------------------------
-// Blocklist API
-// ---------------------------------------------------------------------------
+// ─── OAuth API ────────────────────────────────────────────────────────────────
 
-export const blockSchema = z.object({
-  hashedIp: z.string().min(8).max(64),
-  reason: z.string().max(200).optional().default('manual'),
-  ttlSeconds: z.number().int().min(60).max(2592000).optional().default(604800),
+/** POST /api/oauth — disconnect a provider */
+export const oauthDisconnectSchema = z.object({
+  action: z.literal('disconnect'),
+  provider: z.enum(['spotify', 'google-drive']),
 })
 
-export const unblockSchema = z.object({
-  hashedIp: z.string().min(8).max(64),
-})
-
-// ---------------------------------------------------------------------------
-// Attacker profile API
-// ---------------------------------------------------------------------------
-
-export const getProfileSchema = z.object({
-  hashedIp: z.string().min(8).max(64).optional(),
-  limit: z.coerce.number().int().min(1).max(100).optional().default(50),
-  offset: z.coerce.number().int().min(0).optional().default(0),
-})
-
-export const deleteProfileSchema = z.object({
-  hashedIp: z.string().min(8).max(64),
-})
-
-// ---------------------------------------------------------------------------
-// Security settings API
-// ---------------------------------------------------------------------------
-
-export const securitySettingsSchema = z.object({
-  honeytokensEnabled: z.boolean().optional(),
-  rateLimitEnabled: z.boolean().optional(),
-  robotsTrapEnabled: z.boolean().optional(),
-  entropyInjectionEnabled: z.boolean().optional(),
-  suspiciousUaBlockingEnabled: z.boolean().optional(),
-  sessionBindingEnabled: z.boolean().optional(),
-  maxAlertsStored: z.number().int().min(10).max(10000).optional(),
-  tarpitMinMs: z.number().int().min(0).max(30000).optional(),
-  tarpitMaxMs: z.number().int().min(0).max(60000).optional(),
-  sessionTtlSeconds: z.number().int().min(300).max(86400).optional(),
-  threatScoringEnabled: z.boolean().optional(),
-  zipBombEnabled: z.boolean().optional(),
-  alertingEnabled: z.boolean().optional(),
-  hardBlockEnabled: z.boolean().optional(),
-  autoBlockThreshold: z.number().int().min(3).max(50).optional(),
-})
-
-// ---------------------------------------------------------------------------
-// Reset Password API
-// ---------------------------------------------------------------------------
-
-export const resetPasswordSchema = z.object({
-  email: z.string().min(1, 'Email is required').max(200).email('Invalid email format'),
-})
-
-export const confirmResetPasswordSchema = z.object({
-  token: z.string().min(1, 'Token is required').max(200),
-  newPassword: z.string().min(8, 'New password must be at least 8 characters').max(200),
-})
-
-// ---------------------------------------------------------------------------
-// Drive Download API — GET query
-// ---------------------------------------------------------------------------
-
-export const driveDownloadQuerySchema = z.object({
-  fileId: z.string().min(1, 'fileId is required').max(200).regex(/^[A-Za-z0-9_-]+$/, 'Invalid fileId format'),
-})
-
-// ---------------------------------------------------------------------------
-// Drive Folder API — GET query
-// ---------------------------------------------------------------------------
-
-export const driveFolderQuerySchema = z.object({
-  folderId: z.string().min(1, 'folderId is required').max(200).regex(/^[A-Za-z0-9_-]+$/, 'Invalid folderId format'),
-})
-
-// ---------------------------------------------------------------------------
-// Helper: validate and return first error message
-// ---------------------------------------------------------------------------
+// ─── Validation helper ────────────────────────────────────────────────────────
 
 /**
- * Validate input against a Zod schema.
- * Returns `{ success: true, data }` or `{ success: false, error: string }`.
+ * Parse `input` against a Zod `schema`.
+ *
+ * Returns a discriminated union so callers must narrow on `success` before
+ * accessing either `data` or `error`:
+ *
+ * ```ts
+ * const result = validate(mySchema, req.body)
+ * if (!result.success) {
+ *   return res.status(400).json({ error: result.error })
+ * }
+ * const { data } = result  // TypeScript knows data is correctly typed here
+ * ```
  */
-export function validate<T>(schema: z.ZodType<T>, input: unknown): { success: true; data: T; error?: string } | { success: false; error: string } {
+export function validate<T>(
+  schema: z.ZodSchema<T>,
+  input: unknown,
+): { success: true; data: T } | { success: false; error: string } {
   const result = schema.safeParse(input)
   if (result.success) {
     return { success: true, data: result.data }

@@ -1,121 +1,277 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { z } from 'zod'
-import { applyRateLimit } from './_ratelimit.js'
-
-/** Maximum lengths for contact form fields (mirrors client schema) */
-const MAX_NAME_LENGTH = 100
-const MAX_EMAIL_LENGTH = 254
-const MAX_SUBJECT_LENGTH = 200
-const MAX_MESSAGE_LENGTH = 5000
-
-/** Server-side validation schema */
-const contactSchema = z.object({
-  name: z.string().trim().min(1).max(MAX_NAME_LENGTH),
-  email: z.string().trim().min(1).email().max(MAX_EMAIL_LENGTH),
-  subject: z.string().trim().min(1).max(MAX_SUBJECT_LENGTH),
-  message: z.string().trim().min(1).max(MAX_MESSAGE_LENGTH),
-  /** Honeypot — accepted as any string so we can silently discard bot submissions */
-  _hp: z.string().optional(),
+import { Redis } from '@upstash/redis'
+const kv = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL || '',
+  token: process.env.UPSTASH_REDIS_REST_TOKEN || ''
 })
+import { randomUUID } from 'node:crypto'
+import { applyRateLimit } from './_ratelimit.js'
+import { validateSession } from './auth.js'
 
-/**
- * Simple in-memory rate limiter (fallback when Redis is unavailable).
- * The KV-based applyRateLimit from _ratelimit.ts is the primary limiter.
- */
-const RATE_LIMIT_WINDOW_MS = 60_000
-const RATE_LIMIT_MAX = 5
+interface VercelRequest {
+  method?: string
+  body?: Record<string, unknown>
+  query?: Record<string, string | string[]>
+  headers: Record<string, string | string[] | undefined>
+}
 
-const ipHits = new Map<string, { count: number; resetAt: number }>()
+interface VercelResponse {
+  setHeader(key: string, value: string): VercelResponse
+  status(code: number): VercelResponse
+  json(data: unknown): VercelResponse
+  end(): VercelResponse
+}
 
-function isRateLimitedInMemory(ip: string): boolean {
-  const now = Date.now()
-  const entry = ipHits.get(ip)
-  if (!entry || now > entry.resetAt) {
-    ipHits.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS })
-    return false
+interface ContactMessage {
+  id: string
+  name: string
+  email: string
+  subject: string
+  message: string
+  date: string
+  read: boolean
+}
+
+const KV_KEY = 'contact-messages'
+const MAX_CONTACT_MESSAGES = 500 // Safety cap against storage exhaustion DoS
+
+const isKVConfigured = (): boolean => {
+  return !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN)
+}
+
+/** HTML entity escaping to prevent XSS */
+function esc(str: string | undefined): string {
+  if (!str) return ''
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+interface ValidationResult {
+  error?: string
+  data?: { name: string; email: string; subject: string; message: string }
+}
+
+function validateContactInput(body: Record<string, unknown> | undefined): ValidationResult {
+  const { name, email, subject, message } = body || {}
+  if (!name || typeof name !== 'string' || name.trim().length < 1 || name.trim().length > 100) {
+    return { error: 'Name is required and must be 1-100 characters.' }
   }
-  entry.count++
-  return entry.count > RATE_LIMIT_MAX
+  if (!email || typeof email !== 'string' || !EMAIL_RE.test(email.trim()) || email.trim().length > 254) {
+    return { error: 'A valid email address is required.' }
+  }
+  if (!subject || typeof subject !== 'string' || subject.trim().length < 1 || subject.trim().length > 200) {
+    return { error: 'Subject is required and must be 1-200 characters.' }
+  }
+  if (!message || typeof message !== 'string' || message.trim().length < 1 || message.trim().length > 5000) {
+    return { error: 'Message is required and must be 1-5000 characters.' }
+  }
+  return {
+    data: {
+      name: esc(name.trim().slice(0, 100)),
+      email: esc(email.trim().slice(0, 254)),
+      subject: esc(subject.trim().slice(0, 200)),
+      message: esc(message.trim().slice(0, 5000)),
+    },
+  }
 }
 
-/**
- * Extracts the client IP from Vercel/proxy headers.
- * Falls back to 'unknown' when running locally.
- */
-function getClientIp(req: VercelRequest): string {
-  const forwarded = req.headers['x-forwarded-for']
-  if (typeof forwarded === 'string') return forwarded.split(',')[0].trim()
-  if (Array.isArray(forwarded) && forwarded.length > 0) return forwarded[0].split(',')[0].trim()
-  return 'unknown'
+/** Send email notification via Brevo transactional API */
+async function sendEmailNotification({ name, email, subject, message }: { name: string; email: string; subject: string; message: string }): Promise<void> {
+  const apiKey = process.env.BREVO_API_KEY
+  const toEmail = process.env.CONTACT_EMAIL_TO
+  if (!apiKey || !toEmail) return
+
+  try {
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'api-key': apiKey,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        sender: { name: process.env.SITE_NAME ? `${process.env.SITE_NAME} Contact Form` : 'Contact Form', email: toEmail },
+        to: [{ email: toEmail }],
+        replyTo: { name, email },
+        subject: `Contact Form: ${subject}`,
+        htmlContent: `<p><strong>From:</strong> ${name} &lt;${email}&gt;</p><p><strong>Subject:</strong> ${subject}</p><p>${message.replace(/\n/g, '<br>')}</p>`,
+      }),
+    })
+    if (!response.ok) {
+      const body = await response.text()
+      console.error(`Brevo API error ${response.status}:`, body)
+    }
+  } catch (err) {
+    console.error('Failed to send contact email notification:', err)
+  }
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // CORS preflight
+// OWASP A01:2021 – Broken Access Control: restrict CORS to the configured origin
+// instead of a wildcard so arbitrary third-party sites cannot POST contact messages.
+const CORS_ORIGIN = process.env.ALLOWED_ORIGIN || '*'
+
+function setCorsHeaders(res: VercelResponse): void {
+  res.setHeader('Access-Control-Allow-Origin', CORS_ORIGIN)
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+}
+
+export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
+  // CORS preflight for public POST
   if (req.method === 'OPTIONS') {
-    return res.status(200).end()
+    setCorsHeaders(res)
+    res.status(200).end()
+    return
   }
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
-
-  // --- KV-based rate limiting (GDPR-compliant, IP hashed) ---
-  const rlAllowed = await applyRateLimit(req, res)
-  if (!rlAllowed) return
-
-  // --- Fallback in-memory rate limiting (multi-submission guard) ---
-  const ip = getClientIp(req)
-  if (isRateLimitedInMemory(ip)) {
-    return res.status(429).json({ error: 'Too many requests — please try again later' })
-  }
-
-  // --- Input validation ---
-  const parsed = contactSchema.safeParse(req.body)
-  if (!parsed.success) {
-    const firstError = parsed.error.issues[0]?.message || 'Invalid input'
-    return res.status(400).json({ error: firstError })
-  }
-
-  const { name, email, subject, message, _hp } = parsed.data
-
-  // Honeypot check — bots typically fill hidden fields
-  if (_hp) {
-    // Silently accept to avoid leaking detection to bots
-    return res.status(200).json({ success: true })
+  if (!isKVConfigured()) {
+    res.status(503).json({
+      error: 'Service unavailable',
+      message: 'KV storage is not configured.',
+    })
+    return
   }
 
   try {
-    // Store the contact submission in Upstash Redis (if configured)
-    const redisUrl = process.env.UPSTASH_REDIS_REST_URL
-    const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN
-
-    if (redisUrl && redisToken) {
-      const { Redis } = await import('@upstash/redis')
-      const redis = new Redis({ url: redisUrl, token: redisToken })
-
-      const submission = {
-        name,
-        email,
-        subject,
-        message,
-        ip,
-        createdAt: new Date().toISOString(),
-      }
-
-      // Store in a list of contact submissions (keep last 100)
-      const listKey = 'contact-submissions'
-      await redis.lpush(listKey, JSON.stringify(submission))
-      await redis.ltrim(listKey, 0, 99)
-      // Set a 90-day TTL on the list so old submissions are cleaned up
-      await redis.expire(listKey, 90 * 24 * 60 * 60)
-    } else {
-      // Log to server console when Redis is not configured (development)
-      console.warn('Contact form submission (Redis not configured):', { name, subject })
+    switch (req.method) {
+      case 'POST':
+        await handlePost(req, res)
+        return
+      case 'GET':
+        await handleGet(req, res)
+        return
+      case 'PATCH':
+        await handlePatch(req, res)
+        return
+      case 'DELETE':
+        await handleDelete(req, res)
+        return
+      default:
+        res.setHeader('Allow', 'POST, GET, PATCH, DELETE, OPTIONS')
+        res.status(405).json({ error: 'Method not allowed' })
+        return
     }
-
-    return res.status(200).json({ success: true })
-  } catch (error) {
-    console.error('Contact API error:', error)
-    return res.status(500).json({ error: 'Internal server error — please try again later' })
+  } catch (err) {
+    console.error('Contact API error:', err)
+    res.status(500).json({ error: 'Internal server error' })
   }
+}
+
+/** POST — submit a new contact message (public, rate-limited) */
+async function handlePost(req: VercelRequest, res: VercelResponse): Promise<void> {
+  setCorsHeaders(res)
+
+  const allowed = await applyRateLimit(req, res)
+  if (!allowed) return
+
+  const parsed = validateContactInput(req.body)
+  if (parsed.error) {
+    res.status(400).json({ error: parsed.error })
+    return
+  }
+
+  const { name, email, subject, message } = parsed.data!
+  const id = `msg-${randomUUID()}`
+
+  const entry: ContactMessage = {
+    id,
+    name,
+    email,
+    subject,
+    message,
+    date: new Date().toISOString(),
+    read: false,
+  }
+
+  const MAX_RETRIES = 3
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      const existing: ContactMessage[] = (await kv.get<ContactMessage[]>(KV_KEY)) || []
+      existing.push(entry)
+      const toStore = existing.length > MAX_CONTACT_MESSAGES ? existing.slice(-MAX_CONTACT_MESSAGES) : existing
+      await kv.set(KV_KEY, toStore)
+      break
+    } catch (err) {
+      if (attempt === MAX_RETRIES - 1) throw err
+    }
+  }
+
+  // Send email notification (awaited so Vercel does not kill the request before fetch completes)
+  await sendEmailNotification({ name, email, subject, message })
+
+  res.status(200).json({ success: true })
+}
+
+/** GET — list all contact messages (admin only) */
+async function handleGet(req: VercelRequest, res: VercelResponse): Promise<void> {
+  const sessionValid = await validateSession(req)
+  if (!sessionValid) {
+    res.status(403).json({ error: 'Forbidden' })
+    return
+  }
+
+  const messages = (await kv.get<ContactMessage[]>(KV_KEY)) || []
+  res.status(200).json({ messages })
+}
+
+/** PATCH — mark a message as read/unread (admin only) */
+async function handlePatch(req: VercelRequest, res: VercelResponse): Promise<void> {
+  const sessionValid = await validateSession(req)
+  if (!sessionValid) {
+    res.status(403).json({ error: 'Forbidden' })
+    return
+  }
+
+  const { id, read } = req.body || {}
+  if (!id || typeof id !== 'string') {
+    res.status(400).json({ error: 'Message id is required.' })
+    return
+  }
+  if (typeof read !== 'boolean') {
+    res.status(400).json({ error: 'read must be a boolean.' })
+    return
+  }
+
+  const messages: ContactMessage[] = (await kv.get<ContactMessage[]>(KV_KEY)) || []
+  const idx = messages.findIndex((m) => m.id === id)
+  if (idx === -1) {
+    res.status(404).json({ error: 'Message not found.' })
+    return
+  }
+
+  messages[idx].read = read
+  await kv.set(KV_KEY, messages)
+
+  res.status(200).json({ success: true })
+}
+
+/** DELETE — delete a contact message (admin only) */
+async function handleDelete(req: VercelRequest, res: VercelResponse): Promise<void> {
+  const sessionValid = await validateSession(req)
+  if (!sessionValid) {
+    res.status(403).json({ error: 'Forbidden' })
+    return
+  }
+
+  const { id } = req.body || {}
+  if (!id || typeof id !== 'string') {
+    res.status(400).json({ error: 'Message id is required.' })
+    return
+  }
+
+  const messages: ContactMessage[] = (await kv.get<ContactMessage[]>(KV_KEY)) || []
+  const filtered = messages.filter((m) => m.id !== id)
+  if (filtered.length === messages.length) {
+    res.status(404).json({ error: 'Message not found.' })
+    return
+  }
+
+  await kv.set(KV_KEY, filtered)
+
+  res.status(200).json({ success: true })
 }
