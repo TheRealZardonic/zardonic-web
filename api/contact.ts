@@ -1,8 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { Redis } from '@upstash/redis'
-const kv = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL || '',
-  token: process.env.UPSTASH_REDIS_REST_TOKEN || ''
+import { getRedis } from './_redis.js'
+const kv = new Proxy({} as ReturnType<typeof getRedis>, {
+  get (_, prop: string | symbol) { return Reflect.get(getRedis(), prop) },
 })
 import { randomUUID } from 'node:crypto'
 import { applyRateLimit } from './_ratelimit.js'

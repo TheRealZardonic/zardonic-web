@@ -1,18 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { Redis } from '@upstash/redis'
+import { isRedisConfigured, getRedis } from './_redis.js'
 
 const SYNC_KEY = 'sync-timestamps'
-
-function isRedisConfigured(): boolean {
-  return !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
-}
-
-function getKv(): Redis {
-  return new Redis({
-    url: process.env.UPSTASH_REDIS_REST_URL || '',
-    token: process.env.UPSTASH_REDIS_REST_TOKEN || '',
-  })
-}
 
 /**
  * GET /api/sync  — read sync timestamps
@@ -28,7 +17,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ lastReleasesSync: 0, lastGigsSync: 0 })
   }
 
-  const kv = getKv()
+  const kv = getRedis()
 
   if (req.method === 'GET') {
     try {

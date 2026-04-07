@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { Redis } from '@upstash/redis'
+import { getRedis, isRedisConfigured } from './_redis.js'
 import { createRequire } from 'node:module'
 
 const _require = createRequire(import.meta.url)
@@ -12,14 +12,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   let kvStatus: 'ok' | 'unavailable' = 'ok'
 
-  // Check KV (Upstash Redis) reachability
-  const kvUrl = process.env.UPSTASH_REDIS_REST_URL
-  const kvToken = process.env.UPSTASH_REDIS_REST_TOKEN
-
-  if (kvUrl && kvToken) {
+  if (isRedisConfigured()) {
     try {
-      const redis = new Redis({ url: kvUrl, token: kvToken })
-      await redis.ping()
+      await getRedis().ping()
     } catch {
       kvStatus = 'unavailable'
     }
