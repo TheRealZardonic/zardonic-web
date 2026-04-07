@@ -1,21 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { Redis } from '@upstash/redis'
 import { applyRateLimit } from '../_ratelimit.js'
+import { getRedis } from '../_redis.js'
 import { validateSession } from '../auth.js'
 import { cmsAutoSaveSchema } from '../../src/cms/schemas.js'
 
 const AUTOSAVE_TTL = 24 * 60 * 60 // 24 hours in seconds
 const KEY_PREFIX = /^zd-cms:/
-
-let _redis: Redis | null = null
-function getRedis(): Redis {
-  if (_redis) return _redis
-  const url = process.env.UPSTASH_REDIS_REST_URL
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN
-  if (!url || !token) throw new Error('Missing Redis config')
-  _redis = new Redis({ url, token })
-  return _redis
-}
 
 function buildAutoSaveKey(key: string): string {
   const rest = key.replace(/^zd-cms:/, '')
