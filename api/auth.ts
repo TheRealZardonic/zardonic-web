@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { getRedis } from './_redis.js'
+import { getRedis, isRedisConfigured } from './_redis.js'
 const kv = new Proxy({} as ReturnType<typeof getRedis>, {
   get (_, prop: string | symbol) { return Reflect.get(getRedis(), prop) },
 })
@@ -20,9 +20,6 @@ const COOKIE_NAME = 'nk-session'
 const TOTP_ISSUER = process.env.SITE_NAME ? `${process.env.SITE_NAME} Admin` : 'Site Admin'
 const TOTP_KEY = 'admin-totp-secret'
 
-const isKVConfigured = () => {
-  return !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
-}
 
 /**
  * Hash a password with scrypt + random salt.
@@ -219,7 +216,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   const allowed = await applyRateLimit(req, res)
   if (!allowed) return
 
-  if (!isKVConfigured()) {
+  if (!isRedisConfigured()) {
     return res.status(503).json({ error: 'Service unavailable', message: 'KV storage is not configured.' })
   }
 

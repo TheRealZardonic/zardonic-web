@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { getRedis } from './_redis.js'
+import { getRedis, isRedisConfigured } from './_redis.js'
 const kv = new Proxy({} as ReturnType<typeof getRedis>, {
   get (_, prop: string | symbol) { return Reflect.get(getRedis(), prop) },
 })
@@ -70,9 +70,6 @@ function normalizeLandingPage(p: string | undefined): string | undefined {
 }
 
 // Check if KV is properly configured
-const isKVConfigured = (): boolean => {
-  return !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
-}
 
 interface AnalyticsEvent {
   type: string
@@ -299,7 +296,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   const allowed = await applyRateLimit(req, res)
   if (!allowed) return
 
-  if (!isKVConfigured()) {
+  if (!isRedisConfigured()) {
     res.status(503).json({
       error: 'Service unavailable',
       message: 'KV storage is not configured.',

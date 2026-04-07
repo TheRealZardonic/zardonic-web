@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { getRedis } from './_redis.js'
+import { getRedis, isRedisConfigured } from './_redis.js'
 const kv = new Proxy({} as ReturnType<typeof getRedis>, {
   get (_, prop: string | symbol) { return Reflect.get(getRedis(), prop) },
 })
@@ -9,9 +9,6 @@ import { kvGetQuerySchema, kvPostSchema, validate } from './_schemas.js'
 import { validateSession } from './auth.js'
 import { isHardBlocked } from './_blocklist.js'
 // Check if KV is properly configured
-const isKVConfigured = () => {
-  return !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
-}
 
 /**
  * Allow-list of keys that may be read without admin authentication.
@@ -78,7 +75,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   }
 
   // Check if KV is configured
-  if (!isKVConfigured()) {
+  if (!isRedisConfigured()) {
     console.error('KV not configured: Missing UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN environment variables')
     return res.status(503).json({ 
       error: 'Service unavailable',

@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { getRedis } from './_redis.js'
+import { getRedis, isRedisConfigured } from './_redis.js'
 const kv = new Proxy({} as ReturnType<typeof getRedis>, {
   get (_, prop: string | symbol) { return Reflect.get(getRedis(), prop) },
 })
@@ -37,7 +37,6 @@ interface OAuthLog {
   ip?: string
 }
 
-const isKVConfigured = () => !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
 
 // ---------------------------------------------------------------------------
 // Token Encryption (AES-256-GCM)
@@ -168,7 +167,7 @@ export async function fetchProfile(provider: string, accessToken: string): Promi
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<unknown> {
   if (req.method === 'OPTIONS') return res.status(200).end()
 
-  if (!isKVConfigured()) {
+  if (!isRedisConfigured()) {
     return res.status(503).json({ error: 'Service unavailable', message: 'KV storage is not configured.' })
   }
 

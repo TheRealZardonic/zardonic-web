@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { isRedisConfigured } from './_redis.js'
 import { applyRateLimit } from './_ratelimit.js'
 import { validateSession } from './auth.js'
 import { getProfile, getAllProfiles, deleteProfile, analyzeUserAgents } from './_attacker-profile.js'
@@ -12,7 +13,6 @@ import { validate } from './_schemas.js'
  * GET  /api/attacker-profile?limit=50&offset=0 → Get all attacker profiles (paginated)
  * DELETE /api/attacker-profile?hashedIp=xxx → Delete attacker profile
  */
-const isKVConfigured = (): boolean => !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
 
 export const getProfileSchema = z.object({
   hashedIp: z.string().min(8).max(64).optional(),
@@ -40,7 +40,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return
   }
 
-  if (!isKVConfigured()) {
+  if (!isRedisConfigured()) {
     res.status(503).json({ error: 'Service unavailable' })
     return
   }

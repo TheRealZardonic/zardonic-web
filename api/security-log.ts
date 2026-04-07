@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { getRedis } from './_redis.js'
+import { getRedis, isRedisConfigured } from './_redis.js'
 const kv = new Proxy({} as ReturnType<typeof getRedis>, {
   get (_, prop: string | symbol) { return Reflect.get(getRedis(), prop) },
 })
@@ -26,8 +26,6 @@ import { validate } from './_schemas.js'
  */
 
 const SECURITY_LOG_KEY = 'nk-security-log'
-const isKVConfigured = (): boolean =>
-  !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
 
 const querySchema = z.object({
   limit: z.coerce.number().int().min(1).max(500).optional().default(100),
@@ -50,7 +48,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return
   }
 
-  if (!isKVConfigured()) {
+  if (!isRedisConfigured()) {
     res.status(503).json({ error: 'Service unavailable', message: 'KV storage is not configured.' })
     return
   }

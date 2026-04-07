@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { getRedis } from './_redis.js'
+import { getRedis, isRedisConfigured } from './_redis.js'
 const kv = new Proxy({} as ReturnType<typeof getRedis>, {
   get (_, prop: string | symbol) { return Reflect.get(getRedis(), prop) },
 })
@@ -19,9 +19,6 @@ interface ContactMessage {
 const KV_KEY = 'contact-messages'
 const MAX_CONTACT_MESSAGES = 500 // Safety cap against storage exhaustion DoS
 
-const isKVConfigured = (): boolean => {
-  return !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
-}
 
 /** HTML entity escaping to prevent XSS */
 function esc(str: string | undefined): string {
@@ -114,7 +111,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return
   }
 
-  if (!isKVConfigured()) {
+  if (!isRedisConfigured()) {
     res.status(503).json({
       error: 'Service unavailable',
       message: 'KV storage is not configured.',
