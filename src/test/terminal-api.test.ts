@@ -2,13 +2,16 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // ---------------------------------------------------------------------------
-// Mock @vercel/kv
+// Mock @upstash/redis
 // ---------------------------------------------------------------------------
 const mockKvGet = vi.fn()
 
-vi.mock('@vercel/kv', () => ({
-  kv: { get: mockKvGet, set: vi.fn() },
-}))
+vi.mock('@upstash/redis', () => {
+  const Redis = function () {
+    return { get: mockKvGet, set: vi.fn() }
+  }
+  return { Redis }
+})
 
 // Mock rate limiter — always allow requests in tests
 vi.mock('../../api/_ratelimit.js', () => ({
@@ -43,8 +46,8 @@ const BAND_DATA_WITH_COMMANDS = {
 describe('Terminal API handler', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    process.env.KV_REST_API_URL = 'https://fake-kv.vercel.test'
-    process.env.KV_REST_API_TOKEN = 'fake-token'
+    process.env.UPSTASH_REDIS_REST_URL = 'https://fake-kv.upstash.test'
+    process.env.UPSTASH_REDIS_REST_TOKEN = 'fake-token'
   })
 
   it('OPTIONS returns 200', async () => {
@@ -138,8 +141,8 @@ describe('Terminal API handler', () => {
   })
 
   it('returns 503 when KV is not configured', async () => {
-    delete process.env.KV_REST_API_URL
-    delete process.env.KV_REST_API_TOKEN
+    delete process.env.UPSTASH_REDIS_REST_URL
+    delete process.env.UPSTASH_REDIS_REST_TOKEN
     const res = mockRes()
     await handler({ method: 'POST', body: { command: 'status' }, headers: {} } as unknown as VercelRequest, res)
     expect(res.status).toHaveBeenCalledWith(503)

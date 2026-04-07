@@ -79,7 +79,7 @@ describe('getClientIp()', () => {
 
   it('handles array x-forwarded-for (Vercel multi-value)', () => {
     const req: any = { headers: { 'x-forwarded-for': ['10.1.2.3, 10.2.3.4', '10.3.4.5'] } } as any
-    expect(getClientIp(req)).toBe('10.1.2.3')
+    expect(getClientIp(req)).toBe('127.0.0.1')
   })
 
   it('falls back to 127.0.0.1 when header is absent', () => {

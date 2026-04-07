@@ -49,10 +49,14 @@ function mockRes() {
     status: vi.fn(),
     json: vi.fn(),
     end: vi.fn(),
+    setHeader: vi.fn(),
+    send: vi.fn(),
   }
   res.status.mockReturnValue(res)
   res.json.mockReturnValue(res)
   res.end.mockReturnValue(res)
+  res.setHeader.mockReturnValue(res)
+  res.send.mockReturnValue(res)
   return res as unknown as unknown as VercelResponse
 }
 
@@ -76,7 +80,7 @@ describe('Rate limiting integration', () => {
       mockApplyRateLimit.mockResolvedValue(true)
       mockKvGet.mockResolvedValue({ name: 'test' })
       const res = mockRes()
-      await kvHandler({ method: 'GET', query: { key: 'zardonic-band-data' }, body: {}, headers: {} } as unknown as VercelRequest, res)
+      await kvHandler({ method: 'GET', query: { key: 'band-data' }, body: {}, headers: {} } as unknown as VercelRequest, res)
       expect(mockApplyRateLimit).toHaveBeenCalled()
       expect(res.json).toHaveBeenCalledWith({ value: { name: 'test' } })
     })

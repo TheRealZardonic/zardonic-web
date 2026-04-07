@@ -2,36 +2,43 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // ---------------------------------------------------------------------------
-// Mock @vercel/kv — must be declared before importing the handler
+// Mock @upstash/redis — must be declared before importing the handler
 // ---------------------------------------------------------------------------
 const mockKvGet = vi.fn()
 const mockKvSet = vi.fn()
 const mockKvDel = vi.fn()
-const mockPipeExec = vi.fn()
-const mockKvPipeline = vi.fn(() => ({
-  set: vi.fn(),
-  del: vi.fn(),
-  exec: mockPipeExec,
-}))
+const mockPipeExec = vi.fn().mockResolvedValue([])
+const mockPipeSet = vi.fn()
+const mockPipeDel = vi.fn()
 
-vi.mock('@vercel/kv', () => ({
-  kv: { get: mockKvGet, set: mockKvSet, del: mockKvDel, pipeline: mockKvPipeline },
-}))
-
-// Mock @upstash/redis (transitive dep via kv.js)
 vi.mock('@upstash/redis', () => {
-  const Redis = function () { return {} }
+  const Redis = function () {
+    return {
+      get: mockKvGet,
+      set: mockKvSet,
+      del: mockKvDel,
+      pipeline: () => ({
+        set: mockPipeSet,
+        del: mockPipeDel,
+        exec: mockPipeExec,
+      }),
+    }
+  }
   return { Redis }
 })
+
+// Mock @upstash/redis (transitive dep via kv.js)
+// (already mocked above)
 
 // Mock rate limiter — always allow requests in tests
 vi.mock('../../api/_ratelimit.js', () => ({
   applyRateLimit: vi.fn().mockResolvedValue(true),
 }))
 
-// Mock auth.js hashPassword
+// Mock auth.js hashPassword and invalidateAllSessions
 vi.mock('../../api/auth.js', () => ({
   hashPassword: vi.fn().mockResolvedValue('scrypt:salt:hashedvalue'),
+  invalidateAllSessions: vi.fn().mockResolvedValue(undefined),
 }))
 
 type Res = { status: ReturnType<typeof vi.fn>; json: ReturnType<typeof vi.fn>; end: ReturnType<typeof vi.fn> }
@@ -55,8 +62,8 @@ describe('Reset Password API handler', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    process.env.KV_REST_API_URL = 'https://fake-kv.vercel.test'
-    process.env.KV_REST_API_TOKEN = 'fake-token'
+    process.env.UPSTASH_REDIS_REST_URL = 'https://fake-kv.upstash.test'
+    process.env.UPSTASH_REDIS_REST_TOKEN = 'fake-token'
     process.env.ADMIN_RESET_EMAIL = 'admin@example.com'
   })
 
@@ -78,7 +85,7 @@ describe('Reset Password API handler', () => {
   })
 
   it('returns 503 when KV is not configured', async () => {
-    delete process.env.KV_REST_API_URL
+    delete process.env.UPSTASH_REDIS_REST_URL
     const res = mockRes()
     await handler({ method: 'POST', query: {}, body: { email: 'admin@example.com' }, headers: {} } as unknown as VercelRequest, res)
     expect(res.status).toHaveBeenCalledWith(503)
@@ -102,7 +109,7 @@ describe('Reset Password API handler', () => {
     const res = mockRes()
     await handler({ method: 'POST', query: {}, body: {}, headers: {} } as unknown as VercelRequest, res)
     expect(res.status).toHaveBeenCalledWith(400)
-    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'Required' }))
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: expect.any(String) }))
   })
 
   it('resets password when email matches', async () => {

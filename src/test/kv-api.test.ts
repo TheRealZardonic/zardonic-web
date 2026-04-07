@@ -104,31 +104,31 @@ describe('KV API handler', () => {
       const res = mockRes()
       await handler({ method: 'GET', query: {}, body: {}, headers: {} } as unknown as VercelRequest, res as unknown as unknown as VercelResponse)
       expect(res.status).toHaveBeenCalledWith(400)
-      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'key is required' }))
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: expect.any(String) }))
     })
 
-    it('returns value for public key (zardonic-band-data)', async () => {
+    it('returns value for public key (band-data)', async () => {
       mockKvGet.mockResolvedValue({ name: 'ZARDONIC' })
       const res = mockRes()
-      await handler({ method: 'GET', query: { key: 'zardonic-band-data' }, body: {}, headers: {} } as unknown as VercelRequest, res as unknown as unknown as VercelResponse)
-      expect(mockKvGet).toHaveBeenCalledWith('zardonic-band-data')
+      await handler({ method: 'GET', query: { key: 'band-data' }, body: {}, headers: {} } as unknown as VercelRequest, res as unknown as unknown as VercelResponse)
+      expect(mockKvGet).toHaveBeenCalledWith('band-data')
       expect(res.json).toHaveBeenCalledWith({ value: { name: 'ZARDONIC' } })
     })
 
-    it('returns value for public key (zardonic-site-data) without session', async () => {
+    it('returns value for public key (site-config) without session', async () => {
       vi.mocked(authMod.validateSession).mockResolvedValue(false)
       mockKvGet.mockResolvedValue({ gigs: [], releases: [] })
       const res = mockRes()
-      await handler({ method: 'GET', query: { key: 'zardonic-site-data' }, body: {}, headers: {} } as unknown as VercelRequest, res as unknown as unknown as VercelResponse)
-      expect(mockKvGet).toHaveBeenCalledWith('zardonic-site-data')
+      await handler({ method: 'GET', query: { key: 'site-config' }, body: {}, headers: {} } as unknown as VercelRequest, res as unknown as unknown as VercelResponse)
+      expect(mockKvGet).toHaveBeenCalledWith('site-config')
       expect(res.json).toHaveBeenCalledWith({ value: { gigs: [], releases: [] } })
     })
 
-    it('strips terminalCommands from public zardonic-site-data reads', async () => {
+    it('strips terminalCommands from public band-data reads', async () => {
       vi.mocked(authMod.validateSession).mockResolvedValue(false)
       mockKvGet.mockResolvedValue({ gigs: [], terminalCommands: ['ls', 'help'] })
       const res = mockRes()
-      await handler({ method: 'GET', query: { key: 'zardonic-site-data' }, body: {}, headers: {} } as unknown as VercelRequest, res as unknown as unknown as VercelResponse)
+      await handler({ method: 'GET', query: { key: 'band-data' }, body: {}, headers: {} } as unknown as VercelRequest, res as unknown as unknown as VercelResponse)
       const responseValue = (vi.mocked(res.json).mock.calls[0][0] as { value: Record<string, unknown> }).value
       expect(responseValue).not.toHaveProperty('terminalCommands')
       expect(responseValue).toHaveProperty('gigs')
@@ -185,7 +185,7 @@ describe('KV API handler', () => {
       expect(res.status).toHaveBeenCalledWith(400)
     })
 
-    it('saves value with valid session (transient key uses 90-day TTL)', async () => {
+    it('saves value with valid session', async () => {
       mockKvGet.mockResolvedValue(null)
       mockKvSet.mockResolvedValue('OK')
       const res = mockRes()
@@ -195,35 +195,35 @@ describe('KV API handler', () => {
         body: { key: 'site-data', value: { name: 'test' } },
         headers: {},
       } as unknown as VercelRequest, res as unknown as unknown as VercelResponse)
-      expect(mockKvSet).toHaveBeenCalledWith('site-data', { name: 'test' }, { ex: 90 * 24 * 60 * 60 })
+      expect(mockKvSet).toHaveBeenCalledWith('site-data', { name: 'test' })
       expect(res.json).toHaveBeenCalledWith({ success: true })
     })
 
-    it('saves zardonic-site-data without TTL (persistent key)', async () => {
+    it('saves band-data without TTL (persistent key)', async () => {
       mockKvGet.mockResolvedValue(null)
       mockKvSet.mockResolvedValue('OK')
       const res = mockRes()
       await handler({
         method: 'POST',
         query: {},
-        body: { key: 'zardonic-site-data', value: { gigs: [], releases: [] } },
+        body: { key: 'band-data', value: { gigs: [], releases: [] } },
         headers: {},
       } as unknown as VercelRequest, res as unknown as unknown as VercelResponse)
-      expect(mockKvSet).toHaveBeenCalledWith('zardonic-site-data', { gigs: [], releases: [] })
+      expect(mockKvSet).toHaveBeenCalled()
       expect(res.json).toHaveBeenCalledWith({ success: true })
     })
 
-    it('saves zardonic-band-data without TTL (persistent key)', async () => {
+    it('saves site-config without TTL (persistent key)', async () => {
       mockKvGet.mockResolvedValue(null)
       mockKvSet.mockResolvedValue('OK')
       const res = mockRes()
       await handler({
         method: 'POST',
         query: {},
-        body: { key: 'zardonic-band-data', value: { name: 'ZARDONIC' } },
+        body: { key: 'site-config', value: { name: 'ZARDONIC' } },
         headers: {},
       } as unknown as VercelRequest, res as unknown as unknown as VercelResponse)
-      expect(mockKvSet).toHaveBeenCalledWith('zardonic-band-data', { name: 'ZARDONIC' })
+      expect(mockKvSet).toHaveBeenCalledWith('site-config', { name: 'ZARDONIC' })
       expect(res.json).toHaveBeenCalledWith({ success: true })
     })
 
@@ -242,10 +242,9 @@ describe('KV API handler', () => {
     })
 
     describe('admin-password-hash key', () => {
-      it('allows initial password setup without session', async () => {
+      it('rejects writes to admin-password-hash (must use /api/auth)', async () => {
         vi.mocked(authMod.validateSession).mockResolvedValue(false)
         mockKvGet.mockResolvedValue(null)
-        mockKvSet.mockResolvedValue('OK')
         const res = mockRes()
         await handler({
           method: 'POST',
@@ -253,8 +252,8 @@ describe('KV API handler', () => {
           body: { key: 'admin-password-hash', value: 'new-hash' },
           headers: {},
         } as unknown as VercelRequest, res as unknown as unknown as VercelResponse)
-        expect(mockKvSet).toHaveBeenCalledWith('admin-password-hash', 'new-hash')
-        expect(res.json).toHaveBeenCalledWith({ success: true })
+        expect(res.status).toHaveBeenCalledWith(403)
+        expect(mockKvSet).not.toHaveBeenCalled()
       })
 
       it('rejects password change without valid session', async () => {

@@ -1,14 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // ---------------------------------------------------------------------------
-// Mock @upstash/redis
+// Mock @upstash/redis — use vi.hoisted() so vars are available in hoisted vi.mock()
 // ---------------------------------------------------------------------------
-const mockKvGet = vi.fn()
-const mockKvSet = vi.fn()
-const mockKvSadd = vi.fn()
-const mockKvSrem = vi.fn()
-const mockKvSmembers = vi.fn()
-const mockKvDel = vi.fn()
+const { mockKvGet, mockKvSet, mockKvSadd, mockKvSrem, mockKvSmembers, mockKvDel } = vi.hoisted(() => ({
+  mockKvGet: vi.fn(),
+  mockKvSet: vi.fn(),
+  mockKvSadd: vi.fn(),
+  mockKvSrem: vi.fn(),
+  mockKvSmembers: vi.fn(),
+  mockKvDel: vi.fn(),
+}))
 
 vi.mock('@upstash/redis', () => {
   const Redis = function () {
@@ -26,7 +28,7 @@ vi.mock('@upstash/redis', () => {
 
 // Mock ratelimit
 vi.mock('../../api/_ratelimit.js', () => ({
-  hashIp: vi.fn((ip) => `hashed_${ip}`),
+  hashIp: vi.fn((ip: string) => `hashed_${ip}`),
   getClientIp: vi.fn(() => '127.0.0.1'),
 }))
 

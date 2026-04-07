@@ -101,7 +101,7 @@ describe('incrementThreatScore()', () => {
       expect.objectContaining({ autoBlocked: true }),
       { ex: 604800 }
     )
-    expect(consoleSpy).toHaveBeenCalledWith('[AUTO BLOCK]', expect.any(String))
+    expect(consoleSpy).toHaveBeenCalledWith('[SECURITY:THREAT_LEVEL_ESCALATED]', expect.any(String))
     consoleSpy.mockRestore()
   })
 
