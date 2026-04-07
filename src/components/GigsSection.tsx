@@ -69,7 +69,8 @@ export default function GigsSection({ gigs, editMode, onUpdate, onRefresh, fontS
     try {
       await onRefresh()
       toast.success('Gigs refreshed from Bandsintown')
-    } catch {
+    } catch (error) {
+      console.error('Gig refresh failed:', error)
       toast.error('Failed to refresh gigs')
     } finally {
       setIsLoading(false)

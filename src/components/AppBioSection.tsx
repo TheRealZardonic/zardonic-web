@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -23,16 +23,21 @@ export default function AppBioSection({ bio, sectionOrder, visible, editMode, se
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(bio)
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     onUpdate?.(draft)
     setEditing(false)
     toast.success('Biography saved')
-  }
+  }, [draft, onUpdate])
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     setDraft(bio)
     setEditing(false)
-  }
+  }, [bio])
+
+  const handleEditClick = useCallback(() => {
+    setDraft(bio)
+    setEditing(true)
+  }, [bio])
 
   if (!visible) return null
 
@@ -64,7 +69,7 @@ export default function AppBioSection({ bio, sectionOrder, visible, editMode, se
                   variant="outline"
                   size="sm"
                   className="font-mono border-primary/30 hover:bg-primary/10"
-                  onClick={() => { setDraft(bio); setEditing(true) }}
+                  onClick={handleEditClick}
                 >
                   <PencilSimple className="w-4 h-4 mr-2" />
                   Edit Bio

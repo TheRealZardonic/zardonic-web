@@ -77,7 +77,11 @@ function buildAlbumSchemas(artistName: string, releases: Release[]) {
     '@type': 'MusicAlbum',
     name: release.title,
     byArtist: { '@type': 'MusicGroup', name: artistName },
-    ...(release.releaseDate ? { datePublished: release.releaseDate } : release.year ? { datePublished: release.year } : {}),
+    ...(release.releaseDate
+      ? { datePublished: release.releaseDate }
+      : release.year
+        ? { datePublished: release.year }
+        : {}),
     ...(release.artwork ? { image: release.artwork } : {}),
   }))
 }

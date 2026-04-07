@@ -250,7 +250,7 @@ function App() {
       
       <Toaster />
       {siteData.tracks.length > 0 && siteData.tracks[0]?.url && (
-        <audio src={siteData.tracks[0].url} aria-hidden="true" />
+        <audio src={siteData.tracks[0].url} aria-label="Background music player" />
       )}
 
       <AppNavBar

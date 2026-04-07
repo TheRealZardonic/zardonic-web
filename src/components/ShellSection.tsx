@@ -158,15 +158,15 @@ export default function ShellSection({ setAdminSettings,
                             <Input
                               value={member?.social?.[platform] || ''}
                               onChange={(e) => {
-                              if (!setAdminSettings) return
-                          const prev = adminSettings ?? ({} as AdminSettings)
-                              const members = [...(prev.shellMembers || (prev.shellMember ? [prev.shellMember] : []))]
-                              members[memberIndex] = {
-                                ...members[memberIndex],
-                                social: { ...(members[memberIndex]?.social || {}), [platform]: e.target.value },
-                              }
-                              setAdminSettings?.({ ...prev, shellMembers: members })
-                            }}
+                                if (!setAdminSettings) return
+                                const prev = adminSettings ?? ({} as AdminSettings)
+                                const members = [...(prev.shellMembers || (prev.shellMember ? [prev.shellMember] : []))]
+                                members[memberIndex] = {
+                                  ...members[memberIndex],
+                                  social: { ...(members[memberIndex]?.social || {}), [platform]: e.target.value },
+                                }
+                                setAdminSettings?.({ ...prev, shellMembers: members })
+                              }}
                               className="bg-card border-border font-mono text-xs flex-1"
                               placeholder={`https://${platform}.com/...`}
                             />
