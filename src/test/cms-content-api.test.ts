@@ -28,7 +28,7 @@ vi.mock('../../api/auth.ts', () => ({
 }))
 
 function mockRes() {
-  const res = { status: vi.fn(), json: vi.fn(), setHeader: vi.fn(), end: vi.fn() }
+  const res: any = { status: vi.fn(), json: vi.fn(), setHeader: vi.fn(), end: vi.fn() }
   res.status.mockReturnValue(res)
   res.json.mockReturnValue(res)
   res.setHeader.mockReturnValue(res)

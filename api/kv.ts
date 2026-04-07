@@ -1,50 +1,53 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { Redis } from '@upstash/redis'
+const kv = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL || '',
+  token: process.env.UPSTASH_REDIS_REST_TOKEN || ''
+})
 import { applyRateLimit } from './_ratelimit.js'
 import { isHoneytoken, triggerHoneytokenAlarm, isMarkedAttacker, injectEntropyHeaders, getRandomTaunt, setDefenseHeaders } from './_honeytokens.js'
 import { kvGetQuerySchema, kvPostSchema, validate } from './_schemas.js'
 import { validateSession } from './auth.js'
 import { isHardBlocked } from './_blocklist.js'
 
+interface VercelRequest {
+  method?: string
+  body?: Record<string, unknown>
+  query?: Record<string, string | string[]>
+  headers: Record<string, string | string[] | undefined>
+}
+
+interface VercelResponse {
+  setHeader(key: string, value: string): VercelResponse
+  status(code: number): VercelResponse
+  json(data: unknown): VercelResponse
+  end(): VercelResponse
+  send(data: unknown): VercelResponse
+}
+
+
+
 // Check if KV is properly configured
 const isKVConfigured = () => {
-  return !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
+  return !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN)
 }
 
 /**
  * Allow-list of keys that may be read without admin authentication.
- * Only explicitly listed keys are publicly readable.
+ * All other keys require a valid session cookie.
+ * This prevents accidental leakage of sensitive data stored under
+ * arbitrary key names (e.g. stripe_api_key, db_password, etc.).
+ *
+ * band-data is publicly readable but is sanitized on write to strip
+ * any fields matching sensitive patterns (token, secret, password, etc.).
  */
 const ALLOWED_PUBLIC_READ_KEYS = new Set([
-  'zardonic-band-data',
-  'zardonic-site-data',
+  'band-data',
+  'site-config',
 ])
 
-/**
- * Keys whose data is long-lived admin-managed content and must not have a TTL.
- * All other (cached/transient) keys use a 90-day expiry.
- */
-const PERSISTENT_KEYS = new Set([
-  'zardonic-band-data',
-  'zardonic-site-data',
-])
-
-// Lazily create the Redis client so we only instantiate when env vars are set
-let _redis: Redis | null = null
-function getRedis(): Redis {
-  if (!_redis) {
-    const url = process.env.UPSTASH_REDIS_REST_URL
-    const token = process.env.UPSTASH_REDIS_REST_TOKEN
-    if (!url || !token) {
-      throw new Error('Missing UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN')
-    }
-    _redis = new Redis({ url, token })
-  }
-  return _redis
-}
-
-// Constant-time string comparison to prevent timing attacks on hash comparison
-export function timingSafeEqual(a: string, b: string): boolean {
+// Constant-time string comparison to prevent timing attacks on hash comparison.
+// Always compares the full length of the longer string to avoid leaking length.
+export function timingSafeEqual(a: unknown, b: unknown): boolean {
   if (typeof a !== 'string' || typeof b !== 'string') return false
   const len = Math.max(a.length, b.length)
   let result = a.length ^ b.length
@@ -58,18 +61,12 @@ export function timingSafeEqual(a: string, b: string): boolean {
 const SUSPICIOUS_UA_PATTERNS = [/wfuzz/i, /nikto/i, /sqlmap/i, /dirbuster/i, /gobuster/i, /ffuf/i]
 
 function isSuspiciousUA(req: VercelRequest): boolean {
-  const ua = req.headers['user-agent'] || ''
+  const rawUa = req.headers['user-agent'] || ''
+  const ua = Array.isArray(rawUa) ? rawUa[0] : rawUa
   return SUSPICIOUS_UA_PATTERNS.some(p => p.test(ua))
 }
 
-/** Sensitive key patterns that must never be readable by the public */
-const SENSITIVE_KEY_PATTERNS = [/token/i, /secret/i, /password/i, /private/i, /credential/i]
-
-function hasSensitivePattern(key: string): boolean {
-  return SENSITIVE_KEY_PATTERNS.some(p => p.test(key))
-}
-
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: VercelRequest, res: VercelResponse): Promise<unknown> {
   if (req.method === 'OPTIONS') {
     return res.status(200).end()
   }
@@ -80,19 +77,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(403).json({ error: 'FORBIDDEN' })
   }
 
-  // Wfuzz / hacking tool detection
+  // Wfuzz / hacking tool detection — immediate block (no tarpit to prevent FDoS)
   if (isSuspiciousUA(req)) {
     return res.status(403).json({
       error: 'NOOB_DETECTED',
-      tip: "Next time, try changing your User-Agent before hacking a band.",
+      tip: 'Next time, try changing your User-Agent before hacking a band.',
     })
   }
 
-  // Rate limiting (GDPR-compliant, IP is hashed)
+  // Rate limiting — blocks brute-force and DoS attacks (GDPR-compliant, IP is hashed)
   const allowed = await applyRateLimit(req, res)
   if (!allowed) return
 
-  // Entropy injection for flagged attacker IPs
+  // Entropy injection counter-measure: inject noise headers for flagged attacker IPs
   if (await isMarkedAttacker(req)) {
     injectEntropyHeaders(res)
     setDefenseHeaders(res)
@@ -100,24 +97,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // Check if KV is configured
   if (!isKVConfigured()) {
-    console.error('KV not configured: Missing UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN environment variables')
+    console.error('KV not configured: Missing KV_REST_API_URL or KV_REST_API_TOKEN environment variables')
     return res.status(503).json({ 
       error: 'Service unavailable',
-      message: 'KV storage is not configured. Please set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN environment variables.'
+      message: 'KV storage is not configured. Please set KV_REST_API_URL and KV_REST_API_TOKEN environment variables.'
     })
   }
 
-  const kv = getRedis()
-
   try {
     if (req.method === 'GET') {
+      // Zod validation
       const parsed = validate(kvGetQuerySchema, req.query)
       if (!parsed.success) return res.status(400).json({ error: parsed.error })
       const { key } = parsed.data
 
-      // Honeytoken detection on GET
+      // Honeytoken detection — taunting response on GET.
+      // Confrontational message lets the attacker know they've been caught.
       if (isHoneytoken(key)) {
-        await triggerHoneytokenAlarm(req, key)
+        const responseSent = await triggerHoneytokenAlarm(req, key, res)
+        if (responseSent) return
         setDefenseHeaders(res)
         return res.status(403).json({
           error: 'ACCESS_DENIED',
@@ -125,8 +123,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         })
       }
 
-      // Allow-list: only explicitly listed keys are publicly readable
+      // Allow-list: only explicitly listed keys are publicly readable.
+      // All other keys require a valid session to prevent leakage
+      // of sensitive data stored under arbitrary key names.
       const isPublicRead = ALLOWED_PUBLIC_READ_KEYS.has(key)
+      const isAuthenticated = isPublicRead ? await validateSession(req) : null
       if (!isPublicRead) {
         const sessionValid = await validateSession(req)
         if (!sessionValid) {
@@ -136,11 +137,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const value = await kv.get(key)
 
-      // Strip sensitive fields from public band-data reads
-      if (isPublicRead && value && typeof value === 'object') {
-        const safeValue = { ...(value as Record<string, unknown>) }
-        delete safeValue['terminalCommands']
+      // Strip sensitive terminal command data from public band-data reads.
+      // Terminal commands contain secrets that should only be served via
+      // the dedicated /api/terminal endpoint, not exposed in the full payload.
+      if (key === 'band-data' && isPublicRead && !isAuthenticated && value && typeof value === 'object') {
+        const { terminalCommands: _stripped, ...safeValue } = value as Record<string, unknown>
         return res.json({ value: safeValue })
+      }
+
+      // Strip sensitive fields from public site-config reads.
+      // syncUrl, secretCode, and configOverrides may contain secrets;
+      // widget plugin configs are sanitized to mask API keys/tokens.
+      if (key === 'site-config' && isPublicRead && !isAuthenticated && value && typeof value === 'object') {
+        const { syncUrl: _su, secretCode: _sc, configOverrides: _co, ...safeConfig } = value as Record<string, unknown>
+        // Sanitize widget plugin configs to mask sensitive values
+        if (Array.isArray(safeConfig.widgetPlugins)) {
+          safeConfig.widgetPlugins = safeConfig.widgetPlugins.map((plugin: Record<string, unknown>) => {
+            if (!plugin.config || typeof plugin.config !== 'object') return plugin
+            const sanitized = {}
+            for (const [k, v] of Object.entries(plugin.config)) {
+              const lower = k.toLowerCase()
+              if (lower.includes('key') || lower.includes('token') || lower.includes('secret') || lower.includes('password')) {
+                sanitized[k] = '***'
+              } else {
+                sanitized[k] = v
+              }
+            }
+            return { ...plugin, config: sanitized }
+          })
+        }
+        return res.json({ value: safeConfig })
       }
 
       return res.json({ value: value ?? null })
@@ -151,13 +177,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: 'Request body is required' })
       }
 
+      // Zod validation
       const parsed = validate(kvPostSchema, req.body)
       if (!parsed.success) return res.status(400).json({ error: parsed.error })
       const { key, value } = parsed.data
 
-      // Honeytoken detection on POST
+      // Honeytoken detection — taunting response on POST.
       if (isHoneytoken(key)) {
-        await triggerHoneytokenAlarm(req, key)
+        const responseSent = await triggerHoneytokenAlarm(req, key, res)
+        if (responseSent) return
         setDefenseHeaders(res)
         return res.status(403).json({
           error: 'ACCESS_DENIED',
@@ -165,61 +193,84 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         })
       }
 
-      // Block writes to sensitive key patterns without a valid session
-      if (hasSensitivePattern(key) && key !== 'admin-password-hash') {
-        const sessionValid = await validateSession(req)
-        if (!sessionValid) {
-          return res.status(403).json({ error: 'Forbidden' })
-        }
+      // Block writes to internal keys used by analytics or system functions
+      const lowerKey = key.toLowerCase()
+      if (lowerKey.startsWith('nk-analytics') || lowerKey.startsWith('nk-heatmap') || lowerKey.startsWith('img-cache:')) {
+        return res.status(403).json({ error: 'Forbidden: reserved key prefix' })
       }
 
-      // All writes require a valid session (except initial password setup)
+      // Block direct writes to admin-password-hash — only allowed through /api/auth
       if (key === 'admin-password-hash') {
-        const existingHash = await kv.get<string>('admin-password-hash')
-        if (existingHash) {
-          const sessionValid = await validateSession(req)
-          if (!sessionValid) {
-            return res.status(403).json({ error: 'Unauthorized' })
-          }
-        }
-      } else {
-        const sessionValid = await validateSession(req)
-        if (!sessionValid) {
-          return res.status(403).json({ error: 'Unauthorized' })
-        }
+        return res.status(403).json({ error: 'Forbidden: use /api/auth to manage passwords' })
       }
 
-      // Persistent keys and admin-password-hash never expire.
-      // All other (transient/cached) keys use a 90-day TTL.
-      if (key === 'admin-password-hash' || PERSISTENT_KEYS.has(key)) {
-        await kv.set(key, value)
-      } else {
-        await kv.set(key, value, { ex: 90 * 24 * 60 * 60 }) // 90-day TTL for transient/cached keys
+      // All other writes require a valid session
+      const sessionValid = await validateSession(req)
+      if (!sessionValid) {
+        return res.status(403).json({ error: 'Unauthorized' })
       }
+
+      // Sanitize band-data writes: strip any fields that look like secrets/tokens
+      // to prevent accidental exposure since band-data is publicly readable.
+      if (key === 'band-data' && value && typeof value === 'object' && !Array.isArray(value)) {
+        const SENSITIVE_FIELD_PATTERNS = [/token/i, /secret/i, /password/i, /apikey/i, /api_key/i, /credential/i]
+        // Known-safe fields that match sensitive patterns but are not actual secrets
+        const SAFE_BAND_DATA_FIELDS = new Set(['secretCode', 'configOverrides', 'seo'])
+        const sanitized = Object.fromEntries(
+          Object.entries(value).filter(([k]) => SAFE_BAND_DATA_FIELDS.has(k) || !SENSITIVE_FIELD_PATTERNS.some(p => p.test(k)))
+        )
+
+        // Preserve terminalCommands from existing data when not provided in the
+        // incoming value.  Public (unauthenticated) GET responses strip this field
+        // for security, so a client that loaded the page before logging in will not
+        // have it in its state.  Without this merge the commands would be silently
+        // deleted on the next unrelated save.
+        if (!('terminalCommands' in sanitized)) {
+          try {
+            const existing = await kv.get<Record<string, unknown>>(key)
+            if (existing && typeof existing === 'object' && Array.isArray((existing as Record<string, unknown>).terminalCommands)) {
+              sanitized.terminalCommands = (existing as Record<string, unknown>).terminalCommands
+            }
+          } catch { /* ignore — best-effort preservation */ }
+        }
+
+        await kv.set(key, sanitized)
+        return res.json({ success: true })
+      }
+
+      await kv.set(key, value)
       return res.json({ success: true })
     }
 
     return res.status(405).json({ error: 'Method not allowed' })
   } catch (error) {
     console.error('KV API error:', error)
+    // Provide more detailed error message for debugging
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.error('KV API error details:', {
+      message: errorMessage,
+      method: req.method,
+      // key name intentionally omitted to avoid logging potentially sensitive identifiers
+    })
     
+    // Check if it's a KV-specific configuration error from @vercel/kv
+    // Common errors include missing environment variables or connection issues
     const isKVConfigError = error instanceof Error && (
-      errorMessage.toLowerCase().includes('upstash_redis_rest_url') ||
-      errorMessage.toLowerCase().includes('upstash_redis_rest_token') ||
-      errorMessage.toLowerCase().includes('upstash') ||
+      errorMessage.toLowerCase().includes('kv_rest_api_url') ||
+      errorMessage.toLowerCase().includes('kv_rest_api_token') ||
+      errorMessage.toLowerCase().includes('vercel kv') ||
       errorMessage.toLowerCase().includes('missing credentials')
     )
     
     if (isKVConfigError) {
       return res.status(503).json({ 
         error: 'Service unavailable',
-        message: 'KV storage configuration error. Please check environment variables.',
+        message: 'KV storage configuration error. Please check environment variables.'
       })
     }
     
     return res.status(500).json({ 
-      error: 'Internal server error',
+      error: 'Internal server error'
     })
   }
 }

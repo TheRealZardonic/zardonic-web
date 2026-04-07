@@ -29,7 +29,7 @@ type MockRes = {
 }
 
 function mockRes(): MockRes {
-  const res: MockRes = {
+  const res: any = {
     status: vi.fn(),
     json: vi.fn(),
     end: vi.fn(),

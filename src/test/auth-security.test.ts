@@ -36,7 +36,7 @@ function mockRes() {
   res.status.mockReturnValue(res)
   res.json.mockReturnValue(res)
   res.end.mockReturnValue(res)
-  return res as unknown as VercelResponse
+  return res as unknown as unknown as VercelResponse
 }
 
 const { default: handler, hashPassword } = await import('../../api/auth.js')

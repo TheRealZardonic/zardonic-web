@@ -1,9 +1,28 @@
-import { kv } from '@vercel/kv'
+import { Redis } from '@upstash/redis'
+const kv = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL || '',
+  token: process.env.UPSTASH_REDIS_REST_TOKEN || ''
+})
 import { resolve4, resolve6 } from 'node:dns/promises'
 import { applyRateLimit } from './_ratelimit.js'
 import { isMarkedAttacker, serveFingerprintPixel } from './_honeytokens.js'
 import { imageProxyQuerySchema, validate } from './_schemas.js'
 import { isHardBlocked } from './_blocklist.js'
+
+interface VercelRequest {
+  method?: string
+  body?: Record<string, unknown>
+  query?: Record<string, string | string[]>
+  headers: Record<string, string | string[] | undefined>
+}
+
+interface VercelResponse {
+  setHeader(key: string, value: string): VercelResponse
+  status(code: number): VercelResponse
+  json(data: unknown): VercelResponse
+  end(): VercelResponse
+  send(data: unknown): VercelResponse
+}
 
 /**
  * Server-side image proxy that fetches remote images, caches them in Vercel KV,
@@ -13,170 +32,140 @@ import { isHardBlocked } from './_blocklist.js'
  * GET /api/image-proxy?url=<encoded-url>
  */
 
-const MAX_CACHEABLE_IMAGE_SIZE = 4 * 1024 * 1024 // 4 MB — larger images are served but not cached
-const MAX_IMAGE_SIZE = 16 * 1024 * 1024 // 16 MB — absolute maximum, rejects larger payloads
+const MAX_CACHEABLE_IMAGE_SIZE = 4 * 1024 * 1024 // 4 MB
+const MAX_IMAGE_SIZE = 16 * 1024 * 1024 // 16 MB
 const CACHE_TTL_SECONDS = 60 * 60 * 24 * 30 // 30 days
 const CORS_ORIGIN = process.env.ALLOWED_ORIGIN || '*'
 
-/** Block requests to private/internal networks to prevent SSRF */
 const BLOCKED_HOST_PATTERNS = [
-  /^localhost$/i,
-  /^127\./,
-  /^10\./,
-  /^172\.(1[6-9]|2\d|3[01])\./,
-  /^192\.168\./,
-  /^0\./,
-  /^169\.254\./,
-  /^\[::1\]/,
-  /^\[::ffff:/i,
-  /^\[fe80:/i,
-  /^\[fc/i,
-  /^\[fd/i,
-  /^metadata\.google\.internal$/i,
-  /^0x[0-9a-f]+$/i,
-  /^0[0-7]+\./,
+  /^localhost$/i, /^127\./, /^10\./, /^172\.(1[6-9]|2\d|3[01])\./, /^192\.168\./,
+  /^0\./, /^169\.254\./, /^\[::1\]/, /^\[::ffff:/i, /^\[fe80:/i, /^\[fc/i, /^\[fd/i,
+  /^metadata\.google\.internal$/i, /^0x[0-9a-f]+$/i, /^0[0-7]+\./,
 ]
 
-/** Allowed URL protocols */
 const ALLOWED_PROTOCOLS = new Set(['http:', 'https:'])
 
-function isBlockedHost(hostname) {
+function isBlockedHost(hostname: string): boolean {
   if (BLOCKED_HOST_PATTERNS.some(p => p.test(hostname))) return true
-  // Block numeric-only hostnames (decimal IP like 2130706433 = 127.0.0.1)
   if (/^\d+$/.test(hostname)) return true
-  // Block hostnames without a dot (e.g. "internal", "localhost")
   if (!hostname.includes('.') && !hostname.startsWith('[')) return true
   return false
 }
 
-/** Patterns for checking resolved IP addresses against private/internal ranges */
 const BLOCKED_IP_PATTERNS = [
-  /^127\./,
-  /^10\./,
-  /^172\.(1[6-9]|2\d|3[01])\./,
-  /^192\.168\./,
-  /^0\./,
-  /^169\.254\./,
-  /^::1$/,
-  /^::ffff:(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/i,
-  /^fe80:/i,
-  /^fc/i,
-  /^fd/i,
+  /^127\./, /^10\./, /^172\.(1[6-9]|2\d|3[01])\./, /^192\.168\./, /^0\./, /^169\.254\./,
+  /^::1$/, /^::ffff:(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/i,
+  /^fe80:/i, /^fc/i, /^fd/i,
 ]
 
-/**
- * DNS rebinding protection: resolve the hostname and check all resolved IPs
- * against blocked private/internal ranges before making the actual fetch.
- * This mitigates TOCTOU attacks where DNS returns a safe IP during our
- * hostname check but a private IP when fetch resolves it.
- */
-async function hasBlockedResolvedIP(hostname) {
-  // Skip DNS check for IP literals (already checked by isBlockedHost)
+async function hasBlockedResolvedIP(hostname: string): Promise<boolean> {
   if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname) || hostname.startsWith('[')) return false
-
   try {
     const [ipv4, ipv6] = await Promise.all([
-      resolve4(hostname).catch(() => []),
-      resolve6(hostname).catch(() => []),
+      resolve4(hostname).catch(() => [] as string[]),
+      resolve6(hostname).catch(() => [] as string[]),
     ])
     const allIPs = [...ipv4, ...ipv6]
     return allIPs.some(ip => BLOCKED_IP_PATTERNS.some(p => p.test(ip)))
   } catch {
-    // DNS resolution failure — let fetch handle it
     return false
   }
 }
 
-function toDirectUrl(url) {
+function toDirectUrl(url: string): string {
   const driveFile = url.match(/drive\.google\.com\/file\/d\/([^/?#]+)/)
   if (driveFile) return `https://drive.google.com/uc?export=view&id=${driveFile[1]}`
   const driveOpen = url.match(/drive\.google\.com\/open\?id=([^&#]+)/)
   if (driveOpen) return `https://drive.google.com/uc?export=view&id=${driveOpen[1]}`
-  // Handle all uc URLs (both export=view and export=download) by extracting the ID
   const driveUc = url.match(/drive\.google\.com\/uc\?[^#]*?id=([^&#]+)/)
   if (driveUc) return `https://drive.google.com/uc?export=view&id=${driveUc[1]}`
-  // Handle lh3 CDN URLs — convert back to reliable export URL
   const lh3Match = url.match(/lh3\.googleusercontent\.com\/d\/([^/?#]+)/)
   if (lh3Match) return `https://drive.google.com/uc?export=view&id=${lh3Match[1]}`
   return url
 }
 
-function cacheKey(url) {
+function cacheKey(url: string): string {
   return `img-cache:${url}`
 }
 
-export default async function handler(req, res) {
+interface CachedImage {
+  data: string
+  contentType: string
+}
+
+export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' })
+    res.status(405).json({ error: 'Method not allowed' })
+    return
   }
 
-  // Hard-block check — immediate rejection
   const blocked = await isHardBlocked(req)
   if (blocked) {
-    return res.status(403).json({ error: 'FORBIDDEN' })
+    res.status(403).json({ error: 'FORBIDDEN' })
+    return
   }
 
-  // Rate limiting — blocks image proxy abuse (GDPR-compliant, IP is hashed)
   const allowed = await applyRateLimit(req, res)
   if (!allowed) return
 
-  // Fingerprinting counter-measure: serve a tracking pixel to flagged attackers
-  // instead of the real image, collecting browser Client Hints for identification
   if (await isMarkedAttacker(req)) {
-    return serveFingerprintPixel(res)
+    serveFingerprintPixel(res)
+    return
   }
 
-  // Zod validation
   const qParsed = validate(imageProxyQuerySchema, req.query)
-  if (!qParsed.success) return res.status(400).json({ error: qParsed.error })
+  if (!qParsed.success) {
+    res.status(400).json({ error: qParsed.error })
+    return
+  }
   const { url } = qParsed.data
 
-  // Validate and block dangerous URLs
-  let parsed
+  let parsed: URL
   try {
     parsed = new URL(url)
   } catch {
-    return res.status(400).json({ error: 'Invalid URL' })
+    res.status(400).json({ error: 'Invalid URL' })
+    return
   }
-  // Only allow http(s) protocols (blocks file://, data://, javascript://, etc.)
   if (!ALLOWED_PROTOCOLS.has(parsed.protocol)) {
-    return res.status(400).json({ error: 'Invalid URL protocol' })
+    res.status(400).json({ error: 'Invalid URL protocol' })
+    return
   }
-  // Block requests to private/internal networks (SSRF prevention)
   if (isBlockedHost(parsed.hostname)) {
-    return res.status(400).json({ error: 'Blocked host' })
+    res.status(400).json({ error: 'Blocked host' })
+    return
   }
 
   const directUrl = toDirectUrl(url)
 
-  // Re-validate the transformed URL as well
-  let parsedDirect
+  let parsedDirect: URL
   try {
     parsedDirect = new URL(directUrl)
     if (!ALLOWED_PROTOCOLS.has(parsedDirect.protocol) || isBlockedHost(parsedDirect.hostname)) {
-      return res.status(400).json({ error: 'Blocked host' })
+      res.status(400).json({ error: 'Blocked host' })
+      return
     }
   } catch {
-    return res.status(400).json({ error: 'Invalid URL' })
+    res.status(400).json({ error: 'Invalid URL' })
+    return
   }
 
-  // DNS rebinding protection: resolve the hostname and check all IPs
-  // before fetch to mitigate TOCTOU attacks
   if (await hasBlockedResolvedIP(parsedDirect.hostname)) {
-    return res.status(400).json({ error: 'Blocked host' })
+    res.status(400).json({ error: 'Blocked host' })
+    return
   }
 
   const key = cacheKey(directUrl)
 
   try {
-    // Check KV cache first
-    const cached = await kv.get<{ data: string; contentType: string }>(key)
+    const cached = await kv.get<CachedImage>(key)
     if (cached && cached.data && cached.contentType) {
       const buf = Buffer.from(cached.data, 'base64')
       res.setHeader('Content-Type', cached.contentType)
       res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=2592000')
       res.setHeader('Access-Control-Allow-Origin', CORS_ORIGIN)
-      return res.status(200).send(buf)
+      res.status(200).send(buf)
+      return
     }
   } catch (e) {
     console.warn('KV cache read failed:', e)
@@ -184,62 +173,60 @@ export default async function handler(req, res) {
 
   try {
     const response = await fetch(directUrl, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; NeuroklastImageProxy/1.0)' },
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SiteImageProxy/1.0)' },
       redirect: 'follow',
     })
 
-    // Validate the final URL after redirects to prevent SSRF via redirect
     if (response.url) {
       try {
         const finalUrl = new URL(response.url)
         if (!ALLOWED_PROTOCOLS.has(finalUrl.protocol) || isBlockedHost(finalUrl.hostname)) {
-          return res.status(400).json({ error: 'Blocked redirect target' })
+          res.status(400).json({ error: 'Blocked redirect target' })
+          return
         }
-        // DNS rebinding protection: also resolve the final hostname after redirect
-        // to mitigate TOCTOU attacks where DNS changes between our check and fetch
         if (await hasBlockedResolvedIP(finalUrl.hostname)) {
-          return res.status(400).json({ error: 'Blocked redirect target' })
+          res.status(400).json({ error: 'Blocked redirect target' })
+          return
         }
       } catch {
-        return res.status(400).json({ error: 'Invalid redirect URL' })
+        res.status(400).json({ error: 'Invalid redirect URL' })
+        return
       }
     }
 
     if (!response.ok) {
-      return res.status(502).json({ error: 'Failed to fetch image' })
+      res.status(response.status).json({ error: `Upstream returned ${response.status}` })
+      return
     }
 
     const contentType = response.headers.get('content-type') || 'image/jpeg'
-    // Only allow raster image content types through the image proxy.
-    // Reject text/html, application/javascript, image/svg+xml, etc. to prevent XSS.
-    if (!contentType.startsWith('image/') || contentType.includes('svg')) {
-      return res.status(400).json({ error: 'Unsupported content type' })
+    if (!contentType.startsWith('image/')) {
+      res.status(400).json({ error: 'Unsupported content type' })
+      return
     }
 
-    // Check Content-Length header before loading body into memory to prevent
-    // image bombs from exhausting serverless function memory.
     const contentLength = parseInt(response.headers.get('content-length') || '0', 10)
     if (contentLength > MAX_IMAGE_SIZE) {
-      return res.status(413).json({ error: 'Image too large' })
+      res.status(413).json({ error: 'Image too large' })
+      return
     }
 
     const arrayBuf = await response.arrayBuffer()
 
-    // Double-check actual size (Content-Length can be missing or lie)
     if (arrayBuf.byteLength > MAX_IMAGE_SIZE) {
-      return res.status(413).json({ error: 'Image too large' })
+      res.status(413).json({ error: 'Image too large' })
+      return
     }
     if (arrayBuf.byteLength > MAX_CACHEABLE_IMAGE_SIZE) {
-      // Serve but don't cache very large images
       res.setHeader('Content-Type', contentType)
       res.setHeader('Cache-Control', 'public, max-age=86400')
       res.setHeader('Access-Control-Allow-Origin', CORS_ORIGIN)
-      return res.status(200).send(Buffer.from(arrayBuf))
+      res.status(200).send(Buffer.from(arrayBuf))
+      return
     }
 
     const base64 = Buffer.from(arrayBuf).toString('base64')
 
-    // Cache in KV (fire-and-forget)
     kv.set(key, { data: base64, contentType }, { ex: CACHE_TTL_SECONDS }).catch((e) => {
       console.warn('KV cache write failed:', e)
     })
@@ -247,9 +234,9 @@ export default async function handler(req, res) {
     res.setHeader('Content-Type', contentType)
     res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=2592000')
     res.setHeader('Access-Control-Allow-Origin', CORS_ORIGIN)
-    return res.status(200).send(Buffer.from(arrayBuf))
+    res.status(200).send(Buffer.from(arrayBuf))
   } catch (error) {
     console.error('Image proxy error:', error)
-    return res.status(502).json({ error: 'Failed to fetch image' })
+    res.status(502).json({ error: 'Failed to fetch image' })
   }
 }

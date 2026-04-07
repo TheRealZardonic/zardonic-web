@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, startTransition } from "react"
 
 const MOBILE_BREAKPOINT = 768
 
@@ -11,7 +11,7 @@ export function useIsMobile() {
       setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
     }
     mql.addEventListener("change", onChange)
-    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
+    startTransition(() => setIsMobile(window.innerWidth < MOBILE_BREAKPOINT))
     return () => mql.removeEventListener("change", onChange)
   }, [])
 

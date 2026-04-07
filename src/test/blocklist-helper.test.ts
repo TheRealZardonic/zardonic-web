@@ -122,25 +122,25 @@ describe('isHardBlocked()', () => {
 
   it('returns true when block entry exists', async () => {
     mockGet.mockResolvedValue({ hashedIp: 'hash', reason: 'manual' })
-    const req = { headers: { 'x-forwarded-for': '1.2.3.4' } } as any
+    const req: any = { headers: { 'x-forwarded-for': '1.2.3.4' } } as any
     expect(await isHardBlocked(req)).toBe(true)
   })
 
   it('returns false when no block entry', async () => {
     mockGet.mockResolvedValue(null)
-    const req = { headers: { 'x-forwarded-for': '1.2.3.4' } } as any
+    const req: any = { headers: { 'x-forwarded-for': '1.2.3.4' } } as any
     expect(await isHardBlocked(req)).toBe(false)
   })
 
   it('returns false when Redis is not configured', async () => {
     delete process.env.UPSTASH_REDIS_REST_URL
-    const req = { headers: {} } as any
+    const req: any = { headers: {} } as any
     expect(await isHardBlocked(req)).toBe(false)
   })
 
   it('returns false on Redis error (fail-open for block check)', async () => {
     mockGet.mockRejectedValue(new Error('timeout'))
-    const req = { headers: { 'x-forwarded-for': '1.2.3.4' } } as any
+    const req: any = { headers: { 'x-forwarded-for': '1.2.3.4' } } as any
     expect(await isHardBlocked(req)).toBe(false)
   })
 })

@@ -1,45 +1,44 @@
 import { Redis } from '@upstash/redis'
+const kv = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL || '',
+  token: process.env.UPSTASH_REDIS_REST_TOKEN || ''
+})
 import { scrypt, randomBytes, createHash, timingSafeEqual as cryptoTimingSafeEqual } from 'node:crypto'
 import { promisify } from 'node:util'
-import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { applyAuthRateLimit, getClientIp, hashIp } from './_ratelimit.js'
-import {
-  authLoginSchema,
-  authSetupSchema,
-  authChangePasswordSchema,
-  authLoginTotpSchema,
-  totpSetupSchema,
-  totpVerifySchema,
-  validate,
-} from './_schemas.js'
+import { applyRateLimit, getClientIp } from './_ratelimit.js'
+import { authLoginSchema, authSetupSchema, authChangePasswordSchema, authLoginTotpSchema, totpSetupSchema, totpVerifySchema, validate } from './_schemas.js'
 import * as OTPAuth from 'otpauth'
+
+interface VercelRequest {
+  method?: string
+  body?: Record<string, unknown>
+  query?: Record<string, string | string[]>
+  headers: Record<string, string | string[] | undefined>
+}
+
+interface VercelResponse {
+  setHeader(key: string, value: string): VercelResponse
+  status(code: number): VercelResponse
+  json(data: unknown): VercelResponse
+  end(): VercelResponse
+}
+
+interface SessionData {
+  created: number
+  fingerprint: string
+}
+
+
 
 const scryptAsync = promisify(scrypt)
 
-const SESSION_TTL = 14400 // 4 hours
-const COOKIE_NAME = 'zd-session'
-const TOTP_ISSUER = 'ZARDONIC Admin'
-const TOTP_KEY = 'zd-admin-totp-secret'
-// OWASP A07:2021 — Brute-force protection: max failed TOTP attempts before lockout
-const TOTP_MAX_ATTEMPTS = 5
-const TOTP_LOCKOUT_SECONDS = 900 // 15 minutes
+const SESSION_TTL = 14400 // 4 hours (reduced from 24h to limit session hijacking window)
+const COOKIE_NAME = 'nk-session'
+const TOTP_ISSUER = process.env.SITE_NAME ? `${process.env.SITE_NAME} Admin` : 'Site Admin'
+const TOTP_KEY = 'admin-totp-secret'
 
 const isKVConfigured = () => {
-  return !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
-}
-
-let _redis: Redis | null = null
-
-function getRedis(): Redis {
-  if (_redis) return _redis
-  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
-    throw new Error('Missing UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN')
-  }
-  _redis = new Redis({
-    url: process.env.UPSTASH_REDIS_REST_URL,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN,
-  })
-  return _redis
+  return !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN)
 }
 
 /**
@@ -48,7 +47,7 @@ function getRedis(): Redis {
  */
 export async function hashPassword(password: string): Promise<string> {
   const salt = randomBytes(16).toString('hex')
-  const derived = await scryptAsync(password, salt, 64) as Buffer
+  const derived = (await scryptAsync(password, salt, 64)) as Buffer
   return `scrypt:${salt}:${derived.toString('hex')}`
 }
 
@@ -58,7 +57,7 @@ export async function hashPassword(password: string): Promise<string> {
  */
 async function verifyPassword(password: string, stored: string): Promise<boolean> {
   if (!stored.startsWith('scrypt:')) {
-    // Legacy SHA-256 format
+    // Legacy SHA-256 format (will be migrated automatically on next login)
     const hash = createHash('sha256').update(password).digest('hex')
     const a = Buffer.from(hash, 'utf8')
     const b = Buffer.from(stored, 'utf8')
@@ -66,10 +65,8 @@ async function verifyPassword(password: string, stored: string): Promise<boolean
     return cryptoTimingSafeEqual(a, b)
   }
 
-  const parts = stored.split(':')
-  const salt = parts[1]
-  const key = parts[2]
-  const derived = await scryptAsync(password, salt, 64) as Buffer
+  const [, salt, key] = stored.split(':')
+  const derived = (await scryptAsync(password, salt, 64)) as Buffer
   const storedKey = Buffer.from(key, 'hex')
   if (derived.length !== storedKey.length) return false
   return cryptoTimingSafeEqual(derived, storedKey)
@@ -87,82 +84,67 @@ function clearSessionCookie(res: VercelResponse): void {
   res.setHeader('Set-Cookie', `${COOKIE_NAME}=; HttpOnly;${secure} SameSite=Strict; Path=/; Max-Age=0`)
 }
 
-/** Extract session token from the zd-session cookie */
+/** Extract session token from the nk-session cookie */
 export function getSessionFromCookie(req: VercelRequest): string | null {
-  const cookieHeader = req.headers.cookie || ''
-  const match = cookieHeader.match(/(?:^|;\s*)zd-session=([^;]*)/)
+  const rawCookie = req.headers.cookie || ''
+  const cookieHeader = Array.isArray(rawCookie) ? rawCookie.join('; ') : rawCookie
+  const match = cookieHeader.match(/(?:^|;\s*)nk-session=([^;]*)/)
   return match ? match[1] : null
 }
 
 /**
  * Derive a client fingerprint from User-Agent and IP prefix.
+ * Uses /24 subnet for IPv4 (first 3 octets) or /48 for IPv6 (first 3 groups).
  * Used to bind sessions to the originating client and detect session hijacking.
  */
 function getClientFingerprint(req: VercelRequest): string {
   const ua = req.headers['user-agent'] || ''
   const ip = getClientIp(req)
-  let ipPrefix: string
+  let ipPrefix
   if (ip.includes(':')) {
+    // IPv6: use first 3 groups (/48 prefix)
     ipPrefix = ip.split(':').slice(0, 3).join(':')
   } else {
+    // IPv4: use first 3 octets (/24 prefix)
     ipPrefix = ip.split('.').slice(0, 3).join('.')
   }
   return createHash('sha256').update(`${ua}|${ipPrefix}`).digest('hex')
 }
 
-interface SessionData {
-  created: number
-  fingerprint: string
-}
-
 /** Validate that the request has a valid session. Returns true/false. */
 export async function validateSession(req: VercelRequest): Promise<boolean> {
-  // Check both zd-session cookie (new) and x-session-token header (legacy)
-  const cookieToken = getSessionFromCookie(req)
-  const headerToken = req.headers['x-session-token'] as string | undefined
-
-  const token = cookieToken || headerToken
+  const token = getSessionFromCookie(req)
   if (!token) return false
-
-  const kv = getRedis()
-  const sessionData = await kv.get<SessionData>(`zd-session:${token}`)
-  if (!sessionData) {
-    // Fallback: check legacy session key (without prefix) for backward compat
-    const legacySession = await kv.get<{ token?: string; fingerprint?: string }>(`session:${token}`)
-    return !!legacySession
-  }
-
-  // Validate client binding — reject if User-Agent or IP subnet changed (cookie sessions only)
-  if (cookieToken && sessionData.fingerprint) {
+  const sessionData = await kv.get<SessionData>(`session:${token}`)
+  if (!sessionData) return false
+  // Validate client binding — reject if User-Agent or IP subnet changed
+  if (sessionData.fingerprint) {
     const currentFingerprint = getClientFingerprint(req)
     if (sessionData.fingerprint !== currentFingerprint) return false
   }
-
   return true
 }
 
 async function createSession(req: VercelRequest, res: VercelResponse): Promise<string> {
   const token = randomBytes(32).toString('hex')
   const fingerprint = getClientFingerprint(req)
-  const kv = getRedis()
-  await kv.set(`zd-session:${token}`, { created: Date.now(), fingerprint }, { ex: SESSION_TTL })
+  await kv.set(`session:${token}`, { created: Date.now(), fingerprint }, { ex: SESSION_TTL })
   setSessionCookie(res, token)
   return token
 }
 
 /**
- * Invalidate all existing sessions.
+ * Invalidate all existing sessions by scanning and deleting session:* keys.
  * Called after a password change to force re-authentication.
  */
-async function invalidateAllSessions(): Promise<void> {
-  const kv = getRedis()
+export async function invalidateAllSessions(): Promise<void> {
   try {
     let cursor = 0
     do {
-      const [nextCursor, keys] = await kv.scan(cursor, { match: 'zd-session:*', count: 100 })
+      const [nextCursor, keys] = await kv.scan(cursor, { match: 'session:*', count: 100 })
       cursor = Number(nextCursor)
       if (keys.length > 0) {
-        await Promise.all((keys as string[]).map(key => kv.del(key)))
+        await Promise.all(keys.map(key => kv.del(key)))
       }
     } while (cursor !== 0)
   } catch (err) {
@@ -170,6 +152,9 @@ async function invalidateAllSessions(): Promise<void> {
   }
 }
 
+/**
+ * Generate a new TOTP secret and return the provisioning URI for QR code enrollment.
+ */
 function generateTotpSecret(): { secret: string; uri: string } {
   const secret = new OTPAuth.Secret({ size: 20 })
   const totp = new OTPAuth.TOTP({
@@ -183,7 +168,14 @@ function generateTotpSecret(): { secret: string; uri: string } {
   return { secret: secret.base32, uri: totp.toString() }
 }
 
-function verifyTotpCode(secret: string, code: string): boolean {
+/**
+ * Verify a TOTP code against the stored secret.
+ * Allows ±1 period window (30 s each side) to handle clock skew.
+ * Returns the validated delta (time step offset) or null if invalid.
+ * The delta must be checked by the caller against the used-codes store
+ * to prevent replay attacks.
+ */
+function getTotpDelta(secret: string, code: string): number | null {
   const totp = new OTPAuth.TOTP({
     issuer: TOTP_ISSUER,
     label: 'admin',
@@ -192,13 +184,45 @@ function verifyTotpCode(secret: string, code: string): boolean {
     period: 30,
     secret: OTPAuth.Secret.fromBase32(secret),
   })
-  const delta = totp.validate({ token: code, window: 1 })
-  return delta !== null
+  // delta === null means invalid; otherwise returns the time step offset
+  return totp.validate({ token: code, window: 1 })
 }
 
-function validateSetupToken(setupToken: string | undefined): boolean {
+/**
+ * Verify a TOTP code and guard against replay attacks.
+ * Checks validity then atomically marks the time-step as used in KV
+ * for the full validity window (90 s) so the same code cannot be reused.
+ */
+async function verifyTotpCodeOnce(secret: string, code: string): Promise<boolean> {
+  const delta = getTotpDelta(secret, code)
+  if (delta === null) return false
+
+  // Derive the canonical counter value (absolute time step) for this code.
+  // Using Math.floor(Date.now() / 1000 / 30) + delta gives the exact step
+  // that produced this code, making the used-key deterministic regardless
+  // of which step in the ±1 window matched.
+  const step = Math.floor(Date.now() / 1000 / 30) + delta
+  const usedKey = `totp-used:${step}`
+
+  // NX (set if not exists) + 90-second TTL — if the key already exists the
+  // code was already used within this window and we reject it.
+  try {
+    const set = await kv.set(usedKey, 1, { ex: 90, nx: true })
+    // @vercel/kv returns 'OK' on success and null when NX prevents the write
+    return set !== null
+  } catch {
+    // KV failure: fail closed — reject the code to prevent replay via KV outage
+    return false
+  }
+}
+
+/**
+ * Validate the admin setup token.
+ * If ADMIN_SETUP_TOKEN is set, the request must include a matching setupToken.
+ */
+function validateSetupToken(setupToken: unknown): boolean {
   const requiredToken = process.env.ADMIN_SETUP_TOKEN
-  if (!requiredToken) return true
+  if (!requiredToken) return true // No token configured — allow setup (backward-compatible)
   if (!setupToken || typeof setupToken !== 'string') return false
   const a = Buffer.from(requiredToken, 'utf8')
   const b = Buffer.from(setupToken, 'utf8')
@@ -206,25 +230,22 @@ function validateSetupToken(setupToken: string | undefined): boolean {
   return cryptoTimingSafeEqual(a, b)
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: VercelRequest, res: VercelResponse): Promise<unknown> {
   if (req.method === 'OPTIONS') return res.status(200).end()
 
-  // OWASP A07:2021 — Use stricter auth-specific rate limit (3/min per IP)
-  const allowed = await applyAuthRateLimit(req, res)
+  const allowed = await applyRateLimit(req, res)
   if (!allowed) return
 
   if (!isKVConfigured()) {
     return res.status(503).json({ error: 'Service unavailable', message: 'KV storage is not configured.' })
   }
 
-  const kv = getRedis()
-
   try {
     // GET — check auth status
     if (req.method === 'GET') {
       const authenticated = await validateSession(req)
-      const storedHash = await kv.get('admin-password-hash')
-      const totpSecret = await kv.get(TOTP_KEY)
+      const storedHash = await kv.get<string>('admin-password-hash')
+      const totpSecret = await kv.get<string>(TOTP_KEY)
       return res.json({
         authenticated,
         needsSetup: !storedHash,
@@ -233,30 +254,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
     }
 
+    // POST — login, setup, change password, or TOTP management
     if (req.method === 'POST') {
-      // OWASP A08:2021 — Limit request body size on auth endpoints (max 1 KB).
-      // Check Content-Length header first as an early gate before inspecting the parsed body.
-      const contentLength = parseInt(req.headers['content-length'] as string || '0', 10)
-      if (contentLength > 1024) {
-        return res.status(413).json({ error: 'Request body too large' })
-      }
-      const bodyStr = JSON.stringify(req.body ?? {})
-      if (bodyStr.length > 1024) {
-        return res.status(413).json({ error: 'Request body too large' })
-      }
-
       if (!req.body || typeof req.body !== 'object') {
         return res.status(400).json({ error: 'Request body is required' })
       }
 
-      const { action, newPassword } = req.body as Record<string, unknown>
+      const { action, newPassword } = req.body as { action?: string; newPassword?: string }
 
-      // --- Setup flow ---
+      // --- Setup flow: { password, action: 'setup', setupToken? } ---
       if (action === 'setup') {
         const parsed = validate(authSetupSchema, req.body)
         if (!parsed.success) return res.status(400).json({ error: parsed.error })
 
-        if (!validateSetupToken((req.body as Record<string, string>).setupToken)) {
+        // Validate setup token if ADMIN_SETUP_TOKEN is configured
+        if (!validateSetupToken(req.body.setupToken)) {
           return res.status(403).json({ error: 'Invalid setup token' })
         }
 
@@ -271,62 +283,74 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.json({ success: true })
       }
 
-      // --- TOTP enrollment ---
+      // --- TOTP enrollment: { action: 'totp-setup' } ---
       if (action === 'totp-setup') {
         const sessionValid = await validateSession(req)
-        if (!sessionValid) return res.status(401).json({ error: 'Authentication required' })
+        if (!sessionValid) {
+          return res.status(401).json({ error: 'Authentication required' })
+        }
 
-        const existingTotp = await kv.get(TOTP_KEY)
+        const existingTotp = await kv.get<string>(TOTP_KEY)
         if (existingTotp) {
           return res.status(409).json({ error: 'TOTP is already configured. Disable it first to re-enroll.' })
         }
 
         const { secret, uri } = generateTotpSecret()
-        await kv.set('zd-admin-totp-pending', secret, { ex: 300 })
+        // Store the pending secret temporarily (5 min TTL) until confirmed
+        await kv.set('admin-totp-pending', secret, { ex: 300 })
         return res.json({ success: true, totpUri: uri, totpSecret: secret })
       }
 
-      // --- TOTP confirm enrollment ---
+      // --- TOTP confirm enrollment: { action: 'totp-verify', code } ---
       if (action === 'totp-verify') {
         const sessionValid = await validateSession(req)
-        if (!sessionValid) return res.status(401).json({ error: 'Authentication required' })
+        if (!sessionValid) {
+          return res.status(401).json({ error: 'Authentication required' })
+        }
 
         const parsed = validate(totpVerifySchema, req.body)
         if (!parsed.success) return res.status(400).json({ error: parsed.error })
 
-        const pendingSecret = await kv.get<string>('zd-admin-totp-pending')
+        const pendingSecret = await kv.get<string>('admin-totp-pending')
         if (!pendingSecret) {
           return res.status(400).json({ error: 'No pending TOTP enrollment. Start setup first.' })
         }
 
-        if (!verifyTotpCode(pendingSecret, parsed.data.code)) {
+        if (!(await verifyTotpCodeOnce(pendingSecret, parsed.data.code))) {
           return res.status(403).json({ error: 'Invalid TOTP code. Please try again.' })
         }
 
-        await kv.set(TOTP_KEY, pendingSecret)
-        await kv.del('zd-admin-totp-pending')
+        // Persist the secret and remove the pending key
+        const pipe = kv.pipeline()
+        pipe.set(TOTP_KEY, pendingSecret)
+        pipe.del('admin-totp-pending')
+        await pipe.exec()
 
         return res.json({ success: true, message: 'TOTP 2FA has been enabled.' })
       }
 
-      // --- TOTP disable ---
+      // --- TOTP disable: { action: 'totp-disable', password, code } ---
       if (action === 'totp-disable') {
         const sessionValid = await validateSession(req)
-        if (!sessionValid) return res.status(401).json({ error: 'Authentication required' })
+        if (!sessionValid) {
+          return res.status(401).json({ error: 'Authentication required' })
+        }
 
         const parsed = validate(totpSetupSchema, req.body)
         if (!parsed.success) return res.status(400).json({ error: parsed.error })
 
+        // Require password to disable TOTP (prevents session-hijacking TOTP removal)
         const storedHash = await kv.get<string>('admin-password-hash')
         if (!storedHash) return res.status(400).json({ error: 'No password set' })
 
         const valid = await verifyPassword(parsed.data.password, storedHash)
         if (!valid) return res.status(403).json({ error: 'Invalid password' })
 
+        // Require a valid TOTP code to confirm the owner has the authenticator
         const totpSecret = await kv.get<string>(TOTP_KEY)
         if (!totpSecret) return res.status(400).json({ error: 'TOTP is not enabled' })
 
-        if (!verifyTotpCode(totpSecret, parsed.data.code)) {
+        if (!(await verifyTotpCodeOnce(totpSecret, parsed.data.code))) {
           return res.status(403).json({ error: 'Invalid TOTP code' })
         }
 
@@ -334,20 +358,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.json({ success: true, message: 'TOTP 2FA has been disabled.' })
       }
 
-      // --- Change password flow ---
+      // --- Change password flow: { currentPassword, newPassword } ---
       if (newPassword) {
         const sessionValid = await validateSession(req)
-        if (!sessionValid) return res.status(401).json({ error: 'Authentication required' })
+        if (!sessionValid) {
+          return res.status(401).json({ error: 'Authentication required' })
+        }
 
         const storedHash = await kv.get<string>('admin-password-hash')
-        if (!storedHash) return res.status(400).json({ error: 'No password set' })
+        if (!storedHash) {
+          return res.status(400).json({ error: 'No password set' })
+        }
 
+        // currentPassword is always required to prevent session-hijacking password changes
         const parsed = validate(authChangePasswordSchema, req.body)
         if (!parsed.success) return res.status(400).json({ error: parsed.error })
 
         const valid = await verifyPassword(parsed.data.currentPassword, storedHash)
-        if (!valid) return res.status(403).json({ error: 'Current password is incorrect' })
+        if (!valid) {
+          return res.status(403).json({ error: 'Current password is incorrect' })
+        }
 
+        // Validate newPassword constraints
         if (typeof newPassword !== 'string' || newPassword.length < 8 || newPassword.length > 200) {
           return res.status(400).json({ error: 'New password must be 8-200 characters' })
         }
@@ -355,62 +387,47 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const hashed = await hashPassword(newPassword)
         await kv.set('admin-password-hash', hashed)
 
+        // Invalidate all existing sessions after password change
         await invalidateAllSessions()
+
+        // Create a fresh session for the current user
         await createSession(req, res)
         return res.json({ success: true })
       }
 
-      // --- Login flow ---
-      if ((req.body as Record<string, unknown>).password && !action) {
-        const ip = getClientIp(req)
-        // OWASP A07:2021 — TOTP brute-force protection: check lockout before any auth logic
-        // Use hashIp() (with RATE_LIMIT_SALT) for consistent, salted IP hashing across the application
-        const totpLockKey = `zd-totp-lockout:${hashIp(ip)}`
-        const lockoutActive = await kv.get(totpLockKey)
-        if (lockoutActive) {
-          return res.status(429).json({ error: 'Too many failed attempts. Account temporarily locked. Please try again later.' })
-        }
-
+      // --- Login flow: { password, totpCode? } ---
+      if (req.body.password && !action) {
         const totpSecret = await kv.get<string>(TOTP_KEY)
 
+        // If TOTP is enabled, use the extended login schema
         const schema = totpSecret ? authLoginTotpSchema : authLoginSchema
         const parsed = validate(schema, req.body)
         if (!parsed.success) return res.status(400).json({ error: parsed.error })
+        const loginData = parsed.data as { password: string; totpCode?: string }
 
         const storedHash = await kv.get<string>('admin-password-hash')
-        if (!storedHash) return res.status(401).json({ error: 'Invalid credentials' })
+        if (!storedHash) {
+          return res.status(401).json({ error: 'Invalid credentials' })
+        }
 
-        const valid = await verifyPassword(parsed.data.password, storedHash)
-        if (!valid) return res.status(401).json({ error: 'Invalid credentials' })
+        const valid = await verifyPassword(loginData.password, storedHash)
+        if (!valid) {
+          return res.status(401).json({ error: 'Invalid credentials' })
+        }
 
+        // If TOTP is enabled, verify the code
         if (totpSecret) {
-          const parsedWithTotp = parsed.data as { totpCode?: string }
-          if (!parsedWithTotp.totpCode) {
+          if (!loginData.totpCode) {
             return res.status(403).json({ error: 'TOTP code required', totpRequired: true })
           }
-          // OWASP A07:2021 — Track failed TOTP attempts; lock out after TOTP_MAX_ATTEMPTS
-          // Use hashIp() (with RATE_LIMIT_SALT) for consistent, salted IP hashing across the application
-          const totpAttemptsKey = `zd-totp-attempts:${hashIp(ip)}`
-          if (!verifyTotpCode(totpSecret, parsedWithTotp.totpCode)) {
-            const attempts = await kv.incr(totpAttemptsKey)
-            if (attempts === 1) {
-              // Set TTL on the attempts counter (reset window on first failure)
-              await kv.expire(totpAttemptsKey, TOTP_LOCKOUT_SECONDS)
-            }
-            if (attempts >= TOTP_MAX_ATTEMPTS) {
-              await kv.set(totpLockKey, 1, { ex: TOTP_LOCKOUT_SECONDS })
-              await kv.del(totpAttemptsKey)
-              return res.status(429).json({ error: 'Too many failed TOTP attempts. Account locked for 15 minutes.' })
-            }
+          if (!(await verifyTotpCodeOnce(totpSecret, loginData.totpCode))) {
             return res.status(403).json({ error: 'Invalid TOTP code', totpRequired: true })
           }
-          // Successful TOTP — clear attempt counter
-          await kv.del(totpAttemptsKey)
         }
 
         // Migration: rehash legacy SHA-256 to scrypt on successful login
         if (!storedHash.startsWith('scrypt:')) {
-          const rehashed = await hashPassword(parsed.data.password)
+          const rehashed = await hashPassword(loginData.password)
           await kv.set('admin-password-hash', rehashed)
         }
 
@@ -425,7 +442,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === 'DELETE') {
       const token = getSessionFromCookie(req)
       if (token) {
-        await kv.del(`zd-session:${token}`)
+        await kv.del(`session:${token}`)
       }
       clearSessionCookie(res)
       return res.json({ success: true })

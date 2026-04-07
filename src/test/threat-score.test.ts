@@ -164,7 +164,7 @@ describe('getThreatScoreFromReq()', () => {
   })
 
   it('extracts IP from request and returns score', async () => {
-    const req = { headers: {} } as any
+    const req: any = { headers: {} } as any
     const result = await getThreatScoreFromReq(req)
     expect(result.score).toBe(5)
   })
@@ -180,7 +180,7 @@ describe('incrementThreatScoreFromReq()', () => {
   })
 
   it('extracts IP from request and increments score', async () => {
-    const req = { headers: {} } as any
+    const req: any = { headers: {} } as any
     const result = await incrementThreatScoreFromReq(req, THREAT_REASONS.ROBOTS_VIOLATION)
     expect(result.score).toBe(3)
     expect(result.reason).toBe('robots_violation')

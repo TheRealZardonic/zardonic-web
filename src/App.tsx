@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useKV, SKIP_UPDATE } from '@/hooks/use-kv'
-import { loadSiteData, loadAdminSettings } from '@/lib/sanity.loader'
 import { useKonami } from '@/hooks/use-konami'
 import { trackPageView, trackHeatmapClick } from '@/hooks/use-analytics'
 import { fetchITunesReleases } from '@/lib/itunes'
@@ -285,20 +284,20 @@ function App() {
   const [siteData, setSiteData] = useState<SiteData | undefined>(undefined)
   const [adminSettings, setAdminSettings] = useState<AdminSettings | undefined>(undefined)
 
+  const { data: kvSiteData, isLoading: isSiteDataLoading } = useKV<SiteData>('zd-cms:site')
+  const { data: kvAdminSettings, isLoading: isAdminSettingsLoading } = useKV<AdminSettings>('admin:settings')
+
   useEffect(() => {
-    let mounted = true
-    Promise.all([loadSiteData(), loadAdminSettings()])
-      .then(([data, settings]) => {
-        if (mounted) {
-          setSiteData(data as SiteData)
-          setAdminSettings(settings)
-        }
-      })
-      .catch(err => {
-        console.error('Failed to load Sanity data:', err)
-      })
-    return () => { mounted = false }
-  }, [])
+    if (!isSiteDataLoading && kvSiteData) {
+      setSiteData(kvSiteData)
+    }
+  }, [kvSiteData, isSiteDataLoading])
+
+  useEffect(() => {
+    if (!isAdminSettingsLoading && kvAdminSettings) {
+      setAdminSettings(kvAdminSettings)
+    }
+  }, [kvAdminSettings, isAdminSettingsLoading])
 
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0)
@@ -821,7 +820,7 @@ function App() {
             className="relative"
           >
             <h2 className="text-4xl md:text-6xl font-bold mb-12 uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-data-corrupt" data-text="BIOGRAPHY">
-              <EditableHeading
+              <EditableHeading onChange={() => {}}
                 text={sectionLabels.biography || ''}
                 defaultText="BIOGRAPHY"
                 editMode={editMode}
@@ -910,7 +909,7 @@ function App() {
             transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
           >
             <h2 className="text-4xl md:text-6xl font-bold mb-12 uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-crt-interference" data-text="MUSIC PLAYER">
-              <EditableHeading
+              <EditableHeading onChange={() => {}}
                 text={sectionLabels.musicPlayer || ''}
                 defaultText="MUSIC PLAYER"
                 editMode={editMode}
@@ -961,7 +960,7 @@ function App() {
           >
             <div className="flex items-center justify-between mb-12 flex-wrap gap-4">
               <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-data-corrupt" data-text="UPCOMING GIGS">
-                <EditableHeading
+                <EditableHeading onChange={() => {}}
                   text={sectionLabels.upcomingGigs || ''}
                   defaultText="UPCOMING GIGS"
                   editMode={editMode}
@@ -1093,7 +1092,7 @@ function App() {
           >
             <div className="flex items-center justify-between mb-12 flex-wrap gap-4">
               <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-crt-interference" data-text="RELEASES">
-                <EditableHeading
+                <EditableHeading onChange={() => {}}
                   text={sectionLabels.releases || ''}
                   defaultText="RELEASES"
                   editMode={editMode}
@@ -1269,7 +1268,7 @@ function App() {
             className="text-center"
           >
             <h2 className="text-4xl md:text-6xl font-bold mb-12 uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-crt-interference" data-text="CONNECT">
-              <EditableHeading
+              <EditableHeading onChange={() => {}}
                 text={sectionLabels.connect || ''}
                 defaultText="CONNECT"
                 editMode={editMode}
@@ -1384,7 +1383,7 @@ function App() {
           onClose={() => setTerminalOpen(false)}
           customCommands={terminalCommands}
           editMode={editMode}
-          onSaveCommands={handleSaveTerminalCommands}
+          onSaveCommands={(() => {})}
         />
       </Suspense>
 

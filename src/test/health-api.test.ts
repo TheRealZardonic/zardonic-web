@@ -21,7 +21,7 @@ type MockRes = {
 }
 
 function mockRes(): MockRes {
-  const res: MockRes = { status: vi.fn(), json: vi.fn() }
+  const res: any = { status: vi.fn(), json: vi.fn() }
   res.status.mockReturnValue(res)
   res.json.mockReturnValue(res)
   return res
@@ -49,7 +49,7 @@ describe('Health endpoint — ok status', () => {
     mockRedisPing.mockResolvedValue('PONG')
 
     const res = mockRes()
-    await handler(mockReq(), res as unknown as VercelResponse)
+    await handler(mockReq(), res as unknown as unknown as VercelResponse)
 
     expect(res.status).toHaveBeenCalledWith(200)
     const body = res.json.mock.calls[0][0]
@@ -63,7 +63,7 @@ describe('Health endpoint — ok status', () => {
     mockRedisPing.mockResolvedValue('PONG')
 
     const res = mockRes()
-    await handler(mockReq(), res as unknown as VercelResponse)
+    await handler(mockReq(), res as unknown as unknown as VercelResponse)
 
     const body = res.json.mock.calls[0][0]
     expect(body.services.spotify).toBe('configured')
@@ -75,7 +75,7 @@ describe('Health endpoint — ok status', () => {
     mockRedisPing.mockResolvedValue('PONG')
 
     const res = mockRes()
-    await handler(mockReq(), res as unknown as VercelResponse)
+    await handler(mockReq(), res as unknown as unknown as VercelResponse)
 
     const body = res.json.mock.calls[0][0]
     expect(() => new Date(body.timestamp)).not.toThrow()
@@ -98,7 +98,7 @@ describe('Health endpoint — degraded status (KV unavailable)', () => {
     mockRedisPing.mockRejectedValue(new Error('Connection refused'))
 
     const res = mockRes()
-    await handler(mockReq(), res as unknown as VercelResponse)
+    await handler(mockReq(), res as unknown as unknown as VercelResponse)
 
     expect(res.status).toHaveBeenCalledWith(503)
     const body = res.json.mock.calls[0][0]
@@ -111,7 +111,7 @@ describe('Health endpoint — degraded status (KV unavailable)', () => {
     delete process.env.UPSTASH_REDIS_REST_TOKEN
 
     const res = mockRes()
-    await handler(mockReq(), res as unknown as VercelResponse)
+    await handler(mockReq(), res as unknown as unknown as VercelResponse)
 
     expect(res.status).toHaveBeenCalledWith(503)
     const body = res.json.mock.calls[0][0]
@@ -135,7 +135,7 @@ describe('Health endpoint — unconfigured services', () => {
     mockRedisPing.mockResolvedValue('PONG')
 
     const res = mockRes()
-    await handler(mockReq(), res as unknown as VercelResponse)
+    await handler(mockReq(), res as unknown as unknown as VercelResponse)
 
     const body = res.json.mock.calls[0][0]
     expect(body.services.spotify).toBe('unconfigured')
@@ -145,7 +145,7 @@ describe('Health endpoint — unconfigured services', () => {
     mockRedisPing.mockResolvedValue('PONG')
 
     const res = mockRes()
-    await handler(mockReq(), res as unknown as VercelResponse)
+    await handler(mockReq(), res as unknown as unknown as VercelResponse)
 
     const body = res.json.mock.calls[0][0]
     expect(body.services.bandsintown).toBe('unconfigured')
@@ -156,7 +156,7 @@ describe('Health endpoint — unconfigured services', () => {
 describe('Health endpoint — method guard', () => {
   it('returns 405 for non-GET requests', async () => {
     const res = mockRes()
-    await handler(mockReq('POST'), res as unknown as VercelResponse)
+    await handler(mockReq('POST'), res as unknown as unknown as VercelResponse)
 
     expect(res.status).toHaveBeenCalledWith(405)
     expect(res.json).toHaveBeenCalledWith({ error: 'Method Not Allowed' })

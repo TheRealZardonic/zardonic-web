@@ -46,7 +46,7 @@ export default function GallerySection({
         >
           <div className="flex items-center justify-between mb-12">
             <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-data-corrupt" data-text="GALLERY">
-              <EditableHeading
+              <EditableHeading onChange={() => {}}  onChange={() => {}}
                 text={sectionLabel || ''}
                 defaultText="GALLERY"
                 editMode={editMode}

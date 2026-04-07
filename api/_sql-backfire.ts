@@ -1,7 +1,11 @@
 import { Redis } from '@upstash/redis'
+const kv = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL || '',
+  token: process.env.UPSTASH_REDIS_REST_TOKEN || ''
+})
 import { getClientIp, hashIp } from './_ratelimit.js'
 import { recordIncident } from './_attacker-profile.js'
-import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { logSecurityEvent } from './_security-logger.js'
 
 /**
  * SQL Injection Backfire — counter-offensive defense module.
@@ -15,67 +19,95 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
  * evaluate response data as SQL.
  */
 
-const KV_SETTINGS_KEY = 'zd-security-settings'
+const KV_SETTINGS_KEY = 'nk-security-settings'
 
-function getRedis(): Redis | null {
-  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) return null
-  return new Redis({
-    url: process.env.UPSTASH_REDIS_REST_URL,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN,
-  })
+interface VercelLikeRequest {
+  method?: string
+  url?: string
+  query?: Record<string, string | string[]>
+  body?: Record<string, unknown>
+  headers: Record<string, string | string[] | undefined>
 }
 
-/** Common SQL injection probe patterns */
-const SQL_INJECTION_PATTERNS = [
-  /(?:UNION\s+(?:ALL\s+)?SELECT)/i,
-  /(?:'\s*OR\s+['"]?\d)/i,
-  /(?:;\s*DROP\s+TABLE)/i,
-  /(?:;\s*DELETE\s+FROM)/i,
-  /(?:'\s*;\s*--)/i,
-  /(?:SLEEP\s*\(\d+\))/i,
-  /(?:BENCHMARK\s*\()/i,
-  /(?:WAITFOR\s+DELAY)/i,
-  /(?:pg_sleep\s*\()/i,
-  /(?:LOAD_FILE\s*\()/i,
-  /(?:INTO\s+(?:OUT|DUMP)FILE)/i,
-  /(?:information_schema)/i,
-  /(?:sys\.database)/i,
-  /(?:0x[0-9a-f]{8,})/i,
-  /(?:CHAR\s*\(\s*\d+(?:\s*,\s*\d+)*\s*\))/i,
+interface VercelLikeResponse {
+  setHeader(key: string, value: string): VercelLikeResponse
+  status(code: number): VercelLikeResponse
+  json(data: unknown): VercelLikeResponse
+}
+
+interface SecuritySettings {
+  sqlBackfireEnabled?: boolean
+}
+
+/** Named SQL injection probe patterns — name is logged for admin visibility */
+const SQL_INJECTION_PATTERNS: Array<{ name: string; pattern: RegExp }> = [
+  { name: 'UNION_SELECT',      pattern: /(?:UNION\s+(?:ALL\s+)?SELECT)/i },
+  { name: 'OR_TAUTOLOGY',      pattern: /(?:'\s*OR\s+['"]?\d)/i },
+  { name: 'DROP_TABLE',        pattern: /(?:;\s*DROP\s+TABLE)/i },
+  { name: 'DELETE_FROM',       pattern: /(?:;\s*DELETE\s+FROM)/i },
+  { name: 'COMMENT_TERMINATE', pattern: /(?:'\s*;\s*--)/i },
+  { name: 'TIME_SLEEP',        pattern: /(?:SLEEP\s*\(\d+\))/i },
+  { name: 'BENCHMARK',         pattern: /(?:BENCHMARK\s*\()/i },
+  { name: 'WAITFOR_DELAY',     pattern: /(?:WAITFOR\s+DELAY)/i },
+  { name: 'PG_SLEEP',          pattern: /(?:pg_sleep\s*\()/i },
+  { name: 'LOAD_FILE',         pattern: /(?:LOAD_FILE\s*\()/i },
+  { name: 'INTO_OUTFILE',      pattern: /(?:INTO\s+(?:OUT|DUMP)FILE)/i },
+  { name: 'INFORMATION_SCHEMA', pattern: /(?:information_schema)/i },
+  { name: 'SYS_DATABASE',      pattern: /(?:sys\.database)/i },
+  { name: 'HEX_ENCODING',      pattern: /(?:0x[0-9a-f]{8,})/i },
+  { name: 'CHAR_ENCODING',     pattern: /(?:CHAR\s*\(\s*\d+(?:\s*,\s*\d+)*\s*\))/i },
 ]
 
-/**
- * Detect SQL injection attempts in request parameters.
- * Returns true if any query param, body field, or header contains SQL patterns.
- */
-export function detectSqlInjection(req: VercelRequest): boolean {
+/** Return the name of the first SQL injection pattern that matches any source, or null. */
+function detectSqlInjectionPattern(req: VercelLikeRequest): string | null {
   const sources: string[] = []
-
-  // Check query parameters
   if (req.query) {
     sources.push(...Object.values(req.query).filter((v): v is string => typeof v === 'string'))
   }
-
-  // Check request body string fields
   if (req.body && typeof req.body === 'object') {
-    sources.push(...Object.values(req.body as Record<string, unknown>).filter((v): v is string => typeof v === 'string'))
+    sources.push(...Object.values(req.body).filter((v): v is string => typeof v === 'string'))
   }
-
-  // Check URL path
   if (req.url) sources.push(req.url)
-
-  // Check cookie header (scanners sometimes inject SQL via cookies)
   const cookie = req.headers?.cookie
   if (typeof cookie === 'string') sources.push(cookie)
 
   for (const value of sources) {
-    for (const pattern of SQL_INJECTION_PATTERNS) {
-      if (pattern.test(value)) return true
+    for (const { name, pattern } of SQL_INJECTION_PATTERNS) {
+      if (pattern.test(value)) return name
     }
   }
-  return false
+  return null
 }
 
+/**
+ * Detect SQL injection attempts in request parameters.
+ * Returns the matched pattern name when found, or null for clean requests.
+ */
+export function detectSqlInjection(req: VercelLikeRequest): boolean {
+  return detectSqlInjectionPattern(req) !== null
+}
+
+/**
+ * ReDoS (Regular Expression Denial of Service) payloads.
+ *
+ * These strings are embedded in response bodies alongside the SQL backfire
+ * payloads.  Automated scanning tools that use regex to parse HTTP responses
+ * for SQL error patterns can experience catastrophic backtracking when their
+ * patterns are applied to these inputs.
+ *
+ * The strings are harmless to browsers and legitimate clients — they are just
+ * long sequences of characters that do not render visibly.
+ */
+const REDOS_PAYLOADS = [
+  // Targets (a+)+ style regexes in Python/Perl SQL error parsers
+  "'OR" + " 1".repeat(80) + "=1'",
+  // Triggers catastrophic backtracking in (a*b*)* patterns
+  "'" + "a".repeat(60) + "'" + "a".repeat(60) + "'",
+  // Long quote-delimited string that breaks naive SQL tokenisers
+  "'" + " OR ".repeat(40) + "'1'='1",
+  // Causes exponential backtracking in nested quantifier regexes
+  "1" + " UNION ALL SELECT".repeat(20) + " NULL--",
+]
 /**
  * Backfire payloads — SQL statements designed to corrupt the scanner's
  * local analysis database.  These are embedded in HTTP response bodies
@@ -84,7 +116,6 @@ export function detectSqlInjection(req: VercelRequest): boolean {
  * database.
  */
 const BACKFIRE_PAYLOADS = [
-  // Drop common scanner tables
   "'; DROP TABLE IF EXISTS scan_results; --",
   "'; DROP TABLE IF EXISTS vulnerabilities; --",
   "'; DROP TABLE IF EXISTS sessions CASCADE; --",
@@ -108,7 +139,7 @@ const BACKFIRE_PAYLOADS = [
  * Generate backfire response headers.
  * Scanners often parse response headers for SQL-like content.
  */
-export function setBackfireHeaders(res: VercelResponse): void {
+export function setBackfireHeaders(res: VercelLikeResponse): void {
   res.setHeader('X-DB-Status', "'; DROP TABLE scan_results; --")
   res.setHeader('X-SQL-Version', "'; UPDATE targets SET status='unreachable'; --")
   res.setHeader('X-Backend-DB', "PostgreSQL'; DELETE FROM sessions WHERE 1=1; --")
@@ -122,16 +153,20 @@ export function setBackfireHeaders(res: VercelResponse): void {
  */
 export function generateBackfireBody(): Record<string, unknown> {
   const shuffled = [...BACKFIRE_PAYLOADS].sort(() => Math.random() - 0.5)
+  const redos = REDOS_PAYLOADS[Math.floor(Math.random() * REDOS_PAYLOADS.length)]
   return {
     error: 'Database error',
     message: shuffled[0],
     details: shuffled.slice(1, 4),
     query: shuffled[4] || BACKFIRE_PAYLOADS[0],
-    stack: `Error: ${shuffled[0]}\n    at Query.execute (${shuffled[1]})\n    at Connection.query (${shuffled[2]})`,
+    // ReDoS payload — causes catastrophic backtracking in scanner regex engines
+    trace: `Error: ${redos}\n    at Query.execute (${shuffled[1]})\n    at Connection.query (${shuffled[2]})`,
     debug: {
       last_query: shuffled[3] || BACKFIRE_PAYLOADS[3],
       db_version: "PostgreSQL 15.2'; DROP TABLE IF EXISTS vulnerabilities; --",
       tables: ['users', 'sessions', 'scan_results', 'admin_backup'],
+      // Second ReDoS payload in a field scanners often parse deeply
+      raw_error: redos,
     },
   }
 }
@@ -140,44 +175,50 @@ export function generateBackfireBody(): Record<string, unknown> {
  * Handle an SQL injection attempt with backfire response.
  * Records the incident and returns a poisoned response.
  */
-export async function handleSqlInjectionBackfire(req: VercelRequest, res: VercelResponse): Promise<boolean | VercelResponse> {
+export async function handleSqlInjectionBackfire(req: VercelLikeRequest, res: VercelLikeResponse): Promise<boolean> {
   const ip = getClientIp(req)
   const hashedIp = hashIp(ip)
+  const userAgent = (req.headers?.['user-agent'] as string || '').slice(0, 200)
+  const timestamp = new Date().toISOString()
+  const detectedPattern = detectSqlInjectionPattern(req)
 
   // Check if backfire is enabled
   try {
-    const redis = getRedis()
-    if (!redis) return false
-    const settings = await redis.get<{ sqlBackfireEnabled?: boolean }>(KV_SETTINGS_KEY)
+    const settings = await kv.get<SecuritySettings>(KV_SETTINGS_KEY).catch(() => null)
     if (!settings?.sqlBackfireEnabled) return false
   } catch {
     return false
   }
 
-  // Record the incident
+  // Record the incident in attacker profile
   try {
     await recordIncident(hashedIp, {
       type: 'sql_injection_backfire',
-      method: req.method || '',
-      url: req.url || '',
-      userAgent: ((req.headers?.['user-agent'] as string) || '').slice(0, 200),
-      timestamp: new Date().toISOString(),
+      method: req.method,
+      url: req.url,
+      userAgent,
+      timestamp,
     })
   } catch {
     // Recording failure must not block the response
   }
 
-  // Log for SIEM
-  console.error('[SQL BACKFIRE]', JSON.stringify({
+  // Unified structured log
+  await logSecurityEvent({
+    event: 'SQL_INJECTION_BACKFIRE',
+    severity: 'high',
     hashedIp,
+    userAgent,
     method: req.method,
     url: req.url,
-    timestamp: new Date().toISOString(),
-  }))
+    countermeasure: 'SQL_BACKFIRE',
+    details: { detectedPattern },
+  })
 
   // Send the backfire response
   setBackfireHeaders(res)
   res.setHeader('Content-Type', 'application/json')
   res.setHeader('Cache-Control', 'no-store')
-  return res.status(500).json(generateBackfireBody())
+  res.status(500).json(generateBackfireBody())
+  return true
 }

@@ -28,7 +28,7 @@ type MockRes = {
 }
 
 function mockRes() {
-  const res: MockRes = {
+  const res: any = {
     status: vi.fn(),
     json: vi.fn(),
     setHeader: vi.fn(),
@@ -36,7 +36,7 @@ function mockRes() {
   res.status.mockReturnValue(res)
   res.json.mockReturnValue(res)
   res.setHeader.mockReturnValue(res)
-  return res as unknown as VercelResponse
+  return res as unknown as unknown as VercelResponse
 }
 
 // ---------------------------------------------------------------------------
@@ -63,32 +63,32 @@ describe('hashIp()', () => {
 // ---------------------------------------------------------------------------
 describe('getClientIp()', () => {
   it('extracts first IP from x-forwarded-for string', () => {
-    const req = { headers: { 'x-forwarded-for': '10.0.0.1, 10.0.0.2' } } as any
+    const req: any = { headers: { 'x-forwarded-for': '10.0.0.1, 10.0.0.2' } } as any
     expect(getClientIp(req)).toBe('10.0.0.1')
   })
 
   it('trims whitespace from extracted IP', () => {
-    const req = { headers: { 'x-forwarded-for': '  10.0.0.1  , 10.0.0.2' } } as any
+    const req: any = { headers: { 'x-forwarded-for': '  10.0.0.1  , 10.0.0.2' } } as any
     expect(getClientIp(req)).toBe('10.0.0.1')
   })
 
   it('handles single IP without comma', () => {
-    const req = { headers: { 'x-forwarded-for': '203.0.113.1' } } as any
+    const req: any = { headers: { 'x-forwarded-for': '203.0.113.1' } } as any
     expect(getClientIp(req)).toBe('203.0.113.1')
   })
 
   it('handles array x-forwarded-for (Vercel multi-value)', () => {
-    const req = { headers: { 'x-forwarded-for': ['10.1.2.3, 10.2.3.4', '10.3.4.5'] } } as any
+    const req: any = { headers: { 'x-forwarded-for': ['10.1.2.3, 10.2.3.4', '10.3.4.5'] } } as any
     expect(getClientIp(req)).toBe('10.1.2.3')
   })
 
   it('falls back to 127.0.0.1 when header is absent', () => {
-    const req = { headers: {} } as any
+    const req: any = { headers: {} } as any
     expect(getClientIp(req)).toBe('127.0.0.1')
   })
 
   it('falls back to 127.0.0.1 when header is undefined', () => {
-    const req = { headers: { 'x-forwarded-for': undefined } } as any
+    const req: any = { headers: { 'x-forwarded-for': undefined } } as any
     expect(getClientIp(req)).toBe('127.0.0.1')
   })
 })
@@ -109,7 +109,7 @@ describe('applyRateLimit()', () => {
 
   it('returns true when rate limit is not exceeded', async () => {
     mockLimit.mockResolvedValue({ success: true })
-    const req = { headers: { 'x-forwarded-for': '1.2.3.4' } } as any
+    const req: any = { headers: { 'x-forwarded-for': '1.2.3.4' } } as any
     const res = mockRes()
     const result = await applyRateLimit(req, res)
     expect(result).toBe(true)
@@ -118,7 +118,7 @@ describe('applyRateLimit()', () => {
 
   it('returns false and sends 429 when rate limit is exceeded', async () => {
     mockLimit.mockResolvedValue({ success: false })
-    const req = { headers: { 'x-forwarded-for': '1.2.3.4' } } as any
+    const req: any = { headers: { 'x-forwarded-for': '1.2.3.4' } } as any
     const res = mockRes()
     const result = await applyRateLimit(req, res)
     expect(result).toBe(false)
@@ -130,7 +130,7 @@ describe('applyRateLimit()', () => {
   it('returns false and sends 503 when rate limit service throws (fail-closed)', async () => {
     mockLimit.mockRejectedValue(new Error('Redis connection failed'))
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-    const req = { headers: { 'x-forwarded-for': '1.2.3.4' } } as any
+    const req: any = { headers: { 'x-forwarded-for': '1.2.3.4' } } as any
     const res = mockRes()
     const result = await applyRateLimit(req, res)
     expect(result).toBe(false)

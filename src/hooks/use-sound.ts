@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { SoundSettings } from '@/lib/types'
 import { DEFAULT_SOUND_VOLUME } from '@/lib/config'
 
@@ -70,13 +70,13 @@ export function useSound(settings?: SoundSettings, editMode?: boolean) {
   const backgroundMusicRef = useRef<HTMLAudioElement | null>(null)
 
   // Use default sounds if not specified in settings
-  const effectiveSounds = {
+  const effectiveSounds = useMemo(() => ({
     terminalSound: settings?.terminalSound,
     typingSound: settings?.typingSound || DEFAULT_SOUNDS.typing,
     buttonSound: settings?.buttonSound || DEFAULT_SOUNDS.button,
     loadingFinishedSound: settings?.loadingFinishedSound || DEFAULT_SOUNDS.loadingFinished,
     backgroundMusic: settings?.backgroundMusic,
-  }
+  }), [settings?.terminalSound, settings?.typingSound, settings?.buttonSound, settings?.loadingFinishedSound, settings?.backgroundMusic])
 
   // Determine whether any sounds are configured
   const hasSounds = !!(effectiveSounds.terminalSound || effectiveSounds.typingSound || effectiveSounds.buttonSound)

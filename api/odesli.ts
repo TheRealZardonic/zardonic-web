@@ -1,9 +1,22 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { applyRateLimit } from './_ratelimit.js'
+import { odesliQuerySchema, validate } from './_schemas.js'
 import { fetchWithRetry } from './_fetch-retry.js'
-import { validate, odesliQuerySchema } from './_schemas.js'
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+interface VercelRequest {
+  method?: string
+  body?: Record<string, unknown>
+  query?: Record<string, string | string[]>
+  headers: Record<string, string | string[] | undefined>
+}
+
+interface VercelResponse {
+  setHeader(key: string, value: string): VercelResponse
+  status(code: number): VercelResponse
+  json(data: unknown): VercelResponse
+  end(): VercelResponse
+}
+
+export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   // Rate limiting (GDPR-compliant, IP is hashed)
   const allowed = await applyRateLimit(req, res)
   if (!allowed) return
@@ -11,27 +24,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Zod validation
   const parsed = validate(odesliQuerySchema, req.query)
   if (!parsed.success) {
-    return res.status(400).json({ error: parsed.error })
+    res.status(400).json({ error: parsed.error })
+    return
   }
-  const { url, userCountry } = parsed.data
-
-  const params = new URLSearchParams({ url })
-  if (userCountry) params.set('userCountry', userCountry)
+  const { url } = parsed.data
 
   try {
     const response = await fetchWithRetry(
-      `https://api.song.link/v1-alpha.1/links?${params.toString()}`,
-      { headers: { 'Accept': 'application/json' } }
+      `https://api.song.link/v1-alpha.1/links?url=${encodeURIComponent(url)}&userCountry=US`
     )
 
     if (!response.ok) {
-      return res.status(500).json({ error: `Odesli API responded with ${response.status}` })
+      throw new Error(`Odesli API responded with ${response.status}`)
     }
 
     const data = await response.json()
     res.status(200).json(data)
   } catch (error) {
-    console.error('Odesli proxy error:', error)
-    res.status(502).json({ error: 'Failed to fetch from Odesli API' })
+    console.error('Odesli API error:', error)
+    res.status(500).json({ error: 'Failed to fetch from Odesli API' })
   }
 }

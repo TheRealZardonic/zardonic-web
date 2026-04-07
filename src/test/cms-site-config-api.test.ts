@@ -34,7 +34,7 @@ type MockRes = {
 }
 
 function mockRes(): MockRes {
-  const res: MockRes = {
+  const res: any = {
     status: vi.fn(),
     json: vi.fn(),
     setHeader: vi.fn(),
@@ -69,7 +69,7 @@ beforeEach(() => {
 describe('GET /api/cms/site-config', () => {
   it('returns 401 when not authenticated', async () => {
     vi.mocked(validateSession).mockResolvedValueOnce(false)
-    const req = { method: 'GET', headers: {}, query: {} } as never
+    const req: any = { method: 'GET', headers: {}, query: {} } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.status).toHaveBeenCalledWith(401)
@@ -78,7 +78,7 @@ describe('GET /api/cms/site-config', () => {
 
   it('returns null config when nothing stored', async () => {
     mockGet.mockResolvedValueOnce(null)
-    const req = { method: 'GET', headers: {}, query: {} } as never
+    const req: any = { method: 'GET', headers: {}, query: {} } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.json).toHaveBeenCalledWith({ config: null })
@@ -86,7 +86,7 @@ describe('GET /api/cms/site-config', () => {
 
   it('returns stored config', async () => {
     mockGet.mockResolvedValueOnce(validConfig)
-    const req = { method: 'GET', headers: {}, query: {} } as never
+    const req: any = { method: 'GET', headers: {}, query: {} } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.json).toHaveBeenCalledWith({ config: validConfig })
@@ -96,28 +96,28 @@ describe('GET /api/cms/site-config', () => {
 describe('POST /api/cms/site-config', () => {
   it('returns 401 when not authenticated', async () => {
     vi.mocked(validateSession).mockResolvedValueOnce(false)
-    const req = { method: 'POST', headers: {}, body: validConfig } as never
+    const req: any = { method: 'POST', headers: {}, body: validConfig } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.status).toHaveBeenCalledWith(401)
   })
 
   it('returns 400 when body is missing', async () => {
-    const req = { method: 'POST', headers: {}, body: undefined } as never
+    const req: any = { method: 'POST', headers: {}, body: undefined } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.status).toHaveBeenCalledWith(400)
   })
 
   it('returns 400 when body is not an object', async () => {
-    const req = { method: 'POST', headers: {}, body: 'invalid-string' } as never
+    const req: any = { method: 'POST', headers: {}, body: 'invalid-string' } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.status).toHaveBeenCalledWith(400)
   })
 
   it('returns 400 for invalid config schema (missing name)', async () => {
-    const req = {
+    const req: any = {
       method: 'POST',
       headers: {},
       body: { description: 'Missing name' },
@@ -128,7 +128,7 @@ describe('POST /api/cms/site-config', () => {
   })
 
   it('saves valid config and returns success', async () => {
-    const req = { method: 'POST', headers: {}, body: validConfig } as never
+    const req: any = { method: 'POST', headers: {}, body: validConfig } as never
     const res = mockRes()
     await handler(req, res)
     expect(mockSet).toHaveBeenCalledWith('zd-cms:config', expect.objectContaining({ name: 'Zardonic' }))
@@ -139,7 +139,7 @@ describe('POST /api/cms/site-config', () => {
 
   it('saves config with optional fields omitted', async () => {
     const minimalConfig = { name: 'Zardonic', description: 'Metal' }
-    const req = { method: 'POST', headers: {}, body: minimalConfig } as never
+    const req: any = { method: 'POST', headers: {}, body: minimalConfig } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.json).toHaveBeenCalledWith(
@@ -150,21 +150,21 @@ describe('POST /api/cms/site-config', () => {
 
 describe('Method not allowed', () => {
   it('returns 405 for DELETE', async () => {
-    const req = { method: 'DELETE', headers: {}, query: {} } as never
+    const req: any = { method: 'DELETE', headers: {}, query: {} } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.status).toHaveBeenCalledWith(405)
   })
 
   it('returns 405 for PUT', async () => {
-    const req = { method: 'PUT', headers: {}, body: {} } as never
+    const req: any = { method: 'PUT', headers: {}, body: {} } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.status).toHaveBeenCalledWith(405)
   })
 
   it('returns 405 for PATCH', async () => {
-    const req = { method: 'PATCH', headers: {}, body: {} } as never
+    const req: any = { method: 'PATCH', headers: {}, body: {} } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.status).toHaveBeenCalledWith(405)
@@ -174,7 +174,7 @@ describe('Method not allowed', () => {
 describe('Error handling', () => {
   it('returns 500 on Redis error during GET', async () => {
     mockGet.mockRejectedValueOnce(new Error('Redis down'))
-    const req = { method: 'GET', headers: {}, query: {} } as never
+    const req: any = { method: 'GET', headers: {}, query: {} } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.status).toHaveBeenCalledWith(500)
@@ -182,7 +182,7 @@ describe('Error handling', () => {
 
   it('returns 500 on Redis set error during POST', async () => {
     mockSet.mockRejectedValueOnce(new Error('Redis write failed'))
-    const req = { method: 'POST', headers: {}, body: validConfig } as never
+    const req: any = { method: 'POST', headers: {}, body: validConfig } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.status).toHaveBeenCalledWith(500)

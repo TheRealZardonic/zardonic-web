@@ -32,6 +32,9 @@ import type { SiteData } from '@/App'
 import { toast } from 'sonner'
 
 interface EditControlsProps {
+  setAdminSettings?: any;
+  onImportData?: any;
+  siteData?: any;
   editMode: boolean
   onToggleEdit: () => void
   hasPassword: boolean
@@ -47,7 +50,7 @@ interface EditControlsProps {
   onOpenSubscriberList?: () => void
 }
 
-export default function EditControls({
+export default function EditControls({ setAdminSettings, onImportData, siteData,
   editMode,
   onToggleEdit,
   hasPassword,
@@ -89,22 +92,22 @@ export default function EditControls({
 
   const moveSectionUp = useCallback(
     (index: number) => {
-      if (index <= 0 || !onAdminSettingsChange) return
+      if (index <= 0 || !setAdminSettings) return
       const newOrder = [...currentOrder]
       ;[newOrder[index - 1], newOrder[index]] = [newOrder[index], newOrder[index - 1]]
-      onAdminSettingsChange({ ...adminSettings, sectionOrder: newOrder })
+      setAdminSettings({ ...adminSettings, sectionOrder: newOrder })
     },
-    [currentOrder, adminSettings, onAdminSettingsChange],
+    [currentOrder, adminSettings, setAdminSettings],
   )
 
   const moveSectionDown = useCallback(
     (index: number) => {
-      if (index >= currentOrder.length - 1 || !onAdminSettingsChange) return
+      if (index >= currentOrder.length - 1 || !setAdminSettings) return
       const newOrder = [...currentOrder]
       ;[newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]]
-      onAdminSettingsChange({ ...adminSettings, sectionOrder: newOrder })
+      setAdminSettings({ ...adminSettings, sectionOrder: newOrder })
     },
-    [currentOrder, adminSettings, onAdminSettingsChange],
+    [currentOrder, adminSettings, setAdminSettings],
   )
 
   const handleExport = () => {
@@ -140,8 +143,8 @@ export default function EditControls({
         // Extract admin settings if present in the export
         const { _adminSettings, ...siteDataOnly } = parsed
         onImportData(siteDataOnly as SiteData)
-        if (_adminSettings && onAdminSettingsChange) {
-          onAdminSettingsChange(_adminSettings)
+        if (_adminSettings && setAdminSettings) {
+          setAdminSettings(_adminSettings)
           toast.success('Data & settings imported successfully')
         } else {
           toast.success('Data imported successfully')
@@ -156,8 +159,8 @@ export default function EditControls({
 
   const updateVisibility = useCallback(
     (key: keyof SectionVisibility, value: boolean) => {
-      if (!onAdminSettingsChange) return
-      onAdminSettingsChange({
+      if (!setAdminSettings) return
+      setAdminSettings({
         ...adminSettings,
         sectionVisibility: {
           ...adminSettings?.sectionVisibility,
@@ -165,13 +168,13 @@ export default function EditControls({
         },
       })
     },
-    [adminSettings, onAdminSettingsChange],
+    [adminSettings, setAdminSettings],
   )
 
   const updateTheme = useCallback(
     (key: keyof ThemeCustomization, value: string) => {
-      if (!onAdminSettingsChange) return
-      onAdminSettingsChange({
+      if (!setAdminSettings) return
+      setAdminSettings({
         ...adminSettings,
         theme: {
           ...adminSettings?.theme,
@@ -179,13 +182,13 @@ export default function EditControls({
         },
       })
     },
-    [adminSettings, onAdminSettingsChange],
+    [adminSettings, setAdminSettings],
   )
 
   const updateAnimation = useCallback(
     (key: keyof AnimationSettings, value: boolean) => {
-      if (!onAdminSettingsChange) return
-      onAdminSettingsChange({
+      if (!setAdminSettings) return
+      setAdminSettings({
         ...adminSettings,
         animations: {
           ...adminSettings?.animations,
@@ -193,13 +196,13 @@ export default function EditControls({
         },
       })
     },
-    [adminSettings, onAdminSettingsChange],
+    [adminSettings, setAdminSettings],
   )
 
   const updateAnimationNumber = useCallback(
     (key: keyof AnimationSettings, value: number) => {
-      if (!onAdminSettingsChange) return
-      onAdminSettingsChange({
+      if (!setAdminSettings) return
+      setAdminSettings({
         ...adminSettings,
         animations: {
           ...adminSettings?.animations,
@@ -207,13 +210,13 @@ export default function EditControls({
         },
       })
     },
-    [adminSettings, onAdminSettingsChange],
+    [adminSettings, setAdminSettings],
   )
 
   const updateProgressiveMode = useCallback(
     (key: keyof ProgressiveOverlayModes, value: boolean) => {
-      if (!onAdminSettingsChange) return
-      onAdminSettingsChange({
+      if (!setAdminSettings) return
+      setAdminSettings({
         ...adminSettings,
         progressiveOverlayModes: {
           ...adminSettings?.progressiveOverlayModes,
@@ -221,7 +224,7 @@ export default function EditControls({
         },
       })
     },
-    [adminSettings, onAdminSettingsChange],
+    [adminSettings, setAdminSettings],
   )
 
   const vis = adminSettings?.sectionVisibility ?? {}
@@ -516,7 +519,7 @@ export default function EditControls({
                     <Input
                       value={adminSettings?.faviconUrl || ''}
                       onChange={(e) =>
-                        onAdminSettingsChange?.({
+                        setAdminSettings?.({
                           ...adminSettings,
                           faviconUrl: e.target.value,
                         })
@@ -618,7 +621,7 @@ export default function EditControls({
                   <Switch
                     checked={adminSettings?.glitchTextSettings?.enabled !== false}
                     onCheckedChange={(checked) =>
-                      onAdminSettingsChange?.({
+                      setAdminSettings?.({
                         ...adminSettings,
                         glitchTextSettings: {
                           ...(adminSettings?.glitchTextSettings || {}),
@@ -639,7 +642,7 @@ export default function EditControls({
                     max={30000}
                     step={500}
                     onValueChange={([v]) =>
-                      onAdminSettingsChange?.({
+                      setAdminSettings?.({
                         ...adminSettings,
                         glitchTextSettings: {
                           ...(adminSettings?.glitchTextSettings || {}),
@@ -660,7 +663,7 @@ export default function EditControls({
                     max={1000}
                     step={10}
                     onValueChange={([v]) =>
-                      onAdminSettingsChange?.({
+                      setAdminSettings?.({
                         ...adminSettings,
                         glitchTextSettings: {
                           ...(adminSettings?.glitchTextSettings || {}),
@@ -782,7 +785,7 @@ export default function EditControls({
                 ))}
               </div>
               <Button
-                onClick={() => onAdminSettingsChange?.({ ...adminSettings, sectionOrder: defaultSectionOrder })}
+                onClick={() => setAdminSettings?.({ ...adminSettings, sectionOrder: defaultSectionOrder })}
                 variant="outline"
                 className="w-full font-mono text-xs"
               >

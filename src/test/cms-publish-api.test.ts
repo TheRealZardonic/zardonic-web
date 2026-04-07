@@ -31,7 +31,7 @@ vi.mock('../../api/auth.ts', () => ({
 type MockRes = { status: ReturnType<typeof vi.fn>; json: ReturnType<typeof vi.fn>; setHeader: ReturnType<typeof vi.fn>; end: ReturnType<typeof vi.fn> }
 
 function mockRes(): MockRes {
-  const res: MockRes = { status: vi.fn(), json: vi.fn(), setHeader: vi.fn(), end: vi.fn() }
+  const res: any = { status: vi.fn(), json: vi.fn(), setHeader: vi.fn(), end: vi.fn() }
   res.status.mockReturnValue(res)
   res.json.mockReturnValue(res)
   res.setHeader.mockReturnValue(res)
@@ -52,28 +52,28 @@ beforeEach(() => {
 describe('POST /api/cms/publish', () => {
   it('returns 401 when not authenticated', async () => {
     vi.mocked(validateSession).mockResolvedValueOnce(false)
-    const req = { method: 'POST', headers: {}, body: { key: 'zd-cms:hero' } } as never
+    const req: any = { method: 'POST', headers: {}, body: { key: 'zd-cms:hero' } } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.status).toHaveBeenCalledWith(401)
   })
 
   it('returns 405 for non-POST methods', async () => {
-    const req = { method: 'GET', headers: {}, body: {} } as never
+    const req: any = { method: 'GET', headers: {}, body: {} } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.status).toHaveBeenCalledWith(405)
   })
 
   it('returns 400 for missing body', async () => {
-    const req = { method: 'POST', headers: {}, body: null } as never
+    const req: any = { method: 'POST', headers: {}, body: null } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.status).toHaveBeenCalledWith(400)
   })
 
   it('returns 400 when key lacks zd-cms: prefix', async () => {
-    const req = { method: 'POST', headers: {}, body: { key: 'hero' } } as never
+    const req: any = { method: 'POST', headers: {}, body: { key: 'hero' } } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.status).toHaveBeenCalledWith(400)
@@ -81,7 +81,7 @@ describe('POST /api/cms/publish', () => {
 
   it('copies draft to published on valid publish', async () => {
     mockGet.mockResolvedValueOnce({ headline: 'Test' })
-    const req = { method: 'POST', headers: {}, body: { key: 'zd-cms:hero' } } as never
+    const req: any = { method: 'POST', headers: {}, body: { key: 'zd-cms:hero' } } as never
     const res = mockRes()
     await handler(req, res)
     expect(mockGet).toHaveBeenCalled()
@@ -90,7 +90,7 @@ describe('POST /api/cms/publish', () => {
   })
 
   it('deletes published on revert:true', async () => {
-    const req = { method: 'POST', headers: {}, body: { key: 'zd-cms:hero', revert: true } } as never
+    const req: any = { method: 'POST', headers: {}, body: { key: 'zd-cms:hero', revert: true } } as never
     const res = mockRes()
     await handler(req, res)
     expect(mockDel).toHaveBeenCalled()

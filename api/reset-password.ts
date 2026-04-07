@@ -1,11 +1,30 @@
-import { kv } from '@vercel/kv'
+import { Redis } from '@upstash/redis'
+const kv = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL || '',
+  token: process.env.UPSTASH_REDIS_REST_TOKEN || ''
+})
 import { randomBytes } from 'node:crypto'
 import { timingSafeEqual } from './kv.js'
-import { hashPassword } from './auth.js'
+import { hashPassword, invalidateAllSessions } from './auth.js'
 import { applyRateLimit } from './_ratelimit.js'
 import { resetPasswordSchema, confirmResetPasswordSchema, validate } from './_schemas.js'
 import { Resend } from 'resend'
-import type { VercelRequest, VercelResponse } from '@vercel/node'
+
+interface VercelRequest {
+  method?: string
+  body?: Record<string, unknown>
+  query?: Record<string, string | string[]>
+  headers: Record<string, string | string[] | undefined>
+}
+
+interface VercelResponse {
+  setHeader(key: string, value: string): VercelResponse
+  status(code: number): VercelResponse
+  json(data: unknown): VercelResponse
+  end(): VercelResponse
+}
+
+
 
 // Check if KV is properly configured
 const isKVConfigured = () => {
@@ -15,7 +34,7 @@ const isKVConfigured = () => {
 const RESET_TOKEN_TTL = 600 // 10 minutes
 const RESET_TOKEN_KEY = 'admin-reset-token'
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: VercelRequest, res: VercelResponse): Promise<unknown> {
   if (req.method === 'OPTIONS') {
     return res.status(200).end()
   }
@@ -46,7 +65,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { token, newPassword } = parsed.data
 
     try {
-      const storedToken = await kv.get<string>(RESET_TOKEN_KEY)
+      const storedToken = await kv.get(RESET_TOKEN_KEY)
       if (!storedToken || !timingSafeEqual(token, storedToken)) {
         return res.status(400).json({ error: 'Invalid or expired reset token' })
       }
@@ -60,6 +79,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       pipe.set('admin-password-hash', hashedPassword)
       pipe.del(RESET_TOKEN_KEY)
       await pipe.exec()
+
+      // Invalidate all existing sessions so stolen sessions can't be reused
+      await invalidateAllSessions()
 
       return res.json({ success: true, message: 'Password has been reset successfully.' })
     } catch (error) {
@@ -94,7 +116,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Send password reset email if Resend is configured
     const resendApiKey = process.env.RESEND_API_KEY
-    const siteUrl = process.env.SITE_URL || 'https://neuroklast.com'
+    const siteUrl = process.env.SITE_URL || ''
     
     if (resendApiKey) {
       try {
@@ -102,9 +124,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const resetUrl = `${siteUrl}/admin?resetToken=${token}`
         
         await resend.emails.send({
-          from: process.env.EMAIL_FROM || 'noreply@neuroklast.com',
+          from: process.env.EMAIL_FROM || `noreply@${siteUrl ? new URL(siteUrl).hostname : 'example.com'}`,
           to: resetEmail,
-          subject: 'Password Reset Request - NEUROKLAST Admin',
+          subject: `Password Reset Request - ${process.env.SITE_NAME || 'Site'} Admin`,
           html: `
             <h2>Password Reset Request</h2>
             <p>You have requested to reset your admin password.</p>
@@ -115,18 +137,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           `,
         })
         
-        console.warn(`[SECURITY] Password reset email sent to ${resetEmail}`)
+        console.log(`[SECURITY] Password reset email sent to ${resetEmail}`)
       } catch (emailError) {
         // Log email failure but still return success to prevent email enumeration
         const errorMessage = emailError instanceof Error ? emailError.message : 'Unknown error'
         console.error('[SECURITY] Failed to send reset email:', errorMessage)
         // Fall back to logging that a token was generated (without exposing the token itself)
-        console.warn(`[SECURITY] Password reset token generated (expires in ${RESET_TOKEN_TTL}s) - retrieve from KV: ${RESET_TOKEN_KEY}`)
+        console.log(`[SECURITY] Password reset token generated (expires in ${RESET_TOKEN_TTL}s) - retrieve from KV: ${RESET_TOKEN_KEY}`)
       }
     } else {
       // No email service configured - log that token is available in KV
-      console.warn(`[SECURITY] Password reset token generated (expires in ${RESET_TOKEN_TTL}s) - retrieve from KV: ${RESET_TOKEN_KEY}`)
-      console.warn(`[SECURITY] Set RESEND_API_KEY environment variable to enable email delivery`)
+      console.log(`[SECURITY] Password reset token generated (expires in ${RESET_TOKEN_TTL}s) - retrieve from KV: ${RESET_TOKEN_KEY}`)
+      console.log(`[SECURITY] Set RESEND_API_KEY environment variable to enable email delivery`)
     }
 
     return res.json({ success: true, message: 'If the email matches, a reset link has been generated.' })

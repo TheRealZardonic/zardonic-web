@@ -37,7 +37,7 @@ type MockRes = {
 }
 
 function mockRes(): MockRes {
-  const res: MockRes = { status: vi.fn(), json: vi.fn(), setHeader: vi.fn() }
+  const res: any = { status: vi.fn(), json: vi.fn(), setHeader: vi.fn() }
   res.status.mockReturnValue(res)
   res.json.mockReturnValue(res)
   res.setHeader.mockReturnValue(res)
@@ -82,7 +82,7 @@ describe('Spotify API handler — missing credentials', () => {
   it('returns 503 when SPOTIFY_CLIENT_ID is not set', async () => {
     process.env.SPOTIFY_CLIENT_SECRET = 'secret'
     const res = mockRes()
-    await handler(mockReq({ action: 'artist', id: '123' }), res as unknown as VercelResponse)
+    await handler(mockReq({ action: 'artist', id: '123' }), res as unknown as unknown as VercelResponse)
     expect(res.status).toHaveBeenCalledWith(503)
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'Service unavailable' }))
   })
@@ -90,14 +90,14 @@ describe('Spotify API handler — missing credentials', () => {
   it('returns 503 when SPOTIFY_CLIENT_SECRET is not set', async () => {
     process.env.SPOTIFY_CLIENT_ID = 'client-id'
     const res = mockRes()
-    await handler(mockReq({ action: 'artist', id: '123' }), res as unknown as VercelResponse)
+    await handler(mockReq({ action: 'artist', id: '123' }), res as unknown as unknown as VercelResponse)
     expect(res.status).toHaveBeenCalledWith(503)
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'Service unavailable' }))
   })
 
   it('returns 503 when both credentials are missing', async () => {
     const res = mockRes()
-    await handler(mockReq({ action: 'artist', id: '123' }), res as unknown as VercelResponse)
+    await handler(mockReq({ action: 'artist', id: '123' }), res as unknown as unknown as VercelResponse)
     expect(res.status).toHaveBeenCalledWith(503)
   })
 })
@@ -114,33 +114,33 @@ describe('Spotify API handler — validation', () => {
 
   it('returns 400 for invalid action', async () => {
     const res = mockRes()
-    await handler(mockReq({ action: 'invalid-action' }), res as unknown as VercelResponse)
+    await handler(mockReq({ action: 'invalid-action' }), res as unknown as unknown as VercelResponse)
     expect(res.status).toHaveBeenCalledWith(400)
   })
 
   // With refine-based schema validation, these fail at schema level before any token fetch
   it('returns 400 when action=artist but id is missing', async () => {
     const res = mockRes()
-    await handler(mockReq({ action: 'artist' }), res as unknown as VercelResponse)
+    await handler(mockReq({ action: 'artist' }), res as unknown as unknown as VercelResponse)
     expect(res.status).toHaveBeenCalledWith(400)
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: expect.stringContaining('id') }))
   })
 
   it('returns 400 when action=top-tracks but id is missing', async () => {
     const res = mockRes()
-    await handler(mockReq({ action: 'top-tracks' }), res as unknown as VercelResponse)
+    await handler(mockReq({ action: 'top-tracks' }), res as unknown as unknown as VercelResponse)
     expect(res.status).toHaveBeenCalledWith(400)
   })
 
   it('returns 400 when action=albums but id is missing', async () => {
     const res = mockRes()
-    await handler(mockReq({ action: 'albums' }), res as unknown as VercelResponse)
+    await handler(mockReq({ action: 'albums' }), res as unknown as unknown as VercelResponse)
     expect(res.status).toHaveBeenCalledWith(400)
   })
 
   it('returns 400 when action=search but query is missing', async () => {
     const res = mockRes()
-    await handler(mockReq({ action: 'search' }), res as unknown as VercelResponse)
+    await handler(mockReq({ action: 'search' }), res as unknown as unknown as VercelResponse)
     expect(res.status).toHaveBeenCalledWith(400)
   })
 })
@@ -164,7 +164,7 @@ describe('Spotify API handler — action: artist', () => {
       .mockResolvedValueOnce(dataResponse(artistData))
 
     const res = mockRes()
-    await handler(mockReq({ action: 'artist', id: 'abc123' }), res as unknown as VercelResponse)
+    await handler(mockReq({ action: 'artist', id: 'abc123' }), res as unknown as unknown as VercelResponse)
 
     expect(mockFetchWithRetry).toHaveBeenCalledWith(
       'https://accounts.spotify.com/api/token',
@@ -185,7 +185,7 @@ describe('Spotify API handler — action: artist', () => {
       .mockResolvedValueOnce({ ok: false, status: 404, json: vi.fn() })
 
     const res = mockRes()
-    await handler(mockReq({ action: 'artist', id: 'notfound' }), res as unknown as VercelResponse)
+    await handler(mockReq({ action: 'artist', id: 'notfound' }), res as unknown as unknown as VercelResponse)
 
     expect(res.status).toHaveBeenCalledWith(404)
   })
@@ -208,7 +208,7 @@ describe('Spotify API handler — action: top-tracks', () => {
       .mockResolvedValueOnce(dataResponse(tracksData))
 
     const res = mockRes()
-    await handler(mockReq({ action: 'top-tracks', id: 'abc123' }), res as unknown as VercelResponse)
+    await handler(mockReq({ action: 'top-tracks', id: 'abc123' }), res as unknown as unknown as VercelResponse)
 
     expect(mockFetchWithRetry.mock.calls[1][0]).toContain('/top-tracks?market=US')
     expect(res.status).toHaveBeenCalledWith(200)
@@ -221,7 +221,7 @@ describe('Spotify API handler — action: top-tracks', () => {
       .mockResolvedValueOnce(dataResponse({ tracks: [] }))
 
     const res = mockRes()
-    await handler(mockReq({ action: 'top-tracks', id: 'abc123', market: 'DE' }), res as unknown as VercelResponse)
+    await handler(mockReq({ action: 'top-tracks', id: 'abc123', market: 'DE' }), res as unknown as unknown as VercelResponse)
 
     expect(mockFetchWithRetry.mock.calls[1][0]).toContain('market=DE')
   })
@@ -244,7 +244,7 @@ describe('Spotify API handler — action: albums', () => {
       .mockResolvedValueOnce(dataResponse(albumsData))
 
     const res = mockRes()
-    await handler(mockReq({ action: 'albums', id: 'abc123' }), res as unknown as VercelResponse)
+    await handler(mockReq({ action: 'albums', id: 'abc123' }), res as unknown as unknown as VercelResponse)
 
     expect(mockFetchWithRetry.mock.calls[1][0]).toContain('/v1/artists/abc123/albums')
     expect(res.status).toHaveBeenCalledWith(200)
@@ -269,7 +269,7 @@ describe('Spotify API handler — action: search', () => {
       .mockResolvedValueOnce(dataResponse(searchData))
 
     const res = mockRes()
-    await handler(mockReq({ action: 'search', query: 'Zardonic' }), res as unknown as VercelResponse)
+    await handler(mockReq({ action: 'search', query: 'Zardonic' }), res as unknown as unknown as VercelResponse)
 
     expect(mockFetchWithRetry.mock.calls[1][0]).toContain('/v1/search')
     expect(mockFetchWithRetry.mock.calls[1][0]).toContain('type=artist')
@@ -294,7 +294,7 @@ describe('Spotify API handler — token caching', () => {
     mockFetchWithRetry.mockResolvedValueOnce(dataResponse(artistData))
 
     const res = mockRes()
-    await handler(mockReq({ action: 'artist', id: 'abc' }), res as unknown as VercelResponse)
+    await handler(mockReq({ action: 'artist', id: 'abc' }), res as unknown as unknown as VercelResponse)
 
     // Token fetch should NOT be called since we have a cached token
     expect(mockFetchWithRetry).toHaveBeenCalledTimes(1)
@@ -314,7 +314,7 @@ describe('Spotify API handler — token caching', () => {
       .mockResolvedValueOnce(dataResponse(artistData))
 
     const res = mockRes()
-    await handler(mockReq({ action: 'artist', id: 'abc' }), res as unknown as VercelResponse)
+    await handler(mockReq({ action: 'artist', id: 'abc' }), res as unknown as unknown as VercelResponse)
 
     expect(mockFetchWithRetry.mock.calls[0][0]).toBe('https://accounts.spotify.com/api/token')
     expect(mockRedisSet).toHaveBeenCalledWith(
@@ -334,7 +334,7 @@ describe('Spotify API handler — token caching', () => {
       .mockResolvedValueOnce(dataResponse(artistData))
 
     const res = mockRes()
-    await handler(mockReq({ action: 'artist', id: 'abc' }), res as unknown as VercelResponse)
+    await handler(mockReq({ action: 'artist', id: 'abc' }), res as unknown as unknown as VercelResponse)
 
     expect(res.status).toHaveBeenCalledWith(200)
   })
@@ -355,7 +355,7 @@ describe('Spotify API handler — error handling', () => {
 
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     const res = mockRes()
-    await handler(mockReq({ action: 'artist', id: 'abc' }), res as unknown as VercelResponse)
+    await handler(mockReq({ action: 'artist', id: 'abc' }), res as unknown as unknown as VercelResponse)
 
     expect(res.status).toHaveBeenCalledWith(502)
     expect(res.json).toHaveBeenCalledWith({ error: 'Failed to fetch from Spotify API' })
@@ -367,7 +367,7 @@ describe('Spotify API handler — error handling', () => {
 
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     const res = mockRes()
-    await handler(mockReq({ action: 'artist', id: 'abc' }), res as unknown as VercelResponse)
+    await handler(mockReq({ action: 'artist', id: 'abc' }), res as unknown as unknown as VercelResponse)
 
     expect(res.status).toHaveBeenCalledWith(502)
     consoleSpy.mockRestore()

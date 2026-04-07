@@ -59,7 +59,7 @@ function mockRes() {
   res.json.mockReturnValue(res)
   res.end.mockReturnValue(res)
   res.send.mockReturnValue(res)
-  return res as unknown as VercelResponse
+  return res as unknown as unknown as VercelResponse
 }
 
 // ---------------------------------------------------------------------------

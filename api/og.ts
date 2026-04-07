@@ -1,37 +1,85 @@
 import { Redis } from '@upstash/redis'
+const kv = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL || '',
+  token: process.env.UPSTASH_REDIS_REST_TOKEN || ''
+})
 import { applyRateLimit } from './_ratelimit.js'
-import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 /**
  * Open Graph meta-tag endpoint for social-media link previews.
  *
  * When a user shares a link like /share/news/{id}, /share/gig/{id} or
  * /share/release/{id}, Vercel rewrites the request to this handler.
- * It reads the band-data from Redis, extracts the relevant content item,
+ * It reads the band-data from KV, extracts the relevant content item,
  * and returns a small HTML page with the correct og:title, og:description,
  * og:image (and Twitter card) meta tags.  A client-side redirect sends
  * real browsers to the SPA with the matching hash fragment.
  */
 
-const FALLBACK_TITLE = 'ZARDONIC'
-const FALLBACK_DESCRIPTION = 'ZARDONIC – Industrial Metal, Hard Techno & Dark Electro.'
-const FALLBACK_IMAGE = '/og-image.png'
-
-function getRedis(): Redis | null {
-  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) return null
-  return new Redis({
-    url: process.env.UPSTASH_REDIS_REST_URL,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN,
-  })
+interface VercelRequest {
+  method?: string
+  body?: Record<string, unknown>
+  query?: Record<string, string | string[]>
+  headers: Record<string, string | string[] | undefined>
 }
+
+interface VercelResponse {
+  setHeader(key: string, value: string): VercelResponse
+  status(code: number): VercelResponse
+  send(data: unknown): VercelResponse
+  end(): VercelResponse
+}
+
+interface OgMeta {
+  title: string
+  description: string
+  image: string
+  hash: string
+}
+
+interface NewsItem {
+  id: string
+  text?: string
+  details?: string
+  photo?: string
+}
+
+interface GigItem {
+  id: string
+  date?: string
+  venue?: string
+  location?: string
+  photo?: string
+}
+
+interface ReleaseItem {
+  id: string
+  title?: string
+  type?: string
+  description?: string
+  artwork?: string
+}
+
+interface BandData {
+  name?: string
+  siteName?: string
+  logoUrl?: string
+  news?: NewsItem[]
+  gigs?: GigItem[]
+  releases?: ReleaseItem[]
+}
+
+const FALLBACK_TITLE = process.env.SITE_NAME || 'Band Site'
+const FALLBACK_DESCRIPTION = process.env.SITE_DESCRIPTION || ''
+const FALLBACK_IMAGE = '/og-image.png'
 
 /** Derive the site origin from a trusted source, not raw Host header. */
 function getOrigin(): string {
-  return process.env.SITE_URL || 'https://zardonic.com'
+  return process.env.SITE_URL || ''
 }
 
 /** Simple HTML entity escaping to prevent XSS in injected strings. */
-function esc(str: string | undefined | null): string {
+function esc(str: string): string {
   if (!str) return ''
   return String(str)
     .replace(/&/g, '&amp;')
@@ -42,7 +90,7 @@ function esc(str: string | undefined | null): string {
 }
 
 /** Strip markdown/HTML so we get a plain-text description. */
-function plainText(str: string | undefined | null, maxLen = 200): string {
+function plainText(str: string | undefined, maxLen = 200): string {
   if (!str) return ''
   const plain = String(str)
     .replace(/[<>]/g, '')
@@ -53,38 +101,23 @@ function plainText(str: string | undefined | null, maxLen = 200): string {
 }
 
 /** Format an ISO date string for display. */
-function fmtDate(iso: string | undefined | null): string {
+function fmtDate(iso: string | undefined): string {
   if (!iso) return ''
   const d = new Date(iso)
   if (isNaN(d.getTime())) return iso
-  return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
-}
-
-interface ContentMeta {
-  title: string
-  description: string
-  image: string
-  hash: string
-}
-
-/** Minimal shape of the site-data blob stored in Redis (only fields used here). */
-interface SiteDataBlob {
-  name?: string
-  logoUrl?: string
-  news?: Array<{ id: string; text?: string; details?: string; photo?: string }>
-  gigs?: Array<{ id: string; venue?: string; location?: string; date?: string; photo?: string }>
-  releases?: Array<{ id: string; title?: string; type?: string; description?: string; artwork?: string }>
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
 /**
  * Look up the content item and return { title, description, image, hash }.
  * `hash` is the SPA fragment the browser should navigate to.
  */
-function resolveContent(data: SiteDataBlob, type: string, id: string): ContentMeta | null {
+function resolveContent(data: BandData | null, type: string, id: string): OgMeta | null {
   if (!data || !type || !id) return null
 
   if (type === 'news') {
-    const item = (data.news ?? []).find((n) => n.id === id)
+    const items = data.news || []
+    const item = items.find(n => n.id === id)
     if (!item) return null
     return {
       title: plainText(item.text, 70) || FALLBACK_TITLE,
@@ -95,7 +128,8 @@ function resolveContent(data: SiteDataBlob, type: string, id: string): ContentMe
   }
 
   if (type === 'gig') {
-    const item = (data.gigs ?? []).find((g) => g.id === id)
+    const items = data.gigs || []
+    const item = items.find(g => g.id === id)
     if (!item) return null
     const dateStr = fmtDate(item.date)
     return {
@@ -107,9 +141,10 @@ function resolveContent(data: SiteDataBlob, type: string, id: string): ContentMe
   }
 
   if (type === 'release') {
-    const item = (data.releases ?? []).find((r) => r.id === id)
+    const items = data.releases || []
+    const item = items.find(r => r.id === id)
     if (!item) return null
-    const typeLabel = item.type ? ` (${esc(item.type).toUpperCase()})` : ''
+    const typeLabel = item.type ? ` (${item.type.toUpperCase()})` : ''
     return {
       title: `${item.title}${typeLabel} – ${data.name || FALLBACK_TITLE}`,
       description: plainText(item.description) || `${item.title} by ${data.name || FALLBACK_TITLE}`,
@@ -122,7 +157,7 @@ function resolveContent(data: SiteDataBlob, type: string, id: string): ContentMe
 }
 
 /** Build a minimal HTML page with OG tags and a meta-refresh redirect. */
-function buildHTML(origin: string, meta: ContentMeta): string {
+function buildHTML(origin: string, meta: OgMeta, siteName: string): string {
   const title = esc(meta.title)
   const description = esc(meta.description)
   // Resolve image to absolute URL if it starts with /
@@ -131,7 +166,7 @@ function buildHTML(origin: string, meta: ContentMeta): string {
   const redirect = `${origin}/${meta.hash}`
 
   return `<!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
 <meta charset="UTF-8"/>
 <title>${title}</title>
@@ -141,7 +176,7 @@ function buildHTML(origin: string, meta: ContentMeta): string {
 <meta property="og:image" content="${esc(image)}"/>
 <meta property="og:url" content="${canonical}"/>
 <meta property="og:type" content="website"/>
-<meta property="og:site_name" content="ZARDONIC"/>
+<meta property="og:site_name" content="${esc(siteName || FALLBACK_TITLE)}"/>
 <meta name="twitter:card" content="summary_large_image"/>
 <meta name="twitter:title" content="${title}"/>
 <meta name="twitter:description" content="${description}"/>
@@ -152,50 +187,54 @@ function buildHTML(origin: string, meta: ContentMeta): string {
 </html>`
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (req.method !== 'GET') {
-    return res.status(405).end()
+    res.status(405).end()
+    return
   }
 
   // Rate limiting — generous limit since crawlers must not be blocked
   const allowed = await applyRateLimit(req, res)
   if (!allowed) return
 
-  const { type, id } = req.query as Record<string, string>
+  const { type, id } = req.query || {}
   const origin = getOrigin()
 
   if (!type || !id) {
     res.setHeader('Location', origin)
-    return res.status(302).end()
+    res.status(302).end()
+    return
   }
 
   // Validate type parameter against a whitelist
   const ALLOWED_TYPES = ['news', 'gig', 'release']
-  if (!ALLOWED_TYPES.includes(type)) {
+  if (!ALLOWED_TYPES.includes(type as string)) {
     res.setHeader('Location', origin)
-    return res.status(302).end()
+    res.status(302).end()
+    return
   }
 
   // Validate id: only allow safe characters (alphanumeric, dash, underscore)
-  if (!/^[\w-]+$/.test(id)) {
+  if (!/^[\w-]+$/.test(id as string)) {
     res.setHeader('Location', origin)
-    return res.status(302).end()
+    res.status(302).end()
+    return
   }
 
-  let data: SiteDataBlob | null = null
+  let data: BandData | null = null
   try {
-    const redis = getRedis()
-    if (redis) {
-      data = await redis.get<SiteDataBlob>('zardonic-band-data')
+    if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+      data = await kv.get<BandData>('band-data')
     }
   } catch {
-    // Redis unavailable — fall through to fallback
+    // KV unavailable — fall through to fallback
   }
 
-  const meta = resolveContent(data ?? {}, type, id)
+  const siteName = (data && (data.siteName || data.name)) || FALLBACK_TITLE
+  const meta = resolveContent(data, type as string, id as string)
 
   if (!meta) {
-    const fallback: ContentMeta = {
+    const fallback: OgMeta = {
       title: FALLBACK_TITLE,
       description: FALLBACK_DESCRIPTION,
       image: FALLBACK_IMAGE,
@@ -203,10 +242,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     res.setHeader('Content-Type', 'text/html; charset=utf-8')
     res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300')
-    return res.status(200).send(buildHTML(origin, fallback))
+    res.status(200).send(buildHTML(origin, fallback, siteName))
+    return
   }
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8')
   res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600')
-  return res.status(200).send(buildHTML(origin, meta))
+  res.status(200).send(buildHTML(origin, meta, siteName))
 }

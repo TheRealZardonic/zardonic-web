@@ -34,7 +34,7 @@ type MockRes = {
 }
 
 function mockRes(): MockRes {
-  const res: MockRes = {
+  const res: any = {
     status: vi.fn(),
     json: vi.fn(),
     setHeader: vi.fn(),
@@ -67,7 +67,7 @@ beforeEach(() => {
 describe('GET /api/cms/sections', () => {
   it('returns 401 when not authenticated', async () => {
     vi.mocked(validateSession).mockResolvedValueOnce(false)
-    const req = { method: 'GET', headers: {}, query: {} } as never
+    const req: any = { method: 'GET', headers: {}, query: {} } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.status).toHaveBeenCalledWith(401)
@@ -76,7 +76,7 @@ describe('GET /api/cms/sections', () => {
 
   it('returns empty array when no sections stored', async () => {
     mockGet.mockResolvedValueOnce(null)
-    const req = { method: 'GET', headers: {}, query: {} } as never
+    const req: any = { method: 'GET', headers: {}, query: {} } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.json).toHaveBeenCalledWith({ sections: [] })
@@ -85,7 +85,7 @@ describe('GET /api/cms/sections', () => {
   it('returns stored sections', async () => {
     const sections = [validSection]
     mockGet.mockResolvedValueOnce(sections)
-    const req = { method: 'GET', headers: {}, query: {} } as never
+    const req: any = { method: 'GET', headers: {}, query: {} } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.json).toHaveBeenCalledWith({ sections })
@@ -95,7 +95,7 @@ describe('GET /api/cms/sections', () => {
 describe('POST /api/cms/sections', () => {
   it('returns 401 when not authenticated', async () => {
     vi.mocked(validateSession).mockResolvedValueOnce(false)
-    const req = {
+    const req: any = {
       method: 'POST',
       headers: {},
       body: { sections: [validSection] },
@@ -106,21 +106,21 @@ describe('POST /api/cms/sections', () => {
   })
 
   it('returns 400 when body is missing', async () => {
-    const req = { method: 'POST', headers: {}, body: undefined } as never
+    const req: any = { method: 'POST', headers: {}, body: undefined } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.status).toHaveBeenCalledWith(400)
   })
 
   it('returns 400 when body is not an object', async () => {
-    const req = { method: 'POST', headers: {}, body: 'invalid' } as never
+    const req: any = { method: 'POST', headers: {}, body: 'invalid' } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.status).toHaveBeenCalledWith(400)
   })
 
   it('returns 400 when sections is not an array', async () => {
-    const req = {
+    const req: any = {
       method: 'POST',
       headers: {},
       body: { sections: 'not-an-array' },
@@ -132,7 +132,7 @@ describe('POST /api/cms/sections', () => {
 
   it('saves sections and returns success', async () => {
     const sections = [validSection]
-    const req = {
+    const req: any = {
       method: 'POST',
       headers: {},
       body: { sections },
@@ -150,7 +150,7 @@ describe('POST /api/cms/sections', () => {
       { id: 'hero', type: 'hero', label: 'Hero', enabled: true, order: 0 },
       { id: 'bio', type: 'biography', label: 'Biography', enabled: false, order: 1 },
     ]
-    const req = { method: 'POST', headers: {}, body: { sections } } as never
+    const req: any = { method: 'POST', headers: {}, body: { sections } } as never
     const res = mockRes()
     await handler(req, res)
     expect(mockSet).toHaveBeenCalled()
@@ -162,21 +162,21 @@ describe('POST /api/cms/sections', () => {
 
 describe('Method not allowed', () => {
   it('returns 405 for PUT', async () => {
-    const req = { method: 'PUT', headers: {}, body: {} } as never
+    const req: any = { method: 'PUT', headers: {}, body: {} } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.status).toHaveBeenCalledWith(405)
   })
 
   it('returns 405 for DELETE', async () => {
-    const req = { method: 'DELETE', headers: {}, query: {} } as never
+    const req: any = { method: 'DELETE', headers: {}, query: {} } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.status).toHaveBeenCalledWith(405)
   })
 
   it('returns 405 for PATCH', async () => {
-    const req = { method: 'PATCH', headers: {}, body: {} } as never
+    const req: any = { method: 'PATCH', headers: {}, body: {} } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.status).toHaveBeenCalledWith(405)
@@ -186,7 +186,7 @@ describe('Method not allowed', () => {
 describe('Error handling', () => {
   it('returns 500 on Redis error', async () => {
     mockGet.mockRejectedValueOnce(new Error('Redis connection failed'))
-    const req = { method: 'GET', headers: {}, query: {} } as never
+    const req: any = { method: 'GET', headers: {}, query: {} } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.status).toHaveBeenCalledWith(500)
@@ -194,7 +194,7 @@ describe('Error handling', () => {
 
   it('returns 500 on Redis set error', async () => {
     mockSet.mockRejectedValueOnce(new Error('Redis write failed'))
-    const req = {
+    const req: any = {
       method: 'POST',
       headers: {},
       body: { sections: [validSection] },

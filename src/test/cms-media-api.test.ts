@@ -56,7 +56,7 @@ type MockRes = {
 }
 
 function mockRes(): MockRes {
-  const res: MockRes = {
+  const res: any = {
     status: vi.fn(),
     json: vi.fn(),
     setHeader: vi.fn(),
@@ -85,7 +85,7 @@ beforeEach(() => {
 describe('GET /api/cms/media', () => {
   it('returns 401 when not authenticated', async () => {
     vi.mocked(validateSession).mockResolvedValueOnce(false)
-    const req = { method: 'GET', headers: {}, query: {} } as never
+    const req: any = { method: 'GET', headers: {}, query: {} } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.status).toHaveBeenCalledWith(401)
@@ -93,7 +93,7 @@ describe('GET /api/cms/media', () => {
 
   it('returns empty list when no media stored', async () => {
     mockGet.mockResolvedValueOnce(null)
-    const req = { method: 'GET', headers: {}, query: {} } as never
+    const req: any = { method: 'GET', headers: {}, query: {} } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.json).toHaveBeenCalledWith(
@@ -109,7 +109,7 @@ describe('GET /api/cms/media', () => {
       .mockResolvedValueOnce(index)
       .mockResolvedValueOnce(item1)
       .mockResolvedValueOnce(item2)
-    const req = { method: 'GET', headers: {}, query: { page: '1', limit: '20' } } as never
+    const req: any = { method: 'GET', headers: {}, query: { page: '1', limit: '20' } } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.json).toHaveBeenCalledWith(
@@ -121,7 +121,7 @@ describe('GET /api/cms/media', () => {
     const index = Array.from({ length: 5 }, (_, i) => `id-${i}`)
     mockGet.mockResolvedValueOnce(index)
     // No items on page 2 for limit 10
-    const req = { method: 'GET', headers: {}, query: { page: '2', limit: '10' } } as never
+    const req: any = { method: 'GET', headers: {}, query: { page: '2', limit: '10' } } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.json).toHaveBeenCalledWith(
@@ -133,7 +133,7 @@ describe('GET /api/cms/media', () => {
 describe('POST /api/cms/media', () => {
   it('returns 401 when not authenticated', async () => {
     vi.mocked(validateSession).mockResolvedValueOnce(false)
-    const req = {
+    const req: any = {
       method: 'POST',
       headers: {},
       body: { fileName: 'test.png', mimeType: 'image/png', dataUrl: VALID_DATA_URL },
@@ -144,14 +144,14 @@ describe('POST /api/cms/media', () => {
   })
 
   it('returns 400 when body is missing', async () => {
-    const req = { method: 'POST', headers: {}, body: undefined } as never
+    const req: any = { method: 'POST', headers: {}, body: undefined } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.status).toHaveBeenCalledWith(400)
   })
 
   it('returns 400 when fileName is missing', async () => {
-    const req = {
+    const req: any = {
       method: 'POST',
       headers: {},
       body: { mimeType: 'image/png', dataUrl: VALID_DATA_URL },
@@ -162,7 +162,7 @@ describe('POST /api/cms/media', () => {
   })
 
   it('returns 400 when mimeType is missing', async () => {
-    const req = {
+    const req: any = {
       method: 'POST',
       headers: {},
       body: { fileName: 'test.png', dataUrl: VALID_DATA_URL },
@@ -173,7 +173,7 @@ describe('POST /api/cms/media', () => {
   })
 
   it('returns 400 when dataUrl is missing', async () => {
-    const req = {
+    const req: any = {
       method: 'POST',
       headers: {},
       body: { fileName: 'test.png', mimeType: 'image/png' },
@@ -184,7 +184,7 @@ describe('POST /api/cms/media', () => {
   })
 
   it('returns 400 for disallowed MIME type', async () => {
-    const req = {
+    const req: any = {
       method: 'POST',
       headers: {},
       body: { fileName: 'virus.exe', mimeType: 'application/octet-stream', dataUrl: VALID_DATA_URL },
@@ -196,7 +196,7 @@ describe('POST /api/cms/media', () => {
   })
 
   it('returns 400 for PDF mime type', async () => {
-    const req = {
+    const req: any = {
       method: 'POST',
       headers: {},
       body: { fileName: 'doc.pdf', mimeType: 'application/pdf', dataUrl: VALID_DATA_URL },
@@ -209,7 +209,7 @@ describe('POST /api/cms/media', () => {
   it('returns 413 for oversized payload', async () => {
     // Create a dataUrl that simulates > 5MB decoded (~6.67MB base64 = 5MB binary)
     const bigDataUrl = 'data:image/png;base64,' + 'A'.repeat(7 * 1024 * 1024)
-    const req = {
+    const req: any = {
       method: 'POST',
       headers: {},
       body: { fileName: 'huge.png', mimeType: 'image/png', dataUrl: bigDataUrl },
@@ -221,7 +221,7 @@ describe('POST /api/cms/media', () => {
 
   it('uploads valid image and returns 201 with media item', async () => {
     mockGet.mockResolvedValueOnce([]) // current index
-    const req = {
+    const req: any = {
       method: 'POST',
       headers: {},
       body: { fileName: 'photo.png', mimeType: 'image/png', dataUrl: VALID_DATA_URL },
@@ -241,7 +241,7 @@ describe('POST /api/cms/media', () => {
 
   it('renames uploaded file with .webp extension', async () => {
     mockGet.mockResolvedValueOnce([])
-    const req = {
+    const req: any = {
       method: 'POST',
       headers: {},
       body: { fileName: 'original.jpeg', mimeType: 'image/jpeg', dataUrl: VALID_DATA_URL },
@@ -259,7 +259,7 @@ describe('POST /api/cms/media', () => {
       vi.clearAllMocks()
       mockGet.mockResolvedValue([])
       mockSet.mockResolvedValue('OK')
-      const req = {
+      const req: any = {
         method: 'POST',
         headers: {},
         body: { fileName: 'img.png', mimeType, dataUrl: VALID_DATA_URL },
@@ -274,14 +274,14 @@ describe('POST /api/cms/media', () => {
 describe('DELETE /api/cms/media', () => {
   it('returns 401 when not authenticated', async () => {
     vi.mocked(validateSession).mockResolvedValueOnce(false)
-    const req = { method: 'DELETE', headers: {}, query: { id: 'test-uuid-1234' } } as never
+    const req: any = { method: 'DELETE', headers: {}, query: { id: 'test-uuid-1234' } } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.status).toHaveBeenCalledWith(401)
   })
 
   it('returns 400 when id is missing', async () => {
-    const req = { method: 'DELETE', headers: {}, query: {} } as never
+    const req: any = { method: 'DELETE', headers: {}, query: {} } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.status).toHaveBeenCalledWith(400)
@@ -290,7 +290,7 @@ describe('DELETE /api/cms/media', () => {
 
   it('returns 404 when media item does not exist', async () => {
     mockGet.mockResolvedValueOnce(null)
-    const req = { method: 'DELETE', headers: {}, query: { id: 'nonexistent-id' } } as never
+    const req: any = { method: 'DELETE', headers: {}, query: { id: 'nonexistent-id' } } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.status).toHaveBeenCalledWith(404)
@@ -302,7 +302,7 @@ describe('DELETE /api/cms/media', () => {
     mockGet
       .mockResolvedValueOnce(existingItem) // item exists check
       .mockResolvedValueOnce(index)         // current index
-    const req = { method: 'DELETE', headers: {}, query: { id: 'test-uuid-1234' } } as never
+    const req: any = { method: 'DELETE', headers: {}, query: { id: 'test-uuid-1234' } } as never
     const res = mockRes()
     await handler(req, res)
     expect(mockDel).toHaveBeenCalledWith('zd-cms:media:test-uuid-1234')
@@ -313,14 +313,14 @@ describe('DELETE /api/cms/media', () => {
 
 describe('Method not allowed', () => {
   it('returns 405 for PUT', async () => {
-    const req = { method: 'PUT', headers: {}, body: {} } as never
+    const req: any = { method: 'PUT', headers: {}, body: {} } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.status).toHaveBeenCalledWith(405)
   })
 
   it('returns 405 for PATCH', async () => {
-    const req = { method: 'PATCH', headers: {}, body: {} } as never
+    const req: any = { method: 'PATCH', headers: {}, body: {} } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.status).toHaveBeenCalledWith(405)
@@ -330,7 +330,7 @@ describe('Method not allowed', () => {
 describe('Error handling', () => {
   it('returns 500 on Redis GET error', async () => {
     mockGet.mockRejectedValueOnce(new Error('Redis down'))
-    const req = { method: 'GET', headers: {}, query: {} } as never
+    const req: any = { method: 'GET', headers: {}, query: {} } as never
     const res = mockRes()
     await handler(req, res)
     expect(res.status).toHaveBeenCalledWith(500)
