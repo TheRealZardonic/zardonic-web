@@ -1,27 +1,11 @@
-import { Redis } from '@upstash/redis'
-const kv = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL || '',
-  token: process.env.UPSTASH_REDIS_REST_TOKEN || ''
+import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { getRedis, isRedisConfigured } from './_redis.js'
+const kv = new Proxy({} as ReturnType<typeof getRedis>, {
+  get (_, prop: string | symbol) { return Reflect.get(getRedis(), prop) },
 })
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto'
 import { applyRateLimit, getClientIp } from './_ratelimit.js'
 import { validateSession } from './auth.js'
-
-interface VercelRequest {
-  method?: string
-  body?: Record<string, unknown>
-  query?: Record<string, string | string[]>
-  headers: Record<string, string | string[] | undefined>
-}
-
-interface VercelResponse {
-  setHeader(key: string, value: string): VercelResponse
-  status(code: number): VercelResponse
-  json(data: unknown): VercelResponse
-  end(): VercelResponse
-  send(data: unknown): VercelResponse
-}
-
 interface OAuthProvider {
   name: string
   authUrl: string
@@ -53,9 +37,6 @@ interface OAuthLog {
   ip?: string
 }
 
-
-
-const isKVConfigured = () => !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN)
 
 // ---------------------------------------------------------------------------
 // Token Encryption (AES-256-GCM)
@@ -186,7 +167,7 @@ export async function fetchProfile(provider: string, accessToken: string): Promi
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<unknown> {
   if (req.method === 'OPTIONS') return res.status(200).end()
 
-  if (!isKVConfigured()) {
+  if (!isRedisConfigured()) {
     return res.status(503).json({ error: 'Service unavailable', message: 'KV storage is not configured.' })
   }
 

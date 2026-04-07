@@ -1,20 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { Redis } from '@upstash/redis'
 import { applyRateLimit } from '../_ratelimit.js'
+import { getRedis } from '../_redis.js'
 import { validateSession } from '../auth.js'
 import { siteConfigSchema } from '../../src/cms/schemas.js'
 
 const CONFIG_KEY = 'zd-cms:config'
-
-let _redis: Redis | null = null
-function getRedis(): Redis {
-  if (_redis) return _redis
-  const url = process.env.UPSTASH_REDIS_REST_URL
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN
-  if (!url || !token) throw new Error('Missing Redis config')
-  _redis = new Redis({ url, token })
-  return _redis
-}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // OWASP A07:2021 — Authentication check

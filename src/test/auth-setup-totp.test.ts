@@ -174,7 +174,7 @@ describe('Auth security: TOTP 2FA', () => {
 
   it('reports totpEnabled=true when TOTP secret is stored', async () => {
     mockKvGet.mockImplementation(async (key: string) => {
-      if (key === 'zd-admin-totp-secret') return 'JBSWY3DPEHPK3PXP'
+      if (key === 'admin-totp-secret') return 'JBSWY3DPEHPK3PXP'
       return null
     })
 
@@ -206,8 +206,8 @@ describe('Auth security: TOTP 2FA', () => {
     const expectedFingerprint = crypto.createHash('sha256').update('TestBrowser|1.2.3').digest('hex')
 
     mockKvGet.mockImplementation(async (key: string) => {
-      if (key.startsWith('zd-session:')) return { created: Date.now(), fingerprint: expectedFingerprint }
-      if (key === 'zd-admin-totp-secret') return null // no existing TOTP
+      if (key.startsWith('session:')) return { created: Date.now(), fingerprint: expectedFingerprint }
+      if (key === 'admin-totp-secret') return null // no existing TOTP
       return null
     })
     mockKvSet.mockResolvedValue('OK')
@@ -216,7 +216,7 @@ describe('Auth security: TOTP 2FA', () => {
     await handler({
       method: 'POST',
       body: { action: 'totp-setup' },
-      headers: { cookie: 'zd-session=valid-token', 'user-agent': 'TestBrowser' },
+      headers: { cookie: 'nk-session=valid-token', 'user-agent': 'TestBrowser' },
     } as unknown as VercelRequest, res)
 
     const jsonData = res.json.mock.calls[0][0]
@@ -231,8 +231,8 @@ describe('Auth security: TOTP 2FA', () => {
     const expectedFingerprint = crypto.createHash('sha256').update('TestBrowser|1.2.3').digest('hex')
 
     mockKvGet.mockImplementation(async (key: string) => {
-      if (key.startsWith('zd-session:')) return { created: Date.now(), fingerprint: expectedFingerprint }
-      if (key === 'zd-admin-totp-secret') return 'EXISTING_SECRET'
+      if (key.startsWith('session:')) return { created: Date.now(), fingerprint: expectedFingerprint }
+      if (key === 'admin-totp-secret') return 'EXISTING_SECRET'
       return null
     })
 
@@ -240,7 +240,7 @@ describe('Auth security: TOTP 2FA', () => {
     await handler({
       method: 'POST',
       body: { action: 'totp-setup' },
-      headers: { cookie: 'zd-session=valid-token', 'user-agent': 'TestBrowser' },
+      headers: { cookie: 'nk-session=valid-token', 'user-agent': 'TestBrowser' },
     } as unknown as VercelRequest, res)
 
     expect(res.status).toHaveBeenCalledWith(409)
@@ -251,7 +251,7 @@ describe('Auth security: TOTP 2FA', () => {
 
     mockKvGet.mockImplementation(async (key: string) => {
       if (key === 'admin-password-hash') return hashed
-      if (key === 'zd-admin-totp-secret') return 'JBSWY3DPEHPK3PXP'
+      if (key === 'admin-totp-secret') return 'JBSWY3DPEHPK3PXP'
       return null
     })
 
@@ -272,7 +272,7 @@ describe('Auth security: TOTP 2FA', () => {
 
     mockKvGet.mockImplementation(async (key: string) => {
       if (key === 'admin-password-hash') return hashed
-      if (key === 'zd-admin-totp-secret') return null
+      if (key === 'admin-totp-secret') return null
       return null
     })
     mockKvSet.mockResolvedValue('OK')
@@ -292,9 +292,9 @@ describe('Auth security: TOTP 2FA', () => {
     const expectedFingerprint = crypto.createHash('sha256').update('TestBrowser|1.2.3').digest('hex')
 
     mockKvGet.mockImplementation(async (key: string) => {
-      if (key.startsWith('zd-session:')) return { created: Date.now(), fingerprint: expectedFingerprint }
+      if (key.startsWith('session:')) return { created: Date.now(), fingerprint: expectedFingerprint }
       if (key === 'admin-password-hash') return 'scrypt:salt:hash'
-      if (key === 'zd-admin-totp-secret') return 'JBSWY3DPEHPK3PXP'
+      if (key === 'admin-totp-secret') return 'JBSWY3DPEHPK3PXP'
       return null
     })
 
@@ -302,7 +302,7 @@ describe('Auth security: TOTP 2FA', () => {
     await handler({
       method: 'POST',
       body: { action: 'totp-disable', password: 'wrong', code: '123456' },
-      headers: { cookie: 'zd-session=valid-token', 'user-agent': 'TestBrowser' },
+      headers: { cookie: 'nk-session=valid-token', 'user-agent': 'TestBrowser' },
     } as unknown as VercelRequest, res)
 
     expect(res.status).toHaveBeenCalledWith(403)

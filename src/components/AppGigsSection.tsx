@@ -1,0 +1,151 @@
+import { motion } from 'framer-motion'
+import { Card } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
+import EditableHeading from '@/components/EditableHeading'
+import { ArrowsClockwise, MapPin, CalendarBlank } from '@phosphor-icons/react'
+import type { AdminSettings } from '@/lib/types'
+import type { Gig } from '@/lib/app-types'
+
+interface AppGigsSectionProps {
+  gigs: Gig[]
+  sectionOrder: number
+  visible: boolean
+  editMode: boolean
+  sectionLabel: string
+  adminSettings: AdminSettings | undefined
+  bandsintownFetching: boolean
+  onGigClick: (gig: Gig) => void
+}
+
+export default function AppGigsSection({ gigs, sectionOrder, visible, editMode, sectionLabel, adminSettings, bandsintownFetching, onGigClick }: AppGigsSectionProps) {
+  if (!visible) return null
+
+  return (
+    <div style={{ order: sectionOrder }}>
+      <Separator className="bg-border" />
+      <section id="gigs" className="py-24 px-4 noise-effect crt-effect">
+        <div className="container mx-auto max-w-6xl">
+          <motion.div
+            initial={{ opacity: 0, x: -30, filter: 'blur(10px)', clipPath: 'polygon(0 0, 0 0, 0 100%, 0 100%)' }}
+            whileInView={{ opacity: 1, x: 0, filter: 'blur(0px)', clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' }}
+            viewport={{ once: true }}
+            transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
+          >
+            <div className="flex items-center justify-between mb-12 flex-wrap gap-4">
+              <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-data-corrupt" data-text="UPCOMING GIGS">
+                <EditableHeading onChange={() => {}}
+                  text={sectionLabel}
+                  defaultText="UPCOMING GIGS"
+                  editMode={editMode}
+                  glitchEnabled={adminSettings?.glitchTextSettings?.enabled !== false}
+                  glitchIntervalMs={adminSettings?.glitchTextSettings?.intervalMs}
+                  glitchDurationMs={adminSettings?.glitchTextSettings?.durationMs}
+                />
+              </h2>
+            </div>
+
+            {bandsintownFetching && gigs.length === 0 ? (
+              <Card className="p-12 bg-card/50 border-border relative overflow-hidden">
+                <div className="flex flex-col items-center justify-center space-y-6">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                  >
+                    <ArrowsClockwise className="w-12 h-12 text-primary" />
+                  </motion.div>
+                  <div className="w-full max-w-md space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="data-label">// LOADING.BANDSINTOWN.EVENTS</span>
+                      <motion.span
+                        className="font-mono text-sm text-primary"
+                        animate={{ opacity: [0.4, 1, 0.4] }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
+                      >
+                        SYNCING...
+                      </motion.span>
+                    </div>
+                    <div className="h-1 bg-border/30 relative overflow-hidden">
+                      <motion.div
+                        className="absolute inset-0 bg-primary"
+                        initial={{ scaleX: 0 }}
+                        animate={{ scaleX: [0, 0.6, 0.8, 1] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                        style={{ transformOrigin: 'left' }}
+                      />
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-r from-transparent via-primary-foreground/20 to-transparent"
+                        animate={{ x: ['-100%', '200%'] }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      />
+                    </div>
+                    <div className="flex gap-2 font-mono text-xs text-muted-foreground">
+                      <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ duration: 0.8, repeat: Infinity, delay: 0 }}>▸</motion.span>
+                      <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ duration: 0.8, repeat: Infinity, delay: 0.2 }}>▸</motion.span>
+                      <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ duration: 0.8, repeat: Infinity, delay: 0.4 }}>▸</motion.span>
+                      <span className="ml-2">FETCHING LIVE EVENT DATA</span>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ) : gigs.length === 0 ? (
+              <Card className="p-12 text-center bg-card/50 border-border">
+                <p className="text-xl text-muted-foreground uppercase tracking-wide font-mono">
+                  No upcoming shows - Check back soon
+                </p>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {gigs.map((gig, index) => (
+                  <motion.div
+                    key={gig.id}
+                    initial={{ opacity: 0, x: -50, clipPath: 'polygon(0 0, 0 0, 0 100%, 0 100%)' }}
+                    whileInView={{ opacity: 1, x: 0, clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' }}
+                    viewport={{ once: true }}
+                    transition={{
+                      duration: 0.8,
+                      delay: index * 0.1,
+                      ease: [0.25, 0.46, 0.45, 0.94]
+                    }}
+                  >
+                    <Card
+                      className="p-6 bg-card border-border hover:border-primary/50 transition-colors cursor-pointer cyber-card hover-scan hover-noise relative"
+                      onClick={() => !editMode && onGigClick(gig)}
+                    >
+                      <div className="scan-line"></div>
+                      <div className="data-label mb-2">// EVENT.{gig.id}</div>
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="space-y-2">
+                          <h3 className="text-xl font-bold uppercase font-mono hover-chromatic">{gig.venue}</h3>
+                          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground font-mono">
+                            <span className="flex items-center gap-2">
+                              <MapPin className="w-4 h-4" />
+                              {gig.location}
+                            </span>
+                            <span className="flex items-center gap-2">
+                              <CalendarBlank className="w-4 h-4" />
+                              {new Date(gig.date).toLocaleDateString('en-US', {
+                                weekday: 'short',
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                              })}
+                            </span>
+                          </div>
+                          {gig.support && (
+                            <p className="text-sm text-muted-foreground font-mono">
+                              Support: {gig.support}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        </div>
+      </section>
+    </div>
+  )
+}

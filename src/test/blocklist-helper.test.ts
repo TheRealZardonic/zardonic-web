@@ -38,8 +38,8 @@ const {
 
 // ---------------------------------------------------------------------------
 describe('_blocklist constants', () => {
-  it('BLOCK_PREFIX is zd-blocked:', () => expect(BLOCK_PREFIX).toBe('zd-blocked:'))
-  it('BLOCK_INDEX_KEY is zd-blocked-index', () => expect(BLOCK_INDEX_KEY).toBe('zd-blocked-index'))
+  it('BLOCK_PREFIX is nk-blocked:', () => expect(BLOCK_PREFIX).toBe('nk-blocked:'))
+  it('BLOCK_INDEX_KEY is nk-blocked-index', () => expect(BLOCK_INDEX_KEY).toBe('nk-blocked-index'))
   it('BLOCK_TTL is 604800 (7 days)', () => expect(BLOCK_TTL).toBe(604800))
 })
 
@@ -59,7 +59,7 @@ describe('blockIp()', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     await blockIp(HASH)
     expect(mockSet).toHaveBeenCalledWith(
-      `zd-blocked:${HASH}`,
+      `nk-blocked:${HASH}`,
       expect.objectContaining({ hashedIp: HASH, reason: 'manual', autoBlocked: false }),
       { ex: BLOCK_TTL }
     )
@@ -77,7 +77,7 @@ describe('blockIp()', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     await blockIp(HASH, 'honeytoken_access', 3600)
     expect(mockSet).toHaveBeenCalledWith(
-      `zd-blocked:${HASH}`,
+      `nk-blocked:${HASH}`,
       expect.objectContaining({ reason: 'honeytoken_access' }),
       { ex: 3600 }
     )
@@ -100,7 +100,7 @@ describe('unblockIp()', () => {
   it('deletes the block entry', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     await unblockIp(HASH)
-    expect(mockDel).toHaveBeenCalledWith(`zd-blocked:${HASH}`)
+    expect(mockDel).toHaveBeenCalledWith(`nk-blocked:${HASH}`)
     consoleSpy.mockRestore()
   })
 

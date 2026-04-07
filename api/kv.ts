@@ -1,35 +1,14 @@
-import { Redis } from '@upstash/redis'
-const kv = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL || '',
-  token: process.env.UPSTASH_REDIS_REST_TOKEN || ''
+import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { getRedis, isRedisConfigured } from './_redis.js'
+const kv = new Proxy({} as ReturnType<typeof getRedis>, {
+  get (_, prop: string | symbol) { return Reflect.get(getRedis(), prop) },
 })
 import { applyRateLimit } from './_ratelimit.js'
 import { isHoneytoken, triggerHoneytokenAlarm, isMarkedAttacker, injectEntropyHeaders, getRandomTaunt, setDefenseHeaders } from './_honeytokens.js'
 import { kvGetQuerySchema, kvPostSchema, validate } from './_schemas.js'
 import { validateSession } from './auth.js'
 import { isHardBlocked } from './_blocklist.js'
-
-interface VercelRequest {
-  method?: string
-  body?: Record<string, unknown>
-  query?: Record<string, string | string[]>
-  headers: Record<string, string | string[] | undefined>
-}
-
-interface VercelResponse {
-  setHeader(key: string, value: string): VercelResponse
-  status(code: number): VercelResponse
-  json(data: unknown): VercelResponse
-  end(): VercelResponse
-  send(data: unknown): VercelResponse
-}
-
-
-
 // Check if KV is properly configured
-const isKVConfigured = () => {
-  return !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN)
-}
 
 /**
  * Allow-list of keys that may be read without admin authentication.
@@ -96,11 +75,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   }
 
   // Check if KV is configured
-  if (!isKVConfigured()) {
-    console.error('KV not configured: Missing KV_REST_API_URL or KV_REST_API_TOKEN environment variables')
+  if (!isRedisConfigured()) {
+    console.error('KV not configured: Missing UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN environment variables')
     return res.status(503).json({ 
       error: 'Service unavailable',
-      message: 'KV storage is not configured. Please set KV_REST_API_URL and KV_REST_API_TOKEN environment variables.'
+      message: 'KV storage is not configured. Please set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN environment variables.'
     })
   }
 

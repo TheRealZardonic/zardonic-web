@@ -1,5 +1,11 @@
 import { z } from 'zod'
 
+// Re-export schemas that live in their own API files so tests can import
+// from a single location.
+export { blockSchema, unblockSchema } from './blocklist.js'
+export { getProfileSchema, deleteProfileSchema } from './attacker-profile.js'
+export { securitySettingsSchema } from './security-settings.js'
+
 /**
  * Zod schemas for strict input validation on all API endpoints.
  *
@@ -206,6 +212,26 @@ export const oauthDisconnectSchema = z.object({
   action: z.literal('disconnect'),
   provider: z.enum(['spotify', 'google-drive']),
 })
+
+// ─── Spotify API ──────────────────────────────────────────────────────────────
+
+/** GET /api/spotify — query params */
+export const spotifyQuerySchema = z.object({
+  action: z.enum(['artist', 'top-tracks', 'albums', 'search']),
+  id: z.string().min(1).optional(),
+  query: z.string().min(1).optional(),
+  market: z.string().length(2).optional(),
+}).refine(
+  (data) => {
+    if (['artist', 'top-tracks', 'albums'].includes(data.action) && !data.id) return false
+    if (data.action === 'search' && !data.query) return false
+    return true
+  },
+  {
+    message: 'id is required for artist/top-tracks/albums; query is required for search',
+    path: ['id'],
+  },
+)
 
 // ─── Validation helper ────────────────────────────────────────────────────────
 

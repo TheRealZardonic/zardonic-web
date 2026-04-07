@@ -1,7 +1,7 @@
-import { Redis } from '@upstash/redis'
-const kv = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL || '',
-  token: process.env.UPSTASH_REDIS_REST_TOKEN || ''
+import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { getRedis, isRedisConfigured } from './_redis.js'
+const kv = new Proxy({} as ReturnType<typeof getRedis>, {
+  get (_, prop: string | symbol) { return Reflect.get(getRedis(), prop) },
 })
 import { createHash } from 'node:crypto'
 import { applyRateLimit } from './_ratelimit.js'
@@ -17,24 +17,6 @@ import { validateSession } from './auth.js'
  * DELETE /api/security-incidents
  *   Requires admin session. Clears all stored security incidents.
  */
-
-interface VercelRequest {
-  method?: string
-  body?: Record<string, unknown>
-  query?: Record<string, string | string[]>
-  headers: Record<string, string | string[] | undefined>
-}
-
-interface VercelResponse {
-  setHeader(key: string, value: string): VercelResponse
-  status(code: number): VercelResponse
-  json(data: unknown): VercelResponse
-  end(): VercelResponse
-}
-
-const isKVConfigured = (): boolean => {
-  return !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN)
-}
 
 /** Verify the evidenceHash field of a stored incident. */
 function verifyEvidenceHash(incident: Record<string, unknown>): boolean {
@@ -61,7 +43,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return
   }
 
-  if (!isKVConfigured()) {
+  if (!isRedisConfigured()) {
     res.status(503).json({ error: 'Service unavailable', message: 'KV storage is not configured.' })
     return
   }

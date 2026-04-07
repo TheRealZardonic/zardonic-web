@@ -109,7 +109,7 @@ describe('Security Incidents API handler', () => {
     it('clears the honeytoken alerts list', async () => {
       const res = mockRes()
       await handler({ method: 'DELETE', headers: {} } as any, res as any)
-      expect(mockDel).toHaveBeenCalledWith('zd-honeytoken-alerts')
+      expect(mockDel).toHaveBeenCalledWith('nk-honeytoken-alerts')
       expect(res.json).toHaveBeenCalledWith({ success: true })
     })
   })

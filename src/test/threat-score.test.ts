@@ -83,12 +83,12 @@ describe('incrementThreatScore()', () => {
 
   it('calls incrby with the given points', async () => {
     await incrementThreatScore('hashxyz', 'honeytoken_access', 5)
-    expect(mockIncrby).toHaveBeenCalledWith('zd-threat:hashxyz', 5)
+    expect(mockIncrby).toHaveBeenCalledWith('nk-threat:hashxyz', 5)
   })
 
   it('sets TTL on the threat key', async () => {
     await incrementThreatScore('hashxyz', 'test', 1)
-    expect(mockExpire).toHaveBeenCalledWith('zd-threat:hashxyz', 3600)
+    expect(mockExpire).toHaveBeenCalledWith('nk-threat:hashxyz', 3600)
   })
 
   it('auto-blocks when score reaches BLOCK threshold', async () => {
@@ -97,11 +97,11 @@ describe('incrementThreatScore()', () => {
     const result = await incrementThreatScore('hashxyz', 'honeytoken_access', 5)
     expect(result.level).toBe('BLOCK')
     expect(mockSet).toHaveBeenCalledWith(
-      'zd-blocked:hashxyz',
+      'nk-blocked:hashxyz',
       expect.objectContaining({ autoBlocked: true }),
       { ex: 604800 }
     )
-    expect(consoleSpy).toHaveBeenCalledWith('[AUTO BLOCK]', expect.any(String))
+    expect(consoleSpy).toHaveBeenCalledWith('[SECURITY:THREAT_LEVEL_ESCALATED]', expect.any(String))
     consoleSpy.mockRestore()
   })
 

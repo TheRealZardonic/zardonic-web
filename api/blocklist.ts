@@ -1,32 +1,18 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { isRedisConfigured } from './_redis.js'
 import { applyRateLimit } from './_ratelimit.js'
 import { validateSession } from './auth.js'
 import { blockIp, unblockIp, getAllBlockedIps } from './_blocklist.js'
 import { z } from 'zod'
 import { validate } from './_schemas.js'
 
-interface VercelRequest {
-  method?: string
-  body?: Record<string, unknown>
-  query?: Record<string, string | string[]>
-  headers: Record<string, string | string[] | undefined>
-}
-
-interface VercelResponse {
-  setHeader(key: string, value: string): VercelResponse
-  status(code: number): VercelResponse
-  json(data: unknown): VercelResponse
-  end(): VercelResponse
-}
-
-const isKVConfigured = (): boolean => !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN)
-
-const blockSchema = z.object({
+export const blockSchema = z.object({
   hashedIp: z.string().min(8).max(64),
   reason: z.string().max(200).optional().default('manual'),
   ttlSeconds: z.number().int().min(60).max(2592000).optional().default(604800),
 })
 
-const unblockSchema = z.object({
+export const unblockSchema = z.object({
   hashedIp: z.string().min(8).max(64),
 })
 
@@ -46,7 +32,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return
   }
 
-  if (!isKVConfigured()) {
+  if (!isRedisConfigured()) {
     res.status(503).json({ error: 'Service unavailable' })
     return
   }

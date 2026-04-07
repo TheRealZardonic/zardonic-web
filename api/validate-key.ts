@@ -1,23 +1,11 @@
-import { Redis } from '@upstash/redis'
-const kv = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL || '',
-  token: process.env.UPSTASH_REDIS_REST_TOKEN || ''
+import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { getRedis } from './_redis.js'
+const kv = new Proxy({} as ReturnType<typeof getRedis>, {
+  get (_, prop: string | symbol) { return Reflect.get(getRedis(), prop) },
 })
 import { isPrimaryHost } from './_primary-check.js'
 
 // Minimal inline types so we avoid the vulnerable @vercel/node package
-interface VercelRequest {
-  method?: string
-  body?: Record<string, unknown>
-  headers?: Record<string, string | string[] | undefined>
-}
-interface VercelResponse {
-  setHeader(key: string, value: string): VercelResponse
-  status(code: number): VercelResponse
-  json(data: unknown): VercelResponse
-  end(): VercelResponse
-}
-
 /**
  * Central Activation Key validation endpoint.
  *

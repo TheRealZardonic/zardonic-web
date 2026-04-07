@@ -58,6 +58,39 @@ const DEFAULTS = {
   alertingEnabled: false,
   hardBlockEnabled: true,
   autoBlockThreshold: 12,
+  underAttackMode: false,
+  warnThreshold: 3,
+  tarpitThreshold: 7,
+  pointsRobotsViolation: 3,
+  pointsHoneytokenAccess: 5,
+  pointsSuspiciousUa: 4,
+  pointsMissingHeaders: 2,
+  pointsGenericAccept: 1,
+  pointsRateLimitExceeded: 2,
+  tarpitOnWarn: true,
+  tarpitOnSuspiciousUa: true,
+  tarpitOnRobotsViolation: true,
+  tarpitOnHoneytoken: false,
+  tarpitOnBlock: false,
+  zipBombOnBlock: false,
+  zipBombOnHoneytoken: false,
+  zipBombOnRepeatOffender: false,
+  zipBombOnRobotsViolation: false,
+  zipBombOnSuspiciousUa: false,
+  zipBombOnRateLimit: false,
+  sqlBackfireEnabled: false,
+  canaryDocumentsEnabled: false,
+  logPoisoningEnabled: false,
+  sqlBackfireOnScannerDetection: true,
+  sqlBackfireOnHoneytokenAccess: false,
+  canaryPhoneHomeOnOpen: true,
+  canaryCollectFingerprint: true,
+  canaryAlertOnCallback: true,
+  logPoisonFakeHeaders: true,
+  logPoisonTerminalEscape: true,
+  logPoisonFakePaths: true,
+  discordWebhookUrl: '',
+  alertEmail: '',
 }
 
 // ---------------------------------------------------------------------------
@@ -120,7 +153,7 @@ describe('Security Settings API handler', () => {
         body: { zipBombEnabled: true },
       } as any, res as any)
       expect(mockSet).toHaveBeenCalledWith(
-        'zd-security-settings',
+        'nk-security-settings',
         expect.objectContaining({ zipBombEnabled: true })
       )
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }))
@@ -161,7 +194,7 @@ describe('Security Settings API handler', () => {
         body: { alertingEnabled: true },
       } as any, res as any)
       expect(mockSet).toHaveBeenCalledWith(
-        'zd-security-settings',
+        'nk-security-settings',
         expect.objectContaining({ zipBombEnabled: true, alertingEnabled: true })
       )
     })

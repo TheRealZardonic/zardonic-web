@@ -11,23 +11,10 @@
  *   429 / 503                                                         — rate limit
  *   500 { error: string }                                             — upstream failure
  */
+import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { applyRateLimit } from './_ratelimit.js'
 import { setlistfmQuerySchema, validate } from './_schemas.js'
 import { fetchWithRetry } from './_fetch-retry.js'
-
-interface VercelRequest {
-  method?: string
-  query?: Record<string, string | string[]>
-  headers: Record<string, string | string[] | undefined>
-}
-
-interface VercelResponse {
-  setHeader(key: string, value: string): VercelResponse
-  status(code: number): VercelResponse
-  json(data: unknown): VercelResponse
-  end(): VercelResponse
-}
-
 /** A single setlist entry from the Setlist.fm API. */
 export interface SetlistItem {
   id: string

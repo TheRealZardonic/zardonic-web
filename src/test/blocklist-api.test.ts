@@ -118,7 +118,7 @@ describe('Blocklist API handler', () => {
         body: { hashedIp: VALID_HASH },
       } as any, res as any)
       expect(mockSet).toHaveBeenCalledWith(
-        `zd-blocked:${VALID_HASH}`,
+        `nk-blocked:${VALID_HASH}`,
         expect.objectContaining({ hashedIp: VALID_HASH, reason: 'manual' }),
         { ex: 604800 }
       )
@@ -135,7 +135,7 @@ describe('Blocklist API handler', () => {
         body: { hashedIp: VALID_HASH, reason: 'honeytoken_access', ttlSeconds: 3600 },
       } as any, res as any)
       expect(mockSet).toHaveBeenCalledWith(
-        `zd-blocked:${VALID_HASH}`,
+        `nk-blocked:${VALID_HASH}`,
         expect.objectContaining({ reason: 'honeytoken_access' }),
         { ex: 3600 }
       )
@@ -178,7 +178,7 @@ describe('Blocklist API handler', () => {
         headers: {},
         body: { hashedIp: VALID_HASH },
       } as any, res as any)
-      expect(mockDel).toHaveBeenCalledWith(`zd-blocked:${VALID_HASH}`)
+      expect(mockDel).toHaveBeenCalledWith(`nk-blocked:${VALID_HASH}`)
       expect(res.json).toHaveBeenCalledWith({ success: true })
       consoleSpy.mockRestore()
     })

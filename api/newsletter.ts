@@ -1,28 +1,13 @@
-import { Redis } from '@upstash/redis'
-const kv = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL || '',
-  token: process.env.UPSTASH_REDIS_REST_TOKEN || ''
+import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { getRedis } from './_redis.js'
+const kv = new Proxy({} as ReturnType<typeof getRedis>, {
+  get (_, prop: string | symbol) { return Reflect.get(getRedis(), prop) },
 })
 import { createHash } from 'node:crypto'
 import { applyRateLimit } from './_ratelimit.js'
 
 /** Same regex as api/contact.ts — matches user@domain.tld */
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-interface VercelRequest {
-  method?: string
-  body?: Record<string, unknown>
-  query?: Record<string, string | string[]>
-  headers: Record<string, string | string[] | undefined>
-}
-
-interface VercelResponse {
-  setHeader(key: string, value: string): VercelResponse
-  status(code: number): VercelResponse
-  json(data: unknown): VercelResponse
-  end(): VercelResponse
-}
-
 interface Subscriber {
   email: string
   source?: string
@@ -31,7 +16,7 @@ interface Subscriber {
 
 /** Store subscriber locally in KV for the admin mailing list view. */
 async function storeSubscriberLocally(email: string, source: string | undefined): Promise<void> {
-  if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) return
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) return
   const MAX_RETRIES = 3
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     try {
@@ -76,7 +61,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     const sanitizedEmail = email.toLowerCase().trim().slice(0, 254)
 
     // Remove from local KV store
-    if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+    if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
       const MAX_RETRIES = 3
       for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
         try {

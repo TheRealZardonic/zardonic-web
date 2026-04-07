@@ -94,26 +94,26 @@ describe('Health endpoint — degraded status (KV unavailable)', () => {
     process.env.BANDSINTOWN_API_KEY = 'test-api-key'
   })
 
-  it('returns 503 with status=degraded when KV ping throws', async () => {
+  it('returns 200 with status=degraded when KV ping throws', async () => {
     mockRedisPing.mockRejectedValue(new Error('Connection refused'))
 
     const res = mockRes()
     await handler(mockReq(), res as unknown as unknown as VercelResponse)
 
-    expect(res.status).toHaveBeenCalledWith(503)
+    expect(res.status).toHaveBeenCalledWith(200)
     const body = res.json.mock.calls[0][0]
     expect(body.status).toBe('degraded')
     expect(body.services.kv).toBe('unavailable')
   })
 
-  it('returns 503 with status=degraded when KV env vars are missing', async () => {
+  it('returns 200 with status=degraded when KV env vars are missing', async () => {
     delete process.env.UPSTASH_REDIS_REST_URL
     delete process.env.UPSTASH_REDIS_REST_TOKEN
 
     const res = mockRes()
     await handler(mockReq(), res as unknown as unknown as VercelResponse)
 
-    expect(res.status).toHaveBeenCalledWith(503)
+    expect(res.status).toHaveBeenCalledWith(200)
     const body = res.json.mock.calls[0][0]
     expect(body.status).toBe('degraded')
     expect(body.services.kv).toBe('unavailable')

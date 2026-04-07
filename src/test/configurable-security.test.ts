@@ -23,7 +23,7 @@ vi.mock('@vercel/kv', () => ({
 // Mock @upstash/redis (for _threat-score.ts)
 vi.mock('@upstash/redis', () => {
   const Redis = function () {
-    return { get: mockKvGet, set: mockKvSet, incrby: mockKvIncrby, expire: mockKvExpire }
+    return { get: mockKvGet, set: mockKvSet, incrby: mockKvIncrby, expire: mockKvExpire, lrange: mockKvLrange }
   }
   return { Redis }
 })

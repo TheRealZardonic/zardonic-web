@@ -1,21 +1,5 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { handleCanaryCallback } from './_canary-documents.js'
-
-interface VercelRequest {
-  method?: string
-  body?: Record<string, unknown>
-  query?: Record<string, string | string[]>
-  headers: Record<string, string | string[] | undefined>
-  url?: string
-}
-
-interface VercelResponse {
-  setHeader(key: string, value: string | number): VercelResponse
-  status(code: number): VercelResponse
-  json(data: unknown): VercelResponse
-  end(): VercelResponse
-  send(data: unknown): VercelResponse
-}
-
 /**
  * Canary callback endpoint — receives "phone home" signals from
  * canary documents opened by attackers.

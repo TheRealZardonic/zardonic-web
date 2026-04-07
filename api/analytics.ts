@@ -1,27 +1,12 @@
-import { Redis } from '@upstash/redis'
-const kv = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL || '',
-  token: process.env.UPSTASH_REDIS_REST_TOKEN || ''
+import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { getRedis, isRedisConfigured } from './_redis.js'
+const kv = new Proxy({} as ReturnType<typeof getRedis>, {
+  get (_, prop: string | symbol) { return Reflect.get(getRedis(), prop) },
 })
 import { validateSession } from './auth.js'
 import { applyRateLimit } from './_ratelimit.js'
 import { analyticsPostSchema, validate } from './_schemas.js'
 import { isHardBlocked } from './_blocklist.js'
-
-interface VercelRequest {
-  method?: string
-  body?: Record<string, unknown>
-  query?: Record<string, string | string[]>
-  headers: Record<string, string | string[] | undefined>
-}
-
-interface VercelResponse {
-  setHeader(key: string, value: string): VercelResponse
-  status(code: number): VercelResponse
-  json(data: unknown): VercelResponse
-  end(): VercelResponse
-}
-
 interface AnalyticsMeta {
   referrer?: string
   device?: string
@@ -85,9 +70,6 @@ function normalizeLandingPage(p: string | undefined): string | undefined {
 }
 
 // Check if KV is properly configured
-const isKVConfigured = (): boolean => {
-  return !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN)
-}
 
 interface AnalyticsEvent {
   type: string
@@ -314,7 +296,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   const allowed = await applyRateLimit(req, res)
   if (!allowed) return
 
-  if (!isKVConfigured()) {
+  if (!isRedisConfigured()) {
     res.status(503).json({
       error: 'Service unavailable',
       message: 'KV storage is not configured.',

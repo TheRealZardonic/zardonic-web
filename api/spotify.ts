@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { Redis } from '@upstash/redis'
+import { getRedisOrNull } from './_redis.js'
 import { applyRateLimit } from './_ratelimit.js'
 import { fetchWithRetry } from './_fetch-retry.js'
 import { validate, spotifyQuerySchema } from './_schemas.js'
@@ -7,15 +7,8 @@ import { validate, spotifyQuerySchema } from './_schemas.js'
 const SPOTIFY_TOKEN_KEY = 'spotify:access-token'
 const TOKEN_TTL_SECONDS = 3500 // Spotify tokens live 3600s; cache with buffer
 
-function getRedis(): Redis | null {
-  const url = process.env.UPSTASH_REDIS_REST_URL
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN
-  if (!url || !token) return null
-  return new Redis({ url, token })
-}
-
 async function getAccessToken(): Promise<string> {
-  const redis = getRedis()
+  const redis = getRedisOrNull()
 
   // Try cache first
   if (redis) {

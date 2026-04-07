@@ -1,7 +1,7 @@
-import { Redis } from '@upstash/redis'
-const kv = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL || '',
-  token: process.env.UPSTASH_REDIS_REST_TOKEN || ''
+import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { getRedis, isRedisConfigured } from './_redis.js'
+const kv = new Proxy({} as ReturnType<typeof getRedis>, {
+  get (_, prop: string | symbol) { return Reflect.get(getRedis(), prop) },
 })
 import { applyRateLimit } from './_ratelimit.js'
 import { validateSession } from './auth.js'
@@ -18,26 +18,8 @@ import { validate } from './_schemas.js'
  * GET  /api/security-settings  → read current settings (admin only)
  * POST /api/security-settings  → update settings (admin only)
  */
-
-interface VercelRequest {
-  method?: string
-  body?: Record<string, unknown>
-  query?: Record<string, string | string[]>
-  headers: Record<string, string | string[] | undefined>
-}
-
-interface VercelResponse {
-  setHeader(key: string, value: string): VercelResponse
-  status(code: number): VercelResponse
-  json(data: unknown): VercelResponse
-  end(): VercelResponse
-}
-
 const KV_KEY = 'nk-security-settings'
 
-const isKVConfigured = (): boolean => {
-  return !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN)
-}
 
 /** Default security settings */
 const DEFAULTS = {
@@ -100,7 +82,7 @@ const DEFAULTS = {
 }
 
 /** Zod schema for security settings */
-const securitySettingsSchema = z.object({
+export const securitySettingsSchema = z.object({
   honeytokensEnabled: z.boolean().optional(),
   rateLimitEnabled: z.boolean().optional(),
   robotsTrapEnabled: z.boolean().optional(),
@@ -175,7 +157,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return
   }
 
-  if (!isKVConfigured()) {
+  if (!isRedisConfigured()) {
     res.status(503).json({ error: 'Service unavailable', message: 'KV storage is not configured.' })
     return
   }

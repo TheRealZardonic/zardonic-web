@@ -1,7 +1,7 @@
-import { Redis } from '@upstash/redis'
-const kv = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL || '',
-  token: process.env.UPSTASH_REDIS_REST_TOKEN || ''
+import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { getRedis, isRedisConfigured } from './_redis.js'
+const kv = new Proxy({} as ReturnType<typeof getRedis>, {
+  get (_, prop: string | symbol) { return Reflect.get(getRedis(), prop) },
 })
 import { applyRateLimit } from './_ratelimit.js'
 import { terminalCommandSchema, validate } from './_schemas.js'
@@ -15,21 +15,6 @@ import { terminalCommandSchema, validate } from './_schemas.js'
  * This keeps terminal secrets server-side instead of
  * shipping them in the band-data JSON payload to the browser.
  */
-
-interface VercelRequest {
-  method?: string
-  body?: Record<string, unknown>
-  query?: Record<string, string | string[]>
-  headers: Record<string, string | string[] | undefined>
-}
-
-interface VercelResponse {
-  setHeader(key: string, value: string): VercelResponse
-  status(code: number): VercelResponse
-  json(data: unknown): VercelResponse
-  end(): VercelResponse
-}
-
 interface TerminalCommand {
   name?: string
   description?: string
@@ -43,9 +28,6 @@ interface BandData {
 }
 
 // Check if KV is properly configured
-const isKVConfigured = (): boolean => {
-  return !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN)
-}
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (req.method === 'OPTIONS') {
@@ -75,7 +57,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   }
   const { command } = parsed.data
 
-  if (!isKVConfigured()) {
+  if (!isRedisConfigured()) {
     res.status(503).json({ error: 'Service unavailable' })
     return
   }

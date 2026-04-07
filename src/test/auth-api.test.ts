@@ -10,6 +10,9 @@ const mockScan = vi.fn()
 const mockIncr = vi.fn()
 const mockExpire = vi.fn()
 const mockSetHeader = vi.fn()
+const mockPipeSet = vi.fn()
+const mockPipeDel = vi.fn()
+const mockPipeExec = vi.fn().mockResolvedValue([])
 
 vi.mock('@upstash/redis', () => ({
   Redis: class {
@@ -19,6 +22,13 @@ vi.mock('@upstash/redis', () => ({
     scan = mockScan
     incr = mockIncr
     expire = mockExpire
+    pipeline() {
+      return {
+        set: mockPipeSet,
+        del: mockPipeDel,
+        exec: mockPipeExec,
+      }
+    }
   },
 }))
 
@@ -76,12 +86,12 @@ const LEGACY_SHA256_OF_PASSWORD = '5e884898da28047151d0e56f8dc6292773603d0d6aabb
 // ---------------------------------------------------------------------------
 describe('getSessionFromCookie()', () => {
   it('extracts token from zd-session cookie', () => {
-    const req: any = { headers: { cookie: 'zd-session=mytoken123' } } as any
+    const req: any = { headers: { cookie: 'nk-session=mytoken123' } } as any
     expect(getSessionFromCookie(req)).toBe('mytoken123')
   })
 
   it('extracts token from cookie with other cookies before it', () => {
-    const req: any = { headers: { cookie: 'other=x; zd-session=tok2; another=y' } } as any
+    const req: any = { headers: { cookie: 'other=x; nk-session=tok2; another=y' } } as any
     expect(getSessionFromCookie(req)).toBe('tok2')
   })
 
@@ -234,9 +244,8 @@ describe('Auth API handler', () => {
   // -------------------------------------------------------------------------
   describe('POST (login)', () => {
     it('returns success on valid SHA-256 password', async () => {
-      // Login flow: (1) get totpLockKey → null (no lockout), (2) get TOTP_KEY → null, (3) get admin-password-hash → SHA-256 hash
-      mockGet.mockResolvedValueOnce(null)                  // kv.get(totpLockKey) — no lockout
-        .mockResolvedValueOnce(null)                       // kv.get(TOTP_KEY)
+      // Login flow: (1) get TOTP_KEY → null, (2) get admin-password-hash → SHA-256 hash
+      mockGet.mockResolvedValueOnce(null)                  // kv.get(TOTP_KEY)
         .mockResolvedValueOnce(LEGACY_SHA256_OF_PASSWORD)  // kv.get('admin-password-hash')
       const res = mockRes()
       await handler({
@@ -245,12 +254,11 @@ describe('Auth API handler', () => {
         body: { password: 'password' },
       } as any, res as any)
       expect(res.json).toHaveBeenCalledWith({ success: true })
-      expect(res.setHeader).toHaveBeenCalledWith('Set-Cookie', expect.stringContaining('zd-session='))
+      expect(res.setHeader).toHaveBeenCalledWith('Set-Cookie', expect.stringContaining('nk-session='))
     })
 
     it('returns 401 on invalid password', async () => {
-      mockGet.mockResolvedValueOnce(null)                  // kv.get(totpLockKey) — no lockout
-        .mockResolvedValueOnce(null)                       // kv.get(TOTP_KEY)
+      mockGet.mockResolvedValueOnce(null)                  // kv.get(TOTP_KEY)
         .mockResolvedValueOnce(LEGACY_SHA256_OF_PASSWORD)  // kv.get('admin-password-hash')
       const res = mockRes()
       await handler({
@@ -262,10 +270,8 @@ describe('Auth API handler', () => {
     })
 
     it('returns 401 when no password hash is stored', async () => {
-      // totpLockKey=null, TOTP_KEY=null, admin-password-hash=null (all fall through to default null)
-      mockGet.mockResolvedValueOnce(null) // kv.get(totpLockKey)
-        .mockResolvedValueOnce(null)      // kv.get(TOTP_KEY) → null
-        .mockResolvedValueOnce(null)      // kv.get('admin-password-hash') → null
+      mockGet.mockResolvedValueOnce(null)      // kv.get(TOTP_KEY) → null
+        .mockResolvedValueOnce(null)           // kv.get('admin-password-hash') → null
       const res = mockRes()
       await handler({
         method: 'POST',
@@ -276,10 +282,9 @@ describe('Auth API handler', () => {
     })
 
     it('returns 403 totpRequired when TOTP enabled but no code provided', async () => {
-      // TOTP enabled: (1) no lockout, (2) get TOTP_KEY → secret, (3) get password hash → SHA-256
-      mockGet.mockResolvedValueOnce(null)                  // kv.get(totpLockKey) — no lockout
-        .mockResolvedValueOnce('TOTPSECRET')               // kv.get(TOTP_KEY) → TOTP enabled
-        .mockResolvedValueOnce(LEGACY_SHA256_OF_PASSWORD)  // kv.get('admin-password-hash')
+      // TOTP enabled: (1) get TOTP_KEY → secret, (2) get password hash → SHA-256
+      mockGet.mockResolvedValueOnce('TOTPSECRET')               // kv.get(TOTP_KEY) → TOTP enabled
+        .mockResolvedValueOnce(LEGACY_SHA256_OF_PASSWORD)       // kv.get('admin-password-hash')
       const res = mockRes()
       await handler({
         method: 'POST',
@@ -291,9 +296,8 @@ describe('Auth API handler', () => {
     })
 
     it('returns 403 on invalid TOTP code', async () => {
-      mockGet.mockResolvedValueOnce(null)                  // kv.get(totpLockKey) — no lockout
-        .mockResolvedValueOnce('TOTPSECRET')               // kv.get(TOTP_KEY)
-        .mockResolvedValueOnce(LEGACY_SHA256_OF_PASSWORD)  // kv.get('admin-password-hash')
+      mockGet.mockResolvedValueOnce('TOTPSECRET')               // kv.get(TOTP_KEY)
+        .mockResolvedValueOnce(LEGACY_SHA256_OF_PASSWORD)       // kv.get('admin-password-hash')
       mockIncr.mockResolvedValue(1) // first failed attempt
       mockExpire.mockResolvedValue(1)
       const res = mockRes()
@@ -306,9 +310,8 @@ describe('Auth API handler', () => {
     })
 
     it('succeeds with correct TOTP code 123456', async () => {
-      mockGet.mockResolvedValueOnce(null)                  // kv.get(totpLockKey) — no lockout
-        .mockResolvedValueOnce('TOTPSECRET')               // kv.get(TOTP_KEY)
-        .mockResolvedValueOnce(LEGACY_SHA256_OF_PASSWORD)  // kv.get('admin-password-hash')
+      mockGet.mockResolvedValueOnce('TOTPSECRET')               // kv.get(TOTP_KEY)
+        .mockResolvedValueOnce(LEGACY_SHA256_OF_PASSWORD)       // kv.get('admin-password-hash')
       const res = mockRes()
       await handler({
         method: 'POST',
@@ -351,7 +354,7 @@ describe('Auth API handler', () => {
       const res = mockRes()
       await handler({
         method: 'POST',
-        headers: { cookie: 'zd-session=validtoken', 'user-agent': '', 'x-forwarded-for': '127.0.0.1' },
+        headers: { cookie: 'nk-session=validtoken', 'user-agent': '', 'x-forwarded-for': '127.0.0.1' },
         body: { currentPassword: 'wrongold', newPassword: 'newpassword1' },
       } as any, res as any)
       // Should reject because currentPassword doesn't match
@@ -379,7 +382,7 @@ describe('Auth API handler', () => {
       const res = mockRes()
       await handler({
         method: 'POST',
-        headers: { cookie: 'zd-session=validtoken', 'user-agent': '', 'x-forwarded-for': '127.0.0.1' },
+        headers: { cookie: 'nk-session=validtoken', 'user-agent': '', 'x-forwarded-for': '127.0.0.1' },
         body: { action: 'totp-setup' },
       } as any, res as any)
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
@@ -395,7 +398,7 @@ describe('Auth API handler', () => {
       const res = mockRes()
       await handler({
         method: 'POST',
-        headers: { cookie: 'zd-session=validtoken', 'user-agent': '', 'x-forwarded-for': '127.0.0.1' },
+        headers: { cookie: 'nk-session=validtoken', 'user-agent': '', 'x-forwarded-for': '127.0.0.1' },
         body: { action: 'totp-setup' },
       } as any, res as any)
       expect(res.status).toHaveBeenCalledWith(409)
@@ -421,7 +424,7 @@ describe('Auth API handler', () => {
       const res = mockRes()
       await handler({
         method: 'POST',
-        headers: { cookie: 'zd-session=validtoken', 'user-agent': '', 'x-forwarded-for': '127.0.0.1' },
+        headers: { cookie: 'nk-session=validtoken', 'user-agent': '', 'x-forwarded-for': '127.0.0.1' },
         body: { action: 'totp-verify', code: '123456' },
       } as any, res as any)
       expect(res.status).toHaveBeenCalledWith(400)
@@ -433,7 +436,7 @@ describe('Auth API handler', () => {
       const res = mockRes()
       await handler({
         method: 'POST',
-        headers: { cookie: 'zd-session=validtoken', 'user-agent': '', 'x-forwarded-for': '127.0.0.1' },
+        headers: { cookie: 'nk-session=validtoken', 'user-agent': '', 'x-forwarded-for': '127.0.0.1' },
         body: { action: 'totp-verify', code: '999999' }, // mock only accepts 123456
       } as any, res as any)
       expect(res.status).toHaveBeenCalledWith(403)
@@ -445,12 +448,12 @@ describe('Auth API handler', () => {
       const res = mockRes()
       await handler({
         method: 'POST',
-        headers: { cookie: 'zd-session=validtoken', 'user-agent': '', 'x-forwarded-for': '127.0.0.1' },
+        headers: { cookie: 'nk-session=validtoken', 'user-agent': '', 'x-forwarded-for': '127.0.0.1' },
         body: { action: 'totp-verify', code: '123456' },
       } as any, res as any)
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }))
-      // TOTP secret should be persisted and pending deleted
-      expect(mockDel).toHaveBeenCalledWith('zd-admin-totp-pending')
+      // TOTP secret should be persisted via pipeline and pending deleted
+      expect(mockPipeDel).toHaveBeenCalledWith('admin-totp-pending')
     })
   })
 
@@ -460,10 +463,10 @@ describe('Auth API handler', () => {
       const res = mockRes()
       await handler({
         method: 'DELETE',
-        headers: { cookie: 'zd-session=mytoken' },
+        headers: { cookie: 'nk-session=mytoken' },
         body: {},
       } as any, res as any)
-      expect(mockDel).toHaveBeenCalledWith('zd-session:mytoken')
+      expect(mockDel).toHaveBeenCalledWith('session:mytoken')
       expect(res.setHeader).toHaveBeenCalledWith('Set-Cookie', expect.stringContaining('Max-Age=0'))
       expect(res.json).toHaveBeenCalledWith({ success: true })
     })

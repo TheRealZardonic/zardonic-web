@@ -12,15 +12,15 @@ describe('useKV', () => {
     vi.restoreAllMocks()
   })
 
-  it('returns undefined initially and then the default value when API returns nothing', async () => {
+  it('returns default value initially and keeps it when API returns nothing', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ value: null }), { status: 200 })
     )
 
     const { result } = renderHook(() => useKV('test-key', { foo: 'bar' }))
 
-    // Initially undefined and not loaded
-    expect(result.current[0]).toBeUndefined()
+    // Initially default value and not loaded
+    expect(result.current[0]).toEqual({ foo: 'bar' })
     expect(result.current[2]).toBe(false)
 
     // After loading
@@ -109,12 +109,10 @@ describe('useKV', () => {
     await waitFor(() => expect(result.current[2]).toBe(true))
   })
 
-  it('sends x-session-token and credentials on authenticated POST', async () => {
+  it('sends credentials on POST', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ value: 'data' }), { status: 200 })
     )
-
-    localStorage.setItem('admin-token', 'my-session-token')
 
     const { result } = renderHook(() => useKV('auth-key', 'default'))
     await waitFor(() => expect(result.current[2]).toBe(true))
@@ -127,13 +125,13 @@ describe('useKV', () => {
       )
       expect(postCalls).toHaveLength(1)
       const opts = postCalls[0][1] as RequestInit
-      const headers = opts.headers as Record<string, string>
-      expect(headers['x-session-token']).toBe('my-session-token')
       expect(opts.credentials).toBe('same-origin')
+      const headers = opts.headers as Record<string, string>
+      expect(headers['Content-Type']).toBe('application/json')
     })
   })
 
-  it('does not POST when no admin token is present', async () => {
+  it('always POSTs after load completes (auth via HttpOnly cookie)', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ value: 'data' }), { status: 200 })
     )
@@ -145,10 +143,12 @@ describe('useKV', () => {
 
     act(() => { result.current[1]('new-value') })
 
-    const postCalls = fetchSpy.mock.calls.filter(
-      (call) => call[1] && (call[1] as RequestInit).method === 'POST'
-    )
-    expect(postCalls).toHaveLength(0)
+    await waitFor(() => {
+      const postCalls = fetchSpy.mock.calls.filter(
+        (call) => call[1] && (call[1] as RequestInit).method === 'POST'
+      )
+      expect(postCalls).toHaveLength(1)
+    })
   })
 
   it('handles non-200 GET response gracefully', async () => {

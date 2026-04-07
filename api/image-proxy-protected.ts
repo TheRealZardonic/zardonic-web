@@ -1,25 +1,10 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node'
 import sharp from 'sharp'
 import { resolve4, resolve6 } from 'node:dns/promises'
 import { applyRateLimit } from './_ratelimit.js'
 import { isMarkedAttacker } from './_honeytokens.js'
 import { imageProxyQuerySchema, validate } from './_schemas.js'
 import { isHardBlocked } from './_blocklist.js'
-
-interface VercelRequest {
-  method?: string
-  body?: Record<string, unknown>
-  query?: Record<string, string | string[]>
-  headers: Record<string, string | string[] | undefined>
-}
-
-interface VercelResponse {
-  setHeader(key: string, value: string): VercelResponse
-  status(code: number): VercelResponse
-  json(data: unknown): VercelResponse
-  end(): VercelResponse
-  send(data: unknown): VercelResponse
-}
-
 /**
  * Server-side image proxy with adversarial noise injection.
  *

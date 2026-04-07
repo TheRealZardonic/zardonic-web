@@ -5,20 +5,7 @@
  *
  * GET /api/admin/logs/:id
  */
-
-interface VercelRequest {
-  method?: string
-  body?: Record<string, unknown>
-  query?: Record<string, string | string[]>
-  headers: Record<string, string | string[] | undefined>
-}
-
-interface VercelResponse {
-  setHeader(key: string, value: string): VercelResponse
-  status(code: number): VercelResponse
-  json(data: unknown): VercelResponse
-  end(): VercelResponse
-}
+import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 function randomHex(len: number): string {
   const chars = '0123456789abcdef'

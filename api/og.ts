@@ -1,7 +1,7 @@
-import { Redis } from '@upstash/redis'
-const kv = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL || '',
-  token: process.env.UPSTASH_REDIS_REST_TOKEN || ''
+import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { getRedis } from './_redis.js'
+const kv = new Proxy({} as ReturnType<typeof getRedis>, {
+  get (_, prop: string | symbol) { return Reflect.get(getRedis(), prop) },
 })
 import { applyRateLimit } from './_ratelimit.js'
 
@@ -15,21 +15,6 @@ import { applyRateLimit } from './_ratelimit.js'
  * og:image (and Twitter card) meta tags.  A client-side redirect sends
  * real browsers to the SPA with the matching hash fragment.
  */
-
-interface VercelRequest {
-  method?: string
-  body?: Record<string, unknown>
-  query?: Record<string, string | string[]>
-  headers: Record<string, string | string[] | undefined>
-}
-
-interface VercelResponse {
-  setHeader(key: string, value: string): VercelResponse
-  status(code: number): VercelResponse
-  send(data: unknown): VercelResponse
-  end(): VercelResponse
-}
-
 interface OgMeta {
   title: string
   description: string
@@ -223,7 +208,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
   let data: BandData | null = null
   try {
-    if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+    if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
       data = await kv.get<BandData>('band-data')
     }
   } catch {

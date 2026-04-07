@@ -1,16 +1,4 @@
-interface VercelRequest {
-  method?: string
-  body?: Record<string, unknown>
-  query?: Record<string, string | string[]>
-  headers: Record<string, string | string[] | undefined>
-}
-
-interface VercelResponse {
-  setHeader(key: string, value: string): VercelResponse
-  status(code: number): VercelResponse
-  json(data: unknown): VercelResponse
-  end(): VercelResponse
-}
+import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 export default function handler(req: VercelRequest, res: VercelResponse): void {
   res.setHeader('Access-Control-Allow-Origin', '*')

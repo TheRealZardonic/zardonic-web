@@ -1,22 +1,7 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { Readable } from 'node:stream'
 import { applyRateLimit } from './_ratelimit.js'
 import { driveDownloadQuerySchema, validate } from './_schemas.js'
-
-interface VercelRequest {
-  method?: string
-  body?: Record<string, unknown>
-  query?: Record<string, string | string[]>
-  headers: Record<string, string | string[] | undefined>
-}
-
-interface VercelResponse {
-  setHeader(key: string, value: string | number): VercelResponse
-  status(code: number): VercelResponse
-  json(data: unknown): VercelResponse
-  end(data?: unknown): VercelResponse
-  write(chunk: unknown): boolean
-}
-
 /**
  * API route that proxies file downloads from Google Drive.
  *

@@ -14,27 +14,11 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { Redis } from '@upstash/redis'
+import { isRedisConfigured, getRedis } from './_redis.js'
 import { randomBytes, scrypt, createHash, timingSafeEqual as cryptoTimingSafeEqual } from 'crypto'
 import { promisify } from 'util'
 
 const scryptAsync = promisify(scrypt)
-
-let _redis: Redis | null = null
-
-function getRedisClient(): Redis | null {
-  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
-    console.warn('[Session API] Upstash Redis not configured')
-    return null
-  }
-  if (!_redis) {
-    _redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN,
-    })
-  }
-  return _redis
-}
 
 /**
  * Hash a password with scrypt + random salt.
@@ -88,14 +72,13 @@ const SESSION_TTL = 24 * 60 * 60 // 24 hours (legacy; new auth.ts uses 4h)
  * PUT    /api/session - Setup initial password (initial setup only)
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const kv = getRedisClient()
-
-  if (!kv) {
+  if (!isRedisConfigured()) {
     return res.status(503).json({
       error: 'Service unavailable',
       message: 'Session storage is not configured',
     })
   }
+  const kv = getRedis()
 
   try {
     // POST: Login with password

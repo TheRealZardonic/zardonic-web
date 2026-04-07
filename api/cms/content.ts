@@ -1,18 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { Redis } from '@upstash/redis'
 import { applyRateLimit } from '../_ratelimit.js'
+import { getRedis } from '../_redis.js'
 import { validateSession } from '../auth.js'
 import { cmsContentPostSchema } from '../../src/cms/schemas.js'
-
-let _redis: Redis | null = null
-function getRedis(): Redis {
-  if (_redis) return _redis
-  const url = process.env.UPSTASH_REDIS_REST_URL
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN
-  if (!url || !token) throw new Error('Missing Redis config')
-  _redis = new Redis({ url, token })
-  return _redis
-}
 
 // OWASP A03:2021 — Input validation: key must start with zd-cms:
 const KEY_PREFIX = /^zd-cms:/

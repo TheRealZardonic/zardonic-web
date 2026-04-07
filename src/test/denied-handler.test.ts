@@ -164,7 +164,7 @@ describe('Denied handler: robots.txt access violation response', () => {
       res,
     )
     expect(consoleSpy).toHaveBeenCalledWith(
-      '[ACCESS VIOLATION]',
+      '[SECURITY:ACCESS_VIOLATION]',
       expect.stringContaining('/phpmyadmin/index.php'),
     )
     consoleSpy.mockRestore()

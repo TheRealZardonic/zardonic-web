@@ -1,26 +1,11 @@
-import { Redis } from '@upstash/redis'
-const kv = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL || '',
-  token: process.env.UPSTASH_REDIS_REST_TOKEN || ''
+import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { getRedis, isRedisConfigured } from './_redis.js'
+const kv = new Proxy({} as ReturnType<typeof getRedis>, {
+  get (_, prop: string | symbol) { return Reflect.get(getRedis(), prop) },
 })
 import { randomUUID } from 'node:crypto'
 import { applyRateLimit } from './_ratelimit.js'
 import { validateSession } from './auth.js'
-
-interface VercelRequest {
-  method?: string
-  body?: Record<string, unknown>
-  query?: Record<string, string | string[]>
-  headers: Record<string, string | string[] | undefined>
-}
-
-interface VercelResponse {
-  setHeader(key: string, value: string): VercelResponse
-  status(code: number): VercelResponse
-  json(data: unknown): VercelResponse
-  end(): VercelResponse
-}
-
 interface ContactMessage {
   id: string
   name: string
@@ -34,9 +19,6 @@ interface ContactMessage {
 const KV_KEY = 'contact-messages'
 const MAX_CONTACT_MESSAGES = 500 // Safety cap against storage exhaustion DoS
 
-const isKVConfigured = (): boolean => {
-  return !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN)
-}
 
 /** HTML entity escaping to prevent XSS */
 function esc(str: string | undefined): string {
@@ -129,7 +111,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return
   }
 
-  if (!isKVConfigured()) {
+  if (!isRedisConfigured()) {
     res.status(503).json({
       error: 'Service unavailable',
       message: 'KV storage is not configured.',

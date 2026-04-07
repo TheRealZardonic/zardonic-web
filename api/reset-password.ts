@@ -1,7 +1,7 @@
-import { Redis } from '@upstash/redis'
-const kv = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL || '',
-  token: process.env.UPSTASH_REDIS_REST_TOKEN || ''
+import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { getRedis, isRedisConfigured } from './_redis.js'
+const kv = new Proxy({} as ReturnType<typeof getRedis>, {
+  get (_, prop: string | symbol) { return Reflect.get(getRedis(), prop) },
 })
 import { randomBytes } from 'node:crypto'
 import { timingSafeEqual } from './kv.js'
@@ -9,27 +9,7 @@ import { hashPassword, invalidateAllSessions } from './auth.js'
 import { applyRateLimit } from './_ratelimit.js'
 import { resetPasswordSchema, confirmResetPasswordSchema, validate } from './_schemas.js'
 import { Resend } from 'resend'
-
-interface VercelRequest {
-  method?: string
-  body?: Record<string, unknown>
-  query?: Record<string, string | string[]>
-  headers: Record<string, string | string[] | undefined>
-}
-
-interface VercelResponse {
-  setHeader(key: string, value: string): VercelResponse
-  status(code: number): VercelResponse
-  json(data: unknown): VercelResponse
-  end(): VercelResponse
-}
-
-
-
 // Check if KV is properly configured
-const isKVConfigured = () => {
-  return !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN)
-}
 
 const RESET_TOKEN_TTL = 600 // 10 minutes
 const RESET_TOKEN_KEY = 'admin-reset-token'
@@ -47,7 +27,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  if (!isKVConfigured()) {
+  if (!isRedisConfigured()) {
     return res.status(503).json({
       error: 'Service unavailable',
       message: 'KV storage is not configured.',

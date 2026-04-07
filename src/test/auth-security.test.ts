@@ -56,7 +56,7 @@ describe('Auth security: password change requires currentPassword', () => {
 
     // Session is valid (fingerprint matches)
     mockKvGet.mockImplementation(async (key: string) => {
-      if (key.startsWith('zd-session:')) return { created: Date.now(), fingerprint: expectedFingerprint }
+      if (key.startsWith('session:')) return { created: Date.now(), fingerprint: expectedFingerprint }
       if (key === 'admin-password-hash') return 'scrypt:salt:hash'
       return null
     })
@@ -65,7 +65,7 @@ describe('Auth security: password change requires currentPassword', () => {
     await handler({
       method: 'POST',
       body: { newPassword: 'newSecurePassword123' },
-      headers: { cookie: 'zd-session=valid-token', 'user-agent': 'TestBrowser' },
+      headers: { cookie: 'nk-session=valid-token', 'user-agent': 'TestBrowser' },
     } as unknown as VercelRequest, res)
 
     // Should be rejected because currentPassword is now required (Zod validation)
@@ -78,7 +78,7 @@ describe('Auth security: password change requires currentPassword', () => {
     const expectedFingerprint = crypto.createHash('sha256').update('TestBrowser|1.2.3').digest('hex')
 
     mockKvGet.mockImplementation(async (key: string) => {
-      if (key.startsWith('zd-session:')) return { created: Date.now(), fingerprint: expectedFingerprint }
+      if (key.startsWith('session:')) return { created: Date.now(), fingerprint: expectedFingerprint }
       if (key === 'admin-password-hash') return hashed
       return null
     })
@@ -87,7 +87,7 @@ describe('Auth security: password change requires currentPassword', () => {
     await handler({
       method: 'POST',
       body: { currentPassword: 'wrongPassword', newPassword: 'newSecurePassword123' },
-      headers: { cookie: 'zd-session=valid-token', 'user-agent': 'TestBrowser' },
+      headers: { cookie: 'nk-session=valid-token', 'user-agent': 'TestBrowser' },
     } as unknown as VercelRequest, res)
 
     expect(res.status).toHaveBeenCalledWith(403)
@@ -110,30 +110,30 @@ describe('Auth security: session invalidation on password change', () => {
     
     // Simulate existing sessions
     mockKvGet.mockImplementation(async (key: string) => {
-      if (key.startsWith('zd-session:')) return { created: Date.now(), fingerprint: expectedFingerprint }
+      if (key.startsWith('session:')) return { created: Date.now(), fingerprint: expectedFingerprint }
       if (key === 'admin-password-hash') return hashed
       return null
     })
     mockKvSet.mockResolvedValue('OK')
     mockKvDel.mockResolvedValue(1)
     // Return some session keys then end scanning
-    mockKvScan.mockResolvedValueOnce([0, ['zd-session:old1', 'zd-session:old2']])
+    mockKvScan.mockResolvedValueOnce([0, ['session:old1', 'session:old2']])
 
     const res = mockRes()
     await handler({
       method: 'POST',
       body: { currentPassword: 'oldPassword', newPassword: 'newSecurePassword123' },
-      headers: { cookie: 'zd-session=valid-token', 'user-agent': 'TestBrowser' },
+      headers: { cookie: 'nk-session=valid-token', 'user-agent': 'TestBrowser' },
     } as unknown as VercelRequest, res)
 
     expect(res.json).toHaveBeenCalledWith({ success: true })
     // Verify scan was called to find sessions
-    expect(mockKvScan).toHaveBeenCalledWith(0, { match: 'zd-session:*', count: 100 })
+    expect(mockKvScan).toHaveBeenCalledWith(0, { match: 'session:*', count: 100 })
     // Verify old sessions were deleted
-    expect(mockKvDel).toHaveBeenCalledWith('zd-session:old1')
-    expect(mockKvDel).toHaveBeenCalledWith('zd-session:old2')
+    expect(mockKvDel).toHaveBeenCalledWith('session:old1')
+    expect(mockKvDel).toHaveBeenCalledWith('session:old2')
     // Verify a new session was created (setHeader for cookie)
-    expect(res.setHeader).toHaveBeenCalledWith('Set-Cookie', expect.stringContaining('zd-session='))
+    expect(res.setHeader).toHaveBeenCalledWith('Set-Cookie', expect.stringContaining('nk-session='))
   })
 })
 
@@ -163,7 +163,7 @@ describe('Auth security: session TTL is 4 hours', () => {
     expect(res.json).toHaveBeenCalledWith({ success: true })
     // Check session is created with 4-hour TTL (14400 seconds)
     expect(mockKvSet).toHaveBeenCalledWith(
-      expect.stringMatching(/^zd-session:/),
+      expect.stringMatching(/^session:/),
       expect.objectContaining({ created: expect.any(Number), fingerprint: expect.any(String) }),
       { ex: 14400 }
     )
@@ -198,7 +198,7 @@ describe('Auth security: client fingerprint binding', () => {
     expect(res.json).toHaveBeenCalledWith({ success: true })
     // Session should include a fingerprint
     expect(mockKvSet).toHaveBeenCalledWith(
-      expect.stringMatching(/^zd-session:/),
+      expect.stringMatching(/^session:/),
       expect.objectContaining({ fingerprint: expect.any(String) }),
       expect.any(Object)
     )
@@ -210,7 +210,7 @@ describe('Auth security: client fingerprint binding', () => {
     const originalFingerprint = crypto.createHash('sha256').update('OriginalBrowser|1.2.3').digest('hex')
 
     mockKvGet.mockImplementation(async (key: string) => {
-      if (key.startsWith('zd-session:')) return { created: Date.now(), fingerprint: originalFingerprint }
+      if (key.startsWith('session:')) return { created: Date.now(), fingerprint: originalFingerprint }
       if (key === 'admin-password-hash') return 'scrypt:salt:hash'
       return null
     })
@@ -219,7 +219,7 @@ describe('Auth security: client fingerprint binding', () => {
     const res = mockRes()
     await handler({
       method: 'GET',
-      headers: { cookie: 'zd-session=valid-token', 'user-agent': 'DifferentBrowser' },
+      headers: { cookie: 'nk-session=valid-token', 'user-agent': 'DifferentBrowser' },
     } as unknown as VercelRequest, res)
 
     const jsonCall = res.json.mock.calls[0][0]

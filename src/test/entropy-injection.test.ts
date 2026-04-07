@@ -46,6 +46,7 @@ vi.mock('../../api/_ratelimit.js', () => ({
   applyRateLimit: vi.fn().mockResolvedValue(true),
   getClientIp: vi.fn().mockReturnValue('1.2.3.4'),
   hashIp: vi.fn().mockReturnValue('hashed-ip-1234'),
+  getVercelGeoData: vi.fn().mockReturnValue({ countryCode: null, region: null, city: null, lat: null, lon: null }),
 }))
 
 // Set env vars before import so the singleton Redis is properly initialized

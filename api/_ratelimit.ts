@@ -1,7 +1,6 @@
-import { Redis } from '@upstash/redis'
-const kv = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL || '',
-  token: process.env.UPSTASH_REDIS_REST_TOKEN || ''
+import { getRedis, isRedisConfigured } from './_redis.js'
+const kv = new Proxy({} as ReturnType<typeof getRedis>, {
+  get (_, prop: string | symbol) { return Reflect.get(getRedis(), prop) },
 })
 import { Ratelimit } from '@upstash/ratelimit'
 import { createHash } from 'node:crypto'
@@ -107,9 +106,6 @@ export function getVercelGeoData(req: VercelLikeRequest): {
  * Return true when the Vercel KV environment variables are present.
  * The rate limiter is a no-op in environments without KV (e.g. local dev).
  */
-function isKVConfigured(): boolean {
-  return !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN)
-}
 
 /**
  * Lazily-initialised rate limiter instance.
@@ -120,7 +116,7 @@ let ratelimit: Ratelimit | null = null
 
 function getRatelimit(): Ratelimit | null {
   if (ratelimit) return ratelimit
-  if (!isKVConfigured()) return null
+  if (!isRedisConfigured()) return null
   ratelimit = new Ratelimit({
     redis: kv,
     limiter: Ratelimit.slidingWindow(5, '10 s'),

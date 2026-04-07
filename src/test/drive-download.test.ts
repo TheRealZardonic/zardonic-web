@@ -12,17 +12,35 @@ vi.mock('../../api/_ratelimit.js', () => ({
   getClientIp: vi.fn().mockReturnValue('1.2.3.4'),
 }))
 
-type Res = { status: ReturnType<typeof vi.fn>; json: ReturnType<typeof vi.fn>; redirect: ReturnType<typeof vi.fn> }
+// ---------------------------------------------------------------------------
+// Mock global fetch
+// ---------------------------------------------------------------------------
+const mockFetch = vi.fn()
+vi.stubGlobal('fetch', mockFetch)
+
+type Res = { status: ReturnType<typeof vi.fn>; json: ReturnType<typeof vi.fn>; setHeader: ReturnType<typeof vi.fn>; end: ReturnType<typeof vi.fn>; write: ReturnType<typeof vi.fn> }
 
 function mockRes() {
   const res: Res = {
     status: vi.fn(),
     json: vi.fn(),
-    redirect: vi.fn(),
+    setHeader: vi.fn(),
+    end: vi.fn(),
+    write: vi.fn(),
   }
   res.status.mockReturnValue(res)
   res.json.mockReturnValue(res)
+  res.setHeader.mockReturnValue(res)
   return res as unknown as unknown as VercelResponse
+}
+
+function createReadableBody(data: string): ReadableStream {
+  return new ReadableStream({
+    start(controller) {
+      controller.enqueue(new TextEncoder().encode(data))
+      controller.close()
+    },
+  })
 }
 
 const { default: handler } = await import('../../api/drive-download.js')
@@ -57,24 +75,43 @@ describe('Drive download API', () => {
     mockApplyRateLimit.mockResolvedValue(false)
     const res = mockRes()
     await handler({ method: 'GET', query: { fileId: 'abc123' }, headers: {} } as unknown as VercelRequest, res)
-    expect(res.redirect).not.toHaveBeenCalled()
+    expect(mockFetch).not.toHaveBeenCalled()
   })
 
-  it('redirects to Google Drive download URL with 307 status', async () => {
+  it('streams file from Google Drive download URL', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      headers: new Map([['content-type', 'application/zip'], ['content-length', '1024']]),
+      body: createReadableBody('data'),
+    })
+    // Override headers.get for Response-like interface
+    const headers = { get: (name: string) => name === 'content-type' ? 'application/zip' : name === 'content-length' ? '1024' : null }
+    mockFetch.mockResolvedValue({ ok: true, headers, body: createReadableBody('data') })
     const res = mockRes()
     await handler({ method: 'GET', query: { fileId: 'abc123' }, headers: {} } as unknown as VercelRequest, res)
-    expect(res.redirect).toHaveBeenCalledWith(307, 'https://drive.google.com/uc?export=download&id=abc123')
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://drive.google.com/uc?export=download&id=abc123',
+      expect.objectContaining({ redirect: 'follow' })
+    )
   })
 
-  it('properly encodes fileId in redirect URL', async () => {
+  it('fetches with properly encoded fileId', async () => {
+    const headers = { get: () => null }
+    mockFetch.mockResolvedValue({ ok: true, headers, body: createReadableBody('data') })
     const res = mockRes()
     await handler({ method: 'GET', query: { fileId: 'test_file-123' }, headers: {} } as unknown as VercelRequest, res)
-    expect(res.redirect).toHaveBeenCalledWith(307, 'https://drive.google.com/uc?export=download&id=test_file-123')
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://drive.google.com/uc?export=download&id=test_file-123',
+      expect.objectContaining({ redirect: 'follow' })
+    )
   })
 
-  it('always redirects regardless of file size', async () => {
+  it('returns 502 when fetch fails', async () => {
+    mockFetch.mockRejectedValue(new Error('Network failure'))
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     const res = mockRes()
     await handler({ method: 'GET', query: { fileId: 'largeFileId' }, headers: {} } as unknown as VercelRequest, res)
-    expect(res.redirect).toHaveBeenCalledWith(307, 'https://drive.google.com/uc?export=download&id=largeFileId')
+    expect(res.status).toHaveBeenCalledWith(502)
+    consoleSpy.mockRestore()
   })
 })

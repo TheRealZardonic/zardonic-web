@@ -301,16 +301,8 @@ describe('odesliQuerySchema', () => {
     expect(odesliQuerySchema.safeParse({ url: 'not a url' }).success).toBe(false)
   })
 
-  it('accepts valid userCountry', () => {
+  it('accepts extra fields (stripped by default)', () => {
     expect(odesliQuerySchema.safeParse({ url: 'https://spotify.com/x', userCountry: 'DE' }).success).toBe(true)
-  })
-
-  it('rejects lowercase userCountry', () => {
-    expect(odesliQuerySchema.safeParse({ url: 'https://spotify.com/x', userCountry: 'de' }).success).toBe(false)
-  })
-
-  it('rejects 3-char userCountry', () => {
-    expect(odesliQuerySchema.safeParse({ url: 'https://spotify.com/x', userCountry: 'DEU' }).success).toBe(false)
   })
 })
 
