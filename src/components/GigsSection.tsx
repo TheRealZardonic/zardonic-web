@@ -12,12 +12,13 @@ import { format, isPast } from 'date-fns'
 import { toast } from 'sonner'
 import { useTypingEffect } from '@/hooks/use-typing-effect'
 import { useTrackSection } from '@/hooks/use-track-section'
-import { fetchBandsintownEvents } from '@/lib/bandsintown'
 
 interface GigsSectionProps {
   gigs: Gig[]
   editMode: boolean
   onUpdate: (gigs: Gig[]) => void
+  /** Callback to trigger a Bandsintown refresh via the parent's useSiteDataSync */
+  onRefresh?: () => Promise<void>
   fontSizes?: FontSizeSettings
   onFontSizeChange?: (key: keyof FontSizeSettings, value: string) => void
   dataLoaded?: boolean
@@ -25,7 +26,7 @@ interface GigsSectionProps {
   onLabelChange?: (key: keyof SectionLabels, value: string) => void
 }
 
-export default function GigsSection({ gigs, editMode, onUpdate, fontSizes, onFontSizeChange, dataLoaded, sectionLabels, onLabelChange }: GigsSectionProps) {
+export default function GigsSection({ gigs, editMode, onUpdate, onRefresh, fontSizes, onFontSizeChange, dataLoaded, sectionLabels, onLabelChange }: GigsSectionProps) {
   const [editingGig, setEditingGig] = useState<Gig | null>(null)
   const [isAdding, setIsAdding] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -56,52 +57,20 @@ export default function GigsSection({ gigs, editMode, onUpdate, fontSizes, onFon
   }, [])
 
   useEffect(() => {
-    if (!hasLoadedOnce && dataLoaded) {
-      loadGigsFromAPI(true)
+    if (!hasLoadedOnce && dataLoaded && onRefresh) {
+      void onRefresh()
       setHasLoadedOnce(true)
     }
-  }, [dataLoaded])
+  }, [dataLoaded, hasLoadedOnce, onRefresh])
 
-  const loadGigsFromAPI = async (isAutoLoad = false) => {
+  const handleRefreshClick = async () => {
+    if (!onRefresh) return
     setIsLoading(true)
     try {
-      const bandsintownEvents = await fetchBandsintownEvents()
-      const apiGigs: Gig[] = bandsintownEvents.map(event => ({
-        id: event.id,
-        venue: event.venue,
-        location: event.location,
-        date: event.date,
-        ticketUrl: event.ticketUrl,
-        lineup: event.lineup,
-        streetAddress: event.streetAddress,
-        postalCode: event.postalCode,
-        soldOut: event.soldOut,
-        startsAt: event.startsAt,
-        description: event.description,
-        title: event.title,
-      }))
-
-      if (apiGigs.length > 0) {
-        const currentGigs = gigs || []
-        const existingIds = new Set(currentGigs.map(g => g.id))
-        const newGigs = apiGigs.filter(g => !existingIds.has(g.id))
-        
-        if (newGigs.length > 0) {
-          onUpdate([...currentGigs, ...newGigs])
-          if (!isAutoLoad) {
-            toast.success(`${newGigs.length} upcoming gig${newGigs.length > 1 ? 's' : ''} loaded from concert APIs`)
-          }
-        } else if (!isAutoLoad) {
-          toast.info('No new gigs found')
-        }
-      } else if (!isAutoLoad) {
-        toast.info('No upcoming concerts found at this time')
-      }
-    } catch (error) {
-      console.error('Failed to load gigs:', error)
-      if (!isAutoLoad) {
-        toast.error('Failed to load upcoming gigs')
-      }
+      await onRefresh()
+      toast.success('Gigs refreshed from Bandsintown')
+    } catch {
+      toast.error('Failed to refresh gigs')
     } finally {
       setIsLoading(false)
     }
@@ -165,8 +134,8 @@ export default function GigsSection({ gigs, editMode, onUpdate, fontSizes, onFon
               </Button>
             )}
             <Button
-              onClick={() => loadGigsFromAPI(false)}
-              disabled={isLoading}
+              onClick={() => void handleRefreshClick()}
+              disabled={isLoading || !onRefresh}
               variant="outline"
               className="border-primary/30 hover:bg-primary/10 active:scale-95 transition-transform touch-manipulation"
             >

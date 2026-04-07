@@ -40,7 +40,7 @@
     { "source": "/.env", "destination": "/api/denied?_src=/.env" },
     { "source": "/.git/:p*", "destination": "/api/denied?_src=/.git/:p*" },
     { "source": "/sitemap-extended.xml", "destination": "/api/sitemap-trap" },
-    { "source": "/sitemap.xml", "destination": "/api/sitemap-trap" },
+    { "source": "/sitemap.xml", "destination": "/api/sitemap-gen" },
     { "source": "/share/:type/:id", "destination": "/api/og?type=:type&id=:id" },
     { "source": "/api/sanity/:path*", "destination": "https://unz85dqo.apicdn.sanity.io/:path*" }
   ],

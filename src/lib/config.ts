@@ -31,6 +31,22 @@ const DEFAULTS = {
   OVERLAY_REVEAL_PHASE_DELAY_MS: 700,
 } as const
 
+/** Default display order for all page sections. Used in both App.tsx and EditControls.tsx. */
+export const DEFAULT_SECTION_ORDER = [
+  'bio',
+  'shell',
+  'creditHighlights',
+  'music',
+  'gigs',
+  'releases',
+  'gallery',
+  'media',
+  'connect',
+  'contact',
+] as const
+
+export type SectionKey = (typeof DEFAULT_SECTION_ORDER)[number]
+
 export type ConfigKey = keyof typeof DEFAULTS
 
 export const CONFIG_META: Record<

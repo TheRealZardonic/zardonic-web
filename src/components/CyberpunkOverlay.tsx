@@ -24,6 +24,7 @@ import {
   OVERLAY_REVEAL_PHASE_DELAY_MS,
 } from '@/lib/config'
 import { submitContactForm, contactFormSchema } from '@/lib/contact'
+import { useLocale } from '@/contexts/LocaleContext'
 
 const OVERLAY_LOADING_TEXTS = [
   '> ACCESSING PROFILE...',
@@ -35,11 +36,10 @@ interface CyberpunkOverlayProps {
   overlay: CyberpunkOverlayState | null
   onClose: () => void
   adminSettings: AdminSettings | undefined
-  language: 'en' | 'de'
-  setLanguage: (lang: 'en' | 'de') => void
 }
 
-export default function CyberpunkOverlay({ overlay, onClose, adminSettings, language, setLanguage }: CyberpunkOverlayProps) {
+export default function CyberpunkOverlay({ overlay, onClose, adminSettings }: CyberpunkOverlayProps) {
+  const { locale: language, setLocale: setLanguage } = useLocale()
   const [overlayPhase, setOverlayPhase] = useState<'loading' | 'glitch' | 'revealed'>('loading')
   const [loadingText, setLoadingText] = useState(OVERLAY_LOADING_TEXTS[0])
 

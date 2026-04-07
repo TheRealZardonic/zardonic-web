@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import React, { Suspense } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { useKV } from '@/hooks/use-kv'
@@ -10,6 +10,7 @@ import { useAppTheme } from '@/hooks/use-app-theme'
 import { useSiteDataSync } from '@/hooks/use-site-data-sync'
 import type { SiteData, CyberpunkOverlayState } from '@/lib/app-types'
 import { DEFAULT_SITE_DATA } from '@/lib/app-types'
+import { DEFAULT_SECTION_ORDER } from '@/lib/config'
 export type { SiteData } from '@/lib/app-types'
 import { Separator } from '@/components/ui/separator'
 import { Toaster } from '@/components/ui/sonner'
@@ -37,6 +38,9 @@ import AppGigsSection from '@/components/AppGigsSection'
 import AppReleasesSection from '@/components/AppReleasesSection'
 import AppSocialSection from '@/components/AppSocialSection'
 import CyberpunkOverlay from '@/components/CyberpunkOverlay'
+import { StructuredData } from '@/components/StructuredData'
+import { SectionErrorBoundary } from '@/components/SectionErrorBoundary'
+import { useDocumentTitle } from '@/hooks/use-document-title'
 
 // Code splitting for heavy components
 const Terminal = React.lazy(() => import('@/components/Terminal').then(m => ({ default: m.Terminal })))
@@ -45,6 +49,7 @@ const SecurityIncidentsDashboard = React.lazy(() => import('@/components/Securit
 const SecuritySettingsDialog = React.lazy(() => import('@/components/SecuritySettingsDialog'))
 const BlocklistManagerDialog = React.lazy(() => import('@/components/BlocklistManagerDialog'))
 const AttackerProfileDialog = React.lazy(() => import('@/components/AttackerProfileDialog'))
+
 
 
 function App() {
@@ -63,8 +68,19 @@ function App() {
   } = useAdminAuth()
   const [showLoginDialog, setShowLoginDialog] = useState(false)
   const [showSetupDialog, setShowSetupDialog] = useState(false)
-  const wantsSetup = useRef(false)
-  
+
+  // Check for ?admin-setup URL parameter once at mount (read from URL before first render)
+  const [wantsSetup] = useState(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.has('admin-setup')) {
+      const url = new URL(window.location.href)
+      url.searchParams.delete('admin-setup')
+      window.history.replaceState({}, '', url.toString())
+      return true
+    }
+    return false
+  })
+
   useEffect(() => {
     if (konamiActivated) {
       setTerminalOpen(true)
@@ -72,25 +88,12 @@ function App() {
     }
   }, [konamiActivated])
 
-  // Check for ?admin-setup URL parameter on mount
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    if (params.has('admin-setup')) {
-      wantsSetup.current = true
-      // Clean up URL
-      const url = new URL(window.location.href)
-      url.searchParams.delete('admin-setup')
-      window.history.replaceState({}, '', url.toString())
-    }
-  }, [])
-
   // Open setup dialog when auth check confirms no password exists and user requested setup
   useEffect(() => {
-    if (wantsSetup.current && needsSetup) {
-      wantsSetup.current = false
+    if (wantsSetup && needsSetup) {
       setShowSetupDialog(true)
     }
-  }, [needsSetup])
+  }, [wantsSetup, needsSetup])
 
   useEffect(() => {
     if (!loading) {
@@ -144,8 +147,6 @@ function App() {
     }
   }, [kvAdminSettings, isAdminSettingsLoaded])
 
-  const [currentTrackIndex] = useState(0)
-  const [volume] = useState([80])
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [editMode, setEditMode] = useState(false)
   const [showConfigEditor, setShowConfigEditor] = useState(false)
@@ -164,7 +165,6 @@ function App() {
   const terminalCommands = adminSettings?.terminalCommands ?? []
   const contactSettings = adminSettings?.contactSettings ?? {}
 
-  const DEFAULT_SECTION_ORDER = ['bio', 'shell', 'creditHighlights', 'music', 'gigs', 'releases', 'gallery', 'media', 'connect', 'contact']
   const sectionOrder = adminSettings?.sectionOrder ?? DEFAULT_SECTION_ORDER
   const getSectionOrder = useCallback((section: string) => {
     const idx = sectionOrder.indexOf(section)
@@ -173,6 +173,7 @@ function App() {
 
   useAppTheme(adminSettings)
   const { iTunesFetching, bandsintownFetching, hasAutoLoaded } = useSiteDataSync(siteData, setSiteData)
+  useDocumentTitle(siteData?.artistName ?? '')
 
   // Collect image URLs for precaching during loading screen
   const precacheUrls = useMemo(() => {
@@ -185,15 +186,6 @@ function App() {
   }, [siteData])
   const [galleryIndex, setGalleryIndex] = useState<number | null>(null)
   const [cyberpunkOverlay, setCyberpunkOverlay] = useState<CyberpunkOverlayState | null>(null)
-  const [language, setLanguage] = useState<'en' | 'de'>('en')
-
-  const audioRef = useRef<HTMLAudioElement>(null)
-
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = volume[0] / 100
-    }
-  }, [volume])
 
   // Admin authentication handlers
   const handleAdminLogin = useCallback(async (password: string, totpCode?: string): Promise<{ success: boolean; totpRequired?: boolean }> => {
@@ -220,14 +212,13 @@ function App() {
     }, 100)
   }
 
-  const currentTrack = siteData?.tracks[currentTrackIndex]
-
   if (!siteData) {
     return <LoadingScreen onLoadComplete={() => setLoading(false)} precacheUrls={precacheUrls} />
   }
 
   return (
     <>
+      <StructuredData artistName={siteData.artistName} siteData={siteData} />
       <AnimatePresence>
         {loading && (
           <LoadingScreen onLoadComplete={() => setLoading(false)} precacheUrls={precacheUrls} />
@@ -243,7 +234,9 @@ function App() {
       <SystemMonitorHUD />
       
       <Toaster />
-      <audio ref={audioRef} src={currentTrack?.url} />
+      {siteData.tracks.length > 0 && siteData.tracks[0]?.url && (
+        <audio src={siteData.tracks[0].url} aria-hidden="true" />
+      )}
 
       <AppNavBar
         artistName={siteData.artistName}
@@ -266,6 +259,7 @@ function App() {
 
       <div className="flex flex-col">
 
+      <SectionErrorBoundary sectionName="Biography">
       <AppBioSection
         bio={siteData.bio}
         sectionOrder={getSectionOrder('bio')}
@@ -274,7 +268,9 @@ function App() {
         sectionLabel={sectionLabels.biography || ''}
         adminSettings={adminSettings}
       />
+      </SectionErrorBoundary>
 
+      <SectionErrorBoundary sectionName="Shell">
       <ShellSection
         editMode={editMode}
         adminSettings={adminSettings}
@@ -282,7 +278,9 @@ function App() {
         visible={vis.shell !== false}
         sectionLabel={sectionLabels.shell || ''}
       />
+      </SectionErrorBoundary>
 
+      <SectionErrorBoundary sectionName="Credit Highlights">
       <CreditHighlightsSection
         siteData={siteData}
         editMode={editMode}
@@ -290,7 +288,9 @@ function App() {
         visible={vis.creditHighlights !== false}
         sectionLabel={sectionLabels.creditHighlights || ''}
       />
+      </SectionErrorBoundary>
 
+      <SectionErrorBoundary sectionName="Music">
       <AppMusicSection
         sectionOrder={getSectionOrder('music')}
         visible={vis.music !== false}
@@ -298,7 +298,9 @@ function App() {
         sectionLabel={sectionLabels.musicPlayer || ''}
         adminSettings={adminSettings}
       />
+      </SectionErrorBoundary>
 
+      <SectionErrorBoundary sectionName="Gigs">
       <AppGigsSection
         gigs={siteData.gigs}
         sectionOrder={getSectionOrder('gigs')}
@@ -309,7 +311,9 @@ function App() {
         bandsintownFetching={bandsintownFetching}
         onGigClick={(gig) => setCyberpunkOverlay({ type: 'gig', data: gig })}
       />
+      </SectionErrorBoundary>
 
+      <SectionErrorBoundary sectionName="Releases">
       <AppReleasesSection
         releases={siteData.releases}
         sectionOrder={getSectionOrder('releases')}
@@ -321,7 +325,9 @@ function App() {
         hasAutoLoaded={hasAutoLoaded}
         onReleaseClick={(release) => setCyberpunkOverlay({ type: 'release', data: release })}
       />
+      </SectionErrorBoundary>
 
+      <SectionErrorBoundary sectionName="Gallery">
       <GallerySection
         siteData={siteData}
         editMode={editMode}
@@ -331,10 +337,12 @@ function App() {
         setGalleryIndex={setGalleryIndex}
         adminSettings={adminSettings}
       />
+      </SectionErrorBoundary>
 
       <div style={{ order: getSectionOrder('media') }}>
       <Separator className="bg-border" />
 
+      <SectionErrorBoundary sectionName="Media">
       <MediaBrowser
         mediaFiles={siteData.mediaFiles?.map(f => ({
           id: f.id,
@@ -345,8 +353,10 @@ function App() {
         })) || []}
         editMode={editMode}
       />
+      </SectionErrorBoundary>
       </div>
 
+      <SectionErrorBoundary sectionName="Connect">
       <AppSocialSection
         social={siteData.social}
         sectionOrder={getSectionOrder('connect')}
@@ -356,15 +366,18 @@ function App() {
         adminSettings={adminSettings}
         onContactClick={() => setCyberpunkOverlay({ type: 'contact' })}
       />
+      </SectionErrorBoundary>
 
       {/* Contact Section */}
       <div style={{ order: getSectionOrder('contact') }}>
       {vis.contact !== false && (
+        <SectionErrorBoundary sectionName="Contact">
         <ContactSection
           contactSettings={contactSettings}
           editMode={editMode}
           sectionLabels={sectionLabels}
         />
+        </SectionErrorBoundary>
       )}
       </div>
 
@@ -377,7 +390,6 @@ function App() {
         setShowLoginDialog={setShowLoginDialog}
         setShowSetupDialog={setShowSetupDialog}
         setCyberpunkOverlay={setCyberpunkOverlay}
-        setLanguage={setLanguage}
       />
 
       <AnimatePresence>
@@ -408,8 +420,6 @@ function App() {
         overlay={cyberpunkOverlay}
         onClose={() => setCyberpunkOverlay(null)}
         adminSettings={adminSettings}
-        language={language}
-        setLanguage={setLanguage}
       />
 
 

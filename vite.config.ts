@@ -31,6 +31,12 @@ export default defineConfig(() => {
             if (id.includes('/node_modules/@phosphor-icons')) return 'vendor-icons'
             if (id.includes('/node_modules/@tanstack/react-query')) return 'vendor-query'
             if (id.includes('/node_modules/lucide-react')) return 'vendor-lucide'
+            if (id.includes('/node_modules/d3') || id.includes('/node_modules/d3-')) return 'vendor-d3'
+            if (id.includes('/node_modules/recharts')) return 'vendor-recharts'
+            if (
+              id.includes('/node_modules/@tiptap/') ||
+              id.includes('/node_modules/prosemirror')
+            ) return 'vendor-tiptap'
             if (
               id.includes('/node_modules/@radix-ui/react-dialog') ||
               id.includes('/node_modules/@radix-ui/react-separator') ||

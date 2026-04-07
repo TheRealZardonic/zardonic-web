@@ -1,6 +1,7 @@
 import React from 'react'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import { Lock } from '@phosphor-icons/react'
+import { useLocale } from '@/contexts/LocaleContext'
 
 interface AppFooterProps {
   artistName: string
@@ -9,7 +10,6 @@ interface AppFooterProps {
   setShowLoginDialog: (v: boolean) => void
   setShowSetupDialog: (v: boolean) => void
   setCyberpunkOverlay: (overlay: { type: 'impressum' | 'privacy' | 'contact' } | null) => void
-  setLanguage: (lang: 'en' | 'de') => void
 }
 
 export default function AppFooter({
@@ -19,15 +19,15 @@ export default function AppFooter({
   setShowLoginDialog,
   setShowSetupDialog,
   setCyberpunkOverlay,
-  setLanguage,
 }: AppFooterProps) {
+  const { setLocale } = useLocale()
   return (
     <footer className="py-12 px-4 border-t border-border noise-effect">
       <div className="container mx-auto text-center space-y-4">
         <div className="flex justify-center gap-6 flex-wrap">
           <button
             onClick={() => {
-              setLanguage('en')
+              setLocale('en')
               setCyberpunkOverlay({ type: 'impressum' })
             }}
             className="text-sm text-muted-foreground hover:text-primary transition-colors uppercase tracking-wide font-mono hover-chromatic cursor-pointer"
@@ -36,7 +36,7 @@ export default function AppFooter({
           </button>
           <button
             onClick={() => {
-              setLanguage('en')
+              setLocale('en')
               setCyberpunkOverlay({ type: 'privacy' })
             }}
             className="text-sm text-muted-foreground hover:text-primary transition-colors uppercase tracking-wide font-mono hover-chromatic cursor-pointer"

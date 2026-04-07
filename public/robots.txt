@@ -69,6 +69,4 @@ Disallow: /
 User-agent: DotBot
 Disallow: /
 
-# Sitemap — enthält Honeypot-Link für Bot-Erkennung
 Sitemap: https://zardonic.com/sitemap.xml
-Sitemap: https://zardonic.com/sitemap-extended.xml

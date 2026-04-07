@@ -30,11 +30,12 @@ import AdminLoginDialog from '@/components/AdminLoginDialog'
 import type { AdminSettings, SectionVisibility, ThemeCustomization, AnimationSettings, ProgressiveOverlayModes } from '@/lib/types'
 import type { SiteData } from '@/App'
 import { toast } from 'sonner'
+import { DEFAULT_SECTION_ORDER } from '@/lib/config'
 
 interface EditControlsProps {
-  setAdminSettings?: any;
-  onImportData?: any;
-  siteData?: any;
+  setAdminSettings?: (settings: AdminSettings) => void
+  onImportData?: (data: SiteData) => void
+  siteData?: SiteData
   editMode: boolean
   onToggleEdit: () => void
   hasPassword: boolean
@@ -73,8 +74,6 @@ export default function EditControls({ setAdminSettings, onImportData, siteData,
   const [showReorderPanel, setShowReorderPanel] = useState(false)
   const importInputRef = useRef<HTMLInputElement>(null)
 
-  const defaultSectionOrder = ['bio', 'shell', 'creditHighlights', 'music', 'gigs', 'releases', 'gallery', 'media', 'connect', 'contact']
-
   const sectionDisplayNames: Record<string, string> = {
     bio: 'Biography',
     shell: 'Shell (Member)',
@@ -88,7 +87,7 @@ export default function EditControls({ setAdminSettings, onImportData, siteData,
     contact: 'Contact Form',
   }
 
-  const currentOrder = adminSettings?.sectionOrder ?? defaultSectionOrder
+  const currentOrder = adminSettings?.sectionOrder ?? DEFAULT_SECTION_ORDER
 
   const moveSectionUp = useCallback(
     (index: number) => {
@@ -785,7 +784,7 @@ export default function EditControls({ setAdminSettings, onImportData, siteData,
                 ))}
               </div>
               <Button
-                onClick={() => setAdminSettings?.({ ...adminSettings, sectionOrder: defaultSectionOrder })}
+                onClick={() => setAdminSettings?.({ ...adminSettings, sectionOrder: [...DEFAULT_SECTION_ORDER] })}
                 variant="outline"
                 className="w-full font-mono text-xs"
               >
