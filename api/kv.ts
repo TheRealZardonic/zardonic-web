@@ -97,10 +97,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
   // Check if KV is configured
   if (!isKVConfigured()) {
-    console.error('KV not configured: Missing KV_REST_API_URL or KV_REST_API_TOKEN environment variables')
+    console.error('KV not configured: Missing UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN environment variables')
     return res.status(503).json({ 
       error: 'Service unavailable',
-      message: 'KV storage is not configured. Please set KV_REST_API_URL and KV_REST_API_TOKEN environment variables.'
+      message: 'KV storage is not configured. Please set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN environment variables.'
     })
   }
 

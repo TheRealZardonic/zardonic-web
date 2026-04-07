@@ -27,8 +27,8 @@ export default function handler(req: VercelRequest, res: VercelResponse): void {
   }
 
   const vars = {
-    KV_REST_API_URL: !!process.env.KV_REST_API_URL,
-    KV_REST_API_TOKEN: !!process.env.KV_REST_API_TOKEN,
+    UPSTASH_REDIS_REST_URL: !!process.env.UPSTASH_REDIS_REST_URL,
+    UPSTASH_REDIS_REST_TOKEN: !!process.env.UPSTASH_REDIS_REST_TOKEN,
     ADMIN_SETUP_TOKEN: !!process.env.ADMIN_SETUP_TOKEN,
     RESEND_API_KEY: !!process.env.RESEND_API_KEY,
   }

@@ -41,6 +41,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     version: VERSION,
   }
 
-  const httpStatus = overallStatus === 'ok' ? 200 : 503
-  return res.status(httpStatus).json(body)
+  // Always return 200 — the `status` field communicates degraded state.
+  // Returning 503 here was causing uptime monitors and load balancers to
+  // consider the entire application unreachable when only KV was down.
+  return res.status(200).json(body)
 }

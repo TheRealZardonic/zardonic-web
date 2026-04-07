@@ -31,7 +31,7 @@ interface Subscriber {
 
 /** Store subscriber locally in KV for the admin mailing list view. */
 async function storeSubscriberLocally(email: string, source: string | undefined): Promise<void> {
-  if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) return
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) return
   const MAX_RETRIES = 3
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     try {
@@ -76,7 +76,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     const sanitizedEmail = email.toLowerCase().trim().slice(0, 254)
 
     // Remove from local KV store
-    if (process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN) {
+    if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
       const MAX_RETRIES = 3
       for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
         try {
