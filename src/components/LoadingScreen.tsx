@@ -1,13 +1,23 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { useEffect, useState, useMemo, memo } from 'react'
 import { cacheImage } from '@/lib/image-cache'
+import type { LoaderTexts } from '@/lib/types'
 
 interface LoadingScreenProps {
   onLoadComplete: () => void
   precacheUrls?: string[]
+  loaderTexts?: LoaderTexts
 }
 
-export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, precacheUrls = [] }: LoadingScreenProps) {
+const DEFAULT_MESSAGES = [
+  'INITIALIZING NEURAL INTERFACE',
+  'LOADING CORE SYSTEMS',
+  'SYNCHRONIZING WETWARE',
+  'ESTABLISHING CONNECTION',
+  'SYSTEM READY'
+] as const
+
+export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, precacheUrls = [], loaderTexts }: LoadingScreenProps) {
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [loadingStage, setLoadingStage] = useState(0)
   const [cachingDone, setCachingDone] = useState(precacheUrls.length === 0)
@@ -54,13 +64,16 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
   }, [loadingProgress, loadingStage])
 
   // Memoize messages to prevent recreation
-  const messages = useMemo(() => [
-    'INITIALIZING NEURAL INTERFACE',
-    'LOADING CORE SYSTEMS',
-    'SYNCHRONIZING WETWARE',
-    'ESTABLISHING CONNECTION',
-    'SYSTEM READY'
-  ], [])
+  const messages = useMemo(() => {
+    if (loaderTexts?.stageMessages?.length === 5) return loaderTexts.stageMessages
+    return DEFAULT_MESSAGES as string[]
+  }, [loaderTexts?.stageMessages])
+
+  const systemCheckLabels: [string, string, string] = [
+    loaderTexts?.systemChecks?.[0] ?? 'WETWARE',
+    loaderTexts?.systemChecks?.[1] ?? 'NEURAL',
+    loaderTexts?.systemChecks?.[2] ?? 'CYBERDECK',
+  ]
 
   // Complete when progress reaches 100% and background caching is done
   useEffect(() => {
@@ -122,7 +135,7 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
               repeat: Infinity,
             }}
           >
-            {'>'} ZARDONIC.SYS v2.077 {'<'}
+            {'>'} {loaderTexts?.titleLabel ?? 'ZARDONIC.SYS v2.077'} {'<'}
           </motion.div>
         </div>
         
@@ -199,56 +212,34 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
             </div>
 
             <div className="grid grid-cols-3 gap-2 mt-6 font-mono text-xs text-muted-foreground">
-              <motion.div
-                className="flex items-center gap-1"
-                animate={{ opacity: loadingProgress > 10 ? 1 : 0.3 }}
-              >
-                <motion.span
-                  animate={{
-                    color: loadingProgress > 10 ? 'oklch(0.55 0.25 25)' : 'oklch(0.6 0 0)',
-                  }}
-                >
-                  ▸
-                </motion.span>
-                <span>WETWARE</span>
-                {loadingProgress > 10 && <span className="text-primary">✓</span>}
-              </motion.div>
-              <motion.div
-                className="flex items-center gap-1"
-                animate={{ opacity: loadingProgress > 40 ? 1 : 0.3 }}
-              >
-                <motion.span
-                  animate={{
-                    color: loadingProgress > 40 ? 'oklch(0.55 0.25 25)' : 'oklch(0.6 0 0)',
-                  }}
-                >
-                  ▸
-                </motion.span>
-                <span>NEURAL</span>
-                {loadingProgress > 40 && <span className="text-primary">✓</span>}
-              </motion.div>
-              <motion.div
-                className="flex items-center gap-1"
-                animate={{ opacity: loadingProgress > 70 ? 1 : 0.3 }}
-              >
-                <motion.span
-                  animate={{
-                    color: loadingProgress > 70 ? 'oklch(0.55 0.25 25)' : 'oklch(0.6 0 0)',
-                  }}
-                >
-                  ▸
-                </motion.span>
-                <span>CYBERDECK</span>
-                {loadingProgress > 70 && <span className="text-primary">✓</span>}
-              </motion.div>
+              {systemCheckLabels.map((label, idx) => {
+                const threshold = idx === 0 ? 10 : idx === 1 ? 40 : 70
+                return (
+                  <motion.div
+                    key={label}
+                    className="flex items-center gap-1"
+                    animate={{ opacity: loadingProgress > threshold ? 1 : 0.3 }}
+                  >
+                    <motion.span
+                      animate={{
+                        color: loadingProgress > threshold ? 'oklch(0.55 0.25 25)' : 'oklch(0.6 0 0)',
+                      }}
+                    >
+                      ▸
+                    </motion.span>
+                    <span>{label}</span>
+                    {loadingProgress > threshold && <span className="text-primary">✓</span>}
+                  </motion.div>
+                )
+              })}
             </div>
           </div>
         </motion.div>
       </motion.div>
 
       <div className="absolute bottom-8 left-8 font-mono text-xs text-muted-foreground opacity-50">
-        <div>BUILD: 2077.v1.23</div>
-        <div>PLATFORM: WEB.NEURAL</div>
+        <div>{loaderTexts?.buildInfo ?? 'BUILD: 2077.v1.23'}</div>
+        <div>{loaderTexts?.platformInfo ?? 'PLATFORM: WEB.NEURAL'}</div>
       </div>
 
       <div className="absolute bottom-8 right-8 font-mono text-xs text-muted-foreground opacity-50">
@@ -256,7 +247,7 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
           animate={{ opacity: [0.3, 0.7, 0.3] }}
           transition={{ duration: 2, repeat: Infinity }}
         >
-          CONNECTION: SECURE
+          {loaderTexts?.connectionStatus ?? 'CONNECTION: SECURE'}
         </motion.div>
       </div>
     </motion.div>

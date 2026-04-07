@@ -292,15 +292,28 @@ export function resetThemeDOM() {
 }
 
 function ColorInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  // Local hex state for the native picker – only committed on mouseup/blur
+  const [localHex, setLocalHex] = useState(() => oklchToHex(value))
+
+  // Keep localHex in sync when the value changes externally (e.g. undo / preset)
+  useEffect(() => { setLocalHex(oklchToHex(value)) }, [value])
+
+  const commit = useCallback((hex: string) => { onChange(hexToOklch(hex)) }, [onChange])
+
   return (
     <div className="flex items-center gap-3 py-1.5">
       <Label className="font-mono text-xs text-muted-foreground w-36 flex-shrink-0">{label}</Label>
       <div className="flex items-center gap-2 flex-1">
         <input
           type="color"
-          value={oklchToHex(value)}
-          onChange={e => onChange(hexToOklch(e.target.value))}
+          value={localHex}
+          /* Update local state live so the swatch reflects the picker position */
+          onInput={e => setLocalHex((e.target as HTMLInputElement).value)}
+          /* Commit to parent only when the user releases the mouse or closes the picker */
+          onMouseUp={e => commit((e.target as HTMLInputElement).value)}
+          onChange={e => commit(e.target.value)}
           className="w-8 h-8 rounded cursor-pointer border border-primary/20 bg-transparent"
+          aria-label={label}
         />
         <Input
           value={value}
@@ -375,11 +388,31 @@ export default function ThemeCustomizerDialog({
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const prevOpenRef = useRef(false)
 
+  // Undo stack – stores up to 20 previous draft states
+  const undoStack = useRef<ThemeSettings[]>([])
+  const [canUndo, setCanUndo] = useState(false)
+
+  const pushUndo = useCallback((prev: ThemeSettings) => {
+    undoStack.current = [...undoStack.current.slice(-19), prev]
+    setCanUndo(true)
+  }, [])
+
+  const handleUndo = useCallback(() => {
+    const prev = undoStack.current.pop()
+    if (prev) {
+      setDraft(prev)
+      applyThemeToDOM(prev)
+      setCanUndo(undoStack.current.length > 0)
+    }
+  }, [])
+
   // Sync draft when dialog opens (not on every prop change while open)
   useEffect(() => {
     if (open && !prevOpenRef.current) {
       setDraft(themeSettings || {})
       setVisDraft(sectionVisibility || {})
+      undoStack.current = []
+      setCanUndo(false)
     }
     prevOpenRef.current = open
   }, [open])
@@ -395,10 +428,14 @@ export default function ThemeCustomizerDialog({
   }, [draft, open])
 
   const updateColor = useCallback((key: keyof ThemeSettings, value: string) => {
-    setDraft(prev => ({ ...prev, [key]: value }))
-  }, [])
+    setDraft(prev => {
+      pushUndo(prev)
+      return { ...prev, [key]: value }
+    })
+  }, [pushUndo])
 
   const handlePreset = (preset: ThemePreset) => {
+    pushUndo(draft)
     setDraft({ ...preset.theme, activePreset: preset.name })
   }
 
@@ -410,6 +447,7 @@ export default function ThemeCustomizerDialog({
   }
 
   const handleReset = () => {
+    pushUndo(draft)
     const defaults = THEME_PRESETS[0].theme
     setDraft({ ...defaults, activePreset: THEME_PRESETS[0].name })
     resetThemeDOM()
@@ -778,6 +816,16 @@ export default function ThemeCustomizerDialog({
                 </label>
                 <Button variant="outline" size="sm" onClick={handleReset} className="gap-1 text-xs border-primary/30">
                   <ArrowCounterClockwise size={14} /> Reset
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleUndo}
+                  disabled={!canUndo}
+                  className="gap-1 text-xs border-primary/30 disabled:opacity-40"
+                  title="Undo last change"
+                >
+                  <ArrowCounterClockwise size={14} /> Undo
                 </Button>
               </div>
               <div className="flex gap-2">

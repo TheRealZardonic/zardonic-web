@@ -44,6 +44,8 @@ import type {
   ProgressiveOverlayModes,
   SectionLabels,
   ContactInfo,
+  BackgroundType,
+  LoaderTexts,
 } from '@/lib/types'
 import type { SiteData } from '@/App'
 import { toast } from 'sonner'
@@ -775,6 +777,56 @@ export default function AdminPanel({
                     Save Contact Info
                   </Button>
                 </section>
+
+                <Separator />
+
+                {/* Loader Texts Editor */}
+                <section className="space-y-3">
+                  <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
+                    Loading Screen Texts
+                  </h3>
+                  <p className="font-mono text-xs text-muted-foreground">
+                    Customise every string shown during the loading screen. Leave blank to use the default text.
+                  </p>
+                  {([
+                    { field: 'titleLabel' as keyof LoaderTexts, label: 'Title label', placeholder: 'ZARDONIC.SYS v2.077' },
+                    { field: 'buildInfo' as keyof LoaderTexts, label: 'Build info (bottom left)', placeholder: 'BUILD: 2077.v1.23' },
+                    { field: 'platformInfo' as keyof LoaderTexts, label: 'Platform info (bottom left)', placeholder: 'PLATFORM: WEB.NEURAL' },
+                    { field: 'connectionStatus' as keyof LoaderTexts, label: 'Connection status (bottom right)', placeholder: 'CONNECTION: SECURE' },
+                  ] as { field: keyof LoaderTexts; label: string; placeholder: string }[]).map(({ field, label, placeholder }) => (
+                    <div key={field} className="space-y-1">
+                      <Label className="font-mono text-xs text-muted-foreground">{label}</Label>
+                      <Input
+                        value={(adminSettings?.loaderTexts?.[field] ?? '') as string}
+                        onChange={e => {
+                          const val = e.target.value
+                          setAdminSettings?.({
+                            ...adminSettings,
+                            loaderTexts: { ...adminSettings?.loaderTexts, [field]: val || undefined },
+                          })
+                        }}
+                        className="font-mono text-xs"
+                        placeholder={placeholder}
+                      />
+                    </div>
+                  ))}
+                  <div className="space-y-1">
+                    <Label className="font-mono text-xs text-muted-foreground">Stage messages (5 lines, one per line)</Label>
+                    <textarea
+                      rows={5}
+                      className="w-full bg-transparent border border-primary/30 text-foreground font-mono text-xs p-2 resize-y focus:outline-none focus:border-primary/60"
+                      placeholder={'INITIALIZING NEURAL INTERFACE\nLOADING CORE SYSTEMS\nSYNCHRONIZING WETWARE\nESTABLISHING CONNECTION\nSYSTEM READY'}
+                      value={(adminSettings?.loaderTexts?.stageMessages ?? []).join('\n')}
+                      onChange={e => {
+                        const lines = e.target.value.split('\n').slice(0, 5)
+                        setAdminSettings?.({
+                          ...adminSettings,
+                          loaderTexts: { ...adminSettings?.loaderTexts, stageMessages: lines.length ? lines : undefined },
+                        })
+                      }}
+                    />
+                  </div>
+                </section>
               </TabsContent>
 
               {/* ─── APPEARANCE TAB ───────────────────────────── */}
@@ -908,6 +960,39 @@ export default function AdminPanel({
                         />
                       </div>
                     ))}
+                  </div>
+
+                  {/* Background type selector */}
+                  <div className="space-y-2 pt-2">
+                    <Label className="font-mono text-xs text-muted-foreground uppercase tracking-wider">Background Style</Label>
+                    <div className="grid grid-cols-1 gap-1.5">
+                      {([
+                        { value: 'circuit', label: 'Circuit Board (Default)', desc: 'Animated red circuit traces' },
+                        { value: 'cyberpunk-hud', label: 'Cyberpunk HUD', desc: 'HUD overlay with corner brackets & scan beam' },
+                        { value: 'matrix', label: 'Matrix Rain', desc: 'Cascading Japanese characters' },
+                        { value: 'stars', label: 'Star Field', desc: 'Warp-speed star field' },
+                        { value: 'minimal', label: 'Minimal', desc: 'No decorative background' },
+                      ] as { value: BackgroundType; label: string; desc: string }[]).map(opt => (
+                        <button
+                          key={opt.value}
+                          onClick={() => {
+                            if (!adminSettings) return
+                            setAdminSettings?.({
+                              ...adminSettings,
+                              animations: { ...anim, backgroundType: opt.value },
+                            })
+                          }}
+                          className={`text-left px-3 py-2 border rounded font-mono text-xs transition-colors ${
+                            (anim.backgroundType ?? 'circuit') === opt.value
+                              ? 'border-primary bg-primary/10 text-primary'
+                              : 'border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'
+                          }`}
+                        >
+                          <div className="font-semibold">{opt.label}</div>
+                          <div className="text-muted-foreground/60 text-[10px]">{opt.desc}</div>
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   <div className="space-y-4 pt-2">

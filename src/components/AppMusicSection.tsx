@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import EditableHeading from '@/components/EditableHeading'
 import { SpotifyEmbed } from '@/components/SpotifyEmbed'
-import type { AdminSettings } from '@/lib/types'
+import type { AdminSettings, SectionLabels } from '@/lib/types'
 
 interface AppMusicSectionProps {
   sectionOrder: number
@@ -11,10 +11,23 @@ interface AppMusicSectionProps {
   editMode: boolean
   sectionLabel: string
   adminSettings: AdminSettings | undefined
+  sectionLabels?: SectionLabels
+  onLabelChange?: (key: keyof SectionLabels, value: string) => void
 }
 
-export default function AppMusicSection({ sectionOrder, visible, editMode, sectionLabel, adminSettings }: AppMusicSectionProps) {
+export default function AppMusicSection({
+  sectionOrder,
+  visible,
+  editMode,
+  sectionLabel,
+  adminSettings,
+  sectionLabels,
+  onLabelChange,
+}: AppMusicSectionProps) {
   if (!visible) return null
+
+  const streamLabel = sectionLabels?.musicStreamLabel ?? '// SPOTIFY.STREAM.INTERFACE'
+  const statusLabel = sectionLabels?.musicStatusLabel ?? '// STATUS: [STREAMING]'
 
   return (
     <div style={{ order: sectionOrder }}>
@@ -41,7 +54,16 @@ export default function AppMusicSection({ sectionOrder, visible, editMode, secti
             <Card className="p-0 bg-card border-border relative cyber-card hover-noise overflow-hidden">
               <div className="scan-line"></div>
               <div className="p-4 pb-0">
-                <div className="data-label mb-2">// SPOTIFY.STREAM.INTERFACE</div>
+                {editMode && onLabelChange ? (
+                  <input
+                    className="data-label mb-2 bg-transparent border border-primary/30 px-2 py-1 text-xs font-mono w-full focus:outline-none focus:border-primary/60"
+                    value={streamLabel}
+                    onChange={e => onLabelChange('musicStreamLabel', e.target.value)}
+                    aria-label="Stream interface label"
+                  />
+                ) : (
+                  <div className="data-label mb-2">{streamLabel}</div>
+                )}
               </div>
               <div className="spotify-player-wrapper" style={{
                 background: 'linear-gradient(180deg, oklch(0.15 0 0) 0%, oklch(0.1 0 0) 100%)',
@@ -55,7 +77,16 @@ export default function AppMusicSection({ sectionOrder, visible, editMode, secti
                 />
               </div>
               <div className="p-4 pt-2">
-                <div className="data-label">// STATUS: [STREAMING]</div>
+                {editMode && onLabelChange ? (
+                  <input
+                    className="data-label bg-transparent border border-primary/30 px-2 py-1 text-xs font-mono w-full focus:outline-none focus:border-primary/60"
+                    value={statusLabel}
+                    onChange={e => onLabelChange('musicStatusLabel', e.target.value)}
+                    aria-label="Stream status label"
+                  />
+                ) : (
+                  <div className="data-label">{statusLabel}</div>
+                )}
               </div>
             </Card>
           </motion.div>

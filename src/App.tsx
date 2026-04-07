@@ -5,7 +5,7 @@ import { useKV } from '@/hooks/use-kv'
 import { useKonami } from '@/hooks/use-konami'
 import { trackPageView, trackHeatmapClick } from '@/hooks/use-analytics'
 import { useAdminAuth } from '@/hooks/use-admin-auth'
-import type { AdminSettings } from '@/lib/types'
+import type { AdminSettings, BackgroundType, SectionLabels } from '@/lib/types'
 import { useAppTheme } from '@/hooks/use-app-theme'
 import { useSiteDataSync } from '@/hooks/use-site-data-sync'
 import type { SiteData, CyberpunkOverlayState } from '@/lib/app-types'
@@ -18,6 +18,9 @@ import { toast } from 'sonner'
 import { SwipeableGallery } from '@/components/SwipeableGallery'
 import { LoadingScreen } from '@/components/LoadingScreen'
 import { CircuitBackground } from '@/components/CircuitBackground'
+import CyberpunkBackground from '@/components/CyberpunkBackground'
+const MatrixRain = React.lazy(() => import('@/components/MatrixRain'))
+const StarField = React.lazy(() => import('@/components/StarField'))
 import AdminLoginDialog from '@/components/AdminLoginDialog'
 import EditControls from '@/components/EditControls'
 const ConfigEditorDialog = React.lazy(() => import('@/components/ConfigEditorDialog'))
@@ -41,6 +44,17 @@ import CyberpunkOverlay from '@/components/CyberpunkOverlay'
 import { StructuredData } from '@/components/StructuredData'
 import { SectionErrorBoundary } from '@/components/SectionErrorBoundary'
 import { useDocumentTitle } from '@/hooks/use-document-title'
+
+/** Render the correct background component based on the configured type */
+function BackgroundLayer({ type }: { type: BackgroundType | undefined }) {
+  const bg = type ?? 'circuit'
+  if (bg === 'circuit') return <CircuitBackground />
+  if (bg === 'cyberpunk-hud') return <CyberpunkBackground />
+  if (bg === 'matrix') return <Suspense fallback={null}><MatrixRain /></Suspense>
+  if (bg === 'stars') return <Suspense fallback={null}><StarField /></Suspense>
+  // 'minimal' – no decorative background
+  return null
+}
 
 // Code splitting for heavy components
 const Terminal = React.lazy(() => import('@/components/Terminal').then(m => ({ default: m.Terminal })))
@@ -162,6 +176,14 @@ function App() {
     setKvAdminSettings(settings)
   }, [setKvAdminSettings])
 
+  const handleLabelChange = useCallback((key: keyof SectionLabels, value: string) => {
+    setAdminSettings(prev => {
+      const next = { ...(prev ?? {}), sectionLabels: { ...(prev?.sectionLabels ?? {}), [key]: value } }
+      setKvAdminSettings(next)
+      return next
+    })
+  }, [setKvAdminSettings])
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [editMode, setEditMode] = useState(false)
   const [showConfigEditor, setShowConfigEditor] = useState(false)
@@ -228,7 +250,7 @@ function App() {
   }
 
   if (!siteData) {
-    return <LoadingScreen onLoadComplete={() => setLoading(false)} precacheUrls={precacheUrls} />
+    return <LoadingScreen onLoadComplete={() => setLoading(false)} precacheUrls={precacheUrls} loaderTexts={adminSettings?.loaderTexts} />
   }
 
   return (
@@ -236,7 +258,7 @@ function App() {
       <StructuredData artistName={siteData.artistName} siteData={siteData} />
       <AnimatePresence>
         {loading && (
-          <LoadingScreen onLoadComplete={() => setLoading(false)} precacheUrls={precacheUrls} />
+          <LoadingScreen onLoadComplete={() => setLoading(false)} precacheUrls={precacheUrls} loaderTexts={adminSettings?.loaderTexts} />
         )}
       </AnimatePresence>
 
@@ -245,7 +267,7 @@ function App() {
       {anim.crtEnabled !== false && <div className="crt-vignette" />}
       {anim.scanlineEnabled !== false && <div className="crt-scanline-bg" />}
       {anim.noiseEnabled !== false && <div className="full-page-noise periodic-noise-glitch" />}
-      {anim.circuitBackgroundEnabled !== false && <CircuitBackground />}
+      {anim.circuitBackgroundEnabled !== false && <BackgroundLayer type={anim.backgroundType} />}
       <SystemMonitorHUD />
       
       <Toaster />
@@ -314,6 +336,8 @@ function App() {
         editMode={editMode}
         sectionLabel={sectionLabels.musicPlayer || ''}
         adminSettings={adminSettings}
+        sectionLabels={sectionLabels}
+        onLabelChange={editMode ? handleLabelChange : undefined}
       />
       </SectionErrorBoundary>
 

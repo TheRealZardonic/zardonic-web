@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useMemo } from 'react'
 import logoImage from '@/assets/images/baphomet no text.svg'
 import {
   LOADER_PROGRESS_INCREMENT_MULTIPLIER,
@@ -7,13 +7,15 @@ import {
   LOADER_PROGRESS_INTERVAL_MS,
 } from '@/lib/config'
 import { cacheImage } from '@/lib/image-cache'
+import type { LoaderTexts } from '@/lib/types'
 
 interface CyberpunkLoaderProps {
   onLoadComplete: () => void
   precacheUrls?: string[]
+  loaderTexts?: LoaderTexts
 }
 
-const hackingTexts = [
+const DEFAULT_HACKING_TEXTS = [
   '> INITIALIZING NEURAL INTERFACE...',
   '> LOADING CORE MODULES...',
   '> ESTABLISHING SECURE LINK...',
@@ -28,7 +30,7 @@ const hackingTexts = [
   '> SYSTEM ONLINE // ACCESS GRANTED'
 ]
 
-const codeFragments = [
+const DEFAULT_CODE_FRAGMENTS = [
   'fn init_neural() -> Result<()> {',
   '  let freq = 150.0_f64;',
   '  signal::process(bpm);',
@@ -52,7 +54,18 @@ const codeFragments = [
   'export NK_MODE=ACTIVATED',
 ]
 
-export default function CyberpunkLoader({ onLoadComplete, precacheUrls = [] }: CyberpunkLoaderProps) {
+const DEFAULT_BOOT_LABEL = 'NK-SYS [v2.0] // BOOT SEQUENCE'
+
+export default function CyberpunkLoader({ onLoadComplete, precacheUrls = [], loaderTexts }: CyberpunkLoaderProps) {
+  const hackingTexts = useMemo(
+    () => (loaderTexts?.hackingTexts?.length ? loaderTexts.hackingTexts : DEFAULT_HACKING_TEXTS),
+    [loaderTexts?.hackingTexts]
+  )
+  const codeFragments = useMemo(
+    () => (loaderTexts?.codeFragments?.length ? loaderTexts.codeFragments : DEFAULT_CODE_FRAGMENTS),
+    [loaderTexts?.codeFragments]
+  )
+  const bootLabel = loaderTexts?.bootLabel ?? DEFAULT_BOOT_LABEL
   const [progress, setProgress] = useState(0)
   const [hackingText, setHackingText] = useState(hackingTexts[0])
   const [cachingDone, setCachingDone] = useState(precacheUrls.length === 0)
@@ -226,7 +239,7 @@ export default function CyberpunkLoader({ onLoadComplete, precacheUrls = [] }: C
           animate={{ opacity: [0.2, 0.4, 0.2] }}
           transition={{ duration: 2, repeat: Infinity }}
         >
-          NK-SYS [v2.0] // BOOT SEQUENCE
+          {bootLabel}
         </motion.div>
       </div>
     </motion.div>

@@ -68,6 +68,8 @@ export interface ThemeCustomization {
   fontSizes?: Record<string, string>
 }
 
+export type BackgroundType = 'circuit' | 'cyberpunk-hud' | 'matrix' | 'stars' | 'minimal'
+
 export interface AnimationSettings {
   glitchEnabled?: boolean
   scanlineEnabled?: boolean
@@ -77,6 +79,20 @@ export interface AnimationSettings {
   circuitBackgroundEnabled?: boolean
   crtOverlayOpacity?: number
   crtVignetteOpacity?: number
+  backgroundType?: BackgroundType
+}
+
+export interface LoaderTexts {
+  hackingTexts?: string[]
+  codeFragments?: string[]
+  bootLabel?: string
+  // LoadingScreen specific
+  titleLabel?: string
+  stageMessages?: string[]
+  buildInfo?: string
+  platformInfo?: string
+  connectionStatus?: string
+  systemChecks?: [string, string, string]
 }
 
 export interface ProgressiveOverlayModes {
@@ -107,6 +123,9 @@ export interface SectionLabels {
   sessionStatusText?: string
   profileStatusText?: string
   profileFields?: Array<{ label: string; value: string }>
+  // Decorative labels in music section
+  musicStreamLabel?: string
+  musicStatusLabel?: string
 }
 
 export interface ContactInfo {
@@ -184,6 +203,7 @@ export interface AdminSettings {
     intervalMs?: number
     durationMs?: number
   }
+  loaderTexts?: LoaderTexts
 }
 
 export interface ContactMessage {
