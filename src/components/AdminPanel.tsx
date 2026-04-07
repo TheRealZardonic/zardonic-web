@@ -4,18 +4,14 @@ import {
   Export,
   ArrowSquareIn,
   Eye,
-  EyeSlash,
   Palette,
   GearSix,
   ChartLine,
-  ArrowUp,
-  ArrowDown,
   ShieldWarning,
   ShieldCheck,
   ProhibitInset,
   Envelope,
   Users,
-  Sliders,
   House,
   FileText,
   Shield,
@@ -25,16 +21,13 @@ import {
   CheckCircle,
   Warning,
   ArrowCounterClockwise,
+  Monitor,
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
-import { Slider } from '@/components/ui/slider'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useRef, useState, useCallback, useEffect } from 'react'
+import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react'
 import AdminLoginDialog from '@/components/AdminLoginDialog'
 import type {
   AdminSettings,
@@ -44,12 +37,14 @@ import type {
   ProgressiveOverlayModes,
   SectionLabels,
   ContactInfo,
-  BackgroundType,
-  LoaderTexts,
 } from '@/lib/types'
 import type { SiteData } from '@/App'
 import { toast } from 'sonner'
 import { DEFAULT_SECTION_ORDER } from '@/lib/config'
+import AppearanceTab from '@/components/admin/AppearanceTab'
+import BackgroundTab from '@/components/admin/BackgroundTab'
+import ContentTab from '@/components/admin/ContentTab'
+import SectionsTab from '@/components/admin/SectionsTab'
 
 interface AdminPanelProps {
   open: boolean
@@ -73,41 +68,6 @@ interface AdminPanelProps {
   onSetPassword: (password: string) => Promise<void>
 }
 
-const SOCIAL_FIELDS: { key: keyof SiteData['social']; label: string; placeholder: string }[] = [
-  { key: 'instagram', label: 'Instagram', placeholder: 'https://instagram.com/...' },
-  { key: 'facebook', label: 'Facebook', placeholder: 'https://facebook.com/...' },
-  { key: 'spotify', label: 'Spotify', placeholder: 'https://open.spotify.com/...' },
-  { key: 'youtube', label: 'YouTube', placeholder: 'https://youtube.com/...' },
-  { key: 'soundcloud', label: 'SoundCloud', placeholder: 'https://soundcloud.com/...' },
-  { key: 'bandcamp', label: 'Bandcamp', placeholder: 'https://....bandcamp.com' },
-  { key: 'tiktok', label: 'TikTok', placeholder: 'https://tiktok.com/@...' },
-  { key: 'appleMusic', label: 'Apple Music', placeholder: 'https://music.apple.com/...' },
-  { key: 'twitter', label: 'Twitter / X', placeholder: 'https://x.com/...' },
-  { key: 'twitch', label: 'Twitch', placeholder: 'https://twitch.tv/...' },
-  { key: 'beatport', label: 'Beatport', placeholder: 'https://www.beatport.com/...' },
-  { key: 'linktree', label: 'Linktree', placeholder: 'https://linktr.ee/...' },
-]
-
-const SECTION_LABEL_FIELDS: { key: keyof SectionLabels; label: string; placeholder: string }[] = [
-  { key: 'biography', label: 'Biography Heading', placeholder: 'BIOGRAPHY' },
-  { key: 'musicPlayer', label: 'Music Player Heading', placeholder: 'MUSIC' },
-  { key: 'upcomingGigs', label: 'Upcoming Gigs Heading', placeholder: 'UPCOMING GIGS' },
-  { key: 'releases', label: 'Releases Heading', placeholder: 'RELEASES' },
-  { key: 'gallery', label: 'Gallery Heading', placeholder: 'GALLERY' },
-  { key: 'connect', label: 'Connect Heading', placeholder: 'CONNECT' },
-  { key: 'creditHighlights', label: 'Credit Highlights Heading', placeholder: 'CREDITS' },
-  { key: 'contact', label: 'Contact Heading', placeholder: 'CONTACT' },
-  { key: 'headingPrefix', label: 'Heading Prefix', placeholder: '// ' },
-]
-
-const CONTACT_INFO_FIELDS: { key: keyof ContactInfo; label: string; placeholder: string }[] = [
-  { key: 'managementName', label: 'Management Name', placeholder: 'Management Co.' },
-  { key: 'managementEmail', label: 'Management Email', placeholder: 'mgmt@example.com' },
-  { key: 'bookingEmail', label: 'Booking Email', placeholder: 'booking@example.com' },
-  { key: 'pressEmail', label: 'Press Email', placeholder: 'press@example.com' },
-  { key: 'formTitle', label: 'Form Title', placeholder: 'GET IN TOUCH' },
-  { key: 'formButtonText', label: 'Submit Button Text', placeholder: 'SEND MESSAGE' },
-]
 
 export default function AdminPanel({
   open,
@@ -142,6 +102,9 @@ export default function AdminPanel({
   const [localSectionLabels, setLocalSectionLabels] = useState<SectionLabels>(adminSettings?.sectionLabels ?? {})
   const [localContactInfo, setLocalContactInfo] = useState<ContactInfo>(adminSettings?.contactInfo ?? {})
 
+  const [newPresetName, setNewPresetName] = useState('')
+  const [apiHealth, setApiHealth] = useState<{ status: string; services: Record<string, unknown> } | null>(null)
+
   useEffect(() => {
     if (open) {
       setLocalArtistName(siteData?.artistName ?? '')
@@ -154,7 +117,10 @@ export default function AdminPanel({
   }, [open, siteData, adminSettings])
 
   // Section order helpers
-  const currentOrder = adminSettings?.sectionOrder ?? DEFAULT_SECTION_ORDER
+  const currentOrder: string[] = useMemo(
+    () => adminSettings?.sectionOrder ?? [...DEFAULT_SECTION_ORDER],
+    [adminSettings?.sectionOrder],
+  )
 
   const sectionDisplayNames: Record<string, string> = {
     bio: 'Biography',
@@ -244,6 +210,23 @@ export default function AdminPanel({
     [adminSettings, setAdminSettings],
   )
 
+  const fetchApiHealth = useCallback(async () => {
+    try {
+      const res = await fetch('/api/health')
+      if (res.ok) {
+        const data = await res.json() as { status: string; services: Record<string, unknown> }
+        setApiHealth(data)
+      }
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (open) void fetchApiHealth()
+  }, [open, fetchApiHealth])
+
   const handleExport = () => {
     if (!siteData) return
     const exportData = { ...siteData, _adminSettings: adminSettings || {} }
@@ -272,7 +255,7 @@ export default function AdminPanel({
           return
         }
         const { _adminSettings, ...siteDataOnly } = parsed
-        onImportData(siteDataOnly as SiteData)
+        onImportData(siteDataOnly as unknown as SiteData)
         if (_adminSettings && setAdminSettings) {
           setAdminSettings(_adminSettings as AdminSettings)
           toast.success('Data & settings imported successfully')
@@ -287,112 +270,15 @@ export default function AdminPanel({
     e.target.value = ''
   }
 
-  const isHexColor = (v: string) => /^#[0-9a-fA-F]{6}$/i.test(v)
 
   const vis = adminSettings?.sectionVisibility ?? {}
   const theme = adminSettings?.theme ?? {}
   const anim = adminSettings?.animations ?? {}
   const progModes = adminSettings?.progressiveOverlayModes ?? {}
 
-  const sectionItems: { key: keyof SectionVisibility; label: string }[] = [
-    { key: 'bio', label: 'Biography' },
-    { key: 'shell', label: 'Shell (Member)' },
-    { key: 'music', label: 'Music Player' },
-    { key: 'gigs', label: 'Upcoming Gigs' },
-    { key: 'releases', label: 'Releases' },
-    { key: 'gallery', label: 'Gallery' },
-    { key: 'connect', label: 'Connect / Social' },
-    { key: 'creditHighlights', label: 'Credit Highlights' },
-    { key: 'contact', label: 'Contact Form' },
-  ]
 
-  const animItems: { key: keyof AnimationSettings; label: string }[] = [
-    { key: 'glitchEnabled', label: 'Glitch Effects' },
-    { key: 'scanlineEnabled', label: 'Scanline Overlay' },
-    { key: 'chromaticEnabled', label: 'Chromatic Aberration' },
-    { key: 'crtEnabled', label: 'CRT Effect' },
-    { key: 'noiseEnabled', label: 'Noise / Grain' },
-    { key: 'circuitBackgroundEnabled', label: 'Circuit Background' },
-  ]
 
-  const progressiveModeItems: { key: keyof ProgressiveOverlayModes; label: string }[] = [
-    { key: 'progressiveReveal', label: 'Progressive Content Reveal' },
-    { key: 'dataStream', label: 'Data Stream Loading' },
-    { key: 'sectorAssembly', label: 'Sector-by-Sector Assembly' },
-    { key: 'holographicMaterialization', label: 'Holographic Materialization' },
-  ]
 
-  const colorGroups: {
-    title: string
-    fields: { key: keyof ThemeCustomization; label: string; placeholder: string }[]
-  }[] = [
-    {
-      title: 'Base Colors',
-      fields: [
-        { key: 'primaryColor', label: 'Primary Color', placeholder: 'oklch(0.55 0.25 25)' },
-        { key: 'primaryForegroundColor', label: 'Primary Foreground', placeholder: 'oklch(1 0 0)' },
-        { key: 'accentColor', label: 'Accent Color', placeholder: 'oklch(0.6 0.2 200)' },
-        { key: 'accentForegroundColor', label: 'Accent Foreground', placeholder: 'oklch(1 0 0)' },
-        { key: 'backgroundColor', label: 'Background Color', placeholder: 'oklch(0.1 0 0)' },
-        { key: 'foregroundColor', label: 'Foreground Color', placeholder: 'oklch(0.95 0 0)' },
-      ],
-    },
-    {
-      title: 'UI Elements',
-      fields: [
-        { key: 'cardColor', label: 'Card Background', placeholder: 'oklch(0.15 0 0)' },
-        { key: 'cardForegroundColor', label: 'Card Foreground', placeholder: 'oklch(0.95 0 0)' },
-        { key: 'popoverColor', label: 'Popover Background', placeholder: 'oklch(0.12 0 0)' },
-        { key: 'popoverForegroundColor', label: 'Popover Foreground', placeholder: 'oklch(0.95 0 0)' },
-        { key: 'borderColor', label: 'Border Color', placeholder: 'oklch(0.25 0 0)' },
-        { key: 'inputColor', label: 'Input Color', placeholder: 'oklch(0.25 0 0)' },
-        { key: 'ringColor', label: 'Focus Ring Color', placeholder: 'oklch(0.55 0.25 25)' },
-        { key: 'hoverColor', label: 'Hover Color', placeholder: 'oklch(0.55 0.25 25)' },
-      ],
-    },
-    {
-      title: 'Secondary & Muted',
-      fields: [
-        { key: 'secondaryColor', label: 'Secondary Color', placeholder: 'oklch(0.2 0 0)' },
-        { key: 'secondaryForegroundColor', label: 'Secondary Foreground', placeholder: 'oklch(0.95 0 0)' },
-        { key: 'mutedColor', label: 'Muted Color', placeholder: 'oklch(0.25 0 0)' },
-        { key: 'mutedForegroundColor', label: 'Muted Foreground', placeholder: 'oklch(0.6 0 0)' },
-      ],
-    },
-    {
-      title: 'Destructive',
-      fields: [
-        { key: 'destructiveColor', label: 'Destructive Color', placeholder: 'oklch(0.45 0.22 25)' },
-        { key: 'destructiveForegroundColor', label: 'Destructive Foreground', placeholder: 'oklch(1 0 0)' },
-      ],
-    },
-  ]
-
-  const fontOptions: {
-    key: 'fontHeading' | 'fontBody' | 'fontMono'
-    label: string
-    placeholder: string
-    options: string[]
-  }[] = [
-    {
-      key: 'fontHeading',
-      label: 'Heading Font',
-      placeholder: 'Orbitron, sans-serif',
-      options: ['Orbitron', 'Rajdhani', 'Exo 2', 'Audiowide', 'Share Tech', 'Russo One', 'Teko', 'system-ui'],
-    },
-    {
-      key: 'fontBody',
-      label: 'Body Font',
-      placeholder: 'system-ui, sans-serif',
-      options: ['system-ui', 'Inter', 'Roboto', 'Open Sans', 'Lato', 'Poppins', 'Source Sans Pro', 'Share Tech Mono'],
-    },
-    {
-      key: 'fontMono',
-      label: 'Mono Font',
-      placeholder: 'Share Tech Mono, monospace',
-      options: ['Share Tech Mono', 'JetBrains Mono', 'Fira Code', 'Source Code Pro', 'IBM Plex Mono', 'Courier New'],
-    },
-  ]
 
   const isDesktop = typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches
 
@@ -460,6 +346,7 @@ export default function AdminPanel({
                   { value: 'overview', label: 'Overview', icon: <House size={13} /> },
                   { value: 'content', label: 'Content', icon: <FileText size={13} /> },
                   { value: 'appearance', label: 'Appearance', icon: <Palette size={13} /> },
+                  { value: 'background', label: 'Background', icon: <Monitor size={13} /> },
                   { value: 'sections', label: 'Sections', icon: <Eye size={13} /> },
                   { value: 'security', label: 'Security', icon: <Shield size={13} /> },
                   { value: 'analytics', label: 'Analytics', icon: <ChartBar size={13} /> },
@@ -563,6 +450,7 @@ export default function AdminPanel({
                     {[
                       { tab: 'content', label: 'Content', icon: <FileText size={16} /> },
                       { tab: 'appearance', label: 'Appearance', icon: <Palette size={16} /> },
+                      { tab: 'background', label: 'Background', icon: <Monitor size={16} /> },
                       { tab: 'sections', label: 'Sections', icon: <Eye size={16} /> },
                       { tab: 'security', label: 'Security', icon: <Shield size={16} /> },
                       { tab: 'analytics', label: 'Analytics', icon: <ChartBar size={16} /> },
@@ -579,652 +467,100 @@ export default function AdminPanel({
                     ))}
                   </div>
                 </div>
+
+                <Separator />
+
+                {/* API Health */}
+                <section className="space-y-3">
+                  <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
+                    API Health
+                  </h3>
+                  {apiHealth ? (
+                    <div className="space-y-2">
+                      {Object.entries(apiHealth.services).map(([service, status]) => (
+                        <div key={service} className="flex items-center justify-between">
+                          <span className="font-mono text-xs uppercase">{service}</span>
+                          <span className={`font-mono text-[10px] px-2 py-0.5 rounded border ${
+                            status === 'ok' || status === 'configured'
+                              ? 'border-green-500/40 text-green-400 bg-green-500/10'
+                              : status === 'unconfigured'
+                              ? 'border-yellow-500/40 text-yellow-400 bg-yellow-500/10'
+                              : 'border-destructive/40 text-destructive bg-destructive/10'
+                          }`}>
+                            {String(status).toUpperCase()}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="font-mono text-xs text-muted-foreground">Loading health status...</p>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="font-mono text-xs w-full"
+                    onClick={() => void fetchApiHealth()}
+                  >
+                    <ArrowCounterClockwise size={13} className="mr-1" /> Refresh
+                  </Button>
+                </section>
               </TabsContent>
 
               {/* ─── CONTENT TAB ──────────────────────────────── */}
-              <TabsContent value="content" className="flex-1 overflow-y-auto p-4 space-y-6 mt-0">
-                {/* Artist Name */}
-                <section className="space-y-3">
-                  <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
-                    Artist Name
-                  </h3>
-                  <Input
-                    value={localArtistName}
-                    onChange={(e) => setLocalArtistName(e.target.value)}
-                    placeholder="Artist Name"
-                    className="bg-background border-border font-mono text-sm"
-                  />
-                  <Button
-                    size="sm"
-                    className="font-mono text-xs"
-                    onClick={() => {
-                      onUpdateSiteData?.((prev) => ({ ...prev, artistName: localArtistName }))
-                      toast.success('Artist name saved')
-                    }}
-                    disabled={!onUpdateSiteData}
-                  >
-                    Save Artist Name
-                  </Button>
-                </section>
-
-                <Separator />
-
-                {/* Biography */}
-                <section className="space-y-3">
-                  <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
-                    Biography
-                  </h3>
-                  <textarea
-                    value={localBio}
-                    onChange={(e) => setLocalBio(e.target.value)}
-                    placeholder="Artist biography..."
-                    rows={6}
-                    className="w-full bg-background border border-border rounded-md px-3 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground resize-y focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                  <Button
-                    size="sm"
-                    className="font-mono text-xs"
-                    onClick={() => {
-                      onUpdateSiteData?.((prev) => ({ ...prev, bio: localBio }))
-                      toast.success('Biography saved')
-                    }}
-                    disabled={!onUpdateSiteData}
-                  >
-                    Save Biography
-                  </Button>
-                </section>
-
-                <Separator />
-
-                {/* Hero Image */}
-                <section className="space-y-3">
-                  <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
-                    Hero Image URL
-                  </h3>
-                  <Input
-                    value={localHeroImage}
-                    onChange={(e) => setLocalHeroImage(e.target.value)}
-                    placeholder="https://example.com/hero.jpg"
-                    className="bg-background border-border font-mono text-xs"
-                  />
-                  {localHeroImage && (() => {
-                    try {
-                      const parsed = new URL(localHeroImage)
-                      return parsed.protocol === 'https:' || parsed.protocol === 'http:'
-                    } catch { return false }
-                  })() && (
-                    <img
-                      src={localHeroImage}
-                      alt="Hero preview"
-                      className="w-full h-24 object-cover rounded border border-border"
-                      onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
-                    />
-                  )}
-                  <Button
-                    size="sm"
-                    className="font-mono text-xs"
-                    onClick={() => {
-                      onUpdateSiteData?.((prev) => ({ ...prev, heroImage: localHeroImage }))
-                      toast.success('Hero image saved')
-                    }}
-                    disabled={!onUpdateSiteData}
-                  >
-                    Save Hero Image
-                  </Button>
-                </section>
-
-                <Separator />
-
-                {/* Social Links */}
-                <section className="space-y-3">
-                  <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
-                    Social Links
-                  </h3>
-                  <div className="space-y-2">
-                    {SOCIAL_FIELDS.map(({ key, label, placeholder }) => (
-                      <div key={key} className="space-y-1">
-                        <Label className="font-mono text-[11px] text-muted-foreground">{label}</Label>
-                        <Input
-                          value={localSocial[key] ?? ''}
-                          onChange={(e) =>
-                            setLocalSocial((prev) => ({ ...prev, [key]: e.target.value }))
-                          }
-                          placeholder={placeholder}
-                          className="bg-background border-border font-mono text-xs"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                  <Button
-                    size="sm"
-                    className="font-mono text-xs"
-                    onClick={() => {
-                      onUpdateSiteData?.((prev) => ({ ...prev, social: localSocial }))
-                      toast.success('Social links saved')
-                    }}
-                    disabled={!onUpdateSiteData}
-                  >
-                    Save Social Links
-                  </Button>
-                </section>
-
-                <Separator />
-
-                {/* Section Labels */}
-                <section className="space-y-3">
-                  <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
-                    Section Labels
-                  </h3>
-                  <div className="space-y-2">
-                    {SECTION_LABEL_FIELDS.map(({ key, label, placeholder }) => (
-                      <div key={key} className="space-y-1">
-                        <Label className="font-mono text-[11px] text-muted-foreground">{label}</Label>
-                        <Input
-                          value={localSectionLabels[key] ?? ''}
-                          onChange={(e) =>
-                            setLocalSectionLabels((prev) => ({ ...prev, [key]: e.target.value }))
-                          }
-                          placeholder={placeholder}
-                          className="bg-background border-border font-mono text-xs"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                  <Button
-                    size="sm"
-                    className="font-mono text-xs"
-                    onClick={() => {
-                      setAdminSettings?.({ ...adminSettings, sectionLabels: localSectionLabels })
-                      toast.success('Section labels saved')
-                    }}
-                    disabled={!setAdminSettings}
-                  >
-                    Save Section Labels
-                  </Button>
-                </section>
-
-                <Separator />
-
-                {/* Contact Info */}
-                <section className="space-y-3">
-                  <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
-                    Contact Info
-                  </h3>
-                  <div className="space-y-2">
-                    {CONTACT_INFO_FIELDS.map(({ key, label, placeholder }) => (
-                      <div key={key} className="space-y-1">
-                        <Label className="font-mono text-[11px] text-muted-foreground">{label}</Label>
-                        <Input
-                          value={localContactInfo[key] ?? ''}
-                          onChange={(e) =>
-                            setLocalContactInfo((prev) => ({ ...prev, [key]: e.target.value }))
-                          }
-                          placeholder={placeholder}
-                          className="bg-background border-border font-mono text-xs"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                  <Button
-                    size="sm"
-                    className="font-mono text-xs"
-                    onClick={() => {
-                      setAdminSettings?.({ ...adminSettings, contactInfo: localContactInfo })
-                      toast.success('Contact info saved')
-                    }}
-                    disabled={!setAdminSettings}
-                  >
-                    Save Contact Info
-                  </Button>
-                </section>
-
-                <Separator />
-
-                {/* Loader Texts Editor */}
-                <section className="space-y-3">
-                  <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
-                    Loading Screen Texts
-                  </h3>
-                  <p className="font-mono text-xs text-muted-foreground">
-                    Customise every string shown during the loading screen. Leave blank to use the default text.
-                  </p>
-                  {([
-                    { field: 'titleLabel' as keyof LoaderTexts, label: 'Title label', placeholder: 'ZARDONIC.SYS v2.077' },
-                    { field: 'buildInfo' as keyof LoaderTexts, label: 'Build info (bottom left)', placeholder: 'BUILD: 2077.v1.23' },
-                    { field: 'platformInfo' as keyof LoaderTexts, label: 'Platform info (bottom left)', placeholder: 'PLATFORM: WEB.NEURAL' },
-                    { field: 'connectionStatus' as keyof LoaderTexts, label: 'Connection status (bottom right)', placeholder: 'CONNECTION: SECURE' },
-                  ] as { field: keyof LoaderTexts; label: string; placeholder: string }[]).map(({ field, label, placeholder }) => (
-                    <div key={field} className="space-y-1">
-                      <Label className="font-mono text-xs text-muted-foreground">{label}</Label>
-                      <Input
-                        value={(adminSettings?.loaderTexts?.[field] ?? '') as string}
-                        onChange={e => {
-                          const val = e.target.value
-                          setAdminSettings?.({
-                            ...adminSettings,
-                            loaderTexts: { ...adminSettings?.loaderTexts, [field]: val || undefined },
-                          })
-                        }}
-                        className="font-mono text-xs"
-                        placeholder={placeholder}
-                      />
-                    </div>
-                  ))}
-                  <div className="space-y-1">
-                    <Label className="font-mono text-xs text-muted-foreground">Stage messages (5 lines, one per line)</Label>
-                    <textarea
-                      rows={5}
-                      className="w-full bg-transparent border border-primary/30 text-foreground font-mono text-xs p-2 resize-y focus:outline-none focus:border-primary/60"
-                      placeholder={'INITIALIZING NEURAL INTERFACE\nLOADING CORE SYSTEMS\nSYNCHRONIZING WETWARE\nESTABLISHING CONNECTION\nSYSTEM READY'}
-                      value={(adminSettings?.loaderTexts?.stageMessages ?? []).join('\n')}
-                      onChange={e => {
-                        const lines = e.target.value.split('\n').slice(0, 5)
-                        setAdminSettings?.({
-                          ...adminSettings,
-                          loaderTexts: { ...adminSettings?.loaderTexts, stageMessages: lines.length ? lines : undefined },
-                        })
-                      }}
-                    />
-                  </div>
-                </section>
-              </TabsContent>
+              <ContentTab
+                adminSettings={adminSettings}
+                setAdminSettings={setAdminSettings}
+                onUpdateSiteData={onUpdateSiteData}
+                localArtistName={localArtistName}
+                setLocalArtistName={setLocalArtistName}
+                localBio={localBio}
+                setLocalBio={setLocalBio}
+                localHeroImage={localHeroImage}
+                setLocalHeroImage={setLocalHeroImage}
+                localSocial={localSocial}
+                setLocalSocial={setLocalSocial}
+                localSectionLabels={localSectionLabels}
+                setLocalSectionLabels={setLocalSectionLabels}
+                localContactInfo={localContactInfo}
+                setLocalContactInfo={setLocalContactInfo}
+              />
 
               {/* ─── APPEARANCE TAB ───────────────────────────── */}
-              <TabsContent value="appearance" className="flex-1 overflow-y-auto p-4 space-y-6 mt-0">
-                {/* Color groups */}
-                {colorGroups.map(({ title, fields }) => (
-                  <section key={title} className="space-y-3">
-                    <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
-                      {title}
-                    </h3>
-                    <div className="space-y-3">
-                      {fields.map(({ key, label, placeholder }) => (
-                        <div key={key} className="space-y-1">
-                          <Label className="font-mono text-[11px] text-muted-foreground">{label}</Label>
-                          <div className="flex gap-2 items-center">
-                            <input
-                              type="color"
-                              value={isHexColor(theme[key] || '') ? (theme[key] as string) : '#000000'}
-                              onChange={(e) => updateTheme(key, e.target.value)}
-                              className="w-8 h-8 shrink-0 cursor-pointer border border-border rounded-sm bg-transparent p-0"
-                              title="Pick a color"
-                              aria-label={`Color picker for ${label}`}
-                            />
-                            <Input
-                              value={theme[key] || ''}
-                              onChange={(e) => updateTheme(key, e.target.value)}
-                              placeholder={placeholder}
-                              className="bg-background border-border font-mono text-xs flex-1"
-                            />
-                            {theme[key] && (
-                              <div
-                                className="w-8 h-8 border border-border rounded-sm shrink-0"
-                                style={{ backgroundColor: theme[key] as string }}
-                                title={theme[key] as string}
-                                aria-hidden="true"
-                              />
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <Separator />
-                  </section>
-                ))}
+              <AppearanceTab
+                adminSettings={adminSettings}
+                setAdminSettings={setAdminSettings}
+                theme={theme}
+                updateTheme={updateTheme}
+                anim={anim}
+                updateAnimation={updateAnimation}
+                updateAnimationNumber={updateAnimationNumber}
+                progModes={progModes}
+                updateProgressiveMode={updateProgressiveMode}
+                onClose={onClose}
+                onOpenConfigEditor={onOpenConfigEditor}
+                newPresetName={newPresetName}
+                setNewPresetName={setNewPresetName}
+              />
 
-                {/* Fonts */}
-                <section className="space-y-3">
-                  <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
-                    Fonts
-                  </h3>
-                  {fontOptions.map(({ key, label, placeholder, options }) => (
-                    <div key={key} className="space-y-1">
-                      <Label className="font-mono text-[11px] text-muted-foreground">{label}</Label>
-                      <select
-                        value={options.includes(theme[key] || '') ? theme[key] ?? '' : ''}
-                        onChange={(e) => {
-                          if (e.target.value) updateTheme(key, e.target.value)
-                        }}
-                        className="w-full bg-background text-foreground border border-border rounded-md px-3 py-2 font-mono text-xs"
-                        aria-label={label}
-                      >
-                        <option value="">Custom…</option>
-                        {options.map((font) => (
-                          <option key={font} value={font} style={{ fontFamily: font }}>
-                            {font}
-                          </option>
-                        ))}
-                      </select>
-                      <Input
-                        value={theme[key] || ''}
-                        onChange={(e) => updateTheme(key, e.target.value)}
-                        placeholder={placeholder}
-                        className="bg-background border-border font-mono text-xs"
-                      />
-                    </div>
-                  ))}
-                </section>
-
-                <Separator />
-
-                {/* Other settings */}
-                <section className="space-y-3">
-                  <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
-                    Other Settings
-                  </h3>
-                  <div className="space-y-1">
-                    <Label className="font-mono text-[11px] text-muted-foreground">Favicon URL</Label>
-                    <Input
-                      value={adminSettings?.faviconUrl || ''}
-                      onChange={(e) =>
-                        setAdminSettings?.({ ...adminSettings, faviconUrl: e.target.value })
-                      }
-                      placeholder="https://example.com/favicon.ico"
-                      className="bg-background border-border font-mono text-xs"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="font-mono text-[11px] text-muted-foreground">Border Radius</Label>
-                    <select
-                      value={theme.borderRadius || ''}
-                      onChange={(e) => updateTheme('borderRadius', e.target.value)}
-                      className="w-full bg-background text-foreground border border-border rounded-md px-3 py-2 font-mono text-xs"
-                      aria-label="Border radius"
-                    >
-                      <option value="">Default (0.125rem)</option>
-                      <option value="0rem">Square (0rem)</option>
-                      <option value="0.125rem">Minimal (0.125rem)</option>
-                      <option value="0.25rem">Small (0.25rem)</option>
-                      <option value="0.375rem">Medium (0.375rem)</option>
-                      <option value="0.5rem">Large (0.5rem)</option>
-                      <option value="0.75rem">XL (0.75rem)</option>
-                      <option value="1rem">2XL (1rem)</option>
-                    </select>
-                  </div>
-                </section>
-
-                <Separator />
-
-                {/* Animations */}
-                <section className="space-y-3">
-                  <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
-                    Animation Effects
-                  </h3>
-                  <div className="space-y-3">
-                    {animItems.map(({ key, label }) => (
-                      <div key={key} className="flex items-center justify-between">
-                        <Label className="font-mono text-sm">{label}</Label>
-                        <Switch
-                          checked={anim[key] !== false}
-                          onCheckedChange={(checked) => updateAnimation(key, checked)}
-                        />
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Background type selector */}
-                  <div className="space-y-2 pt-2">
-                    <Label className="font-mono text-xs text-muted-foreground uppercase tracking-wider">Background Style</Label>
-                    <div className="grid grid-cols-1 gap-1.5">
-                      {([
-                        { value: 'circuit', label: 'Circuit Board (Default)', desc: 'Animated red circuit traces' },
-                        { value: 'cyberpunk-hud', label: 'Cyberpunk HUD', desc: 'HUD overlay with corner brackets & scan beam' },
-                        { value: 'matrix', label: 'Matrix Rain', desc: 'Cascading Japanese characters' },
-                        { value: 'stars', label: 'Star Field', desc: 'Warp-speed star field' },
-                        { value: 'minimal', label: 'Minimal', desc: 'No decorative background' },
-                      ] as { value: BackgroundType; label: string; desc: string }[]).map(opt => (
-                        <button
-                          key={opt.value}
-                          onClick={() => {
-                            if (!adminSettings) return
-                            setAdminSettings?.({
-                              ...adminSettings,
-                              animations: { ...anim, backgroundType: opt.value },
-                            })
-                          }}
-                          className={`text-left px-3 py-2 border rounded font-mono text-xs transition-colors ${
-                            (anim.backgroundType ?? 'circuit') === opt.value
-                              ? 'border-primary bg-primary/10 text-primary'
-                              : 'border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'
-                          }`}
-                        >
-                          <div className="font-semibold">{opt.label}</div>
-                          <div className="text-muted-foreground/60 text-[10px]">{opt.desc}</div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-4 pt-2">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label className="font-mono text-xs">CRT Overlay Opacity</Label>
-                        <span className="font-mono text-xs text-muted-foreground">
-                          {Math.round(
-                            (typeof anim.crtOverlayOpacity === 'number' ? anim.crtOverlayOpacity : 0.6) * 100,
-                          )}%
-                        </span>
-                      </div>
-                      <Slider
-                        value={[
-                          typeof anim.crtOverlayOpacity === 'number'
-                            ? anim.crtOverlayOpacity * 100
-                            : 60,
-                        ]}
-                        min={0}
-                        max={100}
-                        step={5}
-                        onValueChange={([v]) => updateAnimationNumber('crtOverlayOpacity', v / 100)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label className="font-mono text-xs">CRT Vignette Opacity</Label>
-                        <span className="font-mono text-xs text-muted-foreground">
-                          {Math.round(
-                            (typeof anim.crtVignetteOpacity === 'number' ? anim.crtVignetteOpacity : 0.3) * 100,
-                          )}%
-                        </span>
-                      </div>
-                      <Slider
-                        value={[
-                          typeof anim.crtVignetteOpacity === 'number'
-                            ? anim.crtVignetteOpacity * 100
-                            : 30,
-                        ]}
-                        min={0}
-                        max={100}
-                        step={5}
-                        onValueChange={([v]) => updateAnimationNumber('crtVignetteOpacity', v / 100)}
-                      />
-                    </div>
-                  </div>
-                </section>
-
-                <Separator />
-
-                {/* Glitch Text */}
-                <section className="space-y-3">
-                  <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
-                    Heading Glitch Text
-                  </h3>
-                  <div className="flex items-center justify-between">
-                    <Label className="font-mono text-sm">Glitch Effect</Label>
-                    <Switch
-                      checked={adminSettings?.glitchTextSettings?.enabled !== false}
-                      onCheckedChange={(checked) =>
-                        setAdminSettings?.({
-                          ...adminSettings,
-                          glitchTextSettings: {
-                            ...(adminSettings?.glitchTextSettings || {}),
-                            enabled: checked,
-                          },
-                        })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label className="font-mono text-xs">Glitch Interval</Label>
-                      <span className="font-mono text-xs text-muted-foreground">
-                        {adminSettings?.glitchTextSettings?.intervalMs || 8000}ms
-                      </span>
-                    </div>
-                    <Slider
-                      value={[adminSettings?.glitchTextSettings?.intervalMs || 8000]}
-                      min={1000}
-                      max={30000}
-                      step={500}
-                      onValueChange={([v]) =>
-                        setAdminSettings?.({
-                          ...adminSettings,
-                          glitchTextSettings: {
-                            ...(adminSettings?.glitchTextSettings || {}),
-                            intervalMs: v,
-                          },
-                        })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label className="font-mono text-xs">Glitch Duration</Label>
-                      <span className="font-mono text-xs text-muted-foreground">
-                        {adminSettings?.glitchTextSettings?.durationMs || 120}ms
-                      </span>
-                    </div>
-                    <Slider
-                      value={[adminSettings?.glitchTextSettings?.durationMs || 120]}
-                      min={50}
-                      max={1000}
-                      step={10}
-                      onValueChange={([v]) =>
-                        setAdminSettings?.({
-                          ...adminSettings,
-                          glitchTextSettings: {
-                            ...(adminSettings?.glitchTextSettings || {}),
-                            durationMs: v,
-                          },
-                        })
-                      }
-                    />
-                  </div>
-                </section>
-
-                <Separator />
-
-                {/* Progressive Overlay Modes */}
-                <section className="space-y-3">
-                  <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
-                    Progressive Overlay Modes
-                  </h3>
-                  <div className="space-y-3">
-                    {progressiveModeItems.map(({ key, label }) => (
-                      <div key={key} className="flex items-center justify-between">
-                        <Label className="font-mono text-sm">{label}</Label>
-                        <Switch
-                          checked={progModes[key] !== false}
-                          onCheckedChange={(checked) => updateProgressiveMode(key, checked)}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-xs text-muted-foreground font-mono">
-                    When multiple modes are selected, one is chosen randomly each time.
-                  </p>
-                </section>
-
-                {onOpenConfigEditor && (
-                  <Button
-                    onClick={() => {
-                      onClose()
-                      onOpenConfigEditor()
-                    }}
-                    variant="outline"
-                    className="w-full font-mono text-xs"
-                  >
-                    <Sliders size={14} className="mr-2" />
-                    Advanced Config Editor
-                  </Button>
-                )}
-              </TabsContent>
+              {/* ─── BACKGROUND TAB ───────────────────────────── */}
+              <BackgroundTab
+                adminSettings={adminSettings}
+                setAdminSettings={setAdminSettings}
+                anim={anim}
+                updateAnimationNumber={updateAnimationNumber}
+              />
 
               {/* ─── SECTIONS TAB ─────────────────────────────── */}
-              <TabsContent value="sections" className="flex-1 overflow-y-auto p-4 space-y-6 mt-0">
-                {/* Visibility */}
-                <section className="space-y-3">
-                  <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-2">
-                    {Object.values(vis).some((v) => v === false) ? (
-                      <EyeSlash size={14} />
-                    ) : (
-                      <Eye size={14} />
-                    )}
-                    Section Visibility
-                  </h3>
-                  <div className="space-y-3">
-                    {sectionItems.map(({ key, label }) => (
-                      <div key={key} className="flex items-center justify-between">
-                        <Label className="font-mono text-sm">{label}</Label>
-                        <Switch
-                          checked={vis[key] !== false}
-                          onCheckedChange={(checked) => updateVisibility(key, checked)}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </section>
-
-                <Separator />
-
-                {/* Reorder */}
-                <section className="space-y-3">
-                  <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
-                    Section Order
-                  </h3>
-                  <div className="space-y-1">
-                    {currentOrder.map((section, index) => (
-                      <div
-                        key={section}
-                        className="flex items-center justify-between bg-background border border-border rounded-md px-3 py-2"
-                      >
-                        <span className="font-mono text-sm">
-                          {sectionDisplayNames[section] ?? section}
-                        </span>
-                        <div className="flex gap-1">
-                          <button
-                            onClick={() => moveSectionUp(index)}
-                            disabled={index === 0}
-                            className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
-                            aria-label={`Move ${sectionDisplayNames[section] ?? section} up`}
-                          >
-                            <ArrowUp size={16} />
-                          </button>
-                          <button
-                            onClick={() => moveSectionDown(index)}
-                            disabled={index === currentOrder.length - 1}
-                            className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
-                            aria-label={`Move ${sectionDisplayNames[section] ?? section} down`}
-                          >
-                            <ArrowDown size={16} />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <Button
-                    onClick={() =>
-                      setAdminSettings?.({ ...adminSettings, sectionOrder: DEFAULT_SECTION_ORDER })
-                    }
-                    variant="outline"
-                    size="sm"
-                    className="font-mono text-xs gap-2"
-                    disabled={!setAdminSettings}
-                  >
-                    <ArrowCounterClockwise size={13} />
-                    Reset to Default Order
-                  </Button>
-                </section>
-              </TabsContent>
+              <SectionsTab
+                adminSettings={adminSettings}
+                setAdminSettings={setAdminSettings}
+                vis={vis}
+                updateVisibility={updateVisibility}
+                currentOrder={currentOrder}
+                sectionDisplayNames={sectionDisplayNames}
+                moveSectionUp={moveSectionUp}
+                moveSectionDown={moveSectionDown}
+              />
 
               {/* ─── SECURITY TAB ─────────────────────────────── */}
               <TabsContent value="security" className="flex-1 overflow-y-auto p-4 space-y-3 mt-0">
