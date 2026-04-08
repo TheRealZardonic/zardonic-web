@@ -77,9 +77,13 @@ export default function GigsSection({ gigs, editMode, onUpdate, onRefresh, fontS
     }
   }
 
-  const upcomingGigs = (gigs || [])
-    .filter(gig => showAllGigs || !isPast(new Date(gig.date)))
+  const allGigsSorted = [...(gigs || [])].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  const upcomingSorted = (gigs || [])
+    .filter(g => !isPast(new Date(g.date)))
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  const displayGigs = showAllGigs
+    ? allGigsSorted
+    : upcomingSorted.length > 0 ? upcomingSorted : allGigsSorted
 
   const handleDelete = (id: string) => {
     onUpdate((gigs || []).filter(g => g.id !== id))
@@ -163,7 +167,7 @@ export default function GigsSection({ gigs, editMode, onUpdate, onRefresh, fontS
           </div>
         )}
 
-        {isLoading && upcomingGigs.length === 0 ? (
+        {isLoading && displayGigs.length === 0 ? (
           <motion.div 
             className="text-center py-20"
             initial={{ opacity: 0 }}
@@ -173,7 +177,7 @@ export default function GigsSection({ gigs, editMode, onUpdate, onRefresh, fontS
             <ArrowsClockwise size={64} className="mx-auto mb-6 text-primary animate-spin" />
             <p className="text-muted-foreground text-lg">Loading upcoming shows...</p>
           </motion.div>
-        ) : upcomingGigs.length === 0 ? (
+        ) : displayGigs.length === 0 ? (
           <motion.div 
             className="text-center py-20"
             initial={{ opacity: 0 }}
@@ -187,7 +191,7 @@ export default function GigsSection({ gigs, editMode, onUpdate, onRefresh, fontS
           </motion.div>
         ) : (
           <div className="grid gap-4">
-            {upcomingGigs.map((gig, index) => (
+            {displayGigs.map((gig, index) => (
               <motion.div
                 key={gig.id}
                 initial={{ opacity: 0, y: 30 }}
@@ -226,6 +230,11 @@ export default function GigsSection({ gigs, editMode, onUpdate, onRefresh, fontS
                             <time className="text-base md:text-lg lg:text-xl font-semibold text-foreground/90">
                               {format(new Date(gig.date), 'EEEE, MMMM d, yyyy')}
                             </time>
+                            {isPast(new Date(gig.date)) && (
+                              <span className="text-xs font-bold px-2 py-0.5 rounded uppercase tracking-wider bg-muted/40 text-muted-foreground border border-border">
+                                PAST
+                              </span>
+                            )}
                             {gig.gigType && (
                               <span className={`text-xs md:text-xs font-bold px-2 py-0.5 rounded uppercase tracking-wider ${gig.gigType === 'concert' ? 'bg-primary/20 text-primary' : 'bg-accent/20 text-accent'}`}>
                                 {gig.gigType === 'concert' ? 'CONCERT' : 'DJ SET'}

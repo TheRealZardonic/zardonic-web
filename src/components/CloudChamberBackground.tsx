@@ -38,10 +38,10 @@ const CloudChamberBackground = memo(function CloudChamberBackground() {
     }
 
     const PARTICLE_COLORS = [
-      'rgba(180,50,50,',    // primary red
-      'rgba(200,200,255,',  // blue-white (electron)
-      'rgba(255,200,100,',  // alpha yellow
-      'rgba(100,255,150,',  // beta green
+      'rgba(180,40,40,',
+      'rgba(220,60,60,',
+      'rgba(120,20,20,',
+      'rgba(200,80,80,',
     ]
 
     const particles: Particle[] = []

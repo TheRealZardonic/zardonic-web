@@ -35,19 +35,8 @@ export function useKV<T>(key: string, defaultValue: T): [T, (updater: T | ((curr
         if (data && data.value !== null && data.value !== undefined) {
           setValue(data.value as T)
           valueRef.current = data.value as T
-          // Keep localStorage in sync as backup
-          try { localStorage.setItem(`kv:${key}`, JSON.stringify(data.value)) } catch { /* ignore */ }
         } else {
-          // API returned null — try localStorage before falling back to default
-          try {
-            const stored = localStorage.getItem(`kv:${key}`)
-            if (stored !== null) {
-              const parsed = JSON.parse(stored) as T
-              setValue(parsed)
-              valueRef.current = parsed
-              return
-            }
-          } catch { /* ignore */ }
+          // API returned null — fall back to default
           setValue(defaultRef.current)
           valueRef.current = defaultRef.current
         }
@@ -94,13 +83,6 @@ export function useKV<T>(key: string, defaultValue: T): [T, (updater: T | ((curr
     setValue(newValue)
     valueRef.current = newValue
 
-    // Persist to localStorage immediately (synchronous, always succeeds locally)
-    try {
-      localStorage.setItem(`kv:${key}`, JSON.stringify(newValue))
-    } catch (e) {
-      console.warn('Failed to persist KV:', e)
-    }
-
     // Write to the remote KV once the initial load has finished.
     // Auth is handled via HttpOnly session cookie (sent automatically).
     // Non-admin writes will get 403 which we suppress silently.
@@ -136,7 +118,6 @@ export function useKV<T>(key: string, defaultValue: T): [T, (updater: T | ((curr
             const errorData = await res.json()
             if (res.status === 503) {
               console.error(`KV service unavailable (${res.status}) for key "${key}":`, errorData.message || errorData.error)
-              console.warn('Data is saved locally in localStorage but not synced to server.')
             } else {
               console.error(`KV POST failed (${res.status}) for key "${key}":`, errorData)
             }

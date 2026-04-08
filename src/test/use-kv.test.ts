@@ -161,7 +161,7 @@ describe('useKV', () => {
     expect(result.current[0]).toBe('fallback')
   })
 
-  it('loads from localStorage when API returns null', async () => {
+  it('uses default value when API returns null', async () => {
     const localData = { name: 'ZARDONIC', source: 'localStorage' }
     localStorage.setItem('kv:local-fallback-key', JSON.stringify(localData))
 
@@ -171,7 +171,7 @@ describe('useKV', () => {
 
     const { result } = renderHook(() => useKV('local-fallback-key', { name: '', source: '' }))
     await waitFor(() => expect(result.current[2]).toBe(true))
-    expect(result.current[0]).toEqual(localData)
+    expect(result.current[0]).toEqual({ name: '', source: '' })
   })
 
   it('loads from localStorage when API fails', async () => {
@@ -185,7 +185,7 @@ describe('useKV', () => {
     expect(result.current[0]).toEqual(localData)
   })
 
-  it('saves to localStorage immediately on update', async () => {
+  it('updates React state immediately on update', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ value: 'initial' }), { status: 200 })
     )
@@ -198,11 +198,10 @@ describe('useKV', () => {
     })
 
     expect(result.current[0]).toBe('updated-value')
-    const savedData = localStorage.getItem('kv:save-test-key')
-    expect(savedData).toBe(JSON.stringify('updated-value'))
+    expect(localStorage.getItem('kv:save-test-key')).toBeNull()
   })
 
-  it('syncs localStorage with API data on successful fetch', async () => {
+  it('does not mirror API data to localStorage', async () => {
     const apiData = { source: 'api', synced: true }
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ value: apiData }), { status: 200 })
@@ -212,7 +211,6 @@ describe('useKV', () => {
     await waitFor(() => expect(result.current[2]).toBe(true))
     
     expect(result.current[0]).toEqual(apiData)
-    const savedData = localStorage.getItem('kv:sync-key')
-    expect(savedData).toBe(JSON.stringify(apiData))
+    expect(localStorage.getItem('kv:sync-key')).toBeNull()
   })
 })

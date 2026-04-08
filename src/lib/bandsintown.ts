@@ -43,7 +43,7 @@ const ARTIST_NAME = 'Zardonic'
 export async function fetchBandsintownEvents(): Promise<BandsintownEvent[]> {
   try {
     const response = await fetch(
-      `/api/bandsintown?artist=${encodeURIComponent(ARTIST_NAME)}`
+      `/api/bandsintown?artist=${encodeURIComponent(ARTIST_NAME)}&include_past=true`
     )
 
     if (!response.ok) {

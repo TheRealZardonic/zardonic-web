@@ -17,6 +17,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { applyRateLimit } from './_ratelimit.js'
 import { bandsintownQuerySchema, validate } from './_schemas.js'
 import { fetchWithRetry } from './_fetch-retry.js'
+import { getRedisOrNull } from './_redis.js'
 /** Venue as returned by the Bandsintown REST API. */
 export interface BandsintownVenue {
   pk?: number
@@ -80,6 +81,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return
   }
 
+  const redis = getRedisOrNull()
+  const redisKey = `bandsintown:events:${artist.toLowerCase().replace(/\s+/g, '-')}:${include_past ? 'all' : 'upcoming'}`
+
+  if (redis) {
+    try {
+      const cached = await redis.get<unknown>(redisKey)
+      if (cached !== null && cached !== undefined) {
+        res.setHeader('Cache-Control', 'public, max-age=1800')
+        res.setHeader('X-Cache', 'HIT')
+        res.status(200).json(cached)
+        return
+      }
+    } catch { /* fall through */ }
+  }
+
   try {
     const url = new URL(
       `${BANDSINTOWN_API_BASE}/artists/${encodeURIComponent(artist)}/events`,
@@ -114,11 +130,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     // Bandsintown returns an array directly (not wrapped in an object)
     const events: BandsintownEvent[] = Array.isArray(data) ? data : []
 
-    // Cache successful results for 30 minutes
+    const payload = { events }
+    if (redis) {
+      try { await redis.set(redisKey, payload, { ex: 3600 }) } catch { /* non-fatal */ }
+    }
     res
       .setHeader('Cache-Control', 'public, max-age=1800')
+      .setHeader('X-Cache', 'MISS')
       .status(200)
-      .json({ events })
+      .json(payload)
   } catch (error) {
     console.error('Bandsintown proxy error:', error)
     res.status(500).json({ error: 'Failed to fetch from Bandsintown API' })

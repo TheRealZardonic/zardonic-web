@@ -63,6 +63,16 @@ export default function ContactSection({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!name.trim() || !email.trim() || !subject.trim() || !message.trim()) {
+      setStatus('error')
+      setErrorMsg(t('contact.sendError') || 'Please fill in all required fields.')
+      return
+    }
+    if (!email.includes('@')) {
+      setStatus('error')
+      setErrorMsg('Please enter a valid email address.')
+      return
+    }
     setStatus('loading')
     setErrorMsg('')
     try {
@@ -156,7 +166,7 @@ export default function ContactSection({
               </Button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} noValidate className="space-y-4">
               <div className="space-y-1.5">
                 <Label className="font-mono text-xs text-foreground/60">
                   {contactSettings?.formNameLabel || t('contact.nameLabel')}
