@@ -34,7 +34,14 @@ export default function AppGigsSection({ gigs, sectionOrder, visible, editMode, 
     today.setHours(0, 0, 0, 0)
     return gigs.filter(gig => {
       if (!gig.date) return false
-      return new Date(gig.date) >= today
+      // Parse date-only strings (YYYY-MM-DD) as local time to avoid UTC-offset skew.
+      // `new Date("2026-04-24")` is UTC midnight which can fall on the *previous* day
+      // in timezones behind UTC, causing today's/tomorrow's gigs to disappear.
+      const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(gig.date)
+      const gigDate = dateOnly
+        ? (() => { const [y, m, d] = gig.date.split('-').map(Number); return new Date(y, m - 1, d) })()
+        : new Date(gig.date)
+      return gigDate >= today
     })
   }, [gigs])
 

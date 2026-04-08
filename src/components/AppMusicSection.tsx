@@ -68,7 +68,7 @@ export default function AppMusicSection({
                   <div className="data-label mb-2">{streamLabel}</div>
                 )}
               </div>
-              <div className="spotify-player-wrapper" style={{
+              <div className="spotify-player-wrapper spotify-ci-embed" style={{
                 background: 'linear-gradient(180deg, oklch(0.15 0 0) 0%, oklch(0.1 0 0) 100%)',
                 borderRadius: '0',
               }}>

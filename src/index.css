@@ -2094,3 +2094,13 @@ h1, h2, h3, h4, h5, h6 {
   pointer-events: none;
   animation: cc-flicker 0.18s infinite;
 }
+
+/* Spotify embed CI theming
+ * Shifts Spotify's green accent (~hue 141°) to the site's orange-red accent (~hue 25°)
+ * via hue-rotate(-116deg) so the embedded player matches the industrial CI.
+ * Dark backgrounds and white text are achromatic and therefore unaffected.
+ * Applied only to the inner iframe so the pre-consent UI keeps its original styling.
+ */
+.spotify-ci-embed iframe {
+  filter: hue-rotate(-116deg) saturate(0.85);
+}

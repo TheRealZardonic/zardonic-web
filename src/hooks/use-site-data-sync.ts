@@ -190,7 +190,18 @@ export function useSiteDataSync(
             updateReleasesSync(Date.now())
           })
         }
-        if (now - lastGigsSync > CACHE_DURATION_MS || siteData.gigs.length === 0) {
+        // Also refresh if all stored gigs are in the past (no upcoming gigs visible)
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const hasUpcomingGigs = siteData.gigs.some(g => {
+          if (!g.date) return false
+          const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(g.date)
+          const gigDate = dateOnly
+            ? (() => { const [y, m, d] = g.date.split('-').map(Number); return new Date(y, m - 1, d) })()
+            : new Date(g.date)
+          return gigDate >= today
+        })
+        if (now - lastGigsSync > CACHE_DURATION_MS || siteData.gigs.length === 0 || !hasUpcomingGigs) {
           handleFetchBandsintownEvents(true).then(() => {
             updateGigsSync(Date.now())
           })
