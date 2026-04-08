@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import EditableHeading from '@/components/EditableHeading'
 import { MusicNote, CaretDown, CaretUp } from '@phosphor-icons/react'
-import type { AdminSettings } from '@/lib/types'
+import type { AdminSettings, SectionLabels } from '@/lib/types'
 import type { Release } from '@/lib/app-types'
 
 interface AppReleasesSectionProps {
@@ -18,11 +18,20 @@ interface AppReleasesSectionProps {
   adminSettings: AdminSettings | undefined
   iTunesFetching: boolean
   hasAutoLoaded: boolean
+  sectionLabels?: SectionLabels
+  onLabelChange?: (key: keyof SectionLabels, value: string) => void
   onReleaseClick: (release: Release) => void
 }
 
-export default function AppReleasesSection({ releases, sectionOrder, visible, editMode, sectionLabel, headingPrefix, adminSettings, iTunesFetching, hasAutoLoaded, onReleaseClick }: AppReleasesSectionProps) {
+export default function AppReleasesSection({ releases, sectionOrder, visible, editMode, sectionLabel, headingPrefix, adminSettings, iTunesFetching, hasAutoLoaded, sectionLabels, onLabelChange, onReleaseClick }: AppReleasesSectionProps) {
   const [showAllReleases, setShowAllReleases] = useState(false)
+
+  const loadingLabel = sectionLabels?.releasesLoadingLabel ?? '// LOADING.ITUNES.RELEASES'
+  const syncingText = sectionLabels?.releasesSyncingText ?? 'SYNCING...'
+  const fetchingText = sectionLabels?.releasesFetchingText ?? 'FETCHING DISCOGRAPHY + STREAMING LINKS'
+  const emptyText = sectionLabels?.releasesEmptyText ?? 'Releases coming soon'
+  const showAllText = sectionLabels?.releasesShowAllText ?? 'Show All'
+  const showLessText = sectionLabels?.releasesShowLessText ?? 'Show Less'
 
   if (!visible) return null
 
@@ -63,13 +72,13 @@ export default function AppReleasesSection({ releases, sectionOrder, visible, ed
                   </motion.div>
                   <div className="w-full max-w-md space-y-3">
                     <div className="flex justify-between items-center">
-                      <span className="data-label">// LOADING.ITUNES.RELEASES</span>
+                      <span className="data-label">{loadingLabel}</span>
                       <motion.span
                         className="font-mono text-sm text-primary"
                         animate={{ opacity: [0.4, 1, 0.4] }}
                         transition={{ duration: 1.5, repeat: Infinity }}
                       >
-                        SYNCING...
+                        {syncingText}
                       </motion.span>
                     </div>
                     <div className="h-1 bg-border/30 relative overflow-hidden">
@@ -90,7 +99,7 @@ export default function AppReleasesSection({ releases, sectionOrder, visible, ed
                       <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ duration: 0.8, repeat: Infinity, delay: 0 }}>▸</motion.span>
                       <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ duration: 0.8, repeat: Infinity, delay: 0.2 }}>▸</motion.span>
                       <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ duration: 0.8, repeat: Infinity, delay: 0.4 }}>▸</motion.span>
-                      <span className="ml-2">FETCHING DISCOGRAPHY + STREAMING LINKS</span>
+                      <span className="ml-2">{fetchingText}</span>
                     </div>
                   </div>
                 </div>
@@ -98,7 +107,14 @@ export default function AppReleasesSection({ releases, sectionOrder, visible, ed
             ) : releases.length === 0 ? (
               <Card className="p-12 text-center bg-card/50 border-border">
                 <p className="text-xl text-muted-foreground uppercase tracking-wide font-mono">
-                  Releases coming soon
+                  {editMode && onLabelChange ? (
+                    <input
+                      className="bg-transparent border border-primary/30 px-2 py-1 font-mono w-full text-center focus:outline-none focus:border-primary/60"
+                      value={emptyText}
+                      onChange={e => onLabelChange('releasesEmptyText', e.target.value)}
+                      aria-label="Releases empty state text"
+                    />
+                  ) : emptyText}
                 </p>
               </Card>
             ) : (
@@ -158,12 +174,12 @@ export default function AppReleasesSection({ releases, sectionOrder, visible, ed
                       {showAllReleases ? (
                         <>
                           <CaretUp className="w-4 h-4" />
-                          Show Less
+                          {showLessText}
                         </>
                       ) : (
                         <>
                           <CaretDown className="w-4 h-4" />
-                          Show All ({releases.length})
+                          {showAllText} ({releases.length})
                         </>
                       )}
                     </Button>

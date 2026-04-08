@@ -2,6 +2,7 @@ import React from 'react'
 import logoImage from '@/assets/images/meta_eyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ==.webp'
 import { motion, AnimatePresence } from 'framer-motion'
 import { List, X } from '@phosphor-icons/react'
+import type { SectionLabels } from '@/lib/types'
 
 interface AppNavBarProps {
   artistName: string
@@ -13,6 +14,7 @@ interface AppNavBarProps {
   mobileMenuOpen: boolean
   setMobileMenuOpen: (v: boolean) => void
   scrollToSection: (id: string) => void
+  sectionLabels?: SectionLabels
 }
 
 export default function AppNavBar({
@@ -25,7 +27,16 @@ export default function AppNavBar({
   mobileMenuOpen,
   setMobileMenuOpen,
   scrollToSection,
+  sectionLabels,
 }: AppNavBarProps) {
+  const navItems: { id: string; label: string }[] = [
+    { id: 'bio', label: sectionLabels?.biography || 'BIO' },
+    { id: 'music', label: sectionLabels?.musicPlayer || 'MUSIC' },
+    { id: 'gigs', label: sectionLabels?.upcomingGigs || 'GIGS' },
+    { id: 'releases', label: sectionLabels?.releases || 'RELEASES' },
+    { id: 'gallery', label: sectionLabels?.gallery || 'GALLERY' },
+    { id: 'connect', label: sectionLabels?.connect || 'CONNECT' },
+  ]
   return (
     <motion.nav
       initial={{ opacity: 0 }}
@@ -46,13 +57,13 @@ export default function AppNavBar({
         </motion.div>
 
         <div className="hidden md:flex items-center gap-6">
-          {['bio', 'music', 'gigs', 'releases', 'gallery', 'connect'].map((section) => (
+          {navItems.map(({ id, label }) => (
             <button
-              key={section}
-              onClick={() => scrollToSection(section)}
+              key={id}
+              onClick={() => scrollToSection(id)}
               className="text-sm uppercase tracking-wide hover:text-primary transition-colors font-mono hover-chromatic hover-glitch"
             >
-              {section}
+              {label}
             </button>
           ))}
         </div>
@@ -76,13 +87,13 @@ export default function AppNavBar({
             className="md:hidden bg-card/95 border-t border-border overflow-hidden"
           >
             <div className="container mx-auto px-4 py-4 flex flex-col gap-4">
-              {['bio', 'music', 'gigs', 'releases', 'gallery', 'connect'].map((section) => (
+              {navItems.map(({ id, label }) => (
                 <button
-                  key={section}
-                  onClick={() => scrollToSection(section)}
+                  key={id}
+                  onClick={() => scrollToSection(id)}
                   className="text-left text-sm uppercase tracking-wide hover:text-primary transition-colors font-mono"
                 >
-                  {section}
+                  {label}
                 </button>
               ))}
             </div>
