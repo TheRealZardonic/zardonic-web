@@ -46,6 +46,7 @@ import AppearanceTab from '@/components/admin/AppearanceTab'
 import BackgroundTab from '@/components/admin/BackgroundTab'
 import ContentTab from '@/components/admin/ContentTab'
 import SectionsTab from '@/components/admin/SectionsTab'
+import SectionConfigTab from '@/components/admin/SectionConfigTab'
 
 interface AdminPanelProps {
   open: boolean
@@ -363,6 +364,7 @@ export default function AdminPanel({
                   { value: 'appearance', label: 'Appearance', icon: <Palette size={13} /> },
                   { value: 'background', label: 'Background', icon: <Monitor size={13} /> },
                   { value: 'sections', label: 'Sections', icon: <Eye size={13} /> },
+                  { value: 'section-config', label: 'Section Config', icon: <GearSix size={13} /> },
                   { value: 'security', label: 'Security', icon: <Shield size={13} /> },
                   { value: 'analytics', label: 'Analytics', icon: <ChartBar size={13} /> },
                   { value: 'data', label: 'Data', icon: <Database size={13} /> },
@@ -758,6 +760,12 @@ export default function AdminPanel({
                   </button>
                 </div>
               </TabsContent>
+              <SectionConfigTab
+                adminSettings={adminSettings}
+                setAdminSettings={setAdminSettings}
+                siteData={siteData}
+                onUpdateSiteData={onUpdateSiteData}
+              />
             </Tabs>
           </motion.div>
 

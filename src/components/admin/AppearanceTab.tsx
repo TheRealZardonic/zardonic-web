@@ -1,4 +1,72 @@
 import { X, FloppyDisk, Sliders, Warning } from '@phosphor-icons/react'
+
+const BUILTIN_PRESETS: { name: string; theme: Partial<ThemeCustomization> }[] = [
+  {
+    name: 'Neon Red (Default)',
+    theme: {
+      primaryColor: 'oklch(0.50 0.22 25)',
+      accentColor: 'oklch(0.60 0.24 25)',
+      backgroundColor: 'oklch(0 0 0)',
+      cardColor: 'oklch(0.05 0 0)',
+      foregroundColor: 'oklch(1 0 0)',
+      mutedForegroundColor: 'oklch(0.55 0 0)',
+      borderColor: 'oklch(0.15 0 0)',
+      secondaryColor: 'oklch(0.10 0 0)',
+    },
+  },
+  {
+    name: 'Cyber Blue',
+    theme: {
+      primaryColor: 'oklch(0.55 0.20 250)',
+      accentColor: 'oklch(0.65 0.22 250)',
+      backgroundColor: 'oklch(0.02 0.01 260)',
+      cardColor: 'oklch(0.06 0.01 260)',
+      foregroundColor: 'oklch(0.95 0.01 250)',
+      mutedForegroundColor: 'oklch(0.55 0.05 250)',
+      borderColor: 'oklch(0.15 0.03 250)',
+      secondaryColor: 'oklch(0.10 0.02 260)',
+    },
+  },
+  {
+    name: 'Toxic Green',
+    theme: {
+      primaryColor: 'oklch(0.60 0.22 145)',
+      accentColor: 'oklch(0.70 0.24 145)',
+      backgroundColor: 'oklch(0.01 0 0)',
+      cardColor: 'oklch(0.04 0.01 145)',
+      foregroundColor: 'oklch(0.90 0.10 145)',
+      mutedForegroundColor: 'oklch(0.50 0.08 145)',
+      borderColor: 'oklch(0.12 0.04 145)',
+      secondaryColor: 'oklch(0.08 0.02 145)',
+    },
+  },
+  {
+    name: 'Violet Chrome',
+    theme: {
+      primaryColor: 'oklch(0.55 0.25 300)',
+      accentColor: 'oklch(0.65 0.27 310)',
+      backgroundColor: 'oklch(0.02 0.02 290)',
+      cardColor: 'oklch(0.06 0.03 290)',
+      foregroundColor: 'oklch(0.95 0.02 300)',
+      mutedForegroundColor: 'oklch(0.55 0.06 300)',
+      borderColor: 'oklch(0.15 0.05 300)',
+      secondaryColor: 'oklch(0.10 0.04 300)',
+    },
+  },
+  {
+    name: 'Gold Circuit',
+    theme: {
+      primaryColor: 'oklch(0.65 0.18 80)',
+      accentColor: 'oklch(0.72 0.20 80)',
+      backgroundColor: 'oklch(0.03 0.01 60)',
+      cardColor: 'oklch(0.07 0.02 60)',
+      foregroundColor: 'oklch(0.92 0.05 80)',
+      mutedForegroundColor: 'oklch(0.55 0.04 60)',
+      borderColor: 'oklch(0.18 0.06 80)',
+      secondaryColor: 'oklch(0.10 0.03 60)',
+    },
+  },
+]
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -167,6 +235,41 @@ export default function AppearanceTab({
 }: AppearanceTabProps) {
   return (
     <TabsContent value="appearance" className="flex-1 overflow-y-auto p-4 space-y-6 mt-0">
+      {/* Built-in Color Presets */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
+            Built-in Presets
+          </h3>
+          <button
+            onClick={() => {
+              const preset = BUILTIN_PRESETS[0]
+              Object.entries(preset.theme).forEach(([k, v]) =>
+                updateTheme(k as keyof ThemeCustomization, v as string)
+              )
+            }}
+            className="font-mono text-[10px] text-muted-foreground hover:text-primary border border-border hover:border-primary px-2 py-1 rounded transition-colors"
+          >
+            Reset to Default
+          </button>
+        </div>
+        <div className="grid grid-cols-1 gap-1">
+          {BUILTIN_PRESETS.map((preset) => (
+            <button
+              key={preset.name}
+              onClick={() =>
+                Object.entries(preset.theme).forEach(([k, v]) =>
+                  updateTheme(k as keyof ThemeCustomization, v as string)
+                )
+              }
+              className="text-left px-3 py-2 border border-border rounded font-mono text-xs hover:border-primary hover:text-foreground text-muted-foreground transition-colors"
+            >
+              {preset.name}
+            </button>
+          ))}
+        </div>
+      </section>
+      <Separator />
       {/* Color Presets */}
       <section className="space-y-3">
         <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
