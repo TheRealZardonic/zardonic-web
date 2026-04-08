@@ -13,6 +13,16 @@ vi.mock('@upstash/redis', () => ({
   },
 }))
 
+// Mock rate limiter and blocklist so tests are not affected by middleware
+vi.mock('../../api/_ratelimit.ts', () => ({
+  applyRateLimit: vi.fn().mockResolvedValue(true),
+  getClientIp: vi.fn().mockReturnValue('127.0.0.1'),
+}))
+
+vi.mock('../../api/_blocklist.ts', () => ({
+  isHardBlocked: vi.fn().mockResolvedValue(false),
+}))
+
 type Res = { status: ReturnType<typeof vi.fn>; json: ReturnType<typeof vi.fn> }
 
 function mockRes(): Res {
@@ -34,7 +44,7 @@ describe('Session API handler', () => {
   describe('POST /api/session (Login)', () => {
     it('should require password', async () => {
       const res = mockRes()
-      await handler({ method: 'POST', body: {} } as any, res as any)
+      await handler({ method: 'POST', headers: {}, body: {} } as any, res as any)
 
       expect(res.status).toHaveBeenCalledWith(400)
       expect(res.json).toHaveBeenCalledWith({ error: 'Password required' })
@@ -46,6 +56,7 @@ describe('Session API handler', () => {
       const res = mockRes()
       await handler({
         method: 'POST',
+        headers: {},
         body: { password: 'test123' },
       } as any, res as any)
 
@@ -59,6 +70,7 @@ describe('Session API handler', () => {
       const res = mockRes()
       await handler({
         method: 'POST',
+        headers: {},
         body: { password: 'wrong-password' },
       } as any, res as any)
 
@@ -73,6 +85,7 @@ describe('Session API handler', () => {
       const res = mockRes()
       await handler({
         method: 'POST',
+        headers: {},
         body: { password: 'password' },
       } as any, res as any)
 
@@ -167,6 +180,7 @@ describe('Session API handler', () => {
       const res = mockRes()
       await handler({
         method: 'PUT',
+        headers: {},
         body: {},
       } as any, res as any)
 
@@ -177,6 +191,7 @@ describe('Session API handler', () => {
       const res = mockRes()
       await handler({
         method: 'PUT',
+        headers: {},
         body: { password: 'short' },
       } as any, res as any)
 
@@ -188,6 +203,7 @@ describe('Session API handler', () => {
       const res = mockRes()
       await handler({
         method: 'PUT',
+        headers: {},
         body: { password: 'validpassword123' },
       } as any, res as any)
 

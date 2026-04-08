@@ -347,7 +347,7 @@ export default function AppearanceTab({
                 theme: { ...theme },
               }
               setAdminSettings?.({
-                ...adminSettings,
+                ...(adminSettings ?? {}),
                 colorPresets: [...(adminSettings?.colorPresets ?? []), preset],
               })
               setNewPresetName('')
@@ -371,7 +371,7 @@ export default function AppearanceTab({
                   className="text-muted-foreground hover:text-destructive transition-colors p-1"
                   aria-label={`Delete preset ${preset.name}`}
                   onClick={() => setAdminSettings?.({
-                    ...adminSettings,
+                    ...(adminSettings ?? {}),
                     colorPresets: (adminSettings?.colorPresets ?? []).filter(p => p.id !== preset.id),
                   })}
                 >
@@ -494,7 +494,7 @@ export default function AppearanceTab({
           <Input
             value={adminSettings?.faviconUrl || ''}
             onChange={(e) =>
-              setAdminSettings?.({ ...adminSettings, faviconUrl: e.target.value })
+              setAdminSettings?.({ ...(adminSettings ?? {}), faviconUrl: e.target.value })
             }
             placeholder="https://example.com/favicon.ico"
             className="bg-background border-border font-mono text-xs"
@@ -554,7 +554,7 @@ export default function AppearanceTab({
             checked={adminSettings?.glitchTextSettings?.enabled !== false}
             onCheckedChange={(checked) =>
               setAdminSettings?.({
-                ...adminSettings,
+                ...(adminSettings ?? {}),
                 glitchTextSettings: {
                   ...(adminSettings?.glitchTextSettings || {}),
                   enabled: checked,
@@ -577,7 +577,7 @@ export default function AppearanceTab({
             step={500}
             onValueChange={([v]) =>
               setAdminSettings?.({
-                ...adminSettings,
+                ...(adminSettings ?? {}),
                 glitchTextSettings: {
                   ...(adminSettings?.glitchTextSettings || {}),
                   intervalMs: v,
@@ -600,7 +600,7 @@ export default function AppearanceTab({
             step={10}
             onValueChange={([v]) =>
               setAdminSettings?.({
-                ...adminSettings,
+                ...(adminSettings ?? {}),
                 glitchTextSettings: {
                   ...(adminSettings?.glitchTextSettings || {}),
                   durationMs: v,

@@ -5,11 +5,12 @@ import { useState, useEffect, useCallback, useRef } from 'react'
  * Uses /api/kv (Vercel KV) for persistence, with localStorage fallback for local dev.
  * Auth is handled via HttpOnly session cookies (set by /api/auth).
  *
- * Returns [value, updateValue, loaded] — `loaded` is true once the initial
+ * Returns [value, updateValue, loaded, refetch] — `loaded` is true once the initial
  * KV/localStorage/default fetch has completed so consumers can avoid acting on
- * stale default data.
+ * stale default data. `refetch` re-fetches the value from the server (e.g. after
+ * login, when authentication state changes and the server returns more fields).
  */
-export function useKV<T>(key: string, defaultValue: T): [T, (updater: T | ((current: T) => T)) => void, boolean] {
+export function useKV<T>(key: string, defaultValue: T): [T, (updater: T | ((current: T) => T)) => void, boolean, () => void] {
   const [value, setValue] = useState<T>(defaultValue)
   const [loaded, setLoaded] = useState(false)
   const initializedRef = useRef(false)
@@ -21,6 +22,8 @@ export function useKV<T>(key: string, defaultValue: T): [T, (updater: T | ((curr
   // AbortController for cancelling in-flight POST requests when a newer
   // update supersedes them.
   const abortRef = useRef<AbortController | null>(null)
+  // Incrementing counter used to re-trigger the fetch effect after refetch()
+  const [fetchTick, setFetchTick] = useState(0)
 
   useEffect(() => {
     if (initializedRef.current) return
@@ -63,7 +66,7 @@ export function useKV<T>(key: string, defaultValue: T): [T, (updater: T | ((curr
         loadedRef.current = true
         setLoaded(true)
       })
-  }, [key])
+  }, [key, fetchTick])
 
   // Cancel any in-flight KV POST on unmount to prevent writes after the
   // component has been removed from the tree.
@@ -134,5 +137,15 @@ export function useKV<T>(key: string, defaultValue: T): [T, (updater: T | ((curr
     }
   }, [key])
 
-  return [value, updateValue, loaded]
+  // Refetch from the server — resets initialization guards so the fetch
+  // effect re-runs. Useful after login when the server returns more fields
+  // (e.g. admin:settings strips sensitive fields for unauthenticated reads).
+  const refetch = useCallback(() => {
+    initializedRef.current = false
+    loadedRef.current = false
+    setLoaded(false)
+    setFetchTick(t => t + 1)
+  }, [])
+
+  return [value, updateValue, loaded, refetch]
 }

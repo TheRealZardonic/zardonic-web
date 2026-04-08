@@ -6,7 +6,7 @@ import { useKonami } from '@/hooks/use-konami'
 import { trackPageView, trackHeatmapClick } from '@/hooks/use-analytics'
 import { useAnalyticsConsent, CookieConsent, CookiePreferencesButton } from '@/components/CookieConsent'
 import { useAdminAuth } from '@/hooks/use-admin-auth'
-import type { AdminSettings, BackgroundType, HudTexts, SectionLabels, Release as FullRelease } from '@/lib/types'
+import type { AdminSettings, BackgroundType, HudTexts, SectionLabels, Release as FullRelease, TerminalCommand } from '@/lib/types'
 import { useAppTheme } from '@/hooks/use-app-theme'
 import { useSiteDataSync } from '@/hooks/use-site-data-sync'
 import { LocaleProvider } from '@/contexts/LocaleContext'
@@ -162,7 +162,7 @@ function App() {
   const [adminSettings, setAdminSettings] = useState<AdminSettings | undefined>(undefined)
 
   const [kvSiteData, setKvSiteData, isSiteDataLoaded] = useKV<SiteData>('band-data', DEFAULT_SITE_DATA)
-  const [kvAdminSettings, setKvAdminSettings, isAdminSettingsLoaded] = useKV<AdminSettings | undefined>('admin:settings', undefined)
+  const [kvAdminSettings, setKvAdminSettings, isAdminSettingsLoaded, refetchAdminSettings] = useKV<AdminSettings | undefined>('admin:settings', undefined)
 
   useEffect(() => {
     if (isSiteDataLoaded) {
@@ -198,6 +198,10 @@ function App() {
       return next
     })
   }, [setKvAdminSettings])
+
+  const handleSaveTerminalCommands = useCallback((commands: TerminalCommand[]) => {
+    handleUpdateAdminSettings({ ...(adminSettings ?? {}), terminalCommands: commands })
+  }, [adminSettings, handleUpdateAdminSettings])
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [editMode, setEditMode] = useState(false)
@@ -255,10 +259,17 @@ function App() {
   // Admin authentication handlers
   const handleAdminLogin = useCallback(async (password: string, totpCode?: string): Promise<{ success: boolean; totpRequired?: boolean }> => {
     const result = await _handleAdminLogin(password, totpCode)
-    if (result === true) return { success: true }
+    if (result === true) {
+      // Re-fetch admin settings now that we're authenticated — the initial
+      // unauthenticated load strips sensitive fields (terminalCommands,
+      // configOverrides, contactInfo.emailForwardTo). Refetching gives the
+      // admin the full, unredacted settings for the current session.
+      refetchAdminSettings()
+      return { success: true }
+    }
     if (result === 'totp-required') return { success: false, totpRequired: true }
     return { success: false }
-  }, [_handleAdminLogin])
+  }, [_handleAdminLogin, refetchAdminSettings])
 
   const handleSetAdminPassword = useCallback(async (password: string): Promise<void> => {
     await handleChangeAdminPassword(password)
@@ -604,7 +615,7 @@ function App() {
           onClose={() => setTerminalOpen(false)}
           customCommands={terminalCommands}
           editMode={editMode}
-          onSaveCommands={(() => {})}
+          onSaveCommands={handleSaveTerminalCommands}
         />
       </Suspense>
 
