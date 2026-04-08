@@ -25,6 +25,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     }
 
     const data = await response.json()
+    res.setHeader('Cache-Control', 'public, max-age=3600')
     res.status(200).json(data)
   } catch (error) {
     console.error('Odesli API error:', error)

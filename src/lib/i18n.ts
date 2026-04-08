@@ -76,6 +76,12 @@ const translations: Record<string, Record<Locale, string>> = {
   'releases.noReleases':       { en: 'No releases yet.', de: 'Noch keine Veröffentlichungen.' },
   'releases.addRelease':       { en: 'Add Release', de: 'Release hinzufügen' },
 
+  // ── ContactInboxDialog ──────────────────────────────────────────────
+  'inbox.title':               { en: 'INBOX', de: 'POSTFACH' },
+  'inbox.loading':             { en: 'Loading...', de: 'Laden...' },
+  'inbox.noMessages':          { en: 'No messages', de: 'Keine Nachrichten' },
+  'inbox.deleteMessage':       { en: 'Delete message', de: 'Nachricht löschen' },
+
   // ── Contact ─────────────────────────────────────────────────────────
   'contact.defaultTitle':      { en: 'CONTACT', de: 'KONTAKT' },
   'contact.description':       { en: 'Get in touch with us.', de: 'Nimm Kontakt mit uns auf.' },
@@ -101,6 +107,18 @@ const translations: Record<string, Record<Locale, string>> = {
   'contact.descriptionPlaceholder': { en: 'Get in touch...', de: 'Kontaktiere uns...' },
   'contact.successLabel':      { en: 'Success Message', de: 'Erfolgsnachricht' },
   'contact.successPlaceholder': { en: 'Thanks for reaching out!', de: 'Danke für deine Nachricht!' },
+  'contact.closePanel':        { en: 'CLOSE', de: 'SCHLIESSEN' },
+  'contact.editSection':       { en: 'EDIT SECTION', de: 'ABSCHNITT BEARBEITEN' },
+  'contact.formFieldLabels':   { en: 'Form Field Labels', de: 'Formularfeld-Beschriftungen' },
+  'contact.nameLabelField':    { en: 'Name Label', de: 'Name-Beschriftung' },
+  'contact.namePlaceholderField': { en: 'Name Placeholder', de: 'Name-Platzhalter' },
+  'contact.emailLabelField':   { en: 'Email Label', de: 'E-Mail-Beschriftung' },
+  'contact.emailPlaceholderField': { en: 'Email Placeholder', de: 'E-Mail-Platzhalter' },
+  'contact.subjectLabelField': { en: 'Subject Label', de: 'Betreff-Beschriftung' },
+  'contact.subjectPlaceholderField': { en: 'Subject Placeholder', de: 'Betreff-Platzhalter' },
+  'contact.messageLabelField': { en: 'Message Label', de: 'Nachrichten-Beschriftung' },
+  'contact.messagePlaceholderField': { en: 'Message Placeholder', de: 'Nachrichten-Platzhalter' },
+  'contact.submitButtonField': { en: 'Submit Button Text', de: 'Schaltfläche Senden Text' },
 
   // ── Media ────────────────────────────────────────────────────────────
   'media.openArchive':         { en: 'OPEN MEDIA ARCHIVE', de: 'MEDIENARCHIV ÖFFNEN' },

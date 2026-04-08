@@ -121,7 +121,7 @@ export default function ContactSection({
                 className="gap-2 border-primary/30 font-mono tracking-wider text-xs shrink-0"
               >
                 <PencilSimple className="w-4 h-4" />
-                {showEditPanel ? 'CLOSE' : 'EDIT SECTION'}
+                {showEditPanel ? t('contact.closePanel') : t('contact.editSection')}
               </Button>
             )}
           </div>
@@ -280,9 +280,9 @@ export default function ContactSection({
               </div>
 
               {/* Form field labels & placeholders */}
-              <p className="font-mono text-xs text-primary/50 uppercase tracking-wider sm:col-span-2 pt-2 border-t border-border/30">Form Field Labels</p>
+              <p className="font-mono text-xs text-primary/50 uppercase tracking-wider sm:col-span-2 pt-2 border-t border-border/30">{t('contact.formFieldLabels')}</p>
               <div className="space-y-1">
-                <Label className="font-mono text-xs text-foreground/50">Name Label</Label>
+                <Label className="font-mono text-xs text-foreground/50">{t('contact.nameLabelField')}</Label>
                 <Input
                   value={contactSettings?.formNameLabel || ''}
                   onChange={(e) => onUpdate({ ...contactSettings, formNameLabel: e.target.value })}
@@ -291,7 +291,7 @@ export default function ContactSection({
                 />
               </div>
               <div className="space-y-1">
-                <Label className="font-mono text-xs text-foreground/50">Name Placeholder</Label>
+                <Label className="font-mono text-xs text-foreground/50">{t('contact.namePlaceholderField')}</Label>
                 <Input
                   value={contactSettings?.formNamePlaceholder || ''}
                   onChange={(e) => onUpdate({ ...contactSettings, formNamePlaceholder: e.target.value })}
@@ -300,7 +300,7 @@ export default function ContactSection({
                 />
               </div>
               <div className="space-y-1">
-                <Label className="font-mono text-xs text-foreground/50">Email Label</Label>
+                <Label className="font-mono text-xs text-foreground/50">{t('contact.emailLabelField')}</Label>
                 <Input
                   value={contactSettings?.formEmailLabel || ''}
                   onChange={(e) => onUpdate({ ...contactSettings, formEmailLabel: e.target.value })}
@@ -309,7 +309,7 @@ export default function ContactSection({
                 />
               </div>
               <div className="space-y-1">
-                <Label className="font-mono text-xs text-foreground/50">Email Placeholder</Label>
+                <Label className="font-mono text-xs text-foreground/50">{t('contact.emailPlaceholderField')}</Label>
                 <Input
                   value={contactSettings?.formEmailPlaceholder || ''}
                   onChange={(e) => onUpdate({ ...contactSettings, formEmailPlaceholder: e.target.value })}
@@ -318,7 +318,7 @@ export default function ContactSection({
                 />
               </div>
               <div className="space-y-1">
-                <Label className="font-mono text-xs text-foreground/50">Subject Label</Label>
+                <Label className="font-mono text-xs text-foreground/50">{t('contact.subjectLabelField')}</Label>
                 <Input
                   value={contactSettings?.formSubjectLabel || ''}
                   onChange={(e) => onUpdate({ ...contactSettings, formSubjectLabel: e.target.value })}
@@ -327,7 +327,7 @@ export default function ContactSection({
                 />
               </div>
               <div className="space-y-1">
-                <Label className="font-mono text-xs text-foreground/50">Subject Placeholder</Label>
+                <Label className="font-mono text-xs text-foreground/50">{t('contact.subjectPlaceholderField')}</Label>
                 <Input
                   value={contactSettings?.formSubjectPlaceholder || ''}
                   onChange={(e) => onUpdate({ ...contactSettings, formSubjectPlaceholder: e.target.value })}
@@ -336,7 +336,7 @@ export default function ContactSection({
                 />
               </div>
               <div className="space-y-1">
-                <Label className="font-mono text-xs text-foreground/50">Message Label</Label>
+                <Label className="font-mono text-xs text-foreground/50">{t('contact.messageLabelField')}</Label>
                 <Input
                   value={contactSettings?.formMessageLabel || ''}
                   onChange={(e) => onUpdate({ ...contactSettings, formMessageLabel: e.target.value })}
@@ -345,7 +345,7 @@ export default function ContactSection({
                 />
               </div>
               <div className="space-y-1">
-                <Label className="font-mono text-xs text-foreground/50">Message Placeholder</Label>
+                <Label className="font-mono text-xs text-foreground/50">{t('contact.messagePlaceholderField')}</Label>
                 <Input
                   value={contactSettings?.formMessagePlaceholder || ''}
                   onChange={(e) => onUpdate({ ...contactSettings, formMessagePlaceholder: e.target.value })}
@@ -354,7 +354,7 @@ export default function ContactSection({
                 />
               </div>
               <div className="space-y-1 sm:col-span-2">
-                <Label className="font-mono text-xs text-foreground/50">Submit Button Text</Label>
+                <Label className="font-mono text-xs text-foreground/50">{t('contact.submitButtonField')}</Label>
                 <Input
                   value={contactSettings?.formButtonText || ''}
                   onChange={(e) => onUpdate({ ...contactSettings, formButtonText: e.target.value })}

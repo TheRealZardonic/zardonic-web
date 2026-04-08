@@ -22,13 +22,14 @@ vi.mock('../../api/_fetch-retry.js', () => ({
   fetchWithRetry: (...args: unknown[]) => mockFetchWithRetry(...args),
 }))
 
-type Res = { status: ReturnType<typeof vi.fn>; json: ReturnType<typeof vi.fn>; end: ReturnType<typeof vi.fn> }
+type Res = { status: ReturnType<typeof vi.fn>; json: ReturnType<typeof vi.fn>; end: ReturnType<typeof vi.fn>; setHeader: ReturnType<typeof vi.fn> }
 
 function mockRes() {
-  const res: Res = { status: vi.fn(), json: vi.fn(), end: vi.fn() }
+  const res: Res = { status: vi.fn(), json: vi.fn(), end: vi.fn(), setHeader: vi.fn() }
   res.status.mockReturnValue(res)
   res.json.mockReturnValue(res)
   res.end.mockReturnValue(res)
+  res.setHeader.mockReturnValue(res)
   return res as unknown as unknown as VercelResponse
 }
 

@@ -32,6 +32,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         resultCount: (songsData.resultCount || 0) + (albumsData.resultCount || 0),
         results: [...(songsData.results || []), ...(albumsData.results || [])],
       }
+      res.setHeader('Cache-Control', 'public, max-age=1800')
       res.status(200).json(combined)
       return
     }
@@ -45,6 +46,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     }
 
     const data = await response.json()
+    res.setHeader('Cache-Control', 'public, max-age=1800')
     res.status(200).json(data)
   } catch (error) {
     console.error('iTunes API error:', error)

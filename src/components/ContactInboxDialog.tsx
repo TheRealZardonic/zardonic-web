@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Envelope, EnvelopeOpen, Trash, CircleNotch } from '@phosphor-icons/react'
 import type { ContactMessage } from '@/lib/types'
+import { useLocale } from '@/contexts/LocaleContext'
 
 interface Props {
   open: boolean
@@ -15,6 +16,7 @@ function formatDate(iso: string): string {
 }
 
 export default function ContactInboxDialog({ open, onClose }: Props) {
+  const { t } = useLocale()
   const [messages, setMessages] = useState<ContactMessage[]>([])
   const [loading, setLoading] = useState(false)
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -77,7 +79,7 @@ export default function ContactInboxDialog({ open, onClose }: Props) {
       <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="font-mono text-primary flex items-center gap-2">
-            INBOX
+            {t('inbox.title')}
             {unreadCount > 0 && (
               <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
                 {unreadCount}
@@ -90,11 +92,11 @@ export default function ContactInboxDialog({ open, onClose }: Props) {
           {loading ? (
             <div className="flex items-center justify-center py-12 font-mono text-foreground/50">
               <CircleNotch className="animate-spin mr-2" size={20} />
-              Loading...
+              {t('inbox.loading')}
             </div>
           ) : messages.length === 0 ? (
             <div className="flex items-center justify-center py-12 font-mono text-foreground/50">
-              No messages
+              {t('inbox.noMessages')}
             </div>
           ) : (
             messages.map((msg) => {
@@ -131,7 +133,7 @@ export default function ContactInboxDialog({ open, onClose }: Props) {
                     <button
                       onClick={(e) => handleDelete(e, msg.id)}
                       className="shrink-0 mt-0.5 text-foreground/30 hover:text-destructive transition-colors"
-                      aria-label="Delete message"
+                      aria-label={t('inbox.deleteMessage')}
                     >
                       <Trash size={16} />
                     </button>
