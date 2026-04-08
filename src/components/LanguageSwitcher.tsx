@@ -13,7 +13,7 @@ export default function LanguageSwitcher({ className }: { className?: string }) 
       aria-label="Select language"
     >
       {LOCALES.map(l => (
-        <option key={l.code} value={l.code} aria-label={l.label}>{l.flag} {l.code.toUpperCase()}</option>
+        <option key={l.code} value={l.code}>{l.flag} {l.label}</option>
       ))}
     </select>
   )

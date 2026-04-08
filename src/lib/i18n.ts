@@ -249,7 +249,7 @@ export function t(key: string, locale: Locale): string {
 
 /** Return a deep copy of all translations for JSON export */
 export function getTranslations(): Record<string, Record<string, string>> {
-  return JSON.parse(JSON.stringify(translations))
+  return structuredClone(translations) as Record<string, Record<string, string>>
 }
 
 /**

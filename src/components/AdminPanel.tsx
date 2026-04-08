@@ -889,8 +889,9 @@ export default function AdminPanel({
                   }
                   const existing = adminSettings?.customTranslations ?? {}
                   setAdminSettings({ ...adminSettings, customTranslations: { ...existing, ...data } })
+                  toast.success('Translations imported successfully!')
                 } catch {
-                  // invalid file
+                  toast.error('Invalid translation file format. Please upload a valid JSON file.')
                 }
               }
               reader.readAsText(file)
