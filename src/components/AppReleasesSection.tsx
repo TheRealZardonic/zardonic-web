@@ -4,8 +4,9 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import EditableHeading from '@/components/EditableHeading'
-import { MusicNote, CaretDown, CaretUp } from '@phosphor-icons/react'
-import type { AdminSettings } from '@/lib/types'
+import ReleaseEditDialog from '@/components/ReleaseEditDialog'
+import { MusicNote, CaretDown, CaretUp, PencilSimple, Plus, Trash, ArrowsClockwise } from '@phosphor-icons/react'
+import type { AdminSettings, SectionLabels, Release as FullRelease } from '@/lib/types'
 import type { Release } from '@/lib/app-types'
 
 interface AppReleasesSectionProps {
@@ -19,12 +20,45 @@ interface AppReleasesSectionProps {
   iTunesFetching: boolean
   hasAutoLoaded: boolean
   onReleaseClick: (release: Release) => void
+  onLabelChange?: (key: keyof SectionLabels, value: string) => void
+  onUpdateRelease?: (release: FullRelease) => void
+  onDeleteRelease?: (id: string) => void
+  onAddRelease?: (release: FullRelease) => void
+  onRefreshReleases?: () => void
 }
 
-export default function AppReleasesSection({ releases, sectionOrder, visible, editMode, sectionLabel, headingPrefix, adminSettings, iTunesFetching, hasAutoLoaded, onReleaseClick }: AppReleasesSectionProps) {
+/** Convert an app-types Release to the richer types.ts Release for the edit dialog */
+function toFullRelease(r: Release): FullRelease {
+  return {
+    id: r.id,
+    title: r.title,
+    artwork: r.artwork,
+    year: r.year,
+    releaseDate: r.releaseDate,
+    streamingLinks: {
+      spotify: r.spotify,
+      soundcloud: r.soundcloud,
+      youtube: r.youtube,
+      bandcamp: r.bandcamp,
+      appleMusic: r.appleMusic,
+    },
+  }
+}
+
+export default function AppReleasesSection({ releases, sectionOrder, visible, editMode, sectionLabel, headingPrefix, adminSettings, iTunesFetching, hasAutoLoaded, onReleaseClick, onLabelChange, onUpdateRelease, onDeleteRelease, onAddRelease, onRefreshReleases }: AppReleasesSectionProps) {
   const [showAllReleases, setShowAllReleases] = useState(false)
+  const [editingRelease, setEditingRelease] = useState<FullRelease | null | 'new'>(null)
 
   if (!visible) return null
+
+  const handleSaveRelease = (release: Release) => {
+    if (editingRelease === 'new') {
+      onAddRelease?.(release)
+    } else {
+      onUpdateRelease?.(release)
+    }
+    setEditingRelease(null)
+  }
 
   return (
     <div style={{ order: sectionOrder }}>
@@ -40,16 +74,44 @@ export default function AppReleasesSection({ releases, sectionOrder, visible, ed
             <div className="flex items-center justify-between mb-12 flex-wrap gap-4">
               <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-crt-interference" data-text={`${headingPrefix ? headingPrefix + ' ' : ''}${sectionLabel || 'RELEASES'}`}>
                 {headingPrefix && <span className="text-primary/70 mr-2">{headingPrefix}</span>}
-                <EditableHeading onChange={() => {}}
+                <EditableHeading
+                  onChange={(v) => onLabelChange?.('releases', v)}
                   text={sectionLabel}
                   defaultText="RELEASES"
-                  editMode={editMode}
+                  editMode={editMode && !!onLabelChange}
                   glitchEnabled={adminSettings?.glitchTextSettings?.enabled !== false}
                   glitchIntervalMs={adminSettings?.glitchTextSettings?.intervalMs}
                   glitchDurationMs={adminSettings?.glitchTextSettings?.durationMs}
                 />
                 {adminSettings?.animations?.blinkingCursor !== false && <span className="animate-pulse">_</span>}
               </h2>
+              {editMode && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  {onRefreshReleases && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onRefreshReleases()}
+                      disabled={iTunesFetching}
+                      className="gap-2 border-primary/30 font-mono tracking-wider text-xs shrink-0"
+                    >
+                      <ArrowsClockwise className={`w-4 h-4 ${iTunesFetching ? 'animate-spin' : ''}`} />
+                      Sync iTunes
+                    </Button>
+                  )}
+                  {onAddRelease && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setEditingRelease('new')}
+                      className="gap-2 border-primary/30 font-mono tracking-wider text-xs shrink-0"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Release
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
 
             {(iTunesFetching || !hasAutoLoaded) && releases.length === 0 ? (
@@ -128,6 +190,28 @@ export default function AppReleasesSection({ releases, sectionOrder, visible, ed
                           onClick={() => !editMode && onReleaseClick(release)}
                         >
                           <div className="data-label absolute top-2 left-2 z-10">// REL.{release.year}</div>
+                          {editMode && (
+                            <div className="absolute top-2 right-2 z-10 flex gap-1">
+                              {onUpdateRelease && (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setEditingRelease(toFullRelease(release)) }}
+                                  className="p-1 bg-black/60 hover:bg-primary/80 text-foreground hover:text-primary-foreground rounded transition-colors"
+                                  aria-label={`Edit ${release.title}`}
+                                >
+                                  <PencilSimple className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                              {onDeleteRelease && (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); onDeleteRelease(release.id) }}
+                                  className="p-1 bg-black/60 hover:bg-destructive/80 text-foreground hover:text-destructive-foreground rounded transition-colors"
+                                  aria-label={`Delete ${release.title}`}
+                                >
+                                  <Trash className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          )}
                           <div className="aspect-square bg-muted relative">
                             {release.artwork && (
                               <img src={release.artwork} alt={release.title} className="w-full h-full object-cover glitch-image hover-chromatic-image" loading="lazy" decoding="async" />
@@ -174,6 +258,14 @@ export default function AppReleasesSection({ releases, sectionOrder, visible, ed
           </motion.div>
         </div>
       </section>
+
+      {editingRelease !== null && (
+        <ReleaseEditDialog
+          release={editingRelease === 'new' ? null : editingRelease}
+          onSave={handleSaveRelease}
+          onClose={() => setEditingRelease(null)}
+        />
+      )}
     </div>
   )
 }

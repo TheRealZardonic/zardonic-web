@@ -44,5 +44,10 @@
     { "source": "/share/:type/:id", "destination": "/api/og?type=:type&id=:id" },
     { "source": "/api/sanity/:path*", "destination": "https://unz85dqo.apicdn.sanity.io/:path*" }
   ],
-  "crons": []
+  "crons": [
+    {
+      "path": "/api/gigs-sync",
+      "schedule": "0 6 * * *"
+    }
+  ]
 }

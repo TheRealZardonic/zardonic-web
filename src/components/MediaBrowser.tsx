@@ -401,7 +401,6 @@ export function MediaBrowser({ mediaFiles = [], editMode = false, onUpdate, isOv
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        onClick={onClose}
       >
         <motion.div
           className="relative w-full max-w-3xl bg-card border border-primary/30 flex flex-col max-h-[90dvh]"
