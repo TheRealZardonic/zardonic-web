@@ -1,11 +1,18 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { isRedisConfigured, getRedis } from './_redis.js'
+import { validateSession } from './auth.js'
+import { z } from 'zod'
 
 const SYNC_KEY = 'sync-timestamps'
 
+const syncPostSchema = z.object({
+  lastReleasesSync: z.number().int().nonnegative().optional(),
+  lastGigsSync: z.number().int().nonnegative().optional(),
+}).strict()
+
 /**
- * GET /api/sync  — read sync timestamps
- * POST /api/sync — update sync timestamps (partial merge)
+ * GET /api/sync  — read sync timestamps (public)
+ * POST /api/sync — update sync timestamps (requires valid admin session)
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') {
@@ -33,11 +40,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (req.method === 'POST') {
+    // Require authenticated admin session for writes
+    const sessionValid = await validateSession(req)
+    if (!sessionValid) {
+      return res.status(401).json({ error: 'Unauthorized' })
+    }
+
     try {
-      const body = req.body as { lastReleasesSync?: number; lastGigsSync?: number } | undefined
-      if (!body) {
-        return res.status(400).json({ error: 'Body is required' })
+      const parsed = syncPostSchema.safeParse(req.body)
+      if (!parsed.success) {
+        return res.status(400).json({ error: 'Invalid request body', details: parsed.error.issues })
       }
+      const body = parsed.data
 
       // Merge with existing timestamps
       const existing = await kv.get<{ lastReleasesSync?: number; lastGigsSync?: number }>(SYNC_KEY) ?? {}

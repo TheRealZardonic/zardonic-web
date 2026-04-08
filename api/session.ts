@@ -144,9 +144,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
     }
 
-    // GET: Validate session token
+    // GET: Validate session token — accept only header, never query param
+    // (query params appear in access logs and browser history)
     if (req.method === 'GET') {
-      const token = (req.headers['x-session-token'] as string) || (req.query.token as string)
+      const token = req.headers['x-session-token'] as string | undefined
 
       if (!token) {
         return res.status(401).json({ error: 'No session token provided' })

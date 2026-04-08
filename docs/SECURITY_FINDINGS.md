@@ -1,6 +1,6 @@
 # Security Findings — Zardonic Industrial
 
-> **Last Updated:** 2026-04-01  
+> **Last Updated:** 2026-04-08  
 > **Agent ID:** copilot/deep-audit-dokumentation  
 > **Scope:** Full repository audit — `api/`, `middleware.ts`, `vercel.json`, `src/`, `tsconfig.json`, `eslint.config.js`
 

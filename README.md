@@ -52,15 +52,14 @@ Access via the lock icon in the footer, or navigate to `?admin-setup` for first-
 
 ### Backend & API (40+ Vercel Serverless Functions)
 - **Auth** — scrypt + optional TOTP (`api/auth.ts`)
-- **Session** — HttpOnly cookies + legacy header (`api/session.ts`)
+- **Session** — HttpOnly cookies with scrypt password hashing (`api/auth.ts`)
 - **KV Proxy** — Upstash Redis read/write with public key allowlist (`api/kv.ts`)
 - **Analytics** — Visitor analytics with hashed IPs (`api/analytics.ts`)
 - **iTunes Sync** — Automatic release fetching (`api/itunes.ts`)
 - **Bandsintown Sync** — Tour date syncing (`api/bandsintown.ts`)
 - **Odesli** — Cross-platform streaming links (`api/odesli.ts`)
-- **Sanity Sync** — Writes iTunes + Bandsintown data to Sanity CMS (`api/sanity-sync.ts`)
 - **Image Proxy** — SSRF-protected image proxy with allowlist (`api/image-proxy.ts`)
-- **Cron Refresh** — Daily data refresh at 06:00 UTC via Vercel Cron
+- **Cron Refresh** — Daily data refresh via Vercel Cron
 - **Security Stack** — Honeytokens, attacker profiling, threat scoring, blocklist, rate limiting
 
 ### Data Persistence
@@ -82,7 +81,7 @@ Access via the lock icon in the footer, or navigate to `?admin-setup` for first-
 | UI Primitives | Radix UI, Phosphor Icons, Sonner |
 | Backend | Vercel Serverless Functions (TypeScript) |
 | APIs | iTunes Search, Bandsintown, Odesli/song.link, Spotify, Resend |
-| Testing | Vitest (1 029+ tests) |
+| Testing | Vitest (1 025+ tests) |
 | Deployment | Vercel |
 
 ---
@@ -161,8 +160,8 @@ The project deploys to **Vercel**. All serverless functions in `api/` are automa
 
 | Schedule | Endpoint | Description |
 |----------|----------|-------------|
-| Daily 06:00 UTC | `/api/cron-refresh` | Refresh iTunes releases + Bandsintown events |
-| Daily 06:05 UTC | `/api/sanity-sync` | Sync data to Sanity CMS |
+| Daily 06:00 UTC | `/api/gigs-sync` | Refresh Bandsintown tour dates |
+| Daily 03:00 UTC | `/api/releases-enrich` | Enrich releases with streaming links |
 
 ### First-time Admin Setup
 

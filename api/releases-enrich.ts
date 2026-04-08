@@ -7,12 +7,28 @@
  * 3. Enriches each release that lacks Odesli streaming links,
  *    waiting ODESLI_DELAY_MS between requests to stay under rate limits.
  *
- * Called daily by the Vercel cron. Admin can also trigger it manually.
+ * Cron calls must supply `Authorization: Bearer <CRON_SECRET>`.
+ * Admin can also trigger it manually (requires valid session).
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { getRedisOrNull, isRedisConfigured } from './_redis.js'
 import { fetchWithRetry } from './_fetch-retry.js'
 import { validateSession } from './auth.js'
+import { timingSafeEqual } from 'node:crypto'
+
+/** Constant-time string comparison to prevent timing-based CRON_SECRET enumeration. */
+function verifyCronSecret(provided: string): boolean {
+  const expected = process.env.CRON_SECRET
+  if (!expected) return false
+  try {
+    const a = Buffer.from(expected, 'utf8')
+    const b = Buffer.from(provided, 'utf8')
+    if (a.length !== b.length) return false
+    return timingSafeEqual(a, b)
+  } catch {
+    return false
+  }
+}
 
 const ARTIST_NAME = 'Zardonic'
 const BAND_DATA_KEY = 'band-data'
@@ -192,7 +208,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   if (req.method === 'OPTIONS') { res.status(200).end(); return }
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return }
 
-  const isCron = req.headers['x-vercel-cron'] === '1'
+  const authHeader = req.headers.authorization ?? ''
+  const isCron = authHeader.startsWith('Bearer ') && verifyCronSecret(authHeader.slice(7))
 
   if (!isCron) {
     const sessionValid = await validateSession(req)

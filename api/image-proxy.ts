@@ -19,7 +19,10 @@ import { isHardBlocked } from './_blocklist.js'
 const MAX_CACHEABLE_IMAGE_SIZE = 4 * 1024 * 1024 // 4 MB
 const MAX_IMAGE_SIZE = 16 * 1024 * 1024 // 16 MB
 const CACHE_TTL_SECONDS = 60 * 60 * 24 * 30 // 30 days
-const CORS_ORIGIN = process.env.ALLOWED_ORIGIN || '*'
+// In production, require ALLOWED_ORIGIN to be explicitly set to prevent
+// arbitrary sites from hotlinking through the proxy and consuming quota.
+const CORS_ORIGIN = process.env.ALLOWED_ORIGIN ||
+  (process.env.VERCEL_ENV === 'production' ? 'null' : '*')
 
 const BLOCKED_HOST_PATTERNS = [
   /^localhost$/i, /^127\./, /^10\./, /^172\.(1[6-9]|2\d|3[01])\./, /^192\.168\./,

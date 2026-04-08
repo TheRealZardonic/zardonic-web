@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { getRedis, isRedisConfigured } from './_redis.js'
+import { validateSession } from './auth.js'
 import { createRequire } from 'node:module'
 
 const _require = createRequire(import.meta.url)
@@ -24,17 +25,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const overallStatus = kvStatus === 'ok' ? 'ok' : 'degraded'
 
-  const body = {
-    status: overallStatus,
-    timestamp: new Date().toISOString(),
-    services: {
-      kv: kvStatus,
-      spotify: process.env.SPOTIFY_CLIENT_ID && process.env.SPOTIFY_CLIENT_SECRET ? 'configured' : 'unconfigured',
-      bandsintown: process.env.BANDSINTOWN_API_KEY ? 'configured' : 'unconfigured',
-      imageProxy: 'ok',
-    },
-    version: VERSION,
-  }
+  // Service-level detail (which third-party APIs are configured) is gated
+  // behind session auth to avoid unauthenticated infrastructure enumeration.
+  const isAuthenticated = await validateSession(req)
+
+  const body = isAuthenticated
+    ? {
+        status: overallStatus,
+        timestamp: new Date().toISOString(),
+        services: {
+          kv: kvStatus,
+          spotify: process.env.SPOTIFY_CLIENT_ID && process.env.SPOTIFY_CLIENT_SECRET ? 'configured' : 'unconfigured',
+          bandsintown: process.env.BANDSINTOWN_API_KEY ? 'configured' : 'unconfigured',
+          imageProxy: 'ok',
+        },
+        version: VERSION,
+      }
+    : {
+        status: overallStatus,
+        timestamp: new Date().toISOString(),
+        version: VERSION,
+      }
 
   // Always return 200 — the `status` field communicates degraded state.
   // Returning 503 here was causing uptime monitors and load balancers to

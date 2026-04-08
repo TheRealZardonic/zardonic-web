@@ -2,14 +2,14 @@
  * Session Management Helper
  * Handles admin authentication.
  *
- * Uses cookie-based auth system (`/api/auth` with HttpOnly `zd-session`
- * cookie + optional TOTP). Legacy `/api/session` token-in-header approach
- * is kept as fallback for backward compatibility.
+ * Uses cookie-based auth system (`/api/auth` with HttpOnly `nk-session`
+ * cookie + optional TOTP). The legacy `/api/session` token-in-header approach
+ * has been removed — the cookie path is the only supported auth mechanism.
  */
 
 /**
  * Login with password (and optional TOTP code).
- * Uses the `/api/auth` endpoint which sets an HttpOnly `zd-session` cookie.
+ * Uses the `/api/auth` endpoint which sets an HttpOnly `nk-session` cookie.
  */
 export async function loginWithPassword(
   password: string,
@@ -37,23 +37,6 @@ export async function loginWithPassword(
       return { success: false, totpRequired: true }
     }
 
-    // Fallback: try legacy session endpoint
-    if (response.status !== 200) {
-      const legacyResponse = await fetch('/api/session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
-      })
-
-      if (legacyResponse.ok) {
-        const result = await legacyResponse.json()
-        if (result.token) {
-          localStorage.setItem('admin-token', result.token)
-          return { success: true }
-        }
-      }
-    }
-
     return { success: false, error: data?.error || 'Login failed' }
   } catch (error) {
     console.error('[Session] Login error:', error)
@@ -79,16 +62,6 @@ export async function validateSession(): Promise<{
       return await response.json()
     }
 
-    // Fallback: legacy token-in-header validation
-    const token = localStorage.getItem('admin-token')
-    if (token) {
-      const legacyResponse = await fetch('/api/session', {
-        method: 'GET',
-        headers: { 'x-session-token': token },
-      })
-      if (legacyResponse.ok) return { authenticated: true }
-    }
-
     return { authenticated: false }
   } catch (error) {
     console.error('[Session] Validation error:', error)
@@ -97,26 +70,14 @@ export async function validateSession(): Promise<{
 }
 
 /**
- * Logout — clears cookie session (and legacy localStorage token).
+ * Logout — clears the HttpOnly cookie session server-side.
  */
 export async function logout(): Promise<void> {
   try {
-    // Primary: logout via /api/auth (clears HttpOnly cookie server-side)
     await fetch('/api/auth', {
       method: 'DELETE',
       credentials: 'same-origin',
     }).catch(() => {})
-
-    // Also clear legacy token
-    const token = localStorage.getItem('admin-token')
-    if (token) {
-      await fetch('/api/session', {
-        method: 'DELETE',
-        headers: { 'x-session-token': token },
-      }).catch(() => {})
-    }
-
-    localStorage.removeItem('admin-token')
   } catch (error) {
     console.error('[Session] Logout error:', error)
   }
@@ -137,16 +98,7 @@ export async function setupPassword(password: string, setupToken?: string): Prom
       body: JSON.stringify(body),
     })
 
-    if (response.ok) return true
-
-    // Fallback: legacy session endpoint
-    const legacyResponse = await fetch('/api/session', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password }),
-    })
-
-    return legacyResponse.ok
+    return response.ok
   } catch (error) {
     console.error('[Session] Setup error:', error)
     return false

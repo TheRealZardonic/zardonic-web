@@ -5,9 +5,10 @@ const kv = new Proxy({} as ReturnType<typeof getRedis>, {
 })
 import { createHash } from 'node:crypto'
 import { applyRateLimit } from './_ratelimit.js'
+import { z } from 'zod'
 
-/** Same regex as api/contact.ts — matches user@domain.tld */
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const emailSchema = z.string().email('Valid email required').max(254)
+
 interface Subscriber {
   email: string
   source?: string
@@ -34,9 +35,10 @@ async function storeSubscriberLocally(email: string, source: string | undefined)
   }
 }
 
-// OWASP A01:2021 – Broken Access Control: restrict CORS to the configured origin
-// instead of a wildcard so arbitrary third-party sites cannot POST subscriptions.
-const CORS_ORIGIN = process.env.ALLOWED_ORIGIN || '*'
+// OWASP A01:2021 – Broken Access Control: restrict CORS to the configured origin.
+// In production, require ALLOWED_ORIGIN to be explicitly set.
+const CORS_ORIGIN = process.env.ALLOWED_ORIGIN ||
+  (process.env.VERCEL_ENV === 'production' ? 'null' : '*')
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   res.setHeader('Access-Control-Allow-Origin', CORS_ORIGIN)
@@ -53,12 +55,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     if (!allowed) return
 
     const { email } = req.body || {}
-    if (!email || typeof email !== 'string' || !EMAIL_RE.test(email.trim()) || email.trim().length > 254) {
+    const emailParsed = emailSchema.safeParse(email)
+    if (!emailParsed.success) {
       res.status(400).json({ error: 'Valid email required' })
       return
     }
 
-    const sanitizedEmail = email.toLowerCase().trim().slice(0, 254)
+    const sanitizedEmail = emailParsed.data.toLowerCase().trim()
 
     // Remove from local KV store
     if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
@@ -125,12 +128,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
   const { email, source } = req.body || {}
 
-  if (!email || typeof email !== 'string' || !EMAIL_RE.test(email.trim()) || email.trim().length > 254) {
+  const emailParsed = emailSchema.safeParse(email)
+  if (!emailParsed.success) {
     res.status(400).json({ error: 'Valid email required' })
     return
   }
 
-  const sanitizedEmail = email.toLowerCase().trim().slice(0, 254)
+  const sanitizedEmail = emailParsed.data.toLowerCase().trim()
   const sanitizedSource = typeof source === 'string' ? source : undefined
 
   // Mailchimp

@@ -4,12 +4,28 @@
  * Fetches gig events from Bandsintown and stores them in Redis for 25 hours.
  * Called daily by the Vercel cron job and on-demand by admin "Sync Now" button.
  *
- * Vercel cron header `x-vercel-cron: 1` is checked for cron calls.
- * Admin calls must supply a valid x-session-token header.
+ * Cron calls must supply `Authorization: Bearer <CRON_SECRET>`.
+ * Admin calls must supply a valid session (cookie or x-session-token header).
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { getRedisOrNull } from './_redis.js'
 import { fetchWithRetry } from './_fetch-retry.js'
+import { validateSession } from './auth.js'
+import { timingSafeEqual } from 'node:crypto'
+
+/** Constant-time string comparison to prevent timing-based CRON_SECRET enumeration. */
+function verifyCronSecret(provided: string): boolean {
+  const expected = process.env.CRON_SECRET
+  if (!expected) return false
+  try {
+    const a = Buffer.from(expected, 'utf8')
+    const b = Buffer.from(provided, 'utf8')
+    if (a.length !== b.length) return false
+    return timingSafeEqual(a, b)
+  } catch {
+    return false
+  }
+}
 
 const BANDSINTOWN_API_BASE = 'https://rest.bandsintown.com'
 const ARTIST_NAME = 'Zardonic'
@@ -27,24 +43,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return
   }
 
-  // Allow Vercel cron calls (identified by x-vercel-cron header)
-  const isCron = req.headers['x-vercel-cron'] === '1'
+  // Cron calls: validate Authorization: Bearer <CRON_SECRET> header.
+  // This replaces the spoofable x-vercel-cron header check.
+  const authHeader = req.headers.authorization ?? ''
+  const isCron = authHeader.startsWith('Bearer ') && verifyCronSecret(authHeader.slice(7))
 
-  // For non-cron calls, require an authenticated admin session token
+  // For non-cron calls, require an authenticated admin session
   if (!isCron) {
-    const sessionToken = req.headers['x-session-token'] as string | undefined
-    if (!sessionToken) {
-      res.status(401).json({ error: 'Unauthorized' })
-      return
-    }
-    const redis = getRedisOrNull()
-    if (!redis) {
-      // If Redis isn't configured, we can't validate session — block for safety
-      res.status(503).json({ error: 'Redis not configured' })
-      return
-    }
-    const session = await redis.get(`session:${sessionToken}`).catch(() => null)
-    if (!session) {
+    const sessionValid = await validateSession(req)
+    if (!sessionValid) {
       res.status(401).json({ error: 'Unauthorized' })
       return
     }
