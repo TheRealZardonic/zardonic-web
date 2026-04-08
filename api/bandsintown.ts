@@ -88,7 +88,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     try {
       const cached = await redis.get<unknown>(redisKey)
       if (cached !== null && cached !== undefined) {
-        res.setHeader('Cache-Control', 'public, max-age=1800')
+        res.setHeader('Cache-Control', 'public, max-age=3600')
         res.setHeader('X-Cache', 'HIT')
         res.status(200).json(cached)
         return
@@ -121,6 +121,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     if (!response.ok) {
       const body = await response.text().catch(() => '')
       console.error(`Bandsintown API error ${response.status}:`, body)
+
+      // On 429 (rate limit), serve stale cache if available
+      if (response.status === 429 && redis) {
+        try {
+          const stale = await redis.get<unknown>(redisKey)
+          if (stale !== null && stale !== undefined) {
+            res.setHeader('Cache-Control', 'public, max-age=3600')
+            res.setHeader('X-Cache', 'STALE')
+            res.status(200).json(stale)
+            return
+          }
+        } catch { /* fall through */ }
+      }
+
       res.status(500).json({ error: `Bandsintown API returned ${response.status}` })
       return
     }
@@ -132,10 +146,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
     const payload = { events }
     if (redis) {
-      try { await redis.set(redisKey, payload, { ex: 3600 }) } catch { /* non-fatal */ }
+      // 24-hour TTL aligns with the daily gigs-sync cron job
+      try { await redis.set(redisKey, payload, { ex: 86400 }) } catch { /* non-fatal */ }
     }
     res
-      .setHeader('Cache-Control', 'public, max-age=1800')
+      .setHeader('Cache-Control', 'public, max-age=3600')
       .setHeader('X-Cache', 'MISS')
       .status(200)
       .json(payload)

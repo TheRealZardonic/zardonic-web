@@ -1,4 +1,4 @@
-import { X, FloppyDisk, Sliders, Warning } from '@phosphor-icons/react'
+import { X, FloppyDisk, Sliders, Warning, MagicWand } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator'
 import { TabsContent } from '@/components/ui/tabs'
 import { toast } from 'sonner'
 import { getContrastRatio } from '@/lib/contrast'
+import { oklchToHex } from '@/lib/color-utils'
 import type {
   AdminSettings,
   ThemeCustomization,
@@ -89,6 +90,7 @@ interface AppearanceTabProps {
   setAdminSettings?: (s: AdminSettings) => void
   theme: ThemeCustomization
   updateTheme: (key: keyof ThemeCustomization, value: string) => void
+  applyPreset: (theme: Partial<ThemeCustomization>) => void
   anim: AnimationSettings
   updateAnimation: (key: keyof AnimationSettings, value: boolean) => void
   updateAnimationNumber: (key: keyof AnimationSettings, value: number) => void
@@ -197,7 +199,6 @@ const fontOptions: {
   },
 ]
 
-const isHexColor = (v: string) => /^#[0-9a-fA-F]{6}$/i.test(v)
 
 /** Shows a WCAG contrast warning when foreground/background ratio is too low. */
 function ContrastBadge({ fg, bg, largeText = false }: { fg: string; bg: string; largeText?: boolean }) {
@@ -224,6 +225,7 @@ export default function AppearanceTab({
   setAdminSettings,
   theme,
   updateTheme,
+  applyPreset,
   anim,
   updateAnimation,
   progModes,
@@ -233,6 +235,43 @@ export default function AppearanceTab({
   newPresetName,
   setNewPresetName,
 }: AppearanceTabProps) {
+  // Auto-contrast: sets all text foreground colors so they contrast sufficiently
+  const handleAutoContrast = () => {
+    const bg = theme.backgroundColor || 'oklch(0 0 0)'
+    const cardBg = theme.cardColor || 'oklch(0.05 0 0)'
+
+    // Pairs: [foreground key, background value]
+    const pairs: [keyof ThemeCustomization, string][] = [
+      ['foregroundColor', bg],
+      ['cardForegroundColor', cardBg],
+      ['popoverForegroundColor', theme.popoverColor || cardBg],
+      ['secondaryForegroundColor', theme.secondaryColor || bg],
+      ['mutedForegroundColor', theme.mutedColor || bg],
+      ['accentForegroundColor', theme.accentColor || bg],
+      ['primaryForegroundColor', theme.primaryColor || bg],
+      ['destructiveForegroundColor', theme.destructiveColor || bg],
+    ]
+
+    const updates: Partial<ThemeCustomization> = {}
+    for (const [key, background] of pairs) {
+      const current = (theme[key] as string | undefined) || 'oklch(1 0 0)'
+      const ratio = getContrastRatio(current, background)
+      if (ratio !== null && ratio < 4.5) {
+        // Determine if background is light or dark via getContrastRatio with white/black
+        const vsWhite = getContrastRatio('oklch(1 0 0)', background) ?? 0
+        const vsBlack = getContrastRatio('oklch(0 0 0)', background) ?? 0
+        updates[key] = vsWhite >= vsBlack ? 'oklch(1 0 0)' : 'oklch(0.10 0 0)'
+      }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      toast.info('All text colors already have sufficient contrast')
+    } else {
+      applyPreset(updates)
+      toast.success(`Adjusted ${Object.keys(updates).length} color(s) for contrast`)
+    }
+  }
+
   return (
     <TabsContent value="appearance" className="flex-1 overflow-y-auto p-4 space-y-6 mt-0">
       {/* Built-in Color Presets */}
@@ -242,12 +281,7 @@ export default function AppearanceTab({
             Built-in Presets
           </h3>
           <button
-            onClick={() => {
-              const preset = BUILTIN_PRESETS[0]
-              Object.entries(preset.theme).forEach(([k, v]) =>
-                updateTheme(k as keyof ThemeCustomization, v as string)
-              )
-            }}
+            onClick={() => applyPreset(BUILTIN_PRESETS[0].theme)}
             className="font-mono text-[10px] text-muted-foreground hover:text-primary border border-border hover:border-primary px-2 py-1 rounded transition-colors"
           >
             Reset to Default
@@ -257,11 +291,7 @@ export default function AppearanceTab({
           {BUILTIN_PRESETS.map((preset) => (
             <button
               key={preset.name}
-              onClick={() =>
-                Object.entries(preset.theme).forEach(([k, v]) =>
-                  updateTheme(k as keyof ThemeCustomization, v as string)
-                )
-              }
+              onClick={() => applyPreset(preset.theme)}
               className="text-left px-3 py-2 border border-border rounded font-mono text-xs hover:border-primary hover:text-foreground text-muted-foreground transition-colors"
             >
               {preset.name}
@@ -310,9 +340,7 @@ export default function AppearanceTab({
               <div key={preset.id} className="flex items-center gap-2">
                 <button
                   className="flex-1 text-left px-2 py-1.5 border border-border rounded font-mono text-xs hover:border-primary hover:text-primary transition-colors truncate"
-                  onClick={() => {
-                    setAdminSettings?.({ ...adminSettings, theme: { ...adminSettings?.theme, ...preset.theme } })
-                  }}
+                  onClick={() => applyPreset(preset.theme)}
                 >
                   {preset.name}
                 </button>
@@ -335,9 +363,21 @@ export default function AppearanceTab({
       {/* Color groups */}
       {colorGroups.map(({ title, fields }) => (
         <section key={title} className="space-y-3">
-          <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
-            {title}
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
+              {title}
+            </h3>
+            {title === 'Base Colors' && (
+              <button
+                onClick={handleAutoContrast}
+                className="inline-flex items-center gap-1 font-mono text-[10px] text-muted-foreground hover:text-primary border border-border hover:border-primary px-2 py-1 rounded transition-colors"
+                title="Automatically adjust text colors for sufficient contrast"
+              >
+                <MagicWand size={11} />
+                Auto Contrast
+              </button>
+            )}
+          </div>
           <div className="space-y-3">
             {fields.map(({ key, label, placeholder }) => (
               <div key={key} className="space-y-1">
@@ -345,7 +385,7 @@ export default function AppearanceTab({
                 <div className="flex gap-2 items-center">
                   <input
                     type="color"
-                    value={isHexColor((theme[key] as string) || '') ? (theme[key] as string) : '#000000'}
+                    value={oklchToHex((theme[key] as string) || '#000000')}
                     onChange={(e) => updateTheme(key, e.target.value)}
                     className="w-8 h-8 shrink-0 cursor-pointer border border-border rounded-sm bg-transparent p-0"
                     title="Pick a color"

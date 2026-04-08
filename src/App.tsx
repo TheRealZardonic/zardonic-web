@@ -5,7 +5,7 @@ import { useKV } from '@/hooks/use-kv'
 import { useKonami } from '@/hooks/use-konami'
 import { trackPageView, trackHeatmapClick } from '@/hooks/use-analytics'
 import { useAdminAuth } from '@/hooks/use-admin-auth'
-import type { AdminSettings, BackgroundType, HudTexts, SectionLabels } from '@/lib/types'
+import type { AdminSettings, BackgroundType, HudTexts, SectionLabels, Release as FullRelease } from '@/lib/types'
 import { useAppTheme } from '@/hooks/use-app-theme'
 import { useSiteDataSync } from '@/hooks/use-site-data-sync'
 import type { SiteData, CyberpunkOverlayState } from '@/lib/app-types'
@@ -217,7 +217,7 @@ function App() {
   }, [sectionOrder])
 
   useAppTheme(adminSettings)
-  const { iTunesFetching, bandsintownFetching, hasAutoLoaded } = useSiteDataSync(siteData, setSiteData)
+  const { iTunesFetching, bandsintownFetching, hasAutoLoaded, handleFetchBandsintownEvents, handleFetchITunesReleases } = useSiteDataSync(siteData, setSiteData)
   useDocumentTitle(siteData?.artistName ?? '')
 
   // Collect image URLs for precaching during loading screen
@@ -369,6 +369,8 @@ function App() {
         adminSettings={adminSettings}
         bandsintownFetching={bandsintownFetching}
         onGigClick={(gig) => setCyberpunkOverlay({ type: 'gig', data: gig })}
+        onLabelChange={editMode ? handleLabelChange : undefined}
+        onRefresh={editMode ? handleFetchBandsintownEvents : undefined}
       />
       </SectionErrorBoundary>
 
@@ -384,6 +386,48 @@ function App() {
         iTunesFetching={iTunesFetching}
         hasAutoLoaded={hasAutoLoaded}
         onReleaseClick={(release) => setCyberpunkOverlay({ type: 'release', data: release })}
+        onLabelChange={editMode ? handleLabelChange : undefined}
+        onUpdateRelease={editMode ? (updated: FullRelease) => {
+          handleUpdateSiteData(prev => ({
+            ...prev,
+            releases: prev.releases.map(r => r.id === updated.id ? {
+              ...r,
+              title: updated.title,
+              artwork: updated.artwork || r.artwork,
+              year: updated.releaseDate ? new Date(updated.releaseDate).getFullYear().toString() : (updated.year || r.year),
+              releaseDate: updated.releaseDate,
+              spotify: updated.streamingLinks?.spotify || r.spotify,
+              soundcloud: updated.streamingLinks?.soundcloud || r.soundcloud,
+              youtube: updated.streamingLinks?.youtube || r.youtube,
+              bandcamp: updated.streamingLinks?.bandcamp || r.bandcamp,
+              appleMusic: updated.streamingLinks?.appleMusic || r.appleMusic,
+            } : r),
+          }))
+        } : undefined}
+        onDeleteRelease={editMode ? (id) => {
+          handleUpdateSiteData(prev => ({
+            ...prev,
+            releases: prev.releases.filter(r => r.id !== id),
+          }))
+        } : undefined}
+        onAddRelease={editMode ? (release: FullRelease) => {
+          handleUpdateSiteData(prev => ({
+            ...prev,
+            releases: [...prev.releases, {
+              id: release.id,
+              title: release.title,
+              artwork: release.artwork || '',
+              year: release.releaseDate ? new Date(release.releaseDate).getFullYear().toString() : (release.year || ''),
+              releaseDate: release.releaseDate,
+              spotify: release.streamingLinks?.spotify,
+              soundcloud: release.streamingLinks?.soundcloud,
+              youtube: release.streamingLinks?.youtube,
+              bandcamp: release.streamingLinks?.bandcamp,
+              appleMusic: release.streamingLinks?.appleMusic,
+            }],
+          }))
+        } : undefined}
+        onRefreshReleases={editMode ? handleFetchITunesReleases : undefined}
       />
       </SectionErrorBoundary>
 

@@ -1,9 +1,7 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Separator } from '@/components/ui/separator'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { PencilSimple, Folder } from '@phosphor-icons/react'
+import { Folder } from '@phosphor-icons/react'
 import EditableHeading from '@/components/EditableHeading'
 import { MediaBrowser } from '@/components/MediaBrowser'
 import type { AdminSettings, SectionLabels, MediaFile } from '@/lib/types'
@@ -34,24 +32,10 @@ export default function AppMediaSection({
   onUpdate,
 }: AppMediaSectionProps) {
   const [browserOpen, setBrowserOpen] = useState(false)
-  const [editingLabel, setEditingLabel] = useState(false)
-  const [labelDraft, setLabelDraft] = useState('')
-  const labelInputRef = useRef<HTMLInputElement>(null)
   const { t, locale } = useLocale()
 
   const prefix = headingPrefix !== undefined ? headingPrefix : ''
   const displayLabel = sectionLabel || 'MEDIA'
-
-  const startLabelEdit = () => {
-    setLabelDraft(sectionLabel || 'MEDIA')
-    setEditingLabel(true)
-    setTimeout(() => labelInputRef.current?.focus(), 50)
-  }
-
-  const saveLabelEdit = () => {
-    onLabelChange?.('media', labelDraft)
-    setEditingLabel(false)
-  }
 
   if (!visible) return null
 
@@ -72,49 +56,15 @@ export default function AppMediaSection({
                 data-text={`${prefix}${prefix ? ' ' : ''}${displayLabel}`}
               >
                 {prefix && <span className="text-primary/70 mr-2">{prefix}</span>}
-                {editMode && onLabelChange ? (
-                  editingLabel ? (
-                    <span className="inline-flex items-center gap-2">
-                      <Input
-                        ref={labelInputRef}
-                        value={labelDraft}
-                        onChange={(e) => setLabelDraft(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Enter') saveLabelEdit() }}
-                        placeholder="MEDIA"
-                        className="bg-transparent border-border font-mono text-2xl md:text-4xl uppercase tracking-tighter w-48"
-                      />
-                      <Button size="sm" onClick={saveLabelEdit} className="font-mono text-xs">
-                        Save
-                      </Button>
-                    </span>
-                  ) : (
-                    <span
-                      className="cursor-pointer hover:text-primary/80 transition-colors"
-                      onClick={startLabelEdit}
-                      title="Click to edit heading"
-                    >
-                      <EditableHeading
-                        text={sectionLabel}
-                        defaultText="MEDIA"
-                        editMode={false}
-                        onChange={() => {}}
-                        glitchEnabled={adminSettings?.glitchTextSettings?.enabled !== false}
-                        glitchIntervalMs={adminSettings?.glitchTextSettings?.intervalMs}
-                        glitchDurationMs={adminSettings?.glitchTextSettings?.durationMs}
-                      />
-                    </span>
-                  )
-                ) : (
-                  <EditableHeading
-                    text={sectionLabel}
-                    defaultText="MEDIA"
-                    editMode={false}
-                    onChange={() => {}}
-                    glitchEnabled={adminSettings?.glitchTextSettings?.enabled !== false}
-                    glitchIntervalMs={adminSettings?.glitchTextSettings?.intervalMs}
-                    glitchDurationMs={adminSettings?.glitchTextSettings?.durationMs}
-                  />
-                )}
+                <EditableHeading
+                  text={sectionLabel}
+                  defaultText="MEDIA"
+                  editMode={editMode && !!onLabelChange}
+                  onChange={(v) => onLabelChange?.('media', v)}
+                  glitchEnabled={adminSettings?.glitchTextSettings?.enabled !== false}
+                  glitchIntervalMs={adminSettings?.glitchTextSettings?.intervalMs}
+                  glitchDurationMs={adminSettings?.glitchTextSettings?.durationMs}
+                />
                 {adminSettings?.animations?.blinkingCursor !== false && <span className="animate-pulse">_</span>}
               </h2>
             </div>

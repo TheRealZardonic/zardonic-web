@@ -181,6 +181,18 @@ export default function AdminPanel({
     [adminSettings, setAdminSettings],
   )
 
+  // Apply a full preset in a single setState call to avoid stale-closure overwrites
+  const applyPreset = useCallback(
+    (themeUpdate: Partial<ThemeCustomization>) => {
+      if (!setAdminSettings) return
+      setAdminSettings({
+        ...adminSettings,
+        theme: { ...adminSettings?.theme, ...themeUpdate },
+      })
+    },
+    [adminSettings, setAdminSettings],
+  )
+
   const updateAnimation = useCallback(
     (key: keyof AnimationSettings, value: boolean) => {
       if (!setAdminSettings) return
@@ -581,6 +593,7 @@ export default function AdminPanel({
                 setAdminSettings={setAdminSettings}
                 theme={theme}
                 updateTheme={updateTheme}
+                applyPreset={applyPreset}
                 anim={anim}
                 updateAnimation={updateAnimation}
                 updateAnimationNumber={updateAnimationNumber}
