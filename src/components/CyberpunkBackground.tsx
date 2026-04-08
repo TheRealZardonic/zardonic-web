@@ -47,7 +47,7 @@ export default function CyberpunkBackground({ hudTexts }: CyberpunkBackgroundPro
       <div className="absolute inset-0 hud-grid-overlay" />
       
       {/* HUD Data readouts */}
-      <div className="absolute top-20 left-4 data-readout hidden md:block">
+      <div className="absolute top-28 left-4 data-readout hidden md:block">
         <div className="mb-1">{hudTexts?.topLeft1 ?? 'SYSTEM: ONLINE'}</div>
         <div>{hudTexts?.topLeft2 !== undefined ? hudTexts.topLeft2 : `TIME: ${formatTime(time)}`}</div>
         <div className="mt-1 flex items-center gap-2">
@@ -56,7 +56,7 @@ export default function CyberpunkBackground({ hudTexts }: CyberpunkBackgroundPro
         </div>
       </div>
 
-      <div className="absolute top-20 right-4 data-readout hidden md:block text-right">
+      <div className="absolute top-28 right-4 data-readout hidden md:block text-right">
         <div className="mb-1">{hudTexts?.topRight1 ?? 'NEUROKLAST v1.0'}</div>
         <div>{hudTexts?.topRight2 ?? `ID: NK-${nodeId}`}</div>
       </div>

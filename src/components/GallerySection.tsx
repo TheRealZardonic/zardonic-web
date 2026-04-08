@@ -42,7 +42,7 @@ export default function GallerySection({
         >
           <div className="flex items-center justify-between mb-12">
             <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-data-corrupt" data-text="GALLERY">
-              <EditableHeading onChange={() => {}}  onChange={() => {}}
+              <EditableHeading onChange={() => {}}
                 text={sectionLabel || ''}
                 defaultText="GALLERY"
                 editMode={editMode}
@@ -53,6 +53,8 @@ export default function GallerySection({
               {adminSettings?.animations?.blinkingCursor !== false && <span className="animate-pulse">_</span>}
             </h2>
           </div>
+
+          {siteData.gallery.length === 0 ? (
             <Card className="p-12 text-center bg-card/50 border-border">
               <p className="text-xl text-muted-foreground uppercase tracking-wide font-mono">
                 Gallery coming soon
