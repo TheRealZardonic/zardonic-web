@@ -2,7 +2,7 @@ import React from 'react'
 import logoImage from '@/assets/images/meta_eyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ==.webp'
 import { motion, AnimatePresence } from 'framer-motion'
 import { List, X } from '@phosphor-icons/react'
-import type { SectionLabels } from '@/lib/types'
+import type { SectionLabels, SectionVisibility } from '@/lib/types'
 
 interface AppNavBarProps {
   artistName: string
@@ -15,6 +15,7 @@ interface AppNavBarProps {
   setMobileMenuOpen: (v: boolean) => void
   scrollToSection: (id: string) => void
   sectionLabels?: SectionLabels
+  sectionVisibility?: SectionVisibility
 }
 
 export default function AppNavBar({
@@ -28,8 +29,9 @@ export default function AppNavBar({
   setMobileMenuOpen,
   scrollToSection,
   sectionLabels,
+  sectionVisibility,
 }: AppNavBarProps) {
-  const navItems: { id: string; label: string }[] = [
+  const allNavItems: { id: string; label: string }[] = [
     { id: 'bio', label: sectionLabels?.biography || 'BIOGRAPHY' },
     { id: 'music', label: sectionLabels?.musicPlayer || 'MUSIC' },
     { id: 'gigs', label: sectionLabels?.upcomingGigs || 'GIGS' },
@@ -37,6 +39,12 @@ export default function AppNavBar({
     { id: 'gallery', label: sectionLabels?.gallery || 'GALLERY' },
     { id: 'connect', label: sectionLabels?.connect || 'CONNECT' },
   ]
+  // Hide nav items whose sections are explicitly disabled
+  const navItems = allNavItems.filter(({ id }) => {
+    if (!sectionVisibility) return true
+    const key = id as keyof SectionVisibility
+    return sectionVisibility[key] !== false
+  })
   return (
     <motion.nav
       initial={{ opacity: 0 }}

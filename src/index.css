@@ -2004,3 +2004,93 @@ h1, h2, h3, h4, h5, h6 {
     text-shadow: 0 0 8px var(--primary);
   }
 }
+
+/* ─── Cloud Chamber Background CSS Effects ─────────────────────────────────── */
+
+@keyframes cc-scanline-drift {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes cc-noise-shift {
+  0%, 100% { opacity: 0.06; transform: translate(0, 0); }
+  10%      { opacity: 0.10; transform: translate(-3%, -3%); }
+  20%      { opacity: 0.07; transform: translate(-6%,  3%); }
+  30%      { opacity: 0.09; transform: translate( 3%, -6%); }
+  40%      { opacity: 0.06; transform: translate(-3%,  9%); }
+  50%      { opacity: 0.10; transform: translate(-6%,  3%); }
+  60%      { opacity: 0.07; transform: translate( 9%,  0%); }
+  70%      { opacity: 0.08; transform: translate( 0%,  6%); }
+  80%      { opacity: 0.06; transform: translate(-9%,  0%); }
+  90%      { opacity: 0.09; transform: translate( 6%,  3%); }
+}
+
+@keyframes cc-flicker {
+  0%, 100% { opacity: 0.03; }
+  50%      { opacity: 0.01; }
+}
+
+/* Horizontal scanlines drifting slowly downward */
+.cc-scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.18),
+    rgba(0, 0, 0, 0.18) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  animation: cc-scanline-drift 10s linear infinite;
+}
+
+/* Animated film grain / noise */
+.cc-noise {
+  position: absolute;
+  inset: -50%;
+  background-image:
+    repeating-radial-gradient(circle at 20% 50%, transparent 0, rgba(255,255,255,0.015) 1px, transparent 2px),
+    repeating-radial-gradient(circle at 80% 70%, transparent 0, rgba(255,255,255,0.015) 1px, transparent 2px),
+    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.025) 2px, rgba(255,255,255,0.025) 4px);
+  background-size: 3px 3px, 4px 4px, 100% 4px;
+  pointer-events: none;
+  animation: cc-noise-shift 1s steps(8) infinite;
+}
+
+/* Subtle dot grid overlay */
+.cc-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events: none;
+}
+
+/* Slow signal interference sweep */
+.cc-interference {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(transparent 0%, rgba(255,255,255,0.025) 50%, transparent 100%);
+  pointer-events: none;
+  animation: cc-scanline-drift 14s linear infinite;
+}
+
+/* Radial vignette */
+.cc-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.55) 100%);
+  pointer-events: none;
+}
+
+/* Subtle CRT flicker */
+.cc-flicker {
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.02);
+  pointer-events: none;
+  animation: cc-flicker 0.18s infinite;
+}

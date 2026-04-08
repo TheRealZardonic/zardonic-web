@@ -33,29 +33,32 @@ export function useSiteDataSync(
         return
       }
 
-      // Enrich with Odesli streaming links in batches
-      const BATCH_SIZE = 3
-      for (let i = 0; i < iTunesReleases.length; i += BATCH_SIZE) {
-        const batch = iTunesReleases.slice(i, i + BATCH_SIZE)
-        await Promise.allSettled(
-          batch.map(async (release) => {
-            if (!release.appleMusic) return
-            try {
-              const links = await fetchOdesliLinks(release.appleMusic)
-              if (links) {
-                if (links.spotify) release.spotify = links.spotify
-                if (links.soundcloud) release.soundcloud = links.soundcloud
-                if (links.youtube) release.youtube = links.youtube
-                if (links.bandcamp) release.bandcamp = links.bandcamp
-                if (links.deezer) release.deezer = links.deezer
-                if (links.tidal) release.tidal = links.tidal
-                if (links.amazonMusic) release.amazonMusic = links.amazonMusic
+      // Only enrich with Odesli on manual admin refresh (not on auto-load)
+      // to avoid exhausting the rate limit on every page load.
+      if (!isAutoLoad) {
+        const BATCH_SIZE = 3
+        for (let i = 0; i < iTunesReleases.length; i += BATCH_SIZE) {
+          const batch = iTunesReleases.slice(i, i + BATCH_SIZE)
+          await Promise.allSettled(
+            batch.map(async (release) => {
+              if (!release.appleMusic) return
+              try {
+                const links = await fetchOdesliLinks(release.appleMusic)
+                if (links) {
+                  if (links.spotify) release.spotify = links.spotify
+                  if (links.soundcloud) release.soundcloud = links.soundcloud
+                  if (links.youtube) release.youtube = links.youtube
+                  if (links.bandcamp) release.bandcamp = links.bandcamp
+                  if (links.deezer) release.deezer = links.deezer
+                  if (links.tidal) release.tidal = links.tidal
+                  if (links.amazonMusic) release.amazonMusic = links.amazonMusic
+                }
+              } catch (e) {
+                console.error(`Odesli enrichment failed for ${release.title}:`, e)
               }
-            } catch (e) {
-              console.error(`Odesli enrichment failed for ${release.title}:`, e)
-            }
-          })
-        )
+            })
+          )
+        }
       }
 
       setSiteData((data) => {

@@ -119,7 +119,7 @@ function getRatelimit(): Ratelimit | null {
   if (!isRedisConfigured()) return null
   ratelimit = new Ratelimit({
     redis: kv,
-    limiter: Ratelimit.slidingWindow(5, '10 s'),
+    limiter: Ratelimit.slidingWindow(30, '60 s'),
     prefix: 'nk-rl',
   })
   return ratelimit
