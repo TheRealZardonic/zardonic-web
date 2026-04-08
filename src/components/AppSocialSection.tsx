@@ -17,6 +17,7 @@ import {
 } from '@phosphor-icons/react'
 import type { AdminSettings } from '@/lib/types'
 import type { SiteData } from '@/lib/app-types'
+import { useLocale } from '@/contexts/LocaleContext'
 
 interface AppSocialSectionProps {
   social: SiteData['social']
@@ -30,13 +31,14 @@ interface AppSocialSectionProps {
 }
 
 export default function AppSocialSection({ social, sectionOrder, visible, editMode, sectionLabel, headingPrefix, adminSettings, onContactClick }: AppSocialSectionProps) {
+  const { t } = useLocale()
   if (!visible) return null
 
   return (
     <div style={{ order: sectionOrder }}>
       <Separator className="bg-border" />
       <section id="connect" className="py-24 px-4 bg-card/50 scanline-effect crt-effect">
-        <div className="container mx-auto max-w-4xl">
+        <div className="container mx-auto max-w-6xl">
           <motion.div
             initial={{ opacity: 0, x: -30, filter: 'blur(10px)', clipPath: 'polygon(0 0, 0 0, 0 100%, 0 100%)' }}
             whileInView={{ opacity: 1, x: 0, filter: 'blur(0px)', clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' }}
@@ -104,7 +106,7 @@ export default function AppSocialSection({ social, sectionOrder, visible, editMo
               <Button asChild size="lg" variant="outline" className="uppercase font-mono hover-glitch cyber-border">
                 <a href="https://zardonic.channl.co/merch" target="_blank" rel="noopener noreferrer">
                   <Storefront className="w-5 h-5 mr-2" />
-                  <span className="hover-chromatic">Merch Shop</span>
+                  <span className="hover-chromatic">{t('social.merchShop')}</span>
                 </a>
               </Button>
               <Button
@@ -114,7 +116,7 @@ export default function AppSocialSection({ social, sectionOrder, visible, editMo
                 onClick={onContactClick}
               >
                 <Envelope className="w-5 h-5 mr-2" />
-                <span className="hover-chromatic">Contact</span>
+                <span className="hover-chromatic">{t('social.contactButton')}</span>
               </Button>
             </motion.div>
           </motion.div>

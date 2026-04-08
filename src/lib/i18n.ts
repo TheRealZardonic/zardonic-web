@@ -102,8 +102,15 @@ const translations: Record<string, Record<Locale, string>> = {
   'contact.successLabel':      { en: 'Success Message', de: 'Erfolgsnachricht' },
   'contact.successPlaceholder': { en: 'Thanks for reaching out!', de: 'Danke für deine Nachricht!' },
 
-  // ── Social ──────────────────────────────────────────────────────────
-  'social.defaultTitle':       { en: 'CONNECT', de: 'VERBINDEN' },
+  // ── Media ────────────────────────────────────────────────────────────
+  'media.openArchive':         { en: 'OPEN MEDIA ARCHIVE', de: 'MEDIENARCHIV ÖFFNEN' },
+  'media.pressKits':           { en: '// PRESS KITS · LOGOS · ASSETS', de: '// PRESSEMAPPEN · LOGOS · ASSETS' },
+  'media.filesAvailable':      { en: '{0} FILE{1} AVAILABLE // PRESS KITS · LOGOS · ASSETS', de: '{0} DATEI{1} VERFÜGBAR // PRESSEMAPPEN · LOGOS · ASSETS' },
+  'media.clickToAccess':       { en: 'CLICK TO ACCESS', de: 'KLICKEN ZUM ÖFFNEN' },
+
+  // ── Social buttons ────────────────────────────────────────────────────
+  'social.merchShop':          { en: 'Merch Shop', de: 'Merch-Shop' },
+  'social.contactButton':      { en: 'Contact', de: 'Kontakt' },
   'social.editLinks':          { en: 'Edit Links', de: 'Links bearbeiten' },
 
   // ── Newsletter ──────────────────────────────────────────────────────

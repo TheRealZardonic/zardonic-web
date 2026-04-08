@@ -2,6 +2,8 @@
 
 A fully customizable cyberpunk-themed artist website for **ZARDONIC**, built with React 19, TypeScript, Vite, and Framer Motion. Features a 3D loading screen, chromatic aberration glitch effects, Sanity CMS integration, and a full admin panel.
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FNeuroklast%2Fzardonic-industrial&env=UPSTASH_REDIS_REST_URL,UPSTASH_REDIS_REST_TOKEN,RATE_LIMIT_SALT,VITE_SANITY_PROJECT_ID,VITE_SANITY_DATASET,SANITY_API_TOKEN&envDescription=Required%20environment%20variables%20for%20Redis%2C%20security%2C%20and%20Sanity%20CMS&envLink=https%3A%2F%2Fgithub.com%2FNeuroklast%2Fzardonic-industrial%2Fblob%2Fmain%2F.env.example&project-name=zardonic-industrial&repository-name=zardonic-industrial)
+
 > **Live Site:** https://zardonic-website.vercel.app  
 > **Coding agents:** Read [`docs/DEVELOPMENT_STATUS.md`](./docs/DEVELOPMENT_STATUS.md) and [`docs/CODING_AGENT_WORKFLOW.md`](./docs/CODING_AGENT_WORKFLOW.md) before starting any work.
 
