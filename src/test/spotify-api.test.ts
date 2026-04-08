@@ -269,7 +269,7 @@ describe('Spotify API handler — action: search', () => {
       .mockResolvedValueOnce(dataResponse(searchData))
 
     const res = mockRes()
-    await handler(mockReq({ action: 'search', query: 'Zardonic' }), res as unknown as unknown as VercelResponse)
+    await handler(mockReq({ action: 'search', query: 'Zardonic', type: 'artist' }), res as unknown as unknown as VercelResponse)
 
     expect(mockFetchWithRetry.mock.calls[1][0]).toContain('/v1/search')
     expect(mockFetchWithRetry.mock.calls[1][0]).toContain('type=artist')

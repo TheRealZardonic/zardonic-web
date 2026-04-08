@@ -50,6 +50,12 @@ export async function fetchITunesReleases(): Promise<ITunesRelease[]> {
       ),
     ])
 
+    if (songsRes.status === 429 || albumsRes.status === 429) {
+      console.warn('iTunes rate limited (429), falling back to Spotify')
+      const { fetchSpotifyReleases } = await import('./spotify-releases')
+      return fetchSpotifyReleases()
+    }
+
     if (!songsRes.ok) throw new Error(`iTunes songs API responded with ${songsRes.status}`)
     if (!albumsRes.ok) throw new Error(`iTunes albums API responded with ${albumsRes.status}`)
 

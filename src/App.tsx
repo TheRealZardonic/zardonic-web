@@ -27,7 +27,7 @@ import EditControls from '@/components/EditControls'
 const ConfigEditorDialog = React.lazy(() => import('@/components/ConfigEditorDialog'))
 import AppMediaSection from '@/components/AppMediaSection'
 import { SystemMonitorHUD } from '@/components/SystemMonitorHUD'
-import ContactSection from '@/components/ContactSection'
+
 const ContactInboxDialog = React.lazy(() => import('@/components/ContactInboxDialog'))
 const SubscriberListDialog = React.lazy(() => import('@/components/SubscriberListDialog'))
 import AppNavBar from '@/components/AppNavBar'
@@ -48,7 +48,7 @@ import { useDocumentTitle } from '@/hooks/use-document-title'
 
 /** Render the correct background component based on the configured type */
 function BackgroundLayer({ type, hudTexts }: { type: BackgroundType | undefined; hudTexts?: HudTexts }) {
-  const bg = type ?? 'circuit'
+  const bg = type ?? 'cloud-chamber'
   if (bg === 'circuit') return <CircuitBackground />
   if (bg === 'cyberpunk-hud') return <CyberpunkBackground hudTexts={hudTexts} />
   if (bg === 'matrix') return <Suspense fallback={null}><MatrixRain /></Suspense>
@@ -442,21 +442,6 @@ function App() {
       />
       </SectionErrorBoundary>
 
-      {/* Contact Section */}
-      <div style={{ order: getSectionOrder('contact') }}>
-      {vis.contact !== false && (
-        <SectionErrorBoundary sectionName="Contact">
-        <ContactSection
-          contactSettings={contactSettings}
-          editMode={editMode}
-          sectionLabels={sectionLabels}
-          onLabelChange={editMode ? handleLabelChange : undefined}
-          adminSettings={adminSettings}
-          onUpdate={(cs) => handleUpdateAdminSettings({ ...(adminSettings || {}), contactSettings: cs })}
-        />
-        </SectionErrorBoundary>
-      )}
-      </div>
       </>)}
 
       </div>{/* end flex container for reorderable sections */}

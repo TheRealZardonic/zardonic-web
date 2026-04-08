@@ -105,10 +105,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       case 'search': {
         if (!query) return res.status(400).json({ error: 'query parameter is required for action=search' })
-        const searchParams = new URLSearchParams({ q: query, type: 'artist' })
-        if (market) searchParams.set('market', market)
-        apiUrl = `https://api.spotify.com/v1/search?${searchParams.toString()}`
-        break
+        const searchType = (req.query.type as string) ?? 'album'
+        const searchUrl = `https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=${encodeURIComponent(searchType)}&limit=50&market=${market ?? 'US'}`
+
+        const searchRedis = getRedisOrNull()
+        const searchCacheKey = `spotify:search:${query.toLowerCase().replace(/\s+/g, '-')}:${searchType}`
+        if (searchRedis) {
+          try {
+            const cached = await searchRedis.get<unknown>(searchCacheKey)
+            if (cached !== null && cached !== undefined) {
+              res.setHeader('Cache-Control', 'public, max-age=300')
+              res.setHeader('X-Cache', 'HIT')
+              return res.status(200).json(cached)
+            }
+          } catch { /* fall through */ }
+        }
+
+        const searchRes = await fetchWithRetry(searchUrl, { headers })
+        if (!searchRes.ok) return res.status(searchRes.status).json({ error: `Spotify API responded with ${searchRes.status}` })
+        const searchData = await searchRes.json()
+        if (searchRedis) {
+          try { await searchRedis.set(searchCacheKey, searchData, { ex: 43200 }) } catch { /* non-fatal */ }
+        }
+        res.setHeader('Cache-Control', 'public, max-age=300')
+        res.setHeader('X-Cache', 'MISS')
+        return res.status(200).json(searchData)
       }
       default:
         return res.status(400).json({ error: 'Invalid action parameter' })

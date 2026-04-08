@@ -92,13 +92,13 @@ describe('iTunes handler – 429 retry via fetchWithRetry', () => {
     expect(combined.results).toHaveLength(2)
   })
 
-  it('returns 500 after all retries are exhausted (fetchWithRetry returns non-ok)', async () => {
+  it('returns 429 after all retries are exhausted (fetchWithRetry returns 429)', async () => {
     mockFetchWithRetry.mockResolvedValue({ ok: false, status: 429, headers: { get: vi.fn() } })
 
     const res = mockRes()
     await itunesHandler({ query: { term: 'NEUROKLAST', entity: 'album' }, headers: {} } as unknown as VercelRequest, res)
 
-    expect(res.status).toHaveBeenCalledWith(500)
+    expect(res.status).toHaveBeenCalledWith(429)
   })
 })
 
