@@ -4,10 +4,12 @@ import { AnimatePresence } from 'framer-motion'
 import { useKV } from '@/hooks/use-kv'
 import { useKonami } from '@/hooks/use-konami'
 import { trackPageView, trackHeatmapClick } from '@/hooks/use-analytics'
+import { useAnalyticsConsent, CookieConsent, CookiePreferencesButton } from '@/components/CookieConsent'
 import { useAdminAuth } from '@/hooks/use-admin-auth'
 import type { AdminSettings, BackgroundType, HudTexts, SectionLabels, Release as FullRelease } from '@/lib/types'
 import { useAppTheme } from '@/hooks/use-app-theme'
 import { useSiteDataSync } from '@/hooks/use-site-data-sync'
+import { LocaleProvider } from '@/contexts/LocaleContext'
 import type { SiteData, CyberpunkOverlayState } from '@/lib/app-types'
 import { DEFAULT_SITE_DATA } from '@/lib/app-types'
 import { DEFAULT_SECTION_ORDER } from '@/lib/config'
@@ -22,6 +24,9 @@ import CyberpunkBackground from '@/components/CyberpunkBackground'
 const MatrixRain = React.lazy(() => import('@/components/MatrixRain'))
 const StarField = React.lazy(() => import('@/components/StarField'))
 const CloudChamberBackground = React.lazy(() => import('@/components/CloudChamberBackground'))
+const GlitchGridBackground = React.lazy(() => import('@/components/GlitchGridBackground'))
+const MinimalBarLoader = React.lazy(() => import('@/components/MinimalBarLoader'))
+const GlitchDecodeLoader = React.lazy(() => import('@/components/GlitchDecodeLoader'))
 import AdminLoginDialog from '@/components/AdminLoginDialog'
 import EditControls from '@/components/EditControls'
 const ConfigEditorDialog = React.lazy(() => import('@/components/ConfigEditorDialog'))
@@ -54,6 +59,7 @@ function BackgroundLayer({ type, hudTexts }: { type: BackgroundType | undefined;
   if (bg === 'matrix') return <Suspense fallback={null}><MatrixRain /></Suspense>
   if (bg === 'stars') return <Suspense fallback={null}><StarField /></Suspense>
   if (bg === 'cloud-chamber') return <Suspense fallback={null}><CloudChamberBackground /></Suspense>
+  if (bg === 'glitch-grid') return <Suspense fallback={null}><GlitchGridBackground /></Suspense>
   // 'minimal' – no decorative background
   return null
 }
@@ -118,13 +124,19 @@ function App() {
     }
   }, [loading])
 
-  // Track page view on mount
+  // Track page view on mount — only if analytics consent was given
+  const analyticsConsent = useAnalyticsConsent()
   useEffect(() => {
-    trackPageView()
-  }, [])
+    if (analyticsConsent) {
+      trackPageView()
+    }
+  // Only run once on mount; analyticsConsent may become true later (after banner)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [analyticsConsent])
 
-  // Track heatmap clicks globally
+  // Track heatmap clicks globally — guard with consent
   useEffect(() => {
+    if (!analyticsConsent) return
     const handleClick = (e: MouseEvent) => {
       const x = e.clientX / window.innerWidth
       const y = (e.clientY + window.scrollY) / document.documentElement.scrollHeight
@@ -144,7 +156,7 @@ function App() {
     }
     document.addEventListener('click', handleClick)
     return () => document.removeEventListener('click', handleClick)
-  }, [])
+  }, [analyticsConsent])
 
   const [siteData, setSiteData] = useState<SiteData | undefined>(undefined)
   const [adminSettings, setAdminSettings] = useState<AdminSettings | undefined>(undefined)
@@ -220,6 +232,14 @@ function App() {
   const { iTunesFetching, bandsintownFetching, hasAutoLoaded, handleFetchBandsintownEvents, handleFetchITunesReleases } = useSiteDataSync(siteData, setSiteData)
   useDocumentTitle(siteData?.artistName ?? '')
 
+  // When loading screen type is 'none', skip loading immediately
+  useEffect(() => {
+    if (anim.loadingScreenType === 'none') {
+      setLoading(false)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [anim.loadingScreenType])
+
   // Collect image URLs for precaching during loading screen
   const precacheUrls = useMemo(() => {
     if (!siteData) return []
@@ -264,12 +284,53 @@ function App() {
   }
 
   return (
+    <LocaleProvider customTranslations={adminSettings?.customTranslations}>
     <>
       {siteData && <StructuredData artistName={siteData.artistName} siteData={siteData} />}
       <AnimatePresence>
-        {(!siteData || loading) && (
-          <LoadingScreen onLoadComplete={() => setLoading(false)} precacheUrls={precacheUrls} loaderTexts={adminSettings?.loaderTexts} />
-        )}
+        {(!siteData || loading) && (() => {
+          const lsType = anim.loadingScreenType ?? 'cyberpunk'
+          if (lsType === 'none') {
+            // Still need to signal load complete
+            return null
+          }
+          if (lsType === 'minimal-bar') {
+            return (
+              <Suspense fallback={null}>
+                <MinimalBarLoader
+                  onLoadComplete={() => setLoading(false)}
+                  precacheUrls={precacheUrls}
+                  mode={anim.loadingScreenMode ?? 'real'}
+                  duration={anim.loadingScreenDuration ?? 3}
+                  loaderTexts={adminSettings?.loaderTexts}
+                />
+              </Suspense>
+            )
+          }
+          if (lsType === 'glitch-decode') {
+            return (
+              <Suspense fallback={null}>
+                <GlitchDecodeLoader
+                  onLoadComplete={() => setLoading(false)}
+                  precacheUrls={precacheUrls}
+                  mode={anim.loadingScreenMode ?? 'real'}
+                  duration={anim.loadingScreenDuration ?? 3}
+                  loaderTexts={adminSettings?.loaderTexts}
+                />
+              </Suspense>
+            )
+          }
+          // default: 'cyberpunk'
+          return (
+            <LoadingScreen
+              onLoadComplete={() => setLoading(false)}
+              precacheUrls={precacheUrls}
+              loaderTexts={adminSettings?.loaderTexts}
+              mode={anim.loadingScreenMode ?? 'real'}
+              duration={anim.loadingScreenDuration ?? 3}
+            />
+          )
+        })()}
       </AnimatePresence>
 
       <div className={`min-h-screen bg-background text-foreground relative${anim.glitchEnabled === false ? ' no-glitch' : ''}${anim.chromaticEnabled === false ? ' no-chromatic' : ''}`}>
@@ -277,7 +338,28 @@ function App() {
       {anim.crtEnabled !== false && <div className="crt-vignette" />}
       {anim.scanlineEnabled !== false && <div className="crt-scanline-bg" />}
       {anim.noiseEnabled !== false && <div className="full-page-noise periodic-noise-glitch" />}
-      {anim.circuitBackgroundEnabled !== false && <BackgroundLayer type={anim.backgroundType} hudTexts={adminSettings?.hudTexts} />}
+      {/* Background image layer */}
+      {anim.backgroundImageUrl && (
+        <div
+          className="fixed inset-0 pointer-events-none"
+          style={{ zIndex: 0, opacity: typeof anim.backgroundImageOpacity === 'number' ? anim.backgroundImageOpacity : 1 }}
+          aria-hidden="true"
+        >
+          <img
+            src={anim.backgroundImageUrl}
+            alt=""
+            className="w-full h-full"
+            style={{
+              objectFit: anim.backgroundImageFit ?? 'cover',
+              display: 'block',
+            }}
+          />
+        </div>
+      )}
+      {/* Animated background effect: show when enabled and (no image, or overlay mode is on) */}
+      {anim.circuitBackgroundEnabled !== false && (!anim.backgroundImageUrl || anim.backgroundImageOverlay === true) && (
+        <BackgroundLayer type={anim.backgroundType} hudTexts={adminSettings?.hudTexts} />
+      )}
       <SystemMonitorHUD />
       
       <Toaster />
@@ -536,6 +618,11 @@ function App() {
         adminSettings={adminSettings}
       />
 
+      {/* GDPR Cookie Consent Banner */}
+      <CookieConsent
+        onOpenPrivacyPolicy={() => setCyberpunkOverlay({ type: 'privacy' })}
+      />
+
 
       {isOwner && (
         <EditControls
@@ -621,6 +708,7 @@ function App() {
       />
     </div>
     </>
+    </LocaleProvider>
   )
 }
 

@@ -2,6 +2,7 @@ import React from 'react'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import { Lock } from '@phosphor-icons/react'
 import { useLocale } from '@/contexts/LocaleContext'
+import { CookiePreferencesButton } from '@/components/CookieConsent'
 
 interface AppFooterProps {
   artistName: string
@@ -49,6 +50,10 @@ export default function AppFooter({
           >
             Contact
           </button>
+          {/* GDPR revocation link — users must be able to change consent at any time */}
+          <CookiePreferencesButton
+            onOpenPrivacyPolicy={() => setCyberpunkOverlay({ type: 'privacy' })}
+          />
           {!isOwner && (
             <button
               onClick={() => hasPassword ? setShowLoginDialog(true) : setShowSetupDialog(true)}

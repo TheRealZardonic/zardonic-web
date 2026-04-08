@@ -71,9 +71,15 @@ export interface ThemeCustomization {
   dataLabelColor?: string
   dataLabelFontSize?: string
   dataLabelFontFamily?: string
+
+  // Modal glow color
+  modalGlowColor?: string
 }
 
-export type BackgroundType = 'circuit' | 'cyberpunk-hud' | 'matrix' | 'stars' | 'minimal' | 'cloud-chamber'
+export type BackgroundType = 'circuit' | 'cyberpunk-hud' | 'matrix' | 'stars' | 'minimal' | 'cloud-chamber' | 'glitch-grid'
+
+export type LoadingScreenType = 'cyberpunk' | 'minimal-bar' | 'glitch-decode' | 'none'
+export type LoadingScreenMode = 'timed' | 'real'
 
 export interface AnimationSettings {
   glitchEnabled?: boolean
@@ -86,6 +92,15 @@ export interface AnimationSettings {
   crtVignetteOpacity?: number
   backgroundType?: BackgroundType
   blinkingCursor?: boolean
+  // Background image
+  backgroundImageUrl?: string
+  backgroundImageFit?: 'cover' | 'contain' | 'fill' | 'none'
+  backgroundImageOpacity?: number
+  backgroundImageOverlay?: boolean
+  // Loading screen
+  loadingScreenType?: LoadingScreenType
+  loadingScreenMode?: LoadingScreenMode
+  loadingScreenDuration?: number
 }
 
 export interface LoaderTexts {
@@ -227,6 +242,8 @@ export interface AdminSettings {
   loaderTexts?: LoaderTexts
   hudTexts?: HudTexts
   colorPresets?: CustomColorPreset[]
+  locale?: string
+  customTranslations?: Record<string, Record<string, string>>
 }
 
 export interface CustomColorPreset {

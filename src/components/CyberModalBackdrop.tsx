@@ -40,6 +40,7 @@ export default function CyberModalBackdrop({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          style={{ boxShadow: 'inset 0 0 80px var(--modal-glow-color, transparent)' }}
         >
           <div className="min-h-full flex items-center justify-center p-4 md:p-6">
             {children}

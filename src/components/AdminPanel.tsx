@@ -23,6 +23,7 @@ import {
   ArrowCounterClockwise,
   Monitor,
   SignOut,
+  Translate,
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -42,6 +43,7 @@ import type {
 import type { SiteData } from '@/App'
 import { toast } from 'sonner'
 import { DEFAULT_SECTION_ORDER } from '@/lib/config'
+import { getTranslations, LOCALES } from '@/lib/i18n'
 import AppearanceTab from '@/components/admin/AppearanceTab'
 import BackgroundTab from '@/components/admin/BackgroundTab'
 import ContentTab from '@/components/admin/ContentTab'
@@ -97,6 +99,7 @@ export default function AdminPanel({
   const [activeTab, setActiveTab] = useState('overview')
   const [showPasswordDialog, setShowPasswordDialog] = useState(false)
   const importInputRef = useRef<HTMLInputElement>(null)
+  const translationImportRef = useRef<HTMLInputElement>(null)
 
   // Local content state for optimistic edits
   const [localArtistName, setLocalArtistName] = useState(siteData?.artistName ?? '')
@@ -380,6 +383,7 @@ export default function AdminPanel({
                   { value: 'security', label: 'Security', icon: <Shield size={13} /> },
                   { value: 'analytics', label: 'Analytics', icon: <ChartBar size={13} /> },
                   { value: 'data', label: 'Data', icon: <Database size={13} /> },
+                  { value: 'translations', label: 'Translations', icon: <Translate size={13} /> },
                 ].map(({ value, label, icon }) => (
                   <TabsTrigger
                     key={value}
@@ -773,6 +777,82 @@ export default function AdminPanel({
                   </button>
                 </div>
               </TabsContent>
+
+              {/* ─── TRANSLATIONS TAB ──────────────────────────── */}
+              <TabsContent value="translations" className="flex-1 overflow-y-auto p-4 space-y-4 mt-0">
+                <div className="space-y-1">
+                  <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">Translation Manager</h3>
+                  <p className="font-mono text-xs text-muted-foreground">
+                    {Object.keys(getTranslations()).length} keys · {LOCALES.length} languages
+                  </p>
+                </div>
+
+                {/* Export */}
+                <div className="bg-background border border-border rounded-md p-4 space-y-2">
+                  <h4 className="font-mono text-xs font-bold text-foreground uppercase tracking-wider">Export Translations</h4>
+                  <p className="font-mono text-xs text-muted-foreground">Download all translation keys as a JSON file for editing.</p>
+                  <button
+                    onClick={() => {
+                      const base = getTranslations()
+                      const merged = adminSettings?.customTranslations
+                        ? (() => {
+                            const out = { ...base }
+                            for (const [key, langs] of Object.entries(adminSettings.customTranslations)) {
+                              out[key] = { ...(out[key] ?? {}), ...langs }
+                            }
+                            return out
+                          })()
+                        : base
+                      const blob = new Blob([JSON.stringify(merged, null, 2)], { type: 'application/json' })
+                      const url = URL.createObjectURL(blob)
+                      const a = document.createElement('a')
+                      a.href = url
+                      a.download = 'translations.json'
+                      a.click()
+                      URL.revokeObjectURL(url)
+                    }}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/30 rounded font-mono text-xs text-primary hover:bg-primary/20 transition-colors"
+                  >
+                    <Export size={13} />
+                    Export JSON
+                  </button>
+                </div>
+
+                {/* Import */}
+                <div className="bg-background border border-border rounded-md p-4 space-y-2">
+                  <h4 className="font-mono text-xs font-bold text-foreground uppercase tracking-wider">Import Translations</h4>
+                  <p className="font-mono text-xs text-muted-foreground">Upload a translation JSON file to add or override translations.</p>
+                  <button
+                    onClick={() => translationImportRef.current?.click()}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/30 rounded font-mono text-xs text-primary hover:bg-primary/20 transition-colors"
+                  >
+                    <ArrowSquareIn size={13} />
+                    Import JSON
+                  </button>
+                </div>
+
+                {/* Reset */}
+                {adminSettings?.customTranslations && Object.keys(adminSettings.customTranslations).length > 0 && (
+                  <div className="bg-background border border-border rounded-md p-4 space-y-2">
+                    <h4 className="font-mono text-xs font-bold text-foreground uppercase tracking-wider">Custom Translations Active</h4>
+                    <p className="font-mono text-xs text-muted-foreground">
+                      {Object.keys(adminSettings.customTranslations).length} custom key overrides loaded.
+                    </p>
+                    <button
+                      onClick={() => {
+                        const updated = { ...adminSettings }
+                        delete updated.customTranslations
+                        setAdminSettings(updated)
+                      }}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-destructive/10 border border-destructive/30 rounded font-mono text-xs text-destructive hover:bg-destructive/20 transition-colors"
+                    >
+                      <ArrowCounterClockwise size={13} />
+                      Reset to Defaults
+                    </button>
+                  </div>
+                )}
+              </TabsContent>
+
               <SectionConfigTab
                 adminSettings={adminSettings}
                 setAdminSettings={setAdminSettings}
@@ -789,6 +869,34 @@ export default function AdminPanel({
             accept=".json,application/json"
             className="hidden"
             onChange={handleImportFile}
+            aria-hidden="true"
+          />
+          {/* Hidden file input for translation import */}
+          <input
+            ref={translationImportRef}
+            type="file"
+            accept=".json,application/json"
+            className="hidden"
+            onChange={(e: ChangeEvent<HTMLInputElement>) => {
+              const file = e.target.files?.[0]
+              if (!file) return
+              const reader = new FileReader()
+              reader.onload = (ev) => {
+                try {
+                  const data = JSON.parse(ev.target?.result as string)
+                  if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+                    throw new Error('invalid')
+                  }
+                  const existing = adminSettings?.customTranslations ?? {}
+                  setAdminSettings({ ...adminSettings, customTranslations: { ...existing, ...data } })
+                  toast.success('Translations imported successfully!')
+                } catch {
+                  toast.error('Invalid translation file format. Please upload a valid JSON file.')
+                }
+              }
+              reader.readAsText(file)
+              e.target.value = ''
+            }}
             aria-hidden="true"
           />
         </>

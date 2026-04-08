@@ -4,7 +4,7 @@ import { Separator } from '@/components/ui/separator'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { TabsContent } from '@/components/ui/tabs'
-import type { AdminSettings, AnimationSettings, BackgroundType, HudTexts } from '@/lib/types'
+import type { AdminSettings, AnimationSettings, BackgroundType, HudTexts, LoadingScreenType, LoadingScreenMode } from '@/lib/types'
 
 interface BackgroundTabProps {
   adminSettings?: AdminSettings | null
@@ -42,6 +42,7 @@ export default function BackgroundTab({
             { value: 'matrix', label: 'Matrix Rain', desc: 'Cascading Japanese characters' },
             { value: 'stars', label: 'Star Field', desc: 'Warp-speed star field' },
             { value: 'cloud-chamber', label: 'Cloud Chamber', desc: 'Radiation cloud chamber with noise, terminal glow & particles' },
+            { value: 'glitch-grid', label: 'Glitch Grid', desc: 'Dark crosshatch grid with glitch artifacts & scan beam (DIGICIDE)' },
             { value: 'minimal', label: 'Minimal', desc: 'No decorative background' },
           ] as { value: BackgroundType; label: string; desc: string }[]).map(opt => (
             <button
@@ -246,6 +247,148 @@ export default function BackgroundTab({
             />
           </div>
         </div>
+      </section>
+
+      <Separator />
+
+      {/* Background Image */}
+      <section className="space-y-3">
+        <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
+          Background Image
+        </h3>
+        <p className="font-mono text-xs text-muted-foreground">
+          Display a custom image behind the page. Optionally overlay the animated background effect on top.
+        </p>
+        <div className="space-y-1">
+          <Label className="font-mono text-xs text-muted-foreground">Image URL</Label>
+          <Input
+            value={anim.backgroundImageUrl ?? ''}
+            onChange={e => updateAnim({ backgroundImageUrl: e.target.value || undefined })}
+            className="font-mono text-xs"
+            placeholder="https://example.com/image.jpg"
+          />
+        </div>
+        <div className="space-y-1">
+          <Label className="font-mono text-xs text-muted-foreground">Object Fit</Label>
+          <div className="grid grid-cols-2 gap-1">
+            {(['cover', 'contain', 'fill', 'none'] as const).map(fit => (
+              <button
+                key={fit}
+                onClick={() => updateAnim({ backgroundImageFit: fit })}
+                aria-label={`Set image fit to ${fit}`}
+                className={`text-left px-2 py-1.5 border rounded font-mono text-xs transition-colors ${
+                  (anim.backgroundImageFit ?? 'cover') === fit
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border text-muted-foreground hover:border-primary/40'
+                }`}
+              >
+                {fit}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="font-mono text-xs">Image Opacity</Label>
+            <span className="font-mono text-xs text-muted-foreground">
+              {Math.round((typeof anim.backgroundImageOpacity === 'number' ? anim.backgroundImageOpacity : 1) * 100)}%
+            </span>
+          </div>
+          <Slider
+            value={[(typeof anim.backgroundImageOpacity === 'number' ? anim.backgroundImageOpacity : 1) * 100]}
+            min={0}
+            max={100}
+            step={5}
+            onValueChange={([v]) => updateAnim({ backgroundImageOpacity: v / 100 })}
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <Label className="font-mono text-xs">Overlay animated background effect</Label>
+          <Switch
+            checked={anim.backgroundImageOverlay === true}
+            onCheckedChange={v => updateAnim({ backgroundImageOverlay: v })}
+          />
+        </div>
+      </section>
+
+      <Separator />
+
+      {/* Loading Screen */}
+      <section className="space-y-3">
+        <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
+          Loading Screen
+        </h3>
+        <div className="space-y-1">
+          <Label className="font-mono text-xs text-muted-foreground">Type</Label>
+          <div className="grid grid-cols-1 gap-1">
+            {([
+              { value: 'cyberpunk', label: 'Cyberpunk (Default)', desc: 'Multi-stage progress bar with scanning lines' },
+              { value: 'minimal-bar', label: 'Minimal Bar', desc: 'Clean horizontal progress bar' },
+              { value: 'glitch-decode', label: 'Glitch Decode', desc: 'Block-style bar with glitch text decoding' },
+              { value: 'none', label: 'None', desc: 'No loading screen' },
+            ] as { value: LoadingScreenType; label: string; desc: string }[]).map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => updateAnim({ loadingScreenType: opt.value })}
+                aria-label={`Select ${opt.label} loading screen`}
+                className={`text-left px-3 py-2 border rounded font-mono text-xs transition-colors ${
+                  (anim.loadingScreenType ?? 'cyberpunk') === opt.value
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'
+                }`}
+              >
+                <div className="font-semibold">{opt.label}</div>
+                <div className="text-muted-foreground/60 text-[10px]">{opt.desc}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {(anim.loadingScreenType ?? 'cyberpunk') !== 'none' && (
+          <>
+            <div className="space-y-1">
+              <Label className="font-mono text-xs text-muted-foreground">Duration Mode</Label>
+              <div className="grid grid-cols-2 gap-1">
+                {([
+                  { value: 'real', label: 'Real Load Time', desc: 'Waits for actual page data' },
+                  { value: 'timed', label: 'Fixed Timer', desc: 'Always shows for set duration' },
+                ] as { value: LoadingScreenMode; label: string; desc: string }[]).map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => updateAnim({ loadingScreenMode: opt.value })}
+                    aria-label={`Set loading duration mode to ${opt.label}`}
+                    className={`text-left px-2 py-2 border rounded font-mono text-xs transition-colors ${
+                      (anim.loadingScreenMode ?? 'real') === opt.value
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border text-muted-foreground hover:border-primary/40'
+                    }`}
+                  >
+                    <div className="font-semibold">{opt.label}</div>
+                    <div className="text-[10px] text-muted-foreground/60">{opt.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {(anim.loadingScreenMode ?? 'real') === 'timed' && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="font-mono text-xs">Duration (seconds)</Label>
+                  <span className="font-mono text-xs text-muted-foreground">
+                    {anim.loadingScreenDuration ?? 3}s
+                  </span>
+                </div>
+                <Slider
+                  value={[anim.loadingScreenDuration ?? 3]}
+                  min={1}
+                  max={15}
+                  step={0.5}
+                  onValueChange={([v]) => updateAnim({ loadingScreenDuration: v })}
+                />
+              </div>
+            )}
+          </>
+        )}
       </section>
     </TabsContent>
   )

@@ -83,6 +83,23 @@ const BUILTIN_PRESETS: { name: string; theme: Partial<ThemeCustomization> }[] = 
       secondaryColor: 'oklch(0.10 0.03 60)',
     },
   },
+  {
+    name: 'DIGICIDE',
+    theme: {
+      primaryColor: 'oklch(0.78 0.03 220)',
+      accentColor: 'oklch(0.65 0.06 215)',
+      backgroundColor: 'oklch(0.015 0.005 240)',
+      cardColor: 'oklch(0.045 0.008 230)',
+      foregroundColor: 'oklch(0.82 0.03 210)',
+      mutedForegroundColor: 'oklch(0.40 0.02 220)',
+      borderColor: 'oklch(0.10 0.01 225)',
+      secondaryColor: 'oklch(0.07 0.01 230)',
+      ringColor: 'oklch(0.78 0.03 220)',
+      hoverColor: 'oklch(0.65 0.06 215)',
+      destructiveColor: 'oklch(0.45 0.18 20)',
+      modalGlowColor: 'oklch(0.60 0.05 220 / 0.25)',
+    },
+  },
 ]
 
 interface AppearanceTabProps {
@@ -169,6 +186,12 @@ const colorGroups: {
       { key: 'dataLabelColor', label: 'Color', placeholder: 'var(--accent)' },
       { key: 'dataLabelFontSize', label: 'Font Size', placeholder: '10px' },
       { key: 'dataLabelFontFamily', label: 'Font Family', placeholder: "'Share Tech Mono', monospace" },
+    ],
+  },
+  {
+    title: 'Modal Glow',
+    fields: [
+      { key: 'modalGlowColor', label: 'Modal Backdrop Glow', placeholder: 'oklch(0.5 0.2 25 / 0.3)' },
     ],
   },
 ]

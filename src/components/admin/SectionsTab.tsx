@@ -25,6 +25,7 @@ const sectionItems: { key: keyof SectionVisibility; label: string }[] = [
   { key: 'gigs', label: 'Upcoming Gigs' },
   { key: 'releases', label: 'Releases' },
   { key: 'gallery', label: 'Gallery' },
+  { key: 'media', label: 'Media' },
   { key: 'connect', label: 'Connect / Social' },
   { key: 'creditHighlights', label: 'Credit Highlights' },
   { key: 'contact', label: 'Contact Form' },

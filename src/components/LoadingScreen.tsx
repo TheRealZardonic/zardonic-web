@@ -1,12 +1,14 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { useEffect, useState, useMemo, memo } from 'react'
 import { cacheImage } from '@/lib/image-cache'
-import type { LoaderTexts } from '@/lib/types'
+import type { LoaderTexts, LoadingScreenMode } from '@/lib/types'
 
 interface LoadingScreenProps {
   onLoadComplete: () => void
   precacheUrls?: string[]
   loaderTexts?: LoaderTexts
+  mode?: LoadingScreenMode
+  duration?: number
 }
 
 const DEFAULT_MESSAGES = [
@@ -17,13 +19,26 @@ const DEFAULT_MESSAGES = [
   'SYSTEM READY'
 ] as const
 
-export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, precacheUrls = [], loaderTexts }: LoadingScreenProps) {
+export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, precacheUrls = [], loaderTexts, mode = 'real', duration = 3 }: LoadingScreenProps) {
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [loadingStage, setLoadingStage] = useState(0)
   const [cachingDone, setCachingDone] = useState(precacheUrls.length === 0)
 
   // Simulated progress so the bar always moves
   useEffect(() => {
+    if (mode === 'timed') {
+      // Timed mode: progress from 0 to 100 over `duration` seconds
+      const totalMs = (duration ?? 3) * 1000
+      const intervalMs = 50
+      const increment = 100 / (totalMs / intervalMs)
+      const interval = setInterval(() => {
+        setLoadingProgress((prev) => {
+          const next = Math.min(prev + increment, 100)
+          return next
+        })
+      }, intervalMs)
+      return () => clearInterval(interval)
+    }
     const interval = setInterval(() => {
       setLoadingProgress((prev) => {
         if (prev >= 95) return prev
@@ -33,7 +48,7 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
       })
     }, 100)
     return () => clearInterval(interval)
-  }, [])
+  }, [mode, duration])
 
   // Background data caching during loading screen
   useEffect(() => {
@@ -48,12 +63,13 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
     return () => { cancelled = true }
   }, [precacheUrls])
 
-  // Jump to 100% when caching is done
+  // Jump to 100% when caching is done (real mode only)
   useEffect(() => {
+    if (mode === 'timed') return
     if (cachingDone && loadingProgress >= 90) {
       setLoadingProgress(100)
     }
-  }, [cachingDone, loadingProgress])
+  }, [cachingDone, loadingProgress, mode])
 
   useEffect(() => {
     if (loadingProgress > 20 && loadingStage < 1) setLoadingStage(1)

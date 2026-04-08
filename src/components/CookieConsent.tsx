@@ -1,150 +1,167 @@
 /**
  * Cookie Consent Banner
- * GDPR-compliant consent management
- * MIGRATED TO VERCEL KV - NO localStorage
+ * GDPR/ePrivacy-compliant consent management.
+ *
+ * Design principles:
+ * - Consent is stored in localStorage ONLY (no server-side call needed to check consent)
+ * - Analytics tracking is blocked until explicit consent is given
+ * - "Reject All" and "Accept All" have equal visual prominence (no dark patterns)
+ * - Analytics is NOT pre-checked (opt-in, not opt-out)
+ * - Consent is versioned; bumping CONSENT_VERSION will re-show the banner
+ * - Users can revoke/change consent at any time via footer link
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
-import { X } from '@phosphor-icons/react'
+import { X, Shield } from '@phosphor-icons/react'
+import { useLocale } from '@/contexts/LocaleContext'
 
-interface ConsentPreferences {
-  essential: boolean // Always true, can't be disabled
-  analytics: boolean
-  timestamp: number
+/** Bump this whenever the privacy policy or processing purposes change materially */
+const CONSENT_VERSION = 2
+const STORAGE_KEY = 'zd-cookie-consent'
+
+export interface ConsentPreferences {
+  essential: boolean  // Always true — technically necessary, no consent required
+  analytics: boolean  // Optional — requires explicit opt-in
+  timestamp: number   // Unix ms when consent was recorded
+  version: number     // Consent schema version
 }
 
 interface CookieConsentProps {
   onPreferencesChange?: (preferences: ConsentPreferences) => void
+  /** Called when user clicks the Privacy Policy link */
+  onOpenPrivacyPolicy?: () => void
 }
 
-/**
- * Get consent preferences from Vercel KV
- */
-async function getConsentPreferences(): Promise<ConsentPreferences | null> {
+// ─── localStorage helpers (synchronous, no API call needed) ──────────────────
+
+function readStoredConsent(): ConsentPreferences | null {
   try {
-    const response = await fetch('/api/kv?key=cookie-consent')
-    if (!response.ok) return null
-    
-    const result = await response.json()
-    return result.value || null
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as ConsentPreferences
+    // Re-show banner if consent was given under an older version
+    if (!parsed.version || parsed.version < CONSENT_VERSION) return null
+    return parsed
   } catch {
     return null
   }
 }
 
-/**
- * Save consent preferences to Vercel KV
- */
-async function saveConsentPreferences(prefs: ConsentPreferences): Promise<void> {
+function writeStoredConsent(prefs: ConsentPreferences): void {
   try {
-    await fetch('/api/kv', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        key: 'cookie-consent',
-        value: prefs,
-      }),
-    })
-  } catch (error) {
-    console.error('[CookieConsent] Failed to save preferences:', error)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs))
+  } catch {
+    // Storage unavailable — consent stays in memory only for this session
   }
 }
 
-export function CookieConsent({ onPreferencesChange }: CookieConsentProps) {
+function removeStoredConsent(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEY)
+  } catch { /* ignore */ }
+}
+
+// ─── Public API ───────────────────────────────────────────────────────────────
+
+/** Synchronously read analytics consent from localStorage (safe to call outside React) */
+export function getAnalyticsConsentSync(): boolean {
+  return readStoredConsent()?.analytics === true
+}
+
+/** Expose a global event so other parts of the app can react to consent changes */
+export function dispatchConsentEvent(prefs: ConsentPreferences): void {
+  window.dispatchEvent(new CustomEvent('zd:consent-change', { detail: prefs }))
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
+export function CookieConsent({ onPreferencesChange, onOpenPrivacyPolicy }: CookieConsentProps) {
+  const { t } = useLocale()
   const [showBanner, setShowBanner] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
-  const [preferences, setPreferences] = useState<ConsentPreferences>({
-    essential: true,
-    analytics: true,
-    timestamp: Date.now(),
-  })
+  // Analytics starts UNCHECKED — opt-in, never opt-out
+  const [analyticsChecked, setAnalyticsChecked] = useState(false)
 
   useEffect(() => {
-    // Check if user has already consented
-    getConsentPreferences().then(stored => {
-      if (!stored) {
-        // Show banner after a short delay
-        setTimeout(() => setShowBanner(true), 1000)
-      } else {
-        setPreferences(stored)
-        onPreferencesChange?.(stored)
-      }
-    })
-  }, [onPreferencesChange])
+    const stored = readStoredConsent()
+    if (stored) {
+      onPreferencesChange?.(stored)
+      dispatchConsentEvent(stored)
+    } else {
+      // Show banner after a short delay so the page can render first
+      const timer = setTimeout(() => setShowBanner(true), 800)
+      return () => clearTimeout(timer)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-  const saveConsent = async (prefs: ConsentPreferences) => {
-    await saveConsentPreferences(prefs)
-    setPreferences(prefs)
+  const saveConsent = useCallback((prefs: ConsentPreferences) => {
+    writeStoredConsent(prefs)
     setShowBanner(false)
     setShowDetails(false)
     onPreferencesChange?.(prefs)
-  }
+    dispatchConsentEvent(prefs)
+  }, [onPreferencesChange])
 
-  const acceptAll = () => {
-    saveConsent({
-      essential: true,
-      analytics: true,
-      timestamp: Date.now(),
-    })
-  }
+  const handleAcceptAll = useCallback(() => {
+    saveConsent({ essential: true, analytics: true, timestamp: Date.now(), version: CONSENT_VERSION })
+  }, [saveConsent])
 
-  const rejectOptional = () => {
-    saveConsent({
-      essential: true,
-      analytics: false,
-      timestamp: Date.now(),
-    })
-  }
+  const handleRejectAll = useCallback(() => {
+    saveConsent({ essential: true, analytics: false, timestamp: Date.now(), version: CONSENT_VERSION })
+  }, [saveConsent])
 
-  const saveCustom = () => {
-    saveConsent({
-      ...preferences,
-      timestamp: Date.now(),
-    })
-  }
+  const handleSaveCustom = useCallback(() => {
+    saveConsent({ essential: true, analytics: analyticsChecked, timestamp: Date.now(), version: CONSENT_VERSION })
+  }, [saveConsent, analyticsChecked])
 
   return (
     <AnimatePresence>
       {showBanner && (
         <motion.div
-          className="fixed bottom-0 left-0 right-0 z-[9999] bg-background/98 backdrop-blur-lg border-t-2 border-primary/30 p-4 md:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="cookie-banner-title"
+          className="fixed bottom-0 left-0 right-0 z-[9999] bg-background/98 backdrop-blur-lg border-t-2 border-primary/30 p-4 md:p-6 shadow-2xl"
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <div className="container mx-auto max-w-6xl">
+          <div className="container mx-auto max-w-5xl">
             {!showDetails ? (
-              // Simple banner
+              // ── Simple banner ──────────────────────────────────────────────
               <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-                <div className="flex-1 space-y-2">
-                  <h3 className="text-lg font-bold text-primary font-mono">
-                    🍪 COOKIE & DATA NOTICE
-                  </h3>
-                  <p className="text-sm text-muted-foreground font-mono">
-                    We use browser storage to analyze site usage and improve your experience. 
-                    Your data is processed anonymously and stored securely. No third-party tracking cookies are used.
-                  </p>
+                <div className="flex items-start gap-3 flex-1 min-w-0">
+                  <Shield size={20} className="text-primary shrink-0 mt-0.5" weight="bold" />
+                  <div className="space-y-1 min-w-0">
+                    <h3 id="cookie-banner-title" className="text-sm font-bold text-primary font-mono">
+                      {t('cookie.title')}
+                    </h3>
+                    <p className="text-xs text-muted-foreground font-mono leading-relaxed">
+                      {t('cookie.bannerText')}{' '}
+                      {onOpenPrivacyPolicy && (
+                        <button
+                          onClick={onOpenPrivacyPolicy}
+                          className="text-primary hover:underline focus:underline focus:outline-none"
+                        >
+                          {t('cookie.privacyPolicyLink')}
+                        </button>
+                      )}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                {/* Buttons: Reject (outline) and Accept (filled) have equal size — no dark patterns */}
+                <div className="flex flex-wrap gap-2 shrink-0">
                   <Button
-                    onClick={acceptAll}
-                    size="sm"
-                    className="font-mono"
-                  >
-                    Accept All
-                  </Button>
-                  <Button
-                    onClick={rejectOptional}
+                    onClick={handleRejectAll}
                     variant="outline"
                     size="sm"
                     className="font-mono"
                   >
-                    Essential Only
+                    {t('cookie.rejectAll')}
                   </Button>
                   <Button
                     onClick={() => setShowDetails(true)}
@@ -152,106 +169,104 @@ export function CookieConsent({ onPreferencesChange }: CookieConsentProps) {
                     size="sm"
                     className="font-mono"
                   >
-                    Customize
+                    {t('cookie.customize')}
+                  </Button>
+                  <Button
+                    onClick={handleAcceptAll}
+                    size="sm"
+                    className="font-mono"
+                  >
+                    {t('cookie.acceptAll')}
                   </Button>
                 </div>
               </div>
             ) : (
-              // Detailed preferences
+              // ── Detailed preferences ───────────────────────────────────────
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-primary font-mono">
-                    PRIVACY PREFERENCES
+                  <h3 id="cookie-banner-title" className="text-base font-bold text-primary font-mono">
+                    {t('cookie.privacyPrefs')}
                   </h3>
                   <button
                     onClick={() => setShowDetails(false)}
-                    className="text-primary/60 hover:text-primary"
-                    aria-label="Close details"
+                    className="text-primary/60 hover:text-primary focus:outline-none focus:text-primary"
+                    aria-label={t('cookie.closeDetails')}
                   >
                     <X size={20} />
                   </button>
                 </div>
 
                 <div className="space-y-3">
-                  {/* Essential */}
+                  {/* Essential — always enabled, no toggle */}
                   <div className="bg-card border border-primary/20 p-4 rounded">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <h4 className="font-bold text-foreground mb-1 font-mono text-sm">
-                          Essential Data
+                          {t('cookie.essentialLabel')}
                         </h4>
                         <p className="text-xs text-muted-foreground font-mono">
-                          Required for the website to function. Includes your preferences and admin session (if logged in).
-                          Cannot be disabled.
+                          {t('cookie.essentialDesc')}
                         </p>
                       </div>
-                      <div className="text-xs text-primary font-mono font-bold">
-                        ALWAYS ON
-                      </div>
+                      <span className="text-xs text-primary font-mono font-bold shrink-0" aria-label="Always enabled">
+                        {t('cookie.alwaysOn')}
+                      </span>
                     </div>
                   </div>
 
-                  {/* Analytics */}
+                  {/* Analytics — opt-in, starts unchecked */}
                   <div className="bg-card border border-primary/20 p-4 rounded">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <h4 className="font-bold text-foreground mb-1 font-mono text-sm">
-                          Analytics
+                          {t('cookie.analyticsLabel')}
                         </h4>
                         <p className="text-xs text-muted-foreground font-mono">
-                          Anonymous usage statistics to understand how visitors interact with the site. 
-                          Includes page views, clicks, device type, and approximate location (timezone-based).
+                          {t('cookie.analyticsDesc')}
+                        </p>
+                        <p className="text-xs text-muted-foreground/60 font-mono mt-1">
+                          {t('cookie.analyticsBasis')}
                         </p>
                       </div>
-                      <label className="flex items-center gap-2 cursor-pointer">
+                      <label className="flex items-center gap-2 cursor-pointer shrink-0">
                         <input
                           type="checkbox"
-                          checked={preferences.analytics}
-                          onChange={(e) =>
-                            setPreferences((prev) => ({
-                              ...prev,
-                              analytics: e.target.checked,
-                            }))
-                          }
-                          className="w-5 h-5 rounded border-primary/30 bg-background text-primary focus:ring-2 focus:ring-primary cursor-pointer"
+                          checked={analyticsChecked}
+                          onChange={(e) => setAnalyticsChecked(e.target.checked)}
+                          className="w-4 h-4 rounded border-primary/30 bg-background text-primary focus:ring-2 focus:ring-primary cursor-pointer"
+                          aria-label={t('cookie.analyticsLabel')}
                         />
-                        <span className="text-xs font-mono">
-                          {preferences.analytics ? 'ON' : 'OFF'}
+                        <span className="text-xs font-mono select-none">
+                          {analyticsChecked ? t('cookie.on') : t('cookie.off')}
                         </span>
                       </label>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2 pt-2">
-                  <Button onClick={saveCustom} size="sm" className="font-mono">
-                    Save Preferences
-                  </Button>
-                  <Button
-                    onClick={acceptAll}
-                    variant="outline"
-                    size="sm"
-                    className="font-mono"
-                  >
-                    Accept All
-                  </Button>
-                  <Button
-                    onClick={rejectOptional}
-                    variant="ghost"
-                    size="sm"
-                    className="font-mono"
-                  >
-                    Essential Only
-                  </Button>
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                  <p className="text-xs text-muted-foreground font-mono">
+                    {onOpenPrivacyPolicy && (
+                      <button
+                        onClick={onOpenPrivacyPolicy}
+                        className="text-primary hover:underline focus:underline focus:outline-none"
+                      >
+                        {t('cookie.privacyPolicyLink')}
+                      </button>
+                    )}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button onClick={handleRejectAll} variant="ghost" size="sm" className="font-mono">
+                      {t('cookie.rejectAll')}
+                    </Button>
+                    <Button onClick={handleSaveCustom} variant="outline" size="sm" className="font-mono">
+                      {t('cookie.savePrefs')}
+                    </Button>
+                    <Button onClick={handleAcceptAll} size="sm" className="font-mono">
+                      {t('cookie.acceptAll')}
+                    </Button>
+                  </div>
                 </div>
-
-                <p className="text-xs text-muted-foreground font-mono">
-                  For more information, see our{' '}
-                  <button className="text-primary hover:underline">
-                    Privacy Policy
-                  </button>
-                  . You can change your preferences at any time in the admin settings.
-                </p>
               </div>
             )}
           </div>
@@ -261,24 +276,73 @@ export function CookieConsent({ onPreferencesChange }: CookieConsentProps) {
   )
 }
 
+// ─── Revoke banner ────────────────────────────────────────────────────────────
+
+interface CookiePreferencesButtonProps {
+  onPreferencesChange?: (preferences: ConsentPreferences) => void
+  onOpenPrivacyPolicy?: () => void
+  className?: string
+}
+
 /**
- * Hook to check if analytics consent has been given
+ * Small button that re-opens the cookie preferences banner.
+ * Place in footer for GDPR revocation requirement.
+ */
+export function CookiePreferencesButton({ onPreferencesChange, onOpenPrivacyPolicy, className }: CookiePreferencesButtonProps) {
+  const { t } = useLocale()
+  const [showBanner, setShowBanner] = useState(false)
+
+  const handleOpen = useCallback(() => {
+    removeStoredConsent()
+    setShowBanner(true)
+  }, [])
+
+  return (
+    <>
+      <button
+        onClick={handleOpen}
+        className={className ?? 'text-sm text-muted-foreground hover:text-primary transition-colors uppercase tracking-wide font-mono hover-chromatic cursor-pointer'}
+      >
+        {t('cookie.managePrefs')}
+      </button>
+      {showBanner && (
+        <CookieConsent
+          onPreferencesChange={(prefs) => {
+            setShowBanner(false)
+            onPreferencesChange?.(prefs)
+          }}
+          onOpenPrivacyPolicy={onOpenPrivacyPolicy}
+        />
+      )}
+    </>
+  )
+}
+
+// ─── Hook ─────────────────────────────────────────────────────────────────────
+
+/**
+ * React hook that reactively tracks analytics consent.
+ * Updates when the user changes their preference (listens for zd:consent-change).
  */
 export function useAnalyticsConsent(): boolean {
-  const [hasConsent, setHasConsent] = useState(false)
+  const [hasConsent, setHasConsent] = useState<boolean>(() => getAnalyticsConsentSync())
 
   useEffect(() => {
-    getConsentPreferences().then(prefs => {
-      setHasConsent(prefs?.analytics || false)
-    })
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<ConsentPreferences>).detail
+      setHasConsent(detail.analytics === true)
+    }
+    window.addEventListener('zd:consent-change', handler)
+    return () => window.removeEventListener('zd:consent-change', handler)
   }, [])
 
   return hasConsent
 }
 
 /**
- * Function to get current consent preferences (async)
+ * Synchronously read full consent preferences (no async, no network call).
+ * Returns null if no consent has been recorded yet.
  */
-export async function getConsentPreferencesAsync(): Promise<ConsentPreferences | null> {
-  return getConsentPreferences()
+export function getConsentPreferencesAsync(): ConsentPreferences | null {
+  return readStoredConsent()
 }

@@ -42,6 +42,7 @@ export function useAppTheme(adminSettings: AdminSettings | undefined): void {
     if (t.dataLabelColor) root.style.setProperty('--data-label-color', t.dataLabelColor)
     if (t.dataLabelFontSize) root.style.setProperty('--data-label-font-size', t.dataLabelFontSize)
     if (t.dataLabelFontFamily) root.style.setProperty('--data-label-font-family', t.dataLabelFontFamily)
+    if (t.modalGlowColor) root.style.setProperty('--modal-glow-color', t.modalGlowColor)
 
     return () => {
       root.style.removeProperty('--primary')
@@ -72,6 +73,7 @@ export function useAppTheme(adminSettings: AdminSettings | undefined): void {
       root.style.removeProperty('--data-label-color')
       root.style.removeProperty('--data-label-font-size')
       root.style.removeProperty('--data-label-font-family')
+      root.style.removeProperty('--modal-glow-color')
     }
   }, [adminSettings?.theme])
 

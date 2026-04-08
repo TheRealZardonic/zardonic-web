@@ -72,9 +72,10 @@ export default function PrivacyPolicy({ open, onClose }: PrivacyPolicyProps) {
           <section>
             <h2 className="text-lg font-bold text-primary mb-3">4. Legal Basis (GDPR Art. 6)</h2>
             <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-4">
-              <li><strong>Legitimate Interest (Art. 6(1)(f)):</strong> Analytics data for website improvement</li>
+              <li><strong>Consent (Art. 6(1)(a)):</strong> Analytics tracking (page views, heatmap clicks) — only collected after explicit opt-in via the cookie consent banner</li>
+              <li><strong>Legitimate Interest (Art. 6(1)(f)) / TTDSG § 25(2):</strong> Technically necessary local storage (image cache, locale preference) — no consent required</li>
               <li><strong>Consent (Art. 6(1)(a)):</strong> Contact form submissions</li>
-              <li><strong>Contract (Art. 6(1)(b)):</strong> Admin authentication for service provision</li>
+              <li><strong>Legitimate Interest (Art. 6(1)(f)):</strong> Admin authentication for service provision; rate limiting (pseudonymised IP, 10-second retention)</li>
             </ul>
           </section>
 
@@ -91,15 +92,14 @@ export default function PrivacyPolicy({ open, onClose }: PrivacyPolicyProps) {
           <section>
             <h2 className="text-lg font-bold text-primary mb-3">6. Cookies and Local Storage</h2>
             <p className="text-muted-foreground mb-2">
-              This website uses browser local storage (not cookies) to store:
+              This website does <strong>not</strong> set HTTP cookies. It uses browser local storage (localStorage, IndexedDB) to store:
             </p>
             <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-4">
-              <li>Analytics data (anonymous usage statistics)</li>
-              <li>Your preferences (theme, section visibility)</li>
-              <li>Admin session data (if logged in as admin)</li>
+              <li><strong>Technically necessary (no consent required):</strong> Image cache (IndexedDB), locale preference, admin session token</li>
+              <li><strong>Optional analytics (consent required):</strong> Anonymous page views, section views, heatmap clicks — only stored after explicit opt-in</li>
             </ul>
             <p className="text-muted-foreground mt-2">
-              You can clear this data at any time through your browser settings.
+              You can change your preferences at any time via the &quot;Cookie Preferences&quot; link in the footer, or clear all local storage through your browser settings.
             </p>
           </section>
 
@@ -138,7 +138,8 @@ export default function PrivacyPolicy({ open, onClose }: PrivacyPolicyProps) {
             </p>
             <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-4">
               <li>HTTPS encryption for all data transmission</li>
-              <li>Password hashing using SHA-256</li>
+              <li>Password hashing using a cryptographic hash function with a secret salt</li>
+              <li>IP address pseudonymisation (SHA-256 + server-side salt) — plaintext IPs are never stored</li>
               <li>Secure cloud storage with Vercel and Upstash</li>
               <li>Regular security updates</li>
             </ul>
@@ -148,11 +149,11 @@ export default function PrivacyPolicy({ open, onClose }: PrivacyPolicyProps) {
             <h2 className="text-lg font-bold text-primary mb-3">10. International Data Transfers</h2>
             <p className="text-muted-foreground">
               Data may be transferred to and processed in countries outside the European Economic Area (EEA), 
-              including the United States. We ensure appropriate safeguards are in place through:
+              including the United States. Appropriate safeguards are in place:
             </p>
             <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-4">
-              <li>Standard Contractual Clauses (SCCs)</li>
-              <li>Privacy Shield-certified service providers (where applicable)</li>
+              <li>Vercel Inc. and Upstash participate in the EU–US Data Privacy Framework (adequacy decision by the European Commission, July 2023)</li>
+              <li>Standard Contractual Clauses (SCCs) where the Data Privacy Framework does not apply</li>
             </ul>
           </section>
 
@@ -182,10 +183,10 @@ export default function PrivacyPolicy({ open, onClose }: PrivacyPolicyProps) {
 
           <section className="border-t border-primary/20 pt-4">
             <p className="text-xs text-muted-foreground">
-              <strong>Last Updated:</strong> February 16, 2026
+              <strong>Last Updated:</strong> April 8, 2026
             </p>
             <p className="text-xs text-muted-foreground mt-2">
-              <strong>Version:</strong> 1.0
+              <strong>Version:</strong> 2.0
             </p>
           </section>
         </div>

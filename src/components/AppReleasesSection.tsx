@@ -8,6 +8,7 @@ import ReleaseEditDialog from '@/components/ReleaseEditDialog'
 import { MusicNote, CaretDown, CaretUp, PencilSimple, Plus, Trash, ArrowsClockwise } from '@phosphor-icons/react'
 import type { AdminSettings, SectionLabels, Release as FullRelease } from '@/lib/types'
 import type { Release } from '@/lib/app-types'
+import { useLocale } from '@/contexts/LocaleContext'
 
 interface AppReleasesSectionProps {
   releases: Release[]
@@ -49,13 +50,14 @@ function toFullRelease(r: Release): FullRelease {
 export default function AppReleasesSection({ releases, sectionOrder, visible, editMode, sectionLabel, headingPrefix, adminSettings, iTunesFetching, hasAutoLoaded, sectionLabels, onLabelChange, onReleaseClick, onUpdateRelease, onDeleteRelease, onAddRelease, onRefreshReleases }: AppReleasesSectionProps) {
   const [showAllReleases, setShowAllReleases] = useState(false)
   const [editingRelease, setEditingRelease] = useState<FullRelease | null | 'new'>(null)
+  const { t } = useLocale()
 
   const loadingLabel = sectionLabels?.releasesLoadingLabel ?? '// LOADING.ITUNES.RELEASES'
   const syncingText = sectionLabels?.releasesSyncingText ?? 'SYNCING...'
   const fetchingText = sectionLabels?.releasesFetchingText ?? 'FETCHING DISCOGRAPHY + STREAMING LINKS'
   const emptyText = sectionLabels?.releasesEmptyText ?? 'Releases coming soon'
-  const showAllText = sectionLabels?.releasesShowAllText ?? 'Show All'
-  const showLessText = sectionLabels?.releasesShowLessText ?? 'Show Less'
+  const showAllText = sectionLabels?.releasesShowAllText ?? t('releases.showAll')
+  const showLessText = sectionLabels?.releasesShowLessText ?? t('releases.showLess')
 
   if (!visible) return null
 
@@ -104,7 +106,7 @@ export default function AppReleasesSection({ releases, sectionOrder, visible, ed
                       className="gap-2 border-primary/30 font-mono tracking-wider text-xs shrink-0"
                     >
                       <ArrowsClockwise className={`w-4 h-4 ${iTunesFetching ? 'animate-spin' : ''}`} />
-                      Sync iTunes
+                      {t('releases.syncItunes')}
                     </Button>
                   )}
                   {onAddRelease && (
