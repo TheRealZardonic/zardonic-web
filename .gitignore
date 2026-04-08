@@ -36,3 +36,7 @@ pids
 .devcontainer/
 
 .spark-workbench-id
+
+# Build/test artifacts
+test_output.txt
+deploy.txt
