@@ -132,6 +132,21 @@ export interface SectionLabels {
   // Decorative labels in music section
   musicStreamLabel?: string
   musicStatusLabel?: string
+  // Gigs section labels
+  gigsLoadingLabel?: string
+  gigsSyncingText?: string
+  gigsFetchingText?: string
+  gigsNoShowsText?: string
+  // Releases section labels
+  releasesLoadingLabel?: string
+  releasesSyncingText?: string
+  releasesFetchingText?: string
+  releasesEmptyText?: string
+  releasesShowAllText?: string
+  releasesShowLessText?: string
+  // Bio section labels
+  bioReadMoreText?: string
+  bioShowLessText?: string
 }
 
 export interface ContactInfo {

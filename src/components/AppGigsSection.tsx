@@ -16,13 +16,19 @@ interface AppGigsSectionProps {
   headingPrefix?: string
   adminSettings: AdminSettings | undefined
   bandsintownFetching: boolean
-  onGigClick: (gig: Gig) => void
+  sectionLabels?: SectionLabels
   onLabelChange?: (key: keyof SectionLabels, value: string) => void
+  onGigClick: (gig: Gig) => void
   onRefresh?: () => void
 }
 
-export default function AppGigsSection({ gigs, sectionOrder, visible, editMode, sectionLabel, headingPrefix, adminSettings, bandsintownFetching, onGigClick, onLabelChange, onRefresh }: AppGigsSectionProps) {
+export default function AppGigsSection({ gigs, sectionOrder, visible, editMode, sectionLabel, headingPrefix, adminSettings, bandsintownFetching, sectionLabels, onLabelChange, onGigClick, onRefresh }: AppGigsSectionProps) {
   if (!visible) return null
+
+  const loadingLabel = sectionLabels?.gigsLoadingLabel ?? '// LOADING.BANDSINTOWN.EVENTS'
+  const syncingText = sectionLabels?.gigsSyncingText ?? 'SYNCING...'
+  const fetchingText = sectionLabels?.gigsFetchingText ?? 'FETCHING LIVE EVENT DATA'
+  const noShowsText = sectionLabels?.gigsNoShowsText ?? 'No upcoming shows - Check back soon'
 
   return (
     <div style={{ order: sectionOrder }}>
@@ -74,13 +80,13 @@ export default function AppGigsSection({ gigs, sectionOrder, visible, editMode, 
                   </motion.div>
                   <div className="w-full max-w-md space-y-3">
                     <div className="flex justify-between items-center">
-                      <span className="data-label">// LOADING.BANDSINTOWN.EVENTS</span>
+                      <span className="data-label">{loadingLabel}</span>
                       <motion.span
                         className="font-mono text-sm text-primary"
                         animate={{ opacity: [0.4, 1, 0.4] }}
                         transition={{ duration: 1.5, repeat: Infinity }}
                       >
-                        SYNCING...
+                        {syncingText}
                       </motion.span>
                     </div>
                     <div className="h-1 bg-border/30 relative overflow-hidden">
@@ -101,7 +107,7 @@ export default function AppGigsSection({ gigs, sectionOrder, visible, editMode, 
                       <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ duration: 0.8, repeat: Infinity, delay: 0 }}>▸</motion.span>
                       <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ duration: 0.8, repeat: Infinity, delay: 0.2 }}>▸</motion.span>
                       <motion.span animate={{ opacity: [0, 1, 0] }} transition={{ duration: 0.8, repeat: Infinity, delay: 0.4 }}>▸</motion.span>
-                      <span className="ml-2">FETCHING LIVE EVENT DATA</span>
+                      <span className="ml-2">{fetchingText}</span>
                     </div>
                   </div>
                 </div>
@@ -109,7 +115,14 @@ export default function AppGigsSection({ gigs, sectionOrder, visible, editMode, 
             ) : gigs.length === 0 ? (
               <Card className="p-12 text-center bg-card/50 border-border">
                 <p className="text-xl text-muted-foreground uppercase tracking-wide font-mono">
-                  No upcoming shows - Check back soon
+                  {editMode && onLabelChange ? (
+                    <input
+                      className="bg-transparent border border-primary/30 px-2 py-1 font-mono w-full text-center focus:outline-none focus:border-primary/60"
+                      value={noShowsText}
+                      onChange={e => onLabelChange('gigsNoShowsText', e.target.value)}
+                      aria-label="No shows text"
+                    />
+                  ) : noShowsText}
                 </p>
               </Card>
             ) : (

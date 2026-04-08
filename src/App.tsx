@@ -295,6 +295,7 @@ function App() {
         mobileMenuOpen={mobileMenuOpen}
         setMobileMenuOpen={setMobileMenuOpen}
         scrollToSection={scrollToSection}
+        sectionLabels={sectionLabels}
       />
 
       <AppHeroSection
@@ -319,6 +320,8 @@ function App() {
         sectionLabel={sectionLabels.biography || ''}
         adminSettings={adminSettings}
         headingPrefix={sectionLabels.headingPrefix}
+        sectionLabels={sectionLabels}
+        onLabelChange={editMode ? handleLabelChange : undefined}
         onUpdate={(bio) => handleUpdateSiteData(prev => ({ ...(prev ?? DEFAULT_SITE_DATA), bio }))}
       />
       </SectionErrorBoundary>
@@ -368,6 +371,8 @@ function App() {
         headingPrefix={sectionLabels.headingPrefix}
         adminSettings={adminSettings}
         bandsintownFetching={bandsintownFetching}
+        sectionLabels={sectionLabels}
+        onLabelChange={editMode ? handleLabelChange : undefined}
         onGigClick={(gig) => setCyberpunkOverlay({ type: 'gig', data: gig })}
         onLabelChange={editMode ? handleLabelChange : undefined}
         onRefresh={editMode ? handleFetchBandsintownEvents : undefined}
@@ -385,6 +390,8 @@ function App() {
         headingPrefix={sectionLabels.headingPrefix}
         iTunesFetching={iTunesFetching}
         hasAutoLoaded={hasAutoLoaded}
+        sectionLabels={sectionLabels}
+        onLabelChange={editMode ? handleLabelChange : undefined}
         onReleaseClick={(release) => setCyberpunkOverlay({ type: 'release', data: release })}
         onLabelChange={editMode ? handleLabelChange : undefined}
         onUpdateRelease={editMode ? (updated: FullRelease) => {

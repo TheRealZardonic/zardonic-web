@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Separator } from '@/components/ui/separator'
 import EditableHeading from '@/components/EditableHeading'
 import { CaretDown, CaretUp, FloppyDisk, PencilSimple, X } from '@phosphor-icons/react'
-import type { AdminSettings } from '@/lib/types'
+import type { AdminSettings, SectionLabels } from '@/lib/types'
 import { toast } from 'sonner'
 
 interface AppBioSectionProps {
@@ -16,13 +16,18 @@ interface AppBioSectionProps {
   sectionLabel: string
   headingPrefix?: string
   adminSettings: AdminSettings | undefined
+  sectionLabels?: SectionLabels
+  onLabelChange?: (key: keyof SectionLabels, value: string) => void
   onUpdate?: (bio: string) => void
 }
 
-export default function AppBioSection({ bio, sectionOrder, visible, editMode, sectionLabel, headingPrefix, adminSettings, onUpdate }: AppBioSectionProps) {
+export default function AppBioSection({ bio, sectionOrder, visible, editMode, sectionLabel, headingPrefix, adminSettings, sectionLabels, onLabelChange, onUpdate }: AppBioSectionProps) {
   const [bioExpanded, setBioExpanded] = useState(false)
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(bio)
+
+  const readMoreText = sectionLabels?.bioReadMoreText ?? 'Read More'
+  const showLessText = sectionLabels?.bioShowLessText ?? 'Show Less'
 
   const handleSave = useCallback(() => {
     onUpdate?.(draft)
@@ -133,12 +138,12 @@ export default function AppBioSection({ bio, sectionOrder, visible, editMode, se
                     {bioExpanded ? (
                       <>
                         <CaretUp className="w-4 h-4 mr-2" />
-                        Show Less
+                        {showLessText}
                       </>
                     ) : (
                       <>
                         <CaretDown className="w-4 h-4 mr-2" />
-                        Read More
+                        {readMoreText}
                       </>
                     )}
                   </Button>
