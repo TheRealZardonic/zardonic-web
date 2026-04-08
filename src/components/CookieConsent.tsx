@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { X } from '@phosphor-icons/react'
+import { useLocale } from '@/contexts/LocaleContext'
 
 interface ConsentPreferences {
   essential: boolean // Always true, can't be disabled
@@ -55,6 +56,7 @@ async function saveConsentPreferences(prefs: ConsentPreferences): Promise<void> 
 }
 
 export function CookieConsent({ onPreferencesChange }: CookieConsentProps) {
+  const { t } = useLocale()
   const [showBanner, setShowBanner] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
   const [preferences, setPreferences] = useState<ConsentPreferences>({
@@ -123,11 +125,10 @@ export function CookieConsent({ onPreferencesChange }: CookieConsentProps) {
               <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
                 <div className="flex-1 space-y-2">
                   <h3 className="text-lg font-bold text-primary font-mono">
-                    🍪 COOKIE & DATA NOTICE
+                    {t('cookie.title')}
                   </h3>
                   <p className="text-sm text-muted-foreground font-mono">
-                    We use browser storage to analyze site usage and improve your experience. 
-                    Your data is processed anonymously and stored securely. No third-party tracking cookies are used.
+                    {t('cookie.cookieText')}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -136,7 +137,7 @@ export function CookieConsent({ onPreferencesChange }: CookieConsentProps) {
                     size="sm"
                     className="font-mono"
                   >
-                    Accept All
+                    {t('cookie.acceptAll')}
                   </Button>
                   <Button
                     onClick={rejectOptional}
@@ -144,7 +145,7 @@ export function CookieConsent({ onPreferencesChange }: CookieConsentProps) {
                     size="sm"
                     className="font-mono"
                   >
-                    Essential Only
+                    {t('cookie.essentialOnly')}
                   </Button>
                   <Button
                     onClick={() => setShowDetails(true)}
@@ -152,7 +153,7 @@ export function CookieConsent({ onPreferencesChange }: CookieConsentProps) {
                     size="sm"
                     className="font-mono"
                   >
-                    Customize
+                    {t('cookie.customize')}
                   </Button>
                 </div>
               </div>
@@ -161,7 +162,7 @@ export function CookieConsent({ onPreferencesChange }: CookieConsentProps) {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold text-primary font-mono">
-                    PRIVACY PREFERENCES
+                    {t('cookie.privacyPrefs')}
                   </h3>
                   <button
                     onClick={() => setShowDetails(false)}
@@ -178,15 +179,14 @@ export function CookieConsent({ onPreferencesChange }: CookieConsentProps) {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <h4 className="font-bold text-foreground mb-1 font-mono text-sm">
-                          Essential Data
+                          {t('cookie.essentialLabel')}
                         </h4>
                         <p className="text-xs text-muted-foreground font-mono">
-                          Required for the website to function. Includes your preferences and admin session (if logged in).
-                          Cannot be disabled.
+                          {t('cookie.essentialDesc')}
                         </p>
                       </div>
                       <div className="text-xs text-primary font-mono font-bold">
-                        ALWAYS ON
+                        {t('cookie.alwaysOn')}
                       </div>
                     </div>
                   </div>
@@ -196,11 +196,10 @@ export function CookieConsent({ onPreferencesChange }: CookieConsentProps) {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <h4 className="font-bold text-foreground mb-1 font-mono text-sm">
-                          Analytics
+                          {t('cookie.analyticsLabel')}
                         </h4>
                         <p className="text-xs text-muted-foreground font-mono">
-                          Anonymous usage statistics to understand how visitors interact with the site. 
-                          Includes page views, clicks, device type, and approximate location (timezone-based).
+                          {t('cookie.analyticsDesc')}
                         </p>
                       </div>
                       <label className="flex items-center gap-2 cursor-pointer">
@@ -225,7 +224,7 @@ export function CookieConsent({ onPreferencesChange }: CookieConsentProps) {
 
                 <div className="flex flex-wrap gap-2 pt-2">
                   <Button onClick={saveCustom} size="sm" className="font-mono">
-                    Save Preferences
+                    {t('cookie.savePrefs')}
                   </Button>
                   <Button
                     onClick={acceptAll}
@@ -233,7 +232,7 @@ export function CookieConsent({ onPreferencesChange }: CookieConsentProps) {
                     size="sm"
                     className="font-mono"
                   >
-                    Accept All
+                    {t('cookie.acceptAll')}
                   </Button>
                   <Button
                     onClick={rejectOptional}
@@ -241,7 +240,7 @@ export function CookieConsent({ onPreferencesChange }: CookieConsentProps) {
                     size="sm"
                     className="font-mono"
                   >
-                    Essential Only
+                    {t('cookie.essentialOnly')}
                   </Button>
                 </div>
 

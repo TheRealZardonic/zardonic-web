@@ -1,5 +1,8 @@
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react'
-import { type Locale, t as translate } from '@/lib/i18n'
+import { type Locale, t as translate, LOCALES } from '@/lib/i18n'
+
+export type { Locale }
+export { LOCALES }
 
 interface LocaleContextValue {
   locale: Locale
@@ -14,19 +17,33 @@ const STORAGE_KEY = 'zd-locale'
 function detectLocale(): Locale {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored === 'en' || stored === 'de') return stored
+    const supported = LOCALES.map(l => l.code)
+    if (stored && (supported as string[]).includes(stored)) return stored as Locale
   } catch {
     // localStorage unavailable
+  }
+  try {
+    const browserLang = navigator.language.split('-')[0]
+    const supported = LOCALES.map(l => l.code)
+    if ((supported as string[]).includes(browserLang)) return browserLang as Locale
+  } catch {
+    // navigator unavailable
   }
   return 'en'
 }
 
-export function LocaleProvider({ children }: { children: ReactNode }) {
+export function LocaleProvider({
+  children,
+  customTranslations,
+}: {
+  children: ReactNode
+  customTranslations?: Record<string, Record<string, string>>
+}) {
   const [locale, setLocaleState] = useState<Locale>(detectLocale)
 
   useEffect(() => {
-    document.documentElement.lang = 'en'
-  }, [])
+    document.documentElement.lang = locale
+  }, [locale])
 
   const setLocale = useCallback((newLocale: Locale) => {
     setLocaleState(newLocale)
@@ -38,8 +55,12 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const t = useCallback(
-    (key: string) => translate(key, locale),
-    [locale],
+    (key: string) => {
+      const custom = customTranslations?.[key]?.[locale]
+      if (custom !== undefined && custom !== '') return custom
+      return translate(key, locale)
+    },
+    [locale, customTranslations],
   )
 
   return (

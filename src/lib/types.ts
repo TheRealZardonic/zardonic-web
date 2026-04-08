@@ -242,6 +242,8 @@ export interface AdminSettings {
   loaderTexts?: LoaderTexts
   hudTexts?: HudTexts
   colorPresets?: CustomColorPreset[]
+  locale?: string
+  customTranslations?: Record<string, Record<string, string>>
 }
 
 export interface CustomColorPreset {

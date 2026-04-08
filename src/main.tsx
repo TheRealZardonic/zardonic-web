@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 import App from './App.tsx'
 import { ErrorFallback } from './ErrorFallback.tsx'
-import { LocaleProvider } from './contexts/LocaleContext.tsx'
 
 import "./main.css"
 import "./styles/theme.css"
@@ -47,9 +46,7 @@ function Root() {
   return (
     <QueryClientProvider client={queryClient}>
       <ErrorBoundary FallbackComponent={ErrorFallback}>
-        <LocaleProvider>
-          <App />
-        </LocaleProvider>
+        <App />
       </ErrorBoundary>
     </QueryClientProvider>
   )

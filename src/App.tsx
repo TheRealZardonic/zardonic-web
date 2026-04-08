@@ -8,6 +8,7 @@ import { useAdminAuth } from '@/hooks/use-admin-auth'
 import type { AdminSettings, BackgroundType, HudTexts, SectionLabels, Release as FullRelease } from '@/lib/types'
 import { useAppTheme } from '@/hooks/use-app-theme'
 import { useSiteDataSync } from '@/hooks/use-site-data-sync'
+import { LocaleProvider } from '@/contexts/LocaleContext'
 import type { SiteData, CyberpunkOverlayState } from '@/lib/app-types'
 import { DEFAULT_SITE_DATA } from '@/lib/app-types'
 import { DEFAULT_SECTION_ORDER } from '@/lib/config'
@@ -276,6 +277,7 @@ function App() {
   }
 
   return (
+    <LocaleProvider customTranslations={adminSettings?.customTranslations}>
     <>
       {siteData && <StructuredData artistName={siteData.artistName} siteData={siteData} />}
       <AnimatePresence>
@@ -694,6 +696,7 @@ function App() {
       />
     </div>
     </>
+    </LocaleProvider>
   )
 }
 

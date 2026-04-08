@@ -3,6 +3,7 @@ import logoImage from '@/assets/images/meta_eyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ==
 import { motion, AnimatePresence } from 'framer-motion'
 import { List, X } from '@phosphor-icons/react'
 import type { SectionLabels, SectionVisibility } from '@/lib/types'
+import { useLocale } from '@/contexts/LocaleContext'
 
 interface AppNavBarProps {
   artistName: string
@@ -31,13 +32,14 @@ export default function AppNavBar({
   sectionLabels,
   sectionVisibility,
 }: AppNavBarProps) {
+  const { t } = useLocale()
   const allNavItems: { id: string; label: string }[] = [
-    { id: 'bio', label: sectionLabels?.biography || 'BIOGRAPHY' },
-    { id: 'music', label: sectionLabels?.musicPlayer || 'MUSIC' },
-    { id: 'gigs', label: sectionLabels?.upcomingGigs || 'GIGS' },
-    { id: 'releases', label: sectionLabels?.releases || 'RELEASES' },
-    { id: 'gallery', label: sectionLabels?.gallery || 'GALLERY' },
-    { id: 'connect', label: sectionLabels?.connect || 'CONNECT' },
+    { id: 'bio', label: sectionLabels?.biography || t('nav.biography') },
+    { id: 'music', label: sectionLabels?.musicPlayer || t('nav.music') },
+    { id: 'gigs', label: sectionLabels?.upcomingGigs || t('nav.gigs') },
+    { id: 'releases', label: sectionLabels?.releases || t('nav.releases') },
+    { id: 'gallery', label: sectionLabels?.gallery || t('nav.gallery') },
+    { id: 'connect', label: sectionLabels?.connect || t('nav.connect') },
   ]
   // Hide nav items whose sections are explicitly disabled
   const navItems = allNavItems.filter(({ id }) => {

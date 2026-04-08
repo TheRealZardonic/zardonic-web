@@ -1,18 +1,20 @@
 import { useLocale } from '@/contexts/LocaleContext'
+import { LOCALES } from '@/lib/i18n'
+import type { Locale } from '@/lib/i18n'
 
 export default function LanguageSwitcher({ className }: { className?: string }) {
   const { locale, setLocale } = useLocale()
 
   return (
-    <button
-      onClick={() => setLocale(locale === 'en' ? 'de' : 'en')}
-      className={`inline-flex items-center gap-1 text-xs md:text-xs text-muted-foreground/50 hover:text-primary/80 transition-colors font-mono uppercase tracking-wider ${className ?? ''}`}
-      aria-label={locale === 'en' ? 'Switch to German' : 'Auf Englisch wechseln'}
-      title={locale === 'en' ? 'Deutsch' : 'English'}
+    <select
+      value={locale}
+      onChange={e => setLocale(e.target.value as Locale)}
+      className={`bg-transparent border border-border/40 rounded px-1 py-0.5 font-mono text-xs text-muted-foreground hover:text-primary hover:border-primary/60 transition-colors cursor-pointer ${className ?? ''}`}
+      aria-label="Select language"
     >
-      <span className={locale === 'en' ? 'text-primary' : 'opacity-50'}>EN</span>
-      <span className="text-muted-foreground/30">/</span>
-      <span className={locale === 'de' ? 'text-primary' : 'opacity-50'}>DE</span>
-    </button>
+      {LOCALES.map(l => (
+        <option key={l.code} value={l.code}>{l.flag} {l.code.toUpperCase()}</option>
+      ))}
+    </select>
   )
 }

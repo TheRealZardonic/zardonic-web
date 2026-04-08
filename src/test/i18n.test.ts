@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { t, type Locale } from '@/lib/i18n'
+import { t, getTranslations, LOCALES, type Locale } from '@/lib/i18n'
 
 describe('i18n translation utility', () => {
   it('should return English translation for known key', () => {
@@ -59,10 +59,76 @@ describe('i18n translation utility', () => {
     expect(t('edit.subscribers', 'de')).toBe('ABONNENTEN')
   })
 
-  it('should handle all locales as Locale type', () => {
-    const locales: Locale[] = ['en', 'de']
+  it('should handle all 8 locales as Locale type', () => {
+    const locales: Locale[] = ['en', 'de', 'ru', 'it', 'es', 'pt', 'ja', 'ko']
     for (const locale of locales) {
       expect(typeof t('footer.admin', locale)).toBe('string')
     }
+  })
+
+  it('should have footer.admin translation for all 8 locales', () => {
+    const locales: Locale[] = ['en', 'de', 'ru', 'it', 'es', 'pt', 'ja', 'ko']
+    for (const locale of locales) {
+      const result = t('footer.admin', locale)
+      expect(result).toBeTruthy()
+      expect(result).not.toBe('footer.admin')
+    }
+  })
+
+  it('should have non-empty translations for all keys in all locales', () => {
+    const all = getTranslations()
+    const locales: Locale[] = ['en', 'de', 'ru', 'it', 'es', 'pt', 'ja', 'ko']
+    for (const [key, langs] of Object.entries(all)) {
+      for (const locale of locales) {
+        const val = langs[locale]
+        expect(val, `key "${key}" missing for locale "${locale}"`).toBeTruthy()
+        expect(typeof val).toBe('string')
+      }
+    }
+  })
+
+  it('should translate new gigs keys', () => {
+    expect(t('gigs.sync', 'en')).toBe('Sync Gigs')
+    expect(t('gigs.showLess', 'en')).toBe('Show Less')
+    expect(t('gigs.seeMore', 'en')).toBe('See More')
+    expect(t('gigs.support', 'en')).toBe('Support:')
+  })
+
+  it('should translate new releases keys', () => {
+    expect(t('releases.syncItunes', 'en')).toBe('Sync iTunes')
+    expect(t('releases.showLess', 'en')).toBe('Show Less')
+    expect(t('releases.showAll', 'en')).toBe('Show All')
+  })
+
+  it('should translate new cookie keys', () => {
+    expect(t('cookie.title', 'en')).toBe('🍪 COOKIE & DATA NOTICE')
+    expect(t('cookie.acceptAll', 'en')).toBe('Accept All')
+    expect(t('cookie.essentialOnly', 'en')).toBe('Essential Only')
+  })
+
+  it('getTranslations() should return all keys', () => {
+    const all = getTranslations()
+    expect(typeof all).toBe('object')
+    expect(Object.keys(all).length).toBeGreaterThan(130)
+    expect(all['footer.admin']).toBeDefined()
+    expect(all['footer.admin']['en']).toBe('ADMIN')
+  })
+
+  it('getTranslations() should return a deep copy', () => {
+    const a = getTranslations()
+    const b = getTranslations()
+    expect(a).not.toBe(b)
+    a['footer.admin']['en'] = 'MUTATED'
+    expect(b['footer.admin']['en']).toBe('ADMIN')
+  })
+
+  it('LOCALES should contain 8 entries', () => {
+    expect(LOCALES.length).toBe(8)
+    const codes = LOCALES.map(l => l.code)
+    expect(codes).toContain('en')
+    expect(codes).toContain('de')
+    expect(codes).toContain('ru')
+    expect(codes).toContain('ja')
+    expect(codes).toContain('ko')
   })
 })

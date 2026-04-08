@@ -8,6 +8,7 @@ import { ArrowsClockwise, MapPin, CalendarBlank, CaretDown, CaretUp } from '@pho
 import type { AdminSettings, SectionLabels } from '@/lib/types'
 import type { Gig } from '@/lib/app-types'
 import { parseGigDate } from '@/lib/utils'
+import { useLocale } from '@/contexts/LocaleContext'
 
 const INITIAL_VISIBLE = 3
 
@@ -28,6 +29,7 @@ interface AppGigsSectionProps {
 
 export default function AppGigsSection({ gigs, sectionOrder, visible, editMode, sectionLabel, headingPrefix, adminSettings, bandsintownFetching, sectionLabels, onLabelChange, onGigClick, onRefresh }: AppGigsSectionProps) {
   const [showAll, setShowAll] = useState(false)
+  const { t } = useLocale()
 
   // Only show future gigs (date >= today) — memoized so it only recomputes when gigs change
   const upcomingGigs = useMemo(() => {
@@ -81,7 +83,7 @@ export default function AppGigsSection({ gigs, sectionOrder, visible, editMode, 
                   className="gap-2 border-primary/30 font-mono tracking-wider text-xs shrink-0"
                 >
                   <ArrowsClockwise className={`w-4 h-4 ${bandsintownFetching ? 'animate-spin' : ''}`} />
-                  Sync Gigs
+                  {t('gigs.sync')}
                 </Button>
               )}
             </div>
@@ -181,7 +183,7 @@ export default function AppGigsSection({ gigs, sectionOrder, visible, editMode, 
                           </div>
                           {gig.support && (
                             <p className="text-sm text-muted-foreground font-mono">
-                              Support: {gig.support}
+                              {t('gigs.support')} {gig.support}
                             </p>
                           )}
                         </div>
@@ -203,12 +205,12 @@ export default function AppGigsSection({ gigs, sectionOrder, visible, editMode, 
                       {showAll ? (
                         <>
                           <CaretUp className="w-4 h-4" />
-                          Show Less
+                          {t('gigs.showLess')}
                         </>
                       ) : (
                         <>
                           <CaretDown className="w-4 h-4" />
-                          See More ({upcomingGigs.length - INITIAL_VISIBLE} more)
+                          {t('gigs.seeMore')} ({upcomingGigs.length - INITIAL_VISIBLE} more)
                         </>
                       )}
                     </Button>
