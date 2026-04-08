@@ -38,10 +38,11 @@ async function hashPasswordScrypt(password: string): Promise<string> {
 async function verifyPassword(password: string, stored: string): Promise<boolean> {
   if (!stored.startsWith('scrypt:')) {
     // Legacy SHA-256 migration path — only reached when an old SHA-256 hash is
-    // still stored in KV. The caller (POST handler) immediately rehashes to scrypt
-    // on successful verification, so this branch is self-eliminating. New accounts
-    // always use scrypt (hashPasswordScrypt). This branch exists solely to allow
-    // existing users to log in once and have their password upgraded automatically.
+    // still stored in KV. The caller (POST handler, see ~line 125) immediately
+    // rehashes to scrypt on successful verification, so this branch is
+    // self-eliminating. New accounts always use scrypt (hashPasswordScrypt).
+    // This branch exists solely to allow existing users to log in once and have
+    // their password upgraded automatically.
     const hash = createHash('sha256').update(password).digest('hex')
     const a = Buffer.from(hash, 'utf8')
     const b = Buffer.from(stored, 'utf8')

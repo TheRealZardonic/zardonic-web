@@ -255,7 +255,9 @@ export default function AdminPanel({
     const a = document.createElement('a')
     a.href = url
     a.download = `zardonic-data-${new Date().toISOString().split('T')[0]}.json`
+    document.body.appendChild(a)
     a.click()
+    document.body.removeChild(a)
     URL.revokeObjectURL(url)
     toast.success('Data exported (including settings)')
   }
@@ -815,7 +817,9 @@ export default function AdminPanel({
                       const a = document.createElement('a')
                       a.href = url
                       a.download = 'translations.json'
+                      document.body.appendChild(a)
                       a.click()
+                      document.body.removeChild(a)
                       URL.revokeObjectURL(url)
                     }}
                     className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/30 rounded font-mono text-xs text-primary hover:bg-primary/20 transition-colors"
