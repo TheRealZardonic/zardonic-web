@@ -41,9 +41,10 @@ export default function AppSocialSection({ social, sectionOrder, visible, editMo
             whileInView={{ opacity: 1, x: 0, filter: 'blur(0px)', clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' }}
             viewport={{ once: true }}
             transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="text-center"
+            className=""
           >
-            <h2 className="text-4xl md:text-6xl font-bold mb-12 uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-crt-interference" data-text="CONNECT">
+            <div className="flex items-center justify-between mb-12">
+            <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-crt-interference" data-text="CONNECT">
               <EditableHeading onChange={() => {}}
                 text={sectionLabel}
                 defaultText="CONNECT"
@@ -52,7 +53,9 @@ export default function AppSocialSection({ social, sectionOrder, visible, editMo
                 glitchIntervalMs={adminSettings?.glitchTextSettings?.intervalMs}
                 glitchDurationMs={adminSettings?.glitchTextSettings?.durationMs}
               />
+              {adminSettings?.animations?.blinkingCursor !== false && <span className="animate-pulse">_</span>}
             </h2>
+            </div>
 
             <div className="flex flex-wrap justify-center gap-6">
               {([

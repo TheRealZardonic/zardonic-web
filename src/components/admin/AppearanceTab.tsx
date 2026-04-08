@@ -38,6 +38,7 @@ const animItems: { key: keyof AnimationSettings; label: string }[] = [
   { key: 'crtEnabled', label: 'CRT Effect' },
   { key: 'noiseEnabled', label: 'Noise / Grain' },
   { key: 'circuitBackgroundEnabled', label: 'Circuit Background' },
+  { key: 'blinkingCursor', label: 'Blinking Cursor on Headings' },
 ]
 
 const progressiveModeItems: { key: keyof ProgressiveOverlayModes; label: string }[] = [
@@ -89,6 +90,14 @@ const colorGroups: {
     fields: [
       { key: 'destructiveColor', label: 'Destructive Color', placeholder: 'oklch(0.45 0.22 25)' },
       { key: 'destructiveForegroundColor', label: 'Destructive Foreground', placeholder: 'oklch(1 0 0)' },
+    ],
+  },
+  {
+    title: 'Data-Label (// annotation text)',
+    fields: [
+      { key: 'dataLabelColor', label: 'Color', placeholder: 'var(--accent)' },
+      { key: 'dataLabelFontSize', label: 'Font Size', placeholder: '10px' },
+      { key: 'dataLabelFontFamily', label: 'Font Family', placeholder: "'Share Tech Mono', monospace" },
     ],
   },
 ]

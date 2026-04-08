@@ -41,6 +41,7 @@ export default function AppGigsSection({ gigs, sectionOrder, visible, editMode, 
                   glitchIntervalMs={adminSettings?.glitchTextSettings?.intervalMs}
                   glitchDurationMs={adminSettings?.glitchTextSettings?.durationMs}
                 />
+                {adminSettings?.animations?.blinkingCursor !== false && <span className="animate-pulse">_</span>}
               </h2>
             </div>
 

@@ -63,6 +63,7 @@ export default function AppBioSection({ bio, sectionOrder, visible, editMode, se
                   glitchIntervalMs={adminSettings?.glitchTextSettings?.intervalMs}
                   glitchDurationMs={adminSettings?.glitchTextSettings?.durationMs}
                 />
+                {adminSettings?.animations?.blinkingCursor !== false && <span className="animate-pulse">_</span>}
               </h2>
               {editMode && !editing && (
                 <Button

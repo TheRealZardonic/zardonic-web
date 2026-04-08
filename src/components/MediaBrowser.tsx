@@ -1,62 +1,37 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Folder, File, DownloadSimple, Plus, Trash, PencilSimple, X } from '@phosphor-icons/react'
+import { DownloadSimple, FolderOpen, File, X, Plus, Trash, PencilSimple, Check, ArrowSquareOut, MusicNote, YoutubeLogo } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import type { MediaFile } from '@/lib/types'
 
-/**
- * Returns true if the URL's hostname is exactly 'drive.google.com'.
- * Using URL parsing instead of substring matching to prevent spoofing
- * (e.g. 'evil.com?host=drive.google.com').
- */
+// ---------------------------------------------------------------------------
+// Google Drive URL helpers
+// ---------------------------------------------------------------------------
+
 function isDriveUrl(url: string): boolean {
-  try {
-    return new URL(url).hostname === 'drive.google.com'
-  } catch {
-    return false
-  }
+  try { return new URL(url).hostname === 'drive.google.com' } catch { return false }
 }
 
-/**
- * Convert a Google Drive share/view URL to a direct download URL so the
- * browser triggers a real download instead of opening the Drive UI.
- *
- * Supported input formats:
- *   https://drive.google.com/file/d/FILE_ID/view?usp=sharing
- *   https://drive.google.com/file/d/FILE_ID/view
- *   https://drive.google.com/open?id=FILE_ID
- *   https://drive.google.com/uc?id=FILE_ID (already a download link)
- */
 function toDriveDirectDownload(url: string): string {
   try {
-    const parsed = new URL(url)
-    if (parsed.hostname !== 'drive.google.com') return url
-
-    // Already a direct download link
-    if (parsed.pathname === '/uc') return url
-
-    // Pattern: /file/d/FILE_ID/
-    const fileMatch = parsed.pathname.match(/^\/file\/d\/([^/]+)/)
-    if (fileMatch) {
-      return `https://drive.google.com/uc?export=download&id=${fileMatch[1]}`
-    }
-
-    // Pattern: ?id=FILE_ID (e.g. /open?id=… or /drive/folders?id=…)
-    const id = parsed.searchParams.get('id')
-    if (id) {
-      return `https://drive.google.com/uc?export=download&id=${id}`
-    }
-  } catch { /* fallback – return original */ }
+    const p = new URL(url)
+    if (p.hostname !== 'drive.google.com') return url
+    if (p.pathname === '/uc') return url
+    const m = p.pathname.match(/^\/file\/d\/([^/]+)/)
+    if (m) return `https://drive.google.com/uc?export=download&id=${m[1]}`
+    const id = p.searchParams.get('id')
+    if (id) return `https://drive.google.com/uc?export=download&id=${id}`
+  } catch { /* fallback */ }
   return url
 }
 
-/** Return the effective download href for a file URL (handles Drive links). */
 function getDownloadHref(url: string): string {
-  if (isDriveUrl(url)) return toDriveDirectDownload(url)
-  return url
+  return isDriveUrl(url) ? toDriveDirectDownload(url) : url
 }
+
+// ---------------------------------------------------------------------------
+// Interfaces
+// ---------------------------------------------------------------------------
 
 interface MediaBrowserProps {
   mediaFiles?: MediaFile[]
@@ -64,260 +39,120 @@ interface MediaBrowserProps {
   onUpdate?: (files: MediaFile[]) => void
 }
 
-function HudCorners() {
-  return (
-    <>
-      <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-accent" />
-      <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-accent" />
-      <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-accent" />
-      <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-accent" />
-    </>
-  )
-}
+// ---------------------------------------------------------------------------
+// Corner decorations
+// ---------------------------------------------------------------------------
 
-function buildFolderTree(files: MediaFile[]) {
-  const folders: Record<string, MediaFile[]> = {}
-  const rootFiles: MediaFile[] = []
-  for (const f of files) {
-    if (f.folder) {
-      if (!folders[f.folder]) folders[f.folder] = []
-      folders[f.folder].push(f)
-    } else {
-      rootFiles.push(f)
-    }
+function HudCorner({ pos }: { pos: 'tl' | 'tr' | 'bl' | 'br' }) {
+  const classes: Record<string, string> = {
+    tl: 'top-0 left-0 border-t-2 border-l-2',
+    tr: 'top-0 right-0 border-t-2 border-r-2',
+    bl: 'bottom-0 left-0 border-b-2 border-l-2',
+    br: 'bottom-0 right-0 border-b-2 border-r-2',
   }
-  return { folders, rootFiles }
-}
-
-function MediaOverlay({
-  files,
-  onClose,
-}: {
-  files: MediaFile[]
-  onClose: () => void
-}) {
-  const [phase, setPhase] = useState<'loading' | 'ready'>('loading')
-  const [selectedFile, setSelectedFile] = useState<MediaFile | null>(null)
-  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
-
-  useEffect(() => {
-    const timer = setTimeout(() => setPhase('ready'), 1500)
-    return () => clearTimeout(timer)
-  }, [])
-
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', handleKey)
-    return () => window.removeEventListener('keydown', handleKey)
-  }, [onClose])
-
-  const { folders, rootFiles } = buildFolderTree(files)
-
-  const toggleFolder = useCallback((folder: string) => {
-    setExpandedFolders((prev) => {
-      const next = new Set(prev)
-      if (next.has(folder)) next.delete(folder)
-      else next.add(folder)
-      return next
-    })
-  }, [])
-
   return (
-    <>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/90 z-[100] backdrop-blur-sm"
-        onClick={onClose}
-      />
-
-      <div className="fixed inset-0 z-[101] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Media Browser">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ duration: 0.3 }}
-          className="relative w-full max-w-4xl h-[70vh] bg-black border border-primary/30 font-mono overflow-hidden"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <HudCorners />
-
-          {/* Header */}
-          <div className="flex items-center justify-between border-b border-primary/30 px-4 py-2">
-            <span className="text-accent text-sm tracking-wider">
-              {'>'} MEDIA_BROWSER v1.0
-            </span>
-            <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close media browser">
-              <X className="w-5 h-5 text-accent" />
-            </Button>
-          </div>
-
-          <AnimatePresence mode="wait">
-            {phase === 'loading' ? (
-              <motion.div
-                key="loading"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex flex-col items-center justify-center h-[calc(100%-3rem)] gap-4"
-                role="status"
-                aria-label="Loading files"
-              >
-                <motion.div
-                  className="text-accent text-sm tracking-wider"
-                  animate={{ opacity: [0.3, 1, 0.3] }}
-                  transition={{ duration: 1.2, repeat: Infinity }}
-                >
-                  INDEXING FILES...
-                </motion.div>
-                <div className="w-48 h-1 bg-primary/20 overflow-hidden">
-                  <motion.div
-                    className="h-full bg-accent"
-                    initial={{ width: '0%' }}
-                    animate={{ width: '100%' }}
-                    transition={{ duration: 1.4, ease: 'linear' }}
-                  />
-                </div>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="ready"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex h-[calc(100%-3rem)]"
-              >
-                {/* File tree */}
-                <nav className="w-1/3 border-r border-primary/30 overflow-y-auto p-3" aria-label="File tree">
-                  <div className="text-accent/60 text-xs tracking-wider mb-3">
-                    FILE TREE
-                  </div>
-                  <div role="tree">
-                    {Object.keys(folders).map((folder) => (
-                      <div key={folder} className="mb-1" role="treeitem" aria-expanded={expandedFolders.has(folder)}>
-                        <button
-                          className="flex items-center gap-2 w-full text-left px-2 py-1 text-sm text-foreground hover:bg-accent/10 transition-colors"
-                          onClick={() => toggleFolder(folder)}
-                          aria-label={`${expandedFolders.has(folder) ? 'Collapse' : 'Expand'} folder ${folder}`}
-                        >
-                          <Folder
-                            className="w-4 h-4 text-accent shrink-0"
-                            weight={expandedFolders.has(folder) ? 'fill' : 'regular'}
-                          />
-                          <span className="truncate tracking-wider">{folder}</span>
-                        </button>
-                        <AnimatePresence>
-                          {expandedFolders.has(folder) && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: 'auto', opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              transition={{ duration: 0.2 }}
-                              className="overflow-hidden pl-4"
-                              role="group"
-                            >
-                              {folders[folder].map((f) => (
-                                <button
-                                  key={f.id}
-                                  className={`flex items-center gap-2 w-full text-left px-2 py-1 text-sm transition-colors ${
-                                    selectedFile?.id === f.id
-                                      ? 'bg-accent/20 text-accent'
-                                      : 'text-foreground hover:bg-accent/10'
-                                  }`}
-                                  onClick={() => setSelectedFile(f)}
-                                  role="treeitem"
-                                  aria-selected={selectedFile?.id === f.id}
-                                  aria-label={`File: ${f.name}`}
-                                >
-                                  <File className="w-4 h-4 shrink-0" aria-hidden="true" />
-                                  <span className="truncate">{f.name}</span>
-                                </button>
-                              ))}
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    ))}
-                    {rootFiles.map((f) => (
-                      <button
-                        key={f.id}
-                        className={`flex items-center gap-2 w-full text-left px-2 py-1 text-sm transition-colors ${
-                          selectedFile?.id === f.id
-                            ? 'bg-accent/20 text-accent'
-                            : 'text-foreground hover:bg-accent/10'
-                        }`}
-                        onClick={() => setSelectedFile(f)}
-                        role="treeitem"
-                        aria-selected={selectedFile?.id === f.id}
-                        aria-label={`File: ${f.name}`}
-                      >
-                        <File className="w-4 h-4 shrink-0" aria-hidden="true" />
-                        <span className="truncate">{f.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                </nav>
-
-                {/* File detail */}
-                <div className="flex-1 p-6 overflow-y-auto">
-                  {selectedFile ? (
-                    <motion.div
-                      key={selectedFile.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="space-y-4"
-                    >
-                      <div className="text-accent text-xs tracking-wider">
-                        FILE DETAIL
-                      </div>
-                      <h3 className="text-xl text-foreground tracking-wider">
-                        {selectedFile.name}
-                      </h3>
-                      {selectedFile.folder && (
-                        <div className="text-sm text-foreground/60">
-                          <span className="text-accent/60">FOLDER:</span>{' '}
-                          {selectedFile.folder}
-                        </div>
-                      )}
-                      {selectedFile.type && (
-                        <div className="text-sm text-foreground/60">
-                          <span className="text-accent/60">TYPE:</span>{' '}
-                          {selectedFile.type.toUpperCase()}
-                        </div>
-                      )}
-                      {selectedFile.description && (
-                        <p className="text-sm text-foreground/70 leading-relaxed">
-                          {selectedFile.description}
-                        </p>
-                      )}
-                      <a
-                        href={getDownloadHref(selectedFile.url)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        download={selectedFile.name || true}
-                        className="inline-flex items-center gap-2 mt-4 px-4 py-2 border border-accent/50 text-accent text-sm tracking-wider hover:bg-accent/10 transition-colors"
-                        aria-label={`Download ${selectedFile.name}`}
-                      >
-                        <DownloadSimple className="w-4 h-4" aria-hidden="true" />
-                        DOWNLOAD
-                      </a>
-                    </motion.div>
-                  ) : (
-                    <div className="flex items-center justify-center h-full text-foreground/30 text-sm tracking-wider">
-                      SELECT A FILE TO VIEW DETAILS
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
-      </div>
-    </>
+    <span className={`absolute w-3 h-3 border-accent/60 ${classes[pos]}`} />
   )
 }
+
+// ---------------------------------------------------------------------------
+// File type icon helper
+// ---------------------------------------------------------------------------
+
+function FileTypeIcon({ type }: { type?: string }) {
+  if (type === 'audio') return <MusicNote className="w-5 h-5 text-accent/70" />
+  if (type === 'youtube') return <YoutubeLogo className="w-5 h-5 text-red-500/70" />
+  return <File className="w-5 h-5 text-accent/70" />
+}
+
+// ---------------------------------------------------------------------------
+// Overlay – shown when a file is clicked
+// ---------------------------------------------------------------------------
+
+function MediaOverlay({ file, onClose }: { file: MediaFile; onClose: () => void }) {
+  const downloadHref = getDownloadHref(file.url)
+  const isYoutube = file.type === 'youtube' || file.url.includes('youtube.com') || file.url.includes('youtu.be')
+  const isAudio = file.type === 'audio' || file.url.match(/\.(mp3|ogg|wav|flac)(\?.*)?$/i)
+
+  return (
+    <motion.div
+      className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
+    >
+      <motion.div
+        className="relative w-full max-w-2xl bg-card border border-primary/30 p-6 font-mono"
+        initial={{ scale: 0.95, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.95, y: 20 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <HudCorner pos="tl" /><HudCorner pos="tr" /><HudCorner pos="bl" /><HudCorner pos="br" />
+
+        <div className="flex items-start justify-between mb-6">
+          <div>
+            <div className="data-label mb-1">// FILE.SELECTED</div>
+            <h3 className="text-lg font-bold tracking-wider uppercase">{file.name}</h3>
+            {file.description && (
+              <p className="text-xs text-foreground/50 mt-1">{file.description}</p>
+            )}
+          </div>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground p-1" aria-label="Close">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {isYoutube && (
+          <div className="aspect-video mb-4 bg-black">
+            <iframe
+              src={file.url.replace('watch?v=', 'embed/').replace('youtu.be/', 'www.youtube-nocookie.com/embed/')}
+              title={file.name}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="w-full h-full"
+            />
+          </div>
+        )}
+
+        {isAudio && (
+          // eslint-disable-next-line jsx-a11y/media-has-caption
+          <audio controls src={file.url} className="w-full mb-4" />
+        )}
+
+        <div className="flex gap-3 flex-wrap">
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="font-mono text-xs gap-2 border-primary/30 hover:border-primary"
+          >
+            <a href={downloadHref} target="_blank" rel="noopener noreferrer" download>
+              <DownloadSimple className="w-4 h-4" />
+              DOWNLOAD
+            </a>
+          </Button>
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="font-mono text-xs gap-2"
+          >
+            <a href={file.url} target="_blank" rel="noopener noreferrer">
+              <ArrowSquareOut className="w-4 h-4" />
+              OPEN IN NEW TAB
+            </a>
+          </Button>
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Edit panel – manage files list
+// ---------------------------------------------------------------------------
 
 function EditPanel({
   files,
@@ -328,244 +163,319 @@ function EditPanel({
   onSave: (files: MediaFile[]) => void
   onClose: () => void
 }) {
-  const [draft, setDraft] = useState<MediaFile[]>(() =>
-    files.map((f) => ({ ...f }))
-  )
+  const [localFiles, setLocalFiles] = useState<MediaFile[]>(files)
+  const [editIdx, setEditIdx] = useState<number | null>(null)
+  const [draft, setDraft] = useState<MediaFile>({ id: '', name: '', url: '', type: 'download' })
+  const inputRef = useRef<HTMLInputElement>(null)
 
-  const addFile = useCallback(() => {
-    setDraft((prev) => [
-      ...prev,
-      {
-        id: typeof crypto.randomUUID === 'function'
-          ? crypto.randomUUID()
-          : Math.random().toString(36).slice(2) + Date.now().toString(36),
-        name: '',
-        url: '',
-        folder: '',
-        type: 'download',
-        description: '',
-      },
-    ])
-  }, [])
+  const genId = () => (typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : Math.random().toString(36).slice(2))
 
-  const removeFile = useCallback((id: string, fileName: string) => {
-    const confirmed = window.confirm(`Delete file "${fileName || 'Untitled'}"? This action cannot be undone.`)
-    if (!confirmed) return
-    setDraft((prev) => prev.filter((f) => f.id !== id))
-  }, [])
+  const startEdit = (idx: number) => {
+    setEditIdx(idx)
+    setDraft({ ...localFiles[idx] })
+  }
 
-  const updateField = useCallback(
-    (id: string, field: keyof MediaFile, value: string) => {
-      setDraft((prev) =>
-        prev.map((f) => (f.id === id ? { ...f, [field]: value } : f))
-      )
-    },
-    []
-  )
+  const startAdd = () => {
+    const newFile: MediaFile = { id: genId(), name: '', url: '', type: 'download' }
+    const next = [...localFiles, newFile]
+    setLocalFiles(next)
+    setEditIdx(next.length - 1)
+    setDraft(newFile)
+    setTimeout(() => inputRef.current?.focus(), 50)
+  }
 
-  const handleSave = useCallback(() => {
-    const valid = draft.filter((f) => f.name.trim() && f.url.trim())
-    onSave(valid)
-    onClose()
-  }, [draft, onSave, onClose])
+  const saveEdit = () => {
+    if (editIdx === null) return
+    const updated = localFiles.map((f, i) => (i === editIdx ? { ...draft, id: draft.id || genId() } : f))
+    setLocalFiles(updated)
+    setEditIdx(null)
+  }
+
+  const removeFile = (idx: number) => {
+    const next = localFiles.filter((_, i) => i !== idx)
+    setLocalFiles(next)
+    if (editIdx === idx) setEditIdx(null)
+  }
 
   return (
-    <>
+    <motion.div
+      className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/80 z-[9999] backdrop-blur-sm"
-        onClick={onClose}
-      />
-
-      <motion.div
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: 20 }}
-        className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-background border-l border-primary/30 z-[9999] overflow-y-auto p-6 font-mono"
-        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-2xl bg-card border border-primary/30 flex flex-col max-h-[90dvh]"
+        initial={{ scale: 0.95, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.95, y: 20 }}
       >
-        <div className="flex items-center justify-between mb-6">
-          <span className="text-accent text-sm tracking-wider">
-            EDIT MEDIA FILES
-          </span>
-          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close edit panel">
-            <X className="w-5 h-5 text-accent" />
-          </Button>
+        <HudCorner pos="tl" /><HudCorner pos="tr" /><HudCorner pos="bl" /><HudCorner pos="br" />
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+          <div className="data-label">// MEDIA.MANAGER</div>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground p-1" aria-label="Close">
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
-        <div className="space-y-4">
-          {draft.map((file) => (
-            <div
-              key={file.id}
-              className="border border-primary/20 p-3 space-y-2"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-accent/60 tracking-wider">
-                  FILE
-                </span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeFile(file.id, file.name)}
-                  aria-label={`Delete file ${file.name || 'Untitled'}`}
-                >
-                  <Trash className="w-4 h-4 text-destructive" />
-                </Button>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-foreground/60">Name</Label>
-                <Input
-                  value={file.name}
-                  onChange={(e) =>
-                    updateField(file.id, 'name', e.target.value)
-                  }
-                  className="bg-transparent border-primary/30 font-mono text-sm"
-                  placeholder="File name"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-foreground/60">URL</Label>
-                <Input
-                  value={file.url}
-                  onChange={(e) =>
-                    updateField(file.id, 'url', e.target.value)
-                  }
-                  className="bg-transparent border-primary/30 font-mono text-sm"
-                  placeholder="https://..."
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-foreground/60">Folder</Label>
-                <Input
-                  value={file.folder ?? ''}
-                  onChange={(e) =>
-                    updateField(file.id, 'folder', e.target.value)
-                  }
-                  className="bg-transparent border-primary/30 font-mono text-sm"
-                  placeholder="Optional folder"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-foreground/60">Type</Label>
-                <select
-                  value={file.type ?? 'download'}
-                  onChange={(e) =>
-                    updateField(file.id, 'type', e.target.value)
-                  }
-                  aria-label="File type"
-                  className="w-full bg-transparent border border-primary/30 text-foreground font-mono text-sm px-3 py-2"
-                >
-                  <option value="download">Download</option>
-                  <option value="audio">Audio</option>
-                  <option value="youtube">YouTube</option>
-                </select>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-foreground/60">
-                  Description
-                </Label>
-                <Input
-                  value={file.description ?? ''}
-                  onChange={(e) =>
-                    updateField(file.id, 'description', e.target.value)
-                  }
-                  className="bg-transparent border-primary/30 font-mono text-sm"
-                  placeholder="Optional description"
-                />
-              </div>
+        {/* File list */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-2 min-h-0">
+          {localFiles.length === 0 && (
+            <p className="text-xs font-mono text-foreground/30 text-center py-8">NO FILES — ADD ONE BELOW</p>
+          )}
+          {localFiles.map((f, idx) => (
+            <div key={f.id || idx} className="border border-border/50 bg-background/40">
+              {editIdx === idx ? (
+                <div className="p-3 space-y-2">
+                  <div className="flex gap-2">
+                    <input
+                      ref={inputRef}
+                      value={draft.name}
+                      onChange={(e) => setDraft(d => ({ ...d, name: e.target.value }))}
+                      placeholder="File name"
+                      className="flex-1 bg-transparent border border-primary/30 px-2 py-1 text-xs font-mono focus:outline-none focus:border-primary"
+                    />
+                    <select
+                      value={draft.type ?? 'download'}
+                      onChange={(e) => setDraft(d => ({ ...d, type: e.target.value as MediaFile['type'] }))}
+                      className="bg-card border border-primary/30 px-2 py-1 text-xs font-mono focus:outline-none"
+                    >
+                      <option value="download">Download</option>
+                      <option value="audio">Audio</option>
+                      <option value="youtube">YouTube</option>
+                    </select>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      value={draft.url}
+                      onChange={(e) => setDraft(d => ({ ...d, url: e.target.value }))}
+                      placeholder="URL (or Google Drive share link)"
+                      className="flex-1 bg-transparent border border-primary/30 px-2 py-1 text-xs font-mono focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      value={draft.description ?? ''}
+                      onChange={(e) => setDraft(d => ({ ...d, description: e.target.value }))}
+                      placeholder="Description (optional)"
+                      className="flex-1 bg-transparent border border-primary/30 px-2 py-1 text-xs font-mono focus:outline-none focus:border-primary"
+                    />
+                    <input
+                      value={draft.folder ?? ''}
+                      onChange={(e) => setDraft(d => ({ ...d, folder: e.target.value }))}
+                      placeholder="Folder (optional)"
+                      className="w-28 bg-transparent border border-primary/30 px-2 py-1 text-xs font-mono focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                  {isDriveUrl(draft.url) && (
+                    <p className="text-[10px] font-mono text-accent/60">✓ Google Drive URL detected — will download directly</p>
+                  )}
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="default" onClick={saveEdit} className="font-mono text-xs gap-1">
+                      <Check className="w-3 h-3" /> SAVE
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setEditIdx(null)} className="font-mono text-xs">
+                      CANCEL
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 px-3 py-2">
+                  <FileTypeIcon type={f.type} />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-mono font-bold truncate">{f.name || '(unnamed)'}</div>
+                    <div className="text-[10px] text-foreground/40 font-mono truncate">{f.url || 'no url'}</div>
+                    {f.folder && <div className="text-[10px] text-accent/50 font-mono">{f.folder}</div>}
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    <button onClick={() => startEdit(idx)} className="p-1 text-muted-foreground hover:text-foreground" aria-label="Edit file">
+                      <PencilSimple className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => removeFile(idx)} className="p-1 text-muted-foreground hover:text-destructive" aria-label="Remove file">
+                      <Trash className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
 
-        <div className="flex gap-2 mt-6">
-          <Button
-            variant="outline"
-            className="flex-1 gap-2 border-primary/30 font-mono tracking-wider text-xs"
-            onClick={addFile}
-          >
-            <Plus className="w-4 h-4" />
-            ADD FILE
+        {/* Footer */}
+        <div className="flex items-center justify-between px-4 py-3 border-t border-border shrink-0">
+          <Button size="sm" variant="outline" onClick={startAdd} className="font-mono text-xs gap-2 border-primary/30 hover:border-primary">
+            <Plus className="w-4 h-4" /> ADD FILE
           </Button>
-          <Button
-            className="flex-1 gap-2 font-mono tracking-wider text-xs"
-            onClick={handleSave}
-          >
-            SAVE
-          </Button>
+          <div className="flex gap-2">
+            <Button size="sm" variant="ghost" onClick={onClose} className="font-mono text-xs">
+              CANCEL
+            </Button>
+            <Button size="sm" variant="default" onClick={() => { onSave(localFiles); onClose() }} className="font-mono text-xs">
+              SAVE ALL
+            </Button>
+          </div>
         </div>
       </motion.div>
-    </>
+    </motion.div>
   )
 }
 
-export function MediaBrowser({
-  mediaFiles = [],
-  editMode = false,
-  onUpdate,
-}: MediaBrowserProps) {
-  const [overlayOpen, setOverlayOpen] = useState(false)
+// ---------------------------------------------------------------------------
+// File card in the browser
+// ---------------------------------------------------------------------------
+
+function FileCard({ file, onClick }: { file: MediaFile; onClick: () => void }) {
+  return (
+    <motion.button
+      onClick={onClick}
+      className="group relative w-full text-left border border-border/40 bg-background/30 hover:border-primary/50 hover:bg-primary/5 transition-all p-4 font-mono"
+      whileHover={{ scale: 1.01 }}
+      whileTap={{ scale: 0.99 }}
+    >
+      <HudCorner pos="tl" /><HudCorner pos="br" />
+      <div className="flex items-start gap-3">
+        <FileTypeIcon type={file.type} />
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-bold tracking-wide uppercase truncate group-hover:text-primary transition-colors">
+            {file.name}
+          </div>
+          {file.description && (
+            <div className="text-xs text-foreground/40 truncate mt-0.5">{file.description}</div>
+          )}
+          {file.folder && (
+            <div className="text-[10px] text-accent/50 mt-1">{file.folder}</div>
+          )}
+        </div>
+        <DownloadSimple className="w-4 h-4 text-accent/40 group-hover:text-accent transition-colors shrink-0 mt-0.5" />
+      </div>
+    </motion.button>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Main export
+// ---------------------------------------------------------------------------
+
+export function MediaBrowser({ mediaFiles = [], editMode = false, onUpdate }: MediaBrowserProps) {
+  const [overlayFile, setOverlayFile] = useState<MediaFile | null>(null)
   const [editOpen, setEditOpen] = useState(false)
 
-  const handleOpen = useCallback(() => {
-    if (mediaFiles.length > 0) setOverlayOpen(true)
-  }, [mediaFiles.length])
+  const handleOpen = useCallback((file: MediaFile) => {
+    setOverlayFile(file)
+  }, [])
+
+  // Group files by folder
+  const folderMap: Record<string, MediaFile[]> = {}
+  const rootFiles: MediaFile[] = []
+  for (const f of mediaFiles) {
+    if (f.folder) {
+      if (!folderMap[f.folder]) folderMap[f.folder] = []
+      folderMap[f.folder].push(f)
+    } else {
+      rootFiles.push(f)
+    }
+  }
+  const folders = Object.keys(folderMap)
 
   return (
     <section id="media" className="py-24 px-4">
-      <div className="max-w-4xl mx-auto">
-        <motion.h2
-          className="font-mono text-4xl text-center mb-8 tracking-wider"
-          style={{
-            textShadow:
-              '0 0 10px rgba(180, 50, 50, 0.5), 0 0 20px rgba(180, 50, 50, 0.3)',
-          }}
-        >
-          MEDIA
-        </motion.h2>
+      <div className="container mx-auto max-w-4xl">
 
+        {/* Section heading — consistent with other App sections */}
         <motion.div
-          className="relative bg-black border border-primary/30 p-6 cursor-pointer hover:border-accent/50 transition-colors"
-          whileHover={{ scale: 1.01 }}
-          onClick={handleOpen}
+          initial={{ opacity: 0, x: -30, filter: 'blur(10px)', clipPath: 'polygon(0 0, 0 0, 0 100%, 0 100%)' }}
+          whileInView={{ opacity: 1, x: 0, filter: 'blur(0px)', clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' }}
+          viewport={{ once: true }}
+          transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
         >
-          <HudCorners />
-          <div className="flex items-center justify-between">
-            <div className="font-mono">
-              <div className="text-accent text-sm tracking-wider mb-1">
-                PRESS KITS · LOGOS · ASSETS
-              </div>
-              <div className="text-foreground/50 text-xs tracking-wider">
-                {mediaFiles.length} FILE{mediaFiles.length !== 1 ? 'S' : ''}{' '}
-                AVAILABLE
-              </div>
-            </div>
-            <DownloadSimple className="w-6 h-6 text-accent/60" />
+          <div className="flex items-center justify-between mb-12">
+            <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build" data-text="MEDIA">
+              MEDIA
+            </h2>
+            {editMode && onUpdate && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setEditOpen(true)}
+                className="gap-2 border-primary/30 font-mono tracking-wider text-xs shrink-0"
+              >
+                <PencilSimple className="w-4 h-4" />
+                MANAGE FILES
+              </Button>
+            )}
           </div>
         </motion.div>
 
-        {editMode && onUpdate && (
-          <div className="flex justify-end mt-3">
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2 border-primary/30 font-mono tracking-wider text-xs"
-              onClick={() => setEditOpen(true)}
-            >
-              <PencilSimple className="w-4 h-4" />
-              EDIT MEDIA
-            </Button>
+        {/* HUD trigger box */}
+        <motion.div
+          className="relative border border-primary/30 bg-card/40 p-6 cursor-pointer hover:border-primary/60 hover:bg-primary/5 transition-all group"
+          whileHover={{ scale: 1.005 }}
+          onClick={() => {
+            if (mediaFiles.length === 0) {
+              if (editMode && onUpdate) setEditOpen(true)
+            }
+          }}
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
+          <HudCorner pos="tl" /><HudCorner pos="tr" /><HudCorner pos="bl" /><HudCorner pos="br" />
+
+          <div className="flex items-center justify-between">
+            <div className="font-mono">
+              <div className="data-label mb-1">// PRESS KITS · LOGOS · ASSETS</div>
+              <div className="text-foreground/50 text-sm tracking-wider">
+                {mediaFiles.length === 0
+                  ? editMode ? 'CLICK TO ADD FILES' : 'NO FILES AVAILABLE'
+                  : `${mediaFiles.length} FILE${mediaFiles.length !== 1 ? 'S' : ''} AVAILABLE`
+                }
+              </div>
+            </div>
+            <DownloadSimple className="w-6 h-6 text-accent/50 group-hover:text-accent transition-colors" />
           </div>
+        </motion.div>
+
+        {/* File grid */}
+        {mediaFiles.length > 0 && (
+          <motion.div
+            className="mt-6 space-y-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            {/* Root files */}
+            {rootFiles.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {rootFiles.map((f) => (
+                  <FileCard key={f.id} file={f} onClick={() => handleOpen(f)} />
+                ))}
+              </div>
+            )}
+
+            {/* Folders */}
+            {folders.map((folder) => (
+              <div key={folder}>
+                <div className="flex items-center gap-2 mb-3">
+                  <FolderOpen className="w-4 h-4 text-accent/60" />
+                  <span className="data-label">// {folder.toUpperCase()}</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-4 border-l border-border/30">
+                  {folderMap[folder].map((f) => (
+                    <FileCard key={f.id} file={f} onClick={() => handleOpen(f)} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </motion.div>
         )}
       </div>
 
       <AnimatePresence>
-        {overlayOpen && (
-          <MediaOverlay
-            files={mediaFiles}
-            onClose={() => setOverlayOpen(false)}
-          />
+        {overlayFile && (
+          <MediaOverlay file={overlayFile} onClose={() => setOverlayFile(null)} />
         )}
       </AnimatePresence>
 

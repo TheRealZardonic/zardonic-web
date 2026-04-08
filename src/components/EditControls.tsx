@@ -26,6 +26,7 @@ interface EditControlsProps {
   onOpenContactInbox?: () => void
   onOpenSubscriberList?: () => void
   onUpdateSiteData?: (updater: SiteData | ((current: SiteData) => SiteData)) => void
+  onLogout?: () => Promise<void>
 }
 
 export default function EditControls({
@@ -46,6 +47,7 @@ export default function EditControls({
   onOpenContactInbox,
   onOpenSubscriberList,
   onUpdateSiteData,
+  onLogout,
 }: EditControlsProps) {
   const [adminPanelOpen, setAdminPanelOpen] = useState(false)
   const [showLoginDialog, setShowLoginDialog] = useState(false)
@@ -132,6 +134,7 @@ export default function EditControls({
           hasPassword={hasPassword}
           onChangePassword={onChangePassword}
           onSetPassword={onSetPassword}
+          onLogout={onLogout}
         />
       </Suspense>
 

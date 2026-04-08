@@ -47,7 +47,7 @@ export default function CyberpunkBackground({ hudTexts }: CyberpunkBackgroundPro
       <div className="absolute inset-0 hud-grid-overlay" />
       
       {/* HUD Data readouts */}
-      <div className="absolute top-4 left-4 data-readout hidden md:block">
+      <div className="absolute top-28 left-4 data-readout hidden md:block">
         <div className="mb-1">{hudTexts?.topLeft1 ?? 'SYSTEM: ONLINE'}</div>
         <div>{hudTexts?.topLeft2 !== undefined ? hudTexts.topLeft2 : `TIME: ${formatTime(time)}`}</div>
         <div className="mt-1 flex items-center gap-2">
@@ -56,18 +56,18 @@ export default function CyberpunkBackground({ hudTexts }: CyberpunkBackgroundPro
         </div>
       </div>
 
-      <div className="absolute top-4 right-4 data-readout hidden md:block text-right">
+      <div className="absolute top-28 right-4 data-readout hidden md:block text-right">
         <div className="mb-1">{hudTexts?.topRight1 ?? 'NEUROKLAST v1.0'}</div>
         <div>{hudTexts?.topRight2 ?? `ID: NK-${nodeId}`}</div>
       </div>
 
       <div className="absolute bottom-4 left-4 data-readout hidden md:block">
-        <div>{hudTexts?.bottomLeft1 ?? 'PROTOCOL: TECHNO'}</div>
+        <div>{hudTexts?.bottomLeft1 ?? 'PROTOCOL: DIGICIDE'}</div>
         <div className="mt-1">{hudTexts?.bottomLeft2 ?? 'STATUS: TRANSMITTING'}</div>
       </div>
 
       <div className="absolute bottom-4 right-4 data-readout hidden md:block text-right">
-        <div>{hudTexts?.bottomRight1 ?? 'FREQ: 140-180 BPM'}</div>
+        <div>{hudTexts?.bottomRight1 ?? 'FREQ: 175 BPM'}</div>
         <div className="mt-1">{hudTexts?.bottomRight2 ?? 'MODE: HARD'}</div>
       </div>
 

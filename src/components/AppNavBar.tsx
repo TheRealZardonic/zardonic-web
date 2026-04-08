@@ -1,8 +1,7 @@
 import React from 'react'
 import logoImage from '@/assets/images/meta_eyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ==.webp'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Button } from '@/components/ui/button'
-import { Pencil, List, X } from '@phosphor-icons/react'
+import { List, X } from '@phosphor-icons/react'
 
 interface AppNavBarProps {
   artistName: string
@@ -18,11 +17,11 @@ interface AppNavBarProps {
 
 export default function AppNavBar({
   artistName,
-  editMode,
-  isOwner,
-  setEditMode,
-  hasPassword,
-  setShowLoginDialog,
+  editMode: _editMode,
+  isOwner: _isOwner,
+  setEditMode: _setEditMode,
+  hasPassword: _hasPassword,
+  setShowLoginDialog: _setShowLoginDialog,
   mobileMenuOpen,
   setMobileMenuOpen,
   scrollToSection,
@@ -60,24 +59,6 @@ export default function AppNavBar({
         </div>
 
         <div className="flex items-center gap-4">
-          {isOwner ? (
-            <Button
-              size="sm"
-              variant={editMode ? 'default' : 'outline'}
-              onClick={() => setEditMode(!editMode)}
-            >
-              <Pencil className="w-4 h-4" />
-            </Button>
-          ) : hasPassword ? (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setShowLoginDialog(true)}
-            >
-              Login
-            </Button>
-          ) : null}
-          
           <button
             className="md:hidden text-foreground"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}

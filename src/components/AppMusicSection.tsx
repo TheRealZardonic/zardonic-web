@@ -49,6 +49,7 @@ export default function AppMusicSection({
                 glitchIntervalMs={adminSettings?.glitchTextSettings?.intervalMs}
                 glitchDurationMs={adminSettings?.glitchTextSettings?.durationMs}
               />
+              {adminSettings?.animations?.blinkingCursor !== false && <span className="animate-pulse">_</span>}
             </h2>
 
             <Card className="p-0 bg-card border-border relative cyber-card hover-noise overflow-hidden">

@@ -39,6 +39,9 @@ export function useAppTheme(adminSettings: AdminSettings | undefined): void {
     if (t.fontHeading) root.style.setProperty('--font-heading', t.fontHeading)
     if (t.fontBody) root.style.setProperty('--font-body', t.fontBody)
     if (t.fontMono) root.style.setProperty('--font-mono', t.fontMono)
+    if (t.dataLabelColor) root.style.setProperty('--data-label-color', t.dataLabelColor)
+    if (t.dataLabelFontSize) root.style.setProperty('--data-label-font-size', t.dataLabelFontSize)
+    if (t.dataLabelFontFamily) root.style.setProperty('--data-label-font-family', t.dataLabelFontFamily)
 
     return () => {
       root.style.removeProperty('--primary')
@@ -66,6 +69,9 @@ export function useAppTheme(adminSettings: AdminSettings | undefined): void {
       root.style.removeProperty('--font-heading')
       root.style.removeProperty('--font-body')
       root.style.removeProperty('--font-mono')
+      root.style.removeProperty('--data-label-color')
+      root.style.removeProperty('--data-label-font-size')
+      root.style.removeProperty('--data-label-font-family')
     }
   }, [adminSettings?.theme])
 

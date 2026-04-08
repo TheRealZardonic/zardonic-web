@@ -77,6 +77,7 @@ function App() {
     isOwner,
     needsSetup,
     handleAdminLogin: _handleAdminLogin,
+    handleAdminLogout,
     handleSetupAdminPassword,
     handleChangeAdminPassword,
   } = useAdminAuth()
@@ -326,6 +327,8 @@ function App() {
         sectionOrder={getSectionOrder('creditHighlights')}
         visible={vis.creditHighlights !== false}
         sectionLabel={sectionLabels.creditHighlights || ''}
+        onLabelChange={editMode ? handleLabelChange : undefined}
+        onUpdateSiteData={editMode ? handleUpdateSiteData : undefined}
       />
       </SectionErrorBoundary>
 
@@ -393,6 +396,16 @@ function App() {
           description: f.size,
         })) || []}
         editMode={editMode}
+        onUpdate={editMode ? (files) => handleUpdateSiteData(prev => ({
+          ...prev,
+          mediaFiles: files.map(f => ({
+            id: f.id,
+            name: f.name,
+            url: f.url,
+            type: f.type === 'audio' || f.type === 'youtube' ? f.type : ('download' as 'download'),
+            size: f.description ?? '',
+          })),
+        })) : undefined}
       />
       </SectionErrorBoundary>
       </div>
@@ -417,6 +430,9 @@ function App() {
           contactSettings={contactSettings}
           editMode={editMode}
           sectionLabels={sectionLabels}
+          onLabelChange={editMode ? handleLabelChange : undefined}
+          adminSettings={adminSettings}
+          onUpdate={(cs) => handleUpdateAdminSettings({ ...(adminSettings || {}), contactSettings: cs })}
         />
         </SectionErrorBoundary>
       )}
@@ -483,6 +499,7 @@ function App() {
           onOpenContactInbox={() => setShowContactInbox(true)}
           onOpenSubscriberList={() => setShowSubscriberList(true)}
           onUpdateSiteData={handleUpdateSiteData}
+          onLogout={handleAdminLogout}
         />
       )}
 

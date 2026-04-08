@@ -22,6 +22,7 @@ import {
   Warning,
   ArrowCounterClockwise,
   Monitor,
+  SignOut,
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -66,6 +67,7 @@ interface AdminPanelProps {
   hasPassword: boolean
   onChangePassword: (password: string) => Promise<void>
   onSetPassword: (password: string) => Promise<void>
+  onLogout?: () => Promise<void>
 }
 
 
@@ -89,6 +91,7 @@ export default function AdminPanel({
   hasPassword,
   onChangePassword,
   onSetPassword,
+  onLogout,
 }: AdminPanelProps) {
   const [activeTab, setActiveTab] = useState('overview')
   const [showPasswordDialog, setShowPasswordDialog] = useState(false)
@@ -286,9 +289,9 @@ export default function AdminPanel({
     <AnimatePresence>
       {open && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop — only on mobile; on desktop the panel slides in without darkening the page */}
           <motion.div
-            className="fixed inset-0 z-[9997] bg-black/70 backdrop-blur-sm"
+            className="fixed inset-0 z-[9997] bg-black/70 backdrop-blur-sm md:hidden"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -326,13 +329,25 @@ export default function AdminPanel({
                   {editMode ? 'EDIT MODE' : 'VIEW MODE'}
                 </span>
               </div>
-              <button
-                onClick={onClose}
-                className="text-muted-foreground hover:text-foreground transition-colors p-1"
-                aria-label="Close admin panel"
-              >
-                <X size={20} />
-              </button>
+              <div className="flex items-center gap-1">
+                {onLogout && (
+                  <button
+                    onClick={async () => { await onLogout(); onClose() }}
+                    className="text-muted-foreground hover:text-destructive transition-colors p-1"
+                    aria-label="Logout"
+                    title="Logout"
+                  >
+                    <SignOut size={18} />
+                  </button>
+                )}
+                <button
+                  onClick={onClose}
+                  className="text-muted-foreground hover:text-foreground transition-colors p-1"
+                  aria-label="Close admin panel"
+                >
+                  <X size={20} />
+                </button>
+              </div>
             </div>
 
             {/* Tabs */}

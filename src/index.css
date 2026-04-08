@@ -1263,11 +1263,11 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .data-label {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 10px;
+  font-family: var(--data-label-font-family, 'Share Tech Mono', monospace);
+  font-size: var(--data-label-font-size, 10px);
   text-transform: uppercase;
   letter-spacing: 2px;
-  color: var(--accent);
+  color: var(--data-label-color, var(--accent));
   opacity: 0.7;
 }
 

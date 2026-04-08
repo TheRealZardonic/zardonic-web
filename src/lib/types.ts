@@ -66,6 +66,11 @@ export interface ThemeCustomization {
   fontBody?: string
   fontMono?: string
   fontSizes?: Record<string, string>
+
+  // Data-label (small red annotation text like "// CREDIT.HIGHLIGHTS")
+  dataLabelColor?: string
+  dataLabelFontSize?: string
+  dataLabelFontFamily?: string
 }
 
 export type BackgroundType = 'circuit' | 'cyberpunk-hud' | 'matrix' | 'stars' | 'minimal'
@@ -80,6 +85,7 @@ export interface AnimationSettings {
   crtOverlayOpacity?: number
   crtVignetteOpacity?: number
   backgroundType?: BackgroundType
+  blinkingCursor?: boolean
 }
 
 export interface LoaderTexts {
