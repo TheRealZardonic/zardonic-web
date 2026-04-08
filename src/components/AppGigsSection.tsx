@@ -55,8 +55,7 @@ export default function AppGigsSection({ gigs, sectionOrder, visible, editMode, 
         <div className="container mx-auto max-w-6xl">
           <motion.div
             initial={{ opacity: 0, x: -30, filter: 'blur(10px)', clipPath: 'polygon(0 0, 0 0, 0 100%, 0 100%)' }}
-            whileInView={{ opacity: 1, x: 0, filter: 'blur(0px)', clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' }}
-            viewport={{ once: true }}
+            animate={{ opacity: 1, x: 0, filter: 'blur(0px)', clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' }}
             transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
           >
             <div className="flex items-center justify-between mb-12 flex-wrap gap-4">
@@ -149,8 +148,7 @@ export default function AppGigsSection({ gigs, sectionOrder, visible, editMode, 
                   <motion.div
                     key={gig.id}
                     initial={{ opacity: 0, x: -50, clipPath: 'polygon(0 0, 0 0, 0 100%, 0 100%)' }}
-                    whileInView={{ opacity: 1, x: 0, clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' }}
-                    viewport={{ once: true }}
+                    animate={{ opacity: 1, x: 0, clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' }}
                     transition={{
                       duration: 0.8,
                       delay: index * 0.1,
