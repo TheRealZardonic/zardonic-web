@@ -299,7 +299,16 @@ export default function AdminPanel({
 
 
 
-  const isDesktop = typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches
+  const [isDesktop, setIsDesktop] = useState(
+    typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches,
+  )
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const mql = window.matchMedia('(min-width: 768px)')
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches)
+    mql.addEventListener('change', handler)
+    return () => mql.removeEventListener('change', handler)
+  }, [])
 
   return (
     <AnimatePresence>
@@ -808,7 +817,9 @@ export default function AdminPanel({
                       const a = document.createElement('a')
                       a.href = url
                       a.download = 'translations.json'
+                      document.body.appendChild(a)
                       a.click()
+                      document.body.removeChild(a)
                       URL.revokeObjectURL(url)
                     }}
                     className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/30 rounded font-mono text-xs text-primary hover:bg-primary/20 transition-colors"
@@ -840,9 +851,9 @@ export default function AdminPanel({
                     </p>
                     <button
                       onClick={() => {
-                        const updated = { ...adminSettings }
+                        const updated = { ...(adminSettings ?? {}) }
                         delete updated.customTranslations
-                        setAdminSettings(updated)
+                        setAdminSettings?.(updated)
                       }}
                       className="flex items-center gap-2 px-3 py-1.5 bg-destructive/10 border border-destructive/30 rounded font-mono text-xs text-destructive hover:bg-destructive/20 transition-colors"
                     >
@@ -883,12 +894,14 @@ export default function AdminPanel({
               const reader = new FileReader()
               reader.onload = (ev) => {
                 try {
-                  const data = JSON.parse(ev.target?.result as string)
+                  const result = ev.target?.result
+                  if (typeof result !== 'string') return
+                  const data = JSON.parse(result)
                   if (typeof data !== 'object' || data === null || Array.isArray(data)) {
                     throw new Error('invalid')
                   }
                   const existing = adminSettings?.customTranslations ?? {}
-                  setAdminSettings({ ...adminSettings, customTranslations: { ...existing, ...data } })
+                  setAdminSettings?.({ ...(adminSettings ?? {}), customTranslations: { ...existing, ...data } })
                   toast.success('Translations imported successfully!')
                 } catch {
                   toast.error('Invalid translation file format. Please upload a valid JSON file.')

@@ -6,6 +6,8 @@ const kv = new Proxy({} as ReturnType<typeof getRedis>, {
 import { randomUUID } from 'node:crypto'
 import { applyRateLimit } from './_ratelimit.js'
 import { validateSession } from './auth.js'
+import { z } from 'zod'
+
 interface ContactMessage {
   id: string
   name: string
@@ -19,7 +21,6 @@ interface ContactMessage {
 const KV_KEY = 'contact-messages'
 const MAX_CONTACT_MESSAGES = 500 // Safety cap against storage exhaustion DoS
 
-
 /** HTML entity escaping to prevent XSS */
 function esc(str: string | undefined): string {
   if (!str) return ''
@@ -31,7 +32,12 @@ function esc(str: string | undefined): string {
     .replace(/'/g, '&#39;')
 }
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const contactInputSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(100, 'Name must be 1-100 characters'),
+  email: z.string().email('A valid email address is required').max(254),
+  subject: z.string().min(1, 'Subject is required').max(200, 'Subject must be 1-200 characters'),
+  message: z.string().min(1, 'Message is required').max(5000, 'Message must be 1-5000 characters'),
+})
 
 interface ValidationResult {
   error?: string
@@ -39,25 +45,17 @@ interface ValidationResult {
 }
 
 function validateContactInput(body: Record<string, unknown> | undefined): ValidationResult {
-  const { name, email, subject, message } = body || {}
-  if (!name || typeof name !== 'string' || name.trim().length < 1 || name.trim().length > 100) {
-    return { error: 'Name is required and must be 1-100 characters.' }
-  }
-  if (!email || typeof email !== 'string' || !EMAIL_RE.test(email.trim()) || email.trim().length > 254) {
-    return { error: 'A valid email address is required.' }
-  }
-  if (!subject || typeof subject !== 'string' || subject.trim().length < 1 || subject.trim().length > 200) {
-    return { error: 'Subject is required and must be 1-200 characters.' }
-  }
-  if (!message || typeof message !== 'string' || message.trim().length < 1 || message.trim().length > 5000) {
-    return { error: 'Message is required and must be 1-5000 characters.' }
+  const parsed = contactInputSchema.safeParse(body)
+  if (!parsed.success) {
+    const first = parsed.error.issues[0]
+    return { error: first?.message ?? 'Invalid input' }
   }
   return {
     data: {
-      name: esc(name.trim().slice(0, 100)),
-      email: esc(email.trim().slice(0, 254)),
-      subject: esc(subject.trim().slice(0, 200)),
-      message: esc(message.trim().slice(0, 5000)),
+      name: parsed.data.name.trim(),
+      email: parsed.data.email.trim(),
+      subject: parsed.data.subject.trim(),
+      message: parsed.data.message.trim(),
     },
   }
 }
@@ -93,9 +91,11 @@ async function sendEmailNotification({ name, email, subject, message }: { name: 
   }
 }
 
-// OWASP A01:2021 – Broken Access Control: restrict CORS to the configured origin
-// instead of a wildcard so arbitrary third-party sites cannot POST contact messages.
-const CORS_ORIGIN = process.env.ALLOWED_ORIGIN || '*'
+// OWASP A01:2021 – Broken Access Control: restrict CORS to the configured origin.
+// In production, require ALLOWED_ORIGIN to be explicitly set. Defaulting to '*'
+// allows any website to silently submit contact forms on behalf of visitors.
+const CORS_ORIGIN = process.env.ALLOWED_ORIGIN ||
+  (process.env.VERCEL_ENV === 'production' ? 'null' : '*')
 
 function setCorsHeaders(res: VercelResponse): void {
   res.setHeader('Access-Control-Allow-Origin', CORS_ORIGIN)

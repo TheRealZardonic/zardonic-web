@@ -106,13 +106,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       // Allow-list: only explicitly listed keys are publicly readable.
       // All other keys require a valid session to prevent leakage
       // of sensitive data stored under arbitrary key names.
+      // validateSession is called exactly once per request and the result
+      // is reused for both the auth gate and the selective field-stripping logic.
       const isPublicRead = ALLOWED_PUBLIC_READ_KEYS.has(key)
-      const isAuthenticated = isPublicRead ? await validateSession(req) : null
-      if (!isPublicRead) {
-        const sessionValid = await validateSession(req)
-        if (!sessionValid) {
-          return res.status(403).json({ error: 'Forbidden' })
-        }
+      const isAuthenticated = await validateSession(req)
+      if (!isPublicRead && !isAuthenticated) {
+        return res.status(403).json({ error: 'Forbidden' })
       }
 
       const value = await kv.get(key)
@@ -227,6 +226,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         }
 
         await kv.set(key, sanitized)
+        return res.json({ success: true })
+      }
+
+      // Preserve fields stripped from public reads of admin:settings.
+      // An unauthenticated page load receives admin:settings without
+      // terminalCommands, configOverrides, and contactInfo.emailForwardTo.
+      // Without this merge an admin who visits the page before logging in
+      // and then saves any setting would permanently delete those fields.
+      if (key === 'admin:settings' && value && typeof value === 'object' && !Array.isArray(value)) {
+        const incoming = value as Record<string, unknown>
+        try {
+          const existing = await kv.get<Record<string, unknown>>(key)
+          if (existing && typeof existing === 'object') {
+            for (const field of ['terminalCommands', 'configOverrides'] as const) {
+              if (!(field in incoming) && field in existing) {
+                incoming[field] = existing[field]
+              }
+            }
+            // Preserve contactInfo.emailForwardTo
+            if (existing.contactInfo && typeof existing.contactInfo === 'object') {
+              const existingCi = existing.contactInfo as Record<string, unknown>
+              if ('emailForwardTo' in existingCi) {
+                if (!incoming.contactInfo || typeof incoming.contactInfo !== 'object') {
+                  incoming.contactInfo = { ...existingCi }
+                } else {
+                  const incomingCi = incoming.contactInfo as Record<string, unknown>
+                  if (!('emailForwardTo' in incomingCi)) {
+                    incomingCi.emailForwardTo = existingCi.emailForwardTo
+                  }
+                }
+              }
+            }
+          }
+        } catch (preserveErr) {
+          console.warn('admin:settings field preservation failed — writing incoming value as-is:', preserveErr instanceof Error ? preserveErr.message : preserveErr)
+        }
+        await kv.set(key, incoming)
         return res.json({ success: true })
       }
 

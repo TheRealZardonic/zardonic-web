@@ -54,7 +54,7 @@ All API inputs are validated through strict [Zod](https://zod.dev/) schemas (`ap
 
 ### Rate Limiting
 All API endpoints are protected by rate limiting (`api/_ratelimit.ts`):
-- **Algorithm**: Sliding window — 5 requests per 10 seconds per client
+- **Algorithm**: Sliding window — 30 requests per 60 seconds per client
 - **Backend**: Upstash Redis (`@upstash/redis`)
 - **GDPR Compliance**: Client IPs are hashed with SHA-256 + a secret salt before use as rate-limit keys. No plaintext IPs are stored. Rate-limit state auto-expires after the window period.
 - **Response**: HTTP 429 `Too Many Requests` when the limit is exceeded
@@ -130,11 +130,13 @@ Critical security events trigger immediate Discord webhook notifications (`api/_
 
 ## KV Key Namespacing (Zardonic)
 
-All Redis keys use the `zd-` prefix to namespace Zardonic data:
+Most Redis keys use the `zd-` prefix to namespace Zardonic data. Session
+tokens are an exception — they use the bare `session:*` prefix (as
+implemented in `api/auth.ts`).
 
 | Key | Purpose |
 |---|---|
-| `zd-session:*` | Admin session tokens (4h TTL) |
+| `session:*` | Admin session tokens (4h TTL) |
 | `zd-threat:*` | Threat scores per hashed IP (1h TTL) |
 | `zd-blocked:*` | Hard-blocked IPs (7d default TTL) |
 | `zd-blocked-index` | Set index of all blocked hashes |
@@ -143,7 +145,6 @@ All Redis keys use the `zd-` prefix to namespace Zardonic data:
 | `zd-honeytoken-alerts` | Security incident log (last 500) |
 | `zd-flagged:*` | IPs flagged for entropy injection (24h TTL) |
 | `zd-admin-totp-secret` | TOTP 2FA secret (permanent) |
-| `zardonic-band-data` | Public site content (public read) |
 
 ## Environment Variables
 
@@ -166,3 +167,10 @@ All Redis keys use the `zd-` prefix to namespace Zardonic data:
 5. **HTTPS**: Always deploy behind HTTPS (HSTS header enforced via vercel.json)
 6. **Regular Updates**: Keep dependencies up to date
 7. **Log Monitoring**: Monitor `[HONEYTOKEN ALERT]` and `[ACCESS VIOLATION]` entries in server logs
+8. **CORS**: Set `ALLOWED_ORIGIN` to your production domain. If left unset, the contact, newsletter, and image-proxy endpoints will refuse cross-origin requests in production (`Access-Control-Allow-Origin: null`).
+9. **Cron Security**: Set `CRON_SECRET` to a long random string. Cron endpoints (`/api/gigs-sync`, `/api/releases-enrich`) require `Authorization: Bearer <CRON_SECRET>` from the cron scheduler. Update your `vercel.json` cron configuration accordingly if using a custom scheduler.
+
+## Third-Party Services
+
+### Sanity CMS
+The Sanity project ID (`VITE_SANITY_PROJECT_ID`) is embedded in the client bundle and referenced in `vercel.json`. Sanity datasets are **publicly readable by default**. Operators must review their Sanity dataset ACLs at https://www.sanity.io/manage and ensure no sensitive data is stored without appropriate access controls. Write access always requires authenticated API tokens (server-side only, never exposed to the client).

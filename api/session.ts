@@ -17,6 +17,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { isRedisConfigured, getRedis } from './_redis.js'
 import { randomBytes, scrypt, createHash, timingSafeEqual as cryptoTimingSafeEqual } from 'crypto'
 import { promisify } from 'util'
+import { applyRateLimit } from './_ratelimit.js'
+import { isHardBlocked } from './_blocklist.js'
 
 const scryptAsync = promisify(scrypt)
 
@@ -35,7 +37,12 @@ async function hashPasswordScrypt(password: string): Promise<string> {
  */
 async function verifyPassword(password: string, stored: string): Promise<boolean> {
   if (!stored.startsWith('scrypt:')) {
-    // Legacy SHA-256
+    // Legacy SHA-256 migration path — only reached when an old SHA-256 hash is
+    // still stored in KV. The caller (POST handler, see ~line 125) immediately
+    // rehashes to scrypt on successful verification, so this branch is
+    // self-eliminating. New accounts always use scrypt (hashPasswordScrypt).
+    // This branch exists solely to allow existing users to log in once and have
+    // their password upgraded automatically.
     const hash = createHash('sha256').update(password).digest('hex')
     const a = Buffer.from(hash, 'utf8')
     const b = Buffer.from(stored, 'utf8')
@@ -72,6 +79,18 @@ const SESSION_TTL = 24 * 60 * 60 // 24 hours (legacy; new auth.ts uses 4h)
  * PUT    /api/session - Setup initial password (initial setup only)
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method === 'OPTIONS') return res.status(200).end()
+
+  // Hard-block check — reject immediately blocked IPs
+  const blocked = await isHardBlocked(req)
+  if (blocked) {
+    return res.status(403).json({ error: 'FORBIDDEN' })
+  }
+
+  // Rate limiting — prevents brute-force attacks on the login endpoint
+  const allowed = await applyRateLimit(req, res)
+  if (!allowed) return
+
   if (!isRedisConfigured()) {
     return res.status(503).json({
       error: 'Service unavailable',
@@ -83,7 +102,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     // POST: Login with password
     if (req.method === 'POST') {
-      const { password } = req.body as { password?: string }
+      const body = req.body as Record<string, unknown>
+      const password = typeof body?.password === 'string' ? body.password : undefined
 
       if (!password) {
         return res.status(400).json({ error: 'Password required' })
@@ -125,9 +145,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })
     }
 
-    // GET: Validate session token
+    // GET: Validate session token — accept only header, never query param
+    // (query params appear in access logs and browser history)
     if (req.method === 'GET') {
-      const token = (req.headers['x-session-token'] as string) || (req.query.token as string)
+      const token = req.headers['x-session-token'] as string | undefined
 
       if (!token) {
         return res.status(401).json({ error: 'No session token provided' })
@@ -169,7 +190,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // PUT: Setup initial password (scrypt)
     if (req.method === 'PUT') {
-      const { password } = req.body as { password?: string }
+      const body = req.body as Record<string, unknown>
+      const password = typeof body?.password === 'string' ? body.password : undefined
 
       if (!password) {
         return res.status(400).json({ error: 'Password required' })

@@ -74,29 +74,19 @@ describe('loginWithPassword()', () => {
     expect(result.totpRequired).toBe(true)
   })
 
-  it('falls back to legacy /api/session on non-200 from /api/auth', async () => {
-    mockFetch
-      .mockResolvedValueOnce(errorResponse(401, { error: 'Unauthorized' }))
-      .mockResolvedValueOnce(jsonResponse({ token: 'legacytoken' }))
-    const result = await loginWithPassword('pw')
-    expect(result.success).toBe(true)
-    expect(localStorage.getItem('admin-token')).toBe('legacytoken')
-  })
-
-  it('stores legacy token in localStorage when /api/session returns one', async () => {
-    mockFetch
-      .mockResolvedValueOnce(errorResponse(401, {}))
-      .mockResolvedValueOnce(jsonResponse({ token: 'tok123' }))
-    await loginWithPassword('pw')
-    expect(localStorage.getItem('admin-token')).toBe('tok123')
-  })
-
-  it('returns success:false with error on total failure', async () => {
+  it('returns success:false with error on /api/auth failure', async () => {
     mockFetch
       .mockResolvedValueOnce(errorResponse(401, { error: 'Invalid password' }))
-      .mockResolvedValueOnce(errorResponse(401, {})) // legacy also fails
     const result = await loginWithPassword('wrong')
     expect(result.success).toBe(false)
+    expect(result.error).toBe('Invalid password')
+  })
+
+  it('does not call legacy /api/session endpoint', async () => {
+    mockFetch.mockResolvedValueOnce(errorResponse(401, { error: 'Unauthorized' }))
+    await loginWithPassword('pw')
+    const legacyCall = mockFetch.mock.calls.find(c => c[0] === '/api/session')
+    expect(legacyCall).toBeUndefined()
   })
 
   it('returns network error on fetch exception', async () => {
@@ -134,12 +124,9 @@ describe('validateSession()', () => {
   })
 
   it('falls back to legacy token on /api/auth 4xx', async () => {
-    localStorage.setItem('admin-token', 'legacytok')
-    mockFetch
-      .mockResolvedValueOnce(errorResponse(401, {})) // /api/auth fails
-      .mockResolvedValueOnce(jsonResponse({ valid: true })) // /api/session succeeds
+    mockFetch.mockResolvedValueOnce(errorResponse(401, {}))
     const result = await validateSession()
-    expect(result.authenticated).toBe(true)
+    expect(result.authenticated).toBe(false)
   })
 
   it('returns authenticated:false when both auth systems fail', async () => {
@@ -173,21 +160,11 @@ describe('logout()', () => {
     expect(deleteCall![0]).toBe('/api/auth')
   })
 
-  it('clears admin-token from localStorage', async () => {
-    localStorage.setItem('admin-token', 'tok')
+  it('does not call legacy /api/session on logout', async () => {
     mockFetch.mockResolvedValue(jsonResponse({ success: true }))
     await logout()
-    expect(localStorage.getItem('admin-token')).toBeNull()
-  })
-
-  it('also deletes legacy session when token exists', async () => {
-    localStorage.setItem('admin-token', 'legacytok')
-    mockFetch.mockResolvedValue(jsonResponse({ success: true }))
-    await logout()
-    const legacyDeleteCall = mockFetch.mock.calls.find(
-      c => c[0] === '/api/session' && c[1]?.method === 'DELETE'
-    )
-    expect(legacyDeleteCall).toBeDefined()
+    const legacyCall = mockFetch.mock.calls.find(c => c[0] === '/api/session')
+    expect(legacyCall).toBeUndefined()
   })
 
   it('does not throw when fetch fails', async () => {
@@ -226,21 +203,12 @@ describe('setupPassword()', () => {
     expect(await setupPassword('newpassword123')).toBe(true)
   })
 
-  it('falls back to PUT /api/session on failure', async () => {
-    mockFetch
-      .mockResolvedValueOnce(errorResponse(409, {}))
-      .mockResolvedValueOnce(jsonResponse({ success: true }))
+  it('returns false when /api/auth fails', async () => {
+    mockFetch.mockResolvedValueOnce(errorResponse(409, {}))
     const result = await setupPassword('newpassword123')
-    expect(result).toBe(true)
+    expect(result).toBe(false)
     const legacyCall = mockFetch.mock.calls.find(c => c[0] === '/api/session' && c[1]?.method === 'PUT')
-    expect(legacyCall).toBeDefined()
-  })
-
-  it('returns false when both endpoints fail', async () => {
-    mockFetch
-      .mockResolvedValueOnce(errorResponse(409, {}))
-      .mockResolvedValueOnce(errorResponse(400, {}))
-    expect(await setupPassword('newpassword123')).toBe(false)
+    expect(legacyCall).toBeUndefined()
   })
 
   it('returns false on network error', async () => {

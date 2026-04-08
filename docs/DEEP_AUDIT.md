@@ -23,13 +23,13 @@ This document records the findings of a comprehensive deep-audit of the Zardonic
 
 ## A. Architecture Analysis
 
-### A-01 🔴 God Object — `src/App.tsx` (3 638 lines)
+### A-01 🟠 God Object — `src/App.tsx` (726 lines)
 
 - **File:** `src/App.tsx`
-- **Size:** 196 961 bytes · ~3 638 lines
-- **Finding:** `App.tsx` aggregates every piece of application state, every dialog, every section, every handler, and the entire layout in a single component. This is a classic **God Object** anti-pattern.
-- **Impact:** Any change risks unintended side-effects across the whole application. The file is impossible to review, test, or onboard new engineers to in a reasonable time.
-- **Recommendation:** Decompose into feature modules (e.g., `features/admin/`, `features/sections/`, `features/security/`). Extract state into dedicated contexts or a state-management library. Aim for <300 lines per component.
+- **Size:** ~726 lines (significantly reduced from original 3 638 lines)
+- **Finding:** `App.tsx` still manages multiple concerns: loading screen state, admin auth state, site data sync, all dialog open/close state (12+ boolean flags), section rendering order, edit mode, and konami activation. This still violates Single Responsibility.
+- **Status:** Substantially improved — down from 3 638 to 726 lines. Key improvements: lazy-loading admin panel, hook extraction, context separation. Remaining work: `AdminDialogManager`, `SiteDataProvider`, `AuthProvider` contexts.
+- **Recommendation:** Extract remaining concerns into dedicated components/contexts. Aim for <300 lines per component.
 
 ---
 

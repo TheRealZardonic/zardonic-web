@@ -6,6 +6,7 @@
  * GET /api/admin/logs/:id
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { applyRateLimit } from '../../_ratelimit.js'
 
 function randomHex(len: number): string {
   const chars = '0123456789abcdef'
@@ -34,6 +35,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     res.status(405).json({ error: 'Method not allowed' })
     return
   }
+
+  // Rate limiting prevents unlimited crawling of the honeypot maze from
+  // generating unnecessary serverless invocations and billing cost.
+  const allowed = await applyRateLimit(req, res)
+  if (!allowed) return
 
   const { id } = req.query || {}
   const numericId = parseInt(id as string, 10) || Math.floor(Math.random() * 100000)

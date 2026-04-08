@@ -12,6 +12,12 @@ vi.mock('@upstash/redis', () => ({
   },
 }))
 
+// Mock validateSession so we can control auth state in tests
+const mockValidateSession = vi.fn()
+vi.mock('../../api/auth.js', () => ({
+  validateSession: (...args: unknown[]) => mockValidateSession(...args),
+}))
+
 // ---------------------------------------------------------------------------
 // Helper types
 // ---------------------------------------------------------------------------
@@ -38,6 +44,7 @@ const { default: handler } = await import('../../api/health.js')
 describe('Health endpoint — ok status', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockValidateSession.mockResolvedValue(true) // authenticated by default
     process.env.UPSTASH_REDIS_REST_URL = 'https://fake-redis.upstash.io'
     process.env.UPSTASH_REDIS_REST_TOKEN = 'fake-token'
     process.env.SPOTIFY_CLIENT_ID = 'test-client-id'
@@ -81,12 +88,25 @@ describe('Health endpoint — ok status', () => {
     expect(() => new Date(body.timestamp)).not.toThrow()
     expect(new Date(body.timestamp).toISOString()).toBe(body.timestamp)
   })
+
+  it('omits services when unauthenticated', async () => {
+    mockValidateSession.mockResolvedValue(false)
+    mockRedisPing.mockResolvedValue('PONG')
+
+    const res = mockRes()
+    await handler(mockReq(), res as unknown as unknown as VercelResponse)
+
+    const body = res.json.mock.calls[0][0]
+    expect(body.status).toBe('ok')
+    expect(body.services).toBeUndefined()
+  })
 })
 
 // ---------------------------------------------------------------------------
 describe('Health endpoint — degraded status (KV unavailable)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockValidateSession.mockResolvedValue(true)
     process.env.UPSTASH_REDIS_REST_URL = 'https://fake-redis.upstash.io'
     process.env.UPSTASH_REDIS_REST_TOKEN = 'fake-token'
     process.env.SPOTIFY_CLIENT_ID = 'test-client-id'
@@ -124,6 +144,7 @@ describe('Health endpoint — degraded status (KV unavailable)', () => {
 describe('Health endpoint — unconfigured services', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockValidateSession.mockResolvedValue(true)
     process.env.UPSTASH_REDIS_REST_URL = 'https://fake-redis.upstash.io'
     process.env.UPSTASH_REDIS_REST_TOKEN = 'fake-token'
     delete process.env.SPOTIFY_CLIENT_ID

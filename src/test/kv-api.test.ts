@@ -227,6 +227,75 @@ describe('KV API handler', () => {
       expect(res.json).toHaveBeenCalledWith({ success: true })
     })
 
+    describe('admin:settings preservation', () => {
+      it('preserves terminalCommands from existing data when not in incoming value', async () => {
+        const existingSettings = { theme: { primaryColor: 'red' }, terminalCommands: [{ command: 'help', response: 'Help text' }] }
+        mockKvGet.mockResolvedValue(existingSettings)
+        mockKvSet.mockResolvedValue('OK')
+        const res = mockRes()
+        await handler({
+          method: 'POST',
+          query: {},
+          body: { key: 'admin:settings', value: { theme: { primaryColor: 'blue' } } },
+          headers: {},
+        } as unknown as VercelRequest, res as unknown as unknown as VercelResponse)
+        expect(mockKvSet).toHaveBeenCalledWith('admin:settings', expect.objectContaining({
+          theme: { primaryColor: 'blue' },
+          terminalCommands: existingSettings.terminalCommands,
+        }))
+        expect(res.json).toHaveBeenCalledWith({ success: true })
+      })
+
+      it('preserves configOverrides from existing data when not in incoming value', async () => {
+        const existingSettings = { theme: { primaryColor: 'red' }, configOverrides: { debug: true } }
+        mockKvGet.mockResolvedValue(existingSettings)
+        mockKvSet.mockResolvedValue('OK')
+        const res = mockRes()
+        await handler({
+          method: 'POST',
+          query: {},
+          body: { key: 'admin:settings', value: { theme: { primaryColor: 'green' } } },
+          headers: {},
+        } as unknown as VercelRequest, res as unknown as unknown as VercelResponse)
+        expect(mockKvSet).toHaveBeenCalledWith('admin:settings', expect.objectContaining({
+          configOverrides: { debug: true },
+        }))
+      })
+
+      it('preserves contactInfo.emailForwardTo from existing data when missing', async () => {
+        const existingSettings = { theme: {}, contactInfo: { emailForwardTo: 'admin@example.com', name: 'Admin' } }
+        mockKvGet.mockResolvedValue(existingSettings)
+        mockKvSet.mockResolvedValue('OK')
+        const res = mockRes()
+        await handler({
+          method: 'POST',
+          query: {},
+          body: { key: 'admin:settings', value: { theme: {}, contactInfo: { name: 'Updated Admin' } } },
+          headers: {},
+        } as unknown as VercelRequest, res as unknown as unknown as VercelResponse)
+        expect(mockKvSet).toHaveBeenCalledWith('admin:settings', expect.objectContaining({
+          contactInfo: expect.objectContaining({ emailForwardTo: 'admin@example.com', name: 'Updated Admin' }),
+        }))
+      })
+
+      it('does not overwrite terminalCommands when provided in incoming value', async () => {
+        const existingSettings = { terminalCommands: [{ command: 'old' }] }
+        mockKvGet.mockResolvedValue(existingSettings)
+        mockKvSet.mockResolvedValue('OK')
+        const res = mockRes()
+        const newCommands = [{ command: 'new' }]
+        await handler({
+          method: 'POST',
+          query: {},
+          body: { key: 'admin:settings', value: { terminalCommands: newCommands } },
+          headers: {},
+        } as unknown as VercelRequest, res as unknown as unknown as VercelResponse)
+        expect(mockKvSet).toHaveBeenCalledWith('admin:settings', expect.objectContaining({
+          terminalCommands: newCommands,
+        }))
+      })
+    })
+
     it('rejects write without valid session', async () => {
       vi.mocked(authMod.validateSession).mockResolvedValue(false)
       mockKvGet.mockResolvedValue(null)
