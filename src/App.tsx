@@ -296,6 +296,7 @@ function App() {
         setMobileMenuOpen={setMobileMenuOpen}
         scrollToSection={scrollToSection}
         sectionLabels={sectionLabels}
+        sectionVisibility={vis}
       />
 
       <AppHeroSection
@@ -304,6 +305,7 @@ function App() {
         scrollToSection={scrollToSection}
         artistName={siteData?.artistName ?? ''}
         adminSettings={adminSettings}
+        sectionVisibility={vis}
         onUpdateSiteData={editMode ? handleUpdateSiteData : undefined}
         siteData={siteData}
       />
@@ -374,7 +376,6 @@ function App() {
         sectionLabels={sectionLabels}
         onLabelChange={editMode ? handleLabelChange : undefined}
         onGigClick={(gig) => setCyberpunkOverlay({ type: 'gig', data: gig })}
-        onLabelChange={editMode ? handleLabelChange : undefined}
         onRefresh={editMode ? handleFetchBandsintownEvents : undefined}
       />
       </SectionErrorBoundary>
@@ -393,7 +394,6 @@ function App() {
         sectionLabels={sectionLabels}
         onLabelChange={editMode ? handleLabelChange : undefined}
         onReleaseClick={(release) => setCyberpunkOverlay({ type: 'release', data: release })}
-        onLabelChange={editMode ? handleLabelChange : undefined}
         onUpdateRelease={editMode ? (updated: FullRelease) => {
           handleUpdateSiteData(prev => ({
             ...prev,

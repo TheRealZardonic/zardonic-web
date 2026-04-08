@@ -48,6 +48,10 @@
     {
       "path": "/api/gigs-sync",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/releases-enrich",
+      "schedule": "0 3 * * *"
     }
   ]
 }

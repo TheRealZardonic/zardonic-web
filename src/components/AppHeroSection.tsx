@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Upload, Storefront, Plus, Trash, PencilSimple, Check } from '@phosphor-icons/react'
 import type { SiteData, HeroLink } from '@/lib/app-types'
-import type { AdminSettings } from '@/lib/types'
+import type { AdminSettings, SectionVisibility } from '@/lib/types'
 import { useState } from 'react'
 
 const DEFAULT_HERO_LINKS: HeroLink[] = [
@@ -19,6 +19,7 @@ interface AppHeroSectionProps {
   scrollToSection: (id: string) => void
   artistName: string
   adminSettings?: AdminSettings
+  sectionVisibility?: SectionVisibility
   onUpdateSiteData?: (updater: SiteData | ((current: SiteData) => SiteData)) => void
   siteData?: SiteData
 }
@@ -28,6 +29,7 @@ export default function AppHeroSection({
   editMode,
   scrollToSection,
   artistName,
+  sectionVisibility,
   onUpdateSiteData,
   siteData,
 }: AppHeroSectionProps) {
@@ -112,6 +114,11 @@ export default function AppHeroSection({
           className="mt-12 flex gap-4 justify-center flex-wrap"
         >
           {heroLinks.map((link) => {
+            // If this link targets a section that is explicitly hidden, don't render it
+            if (link.type === 'section' && sectionVisibility) {
+              const key = link.target as keyof SectionVisibility
+              if (sectionVisibility[key] === false) return null
+            }
             const isExternal = link.type === 'url'
             const commonClass = "uppercase font-mono hover-glitch hover-noise relative cyber-border"
             if (isExternal) {

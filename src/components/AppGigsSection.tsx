@@ -1,11 +1,14 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import EditableHeading from '@/components/EditableHeading'
-import { ArrowsClockwise, MapPin, CalendarBlank } from '@phosphor-icons/react'
+import { ArrowsClockwise, MapPin, CalendarBlank, CaretDown, CaretUp } from '@phosphor-icons/react'
 import type { AdminSettings, SectionLabels } from '@/lib/types'
 import type { Gig } from '@/lib/app-types'
+
+const INITIAL_VISIBLE = 3
 
 interface AppGigsSectionProps {
   gigs: Gig[]
@@ -23,12 +26,25 @@ interface AppGigsSectionProps {
 }
 
 export default function AppGigsSection({ gigs, sectionOrder, visible, editMode, sectionLabel, headingPrefix, adminSettings, bandsintownFetching, sectionLabels, onLabelChange, onGigClick, onRefresh }: AppGigsSectionProps) {
+  const [showAll, setShowAll] = useState(false)
+
   if (!visible) return null
 
   const loadingLabel = sectionLabels?.gigsLoadingLabel ?? '// LOADING.BANDSINTOWN.EVENTS'
   const syncingText = sectionLabels?.gigsSyncingText ?? 'SYNCING...'
   const fetchingText = sectionLabels?.gigsFetchingText ?? 'FETCHING LIVE EVENT DATA'
   const noShowsText = sectionLabels?.gigsNoShowsText ?? 'No upcoming shows - Check back soon'
+
+  // Only show future gigs (date >= today)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const upcomingGigs = gigs.filter(gig => {
+    if (!gig.date) return false
+    const gigDate = new Date(gig.date)
+    return gigDate >= today
+  })
+
+  const visibleGigs = showAll ? upcomingGigs : upcomingGigs.slice(0, INITIAL_VISIBLE)
 
   return (
     <div style={{ order: sectionOrder }}>
@@ -69,7 +85,7 @@ export default function AppGigsSection({ gigs, sectionOrder, visible, editMode, 
               )}
             </div>
 
-            {bandsintownFetching && gigs.length === 0 ? (
+            {bandsintownFetching && upcomingGigs.length === 0 ? (
               <Card className="p-12 bg-card/50 border-border relative overflow-hidden">
                 <div className="flex flex-col items-center justify-center space-y-6">
                   <motion.div
@@ -112,7 +128,7 @@ export default function AppGigsSection({ gigs, sectionOrder, visible, editMode, 
                   </div>
                 </div>
               </Card>
-            ) : gigs.length === 0 ? (
+            ) : upcomingGigs.length === 0 ? (
               <Card className="p-12 text-center bg-card/50 border-border">
                 <p className="text-xl text-muted-foreground uppercase tracking-wide font-mono">
                   {editMode && onLabelChange ? (
@@ -127,7 +143,7 @@ export default function AppGigsSection({ gigs, sectionOrder, visible, editMode, 
               </Card>
             ) : (
               <div className="space-y-4">
-                {gigs.map((gig, index) => (
+                {visibleGigs.map((gig, index) => (
                   <motion.div
                     key={gig.id}
                     initial={{ opacity: 0, x: -50, clipPath: 'polygon(0 0, 0 0, 0 100%, 0 100%)' }}
@@ -173,6 +189,31 @@ export default function AppGigsSection({ gigs, sectionOrder, visible, editMode, 
                     </Card>
                   </motion.div>
                 ))}
+                {upcomingGigs.length > INITIAL_VISIBLE && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex justify-center pt-4"
+                  >
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowAll(prev => !prev)}
+                      className="gap-2 border-primary/30 font-mono tracking-wider text-xs uppercase hover:border-primary/60"
+                    >
+                      {showAll ? (
+                        <>
+                          <CaretUp className="w-4 h-4" />
+                          Show Less
+                        </>
+                      ) : (
+                        <>
+                          <CaretDown className="w-4 h-4" />
+                          See More ({upcomingGigs.length - INITIAL_VISIBLE} more)
+                        </>
+                      )}
+                    </Button>
+                  </motion.div>
+                )}
               </div>
             )}
           </motion.div>
