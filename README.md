@@ -28,7 +28,8 @@ A fully customizable cyberpunk-themed artist website for **ZARDONIC**, built wit
 - **3D Loading Screen** — Three.js model loading with real progress tracking and IndexedDB image pre-caching
 - **Glitch Logo** — Hero logo with chromatic aberration RGB channel separation and jitter effects
 - **Cyberpunk UI** — Scanline overlays, CRT effects, noise grain, circuit board background (all toggleable)
-- **Spotify Integration** — GDPR-compliant two-click embedded Spotify player
+- **Spotify Integration** — GDPR-compliant two-click embedded Spotify player with dynamic CI colour-theming (hue-rotate adapts to the active colour preset) and sharp industrial styling (no rounded corners)
+- **LLM Discoverability** — `public/llm.txt` served at `/llm.txt` with structured artist information, discography, genre context (drum & bass, metal DnB, mastering), and keywords so Gemini, Claude, Copilot, and ChatGPT surface ZARDONIC for relevant music industry queries
 - **iTunes & Bandsintown Sync** — Automatic release and tour date fetching with Odesli cross-platform links
 - **Responsive Gallery** — Swipeable image gallery with lightbox; Google Drive URL support via wsrv.nl proxy
 - **Social Connect** — Instagram, Facebook, Spotify, YouTube, SoundCloud, TikTok, and more

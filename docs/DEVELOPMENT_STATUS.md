@@ -1,7 +1,7 @@
 # Development Status — Zardonic Industrial
 
-> **Last Updated:** 2026-04-08  
-> **Updated By:** copilot/update-readme-and-documentation  
+> **Last Updated:** 2026-04-09  
+> **Updated By:** copilot/update-smooth-scrolling-and-spotify-player  
 > **Current Phase:** Phase 2 — Critical Fixes & Cleanup  
 
 ---
@@ -19,8 +19,8 @@
 | State Management | ❌ Missing | No Zustand/Redux/Jotai |
 | Accessibility | ⚠️ Needs Fix | `prefers-reduced-motion` not respected |
 | Performance | ⚠️ Needs Fix | No lazy loading, JS obfuscation inflates bundle |
-| Documentation | 🔄 In Progress | `docs/` being created |
-| DevOps / CI | ⚠️ Needs Fix | 7 unmerged Dependabot PRs |
+| Documentation | ✅ Up to date | `docs/` complete; `public/llm.txt` added |
+| DevOps / CI | ⚠️ Needs Fix | Dependabot PRs pending |
 
 ---
 
@@ -35,7 +35,9 @@
 - [x] Gigs / Tour dates section (Bandsintown sync)
 - [x] Media section (YouTube embeds)
 - [x] Instagram gallery (swipeable)
-- [x] Spotify embed (GDPR-aware)
+- [x] Spotify embed (GDPR-aware) — dynamic CI colour-theming via `hue-rotate(var(--spotify-hue-rotate))`; no rounded corners
+- [x] Smooth background parallax — `useSpring` on scroll progress in CircuitBackground & BackgroundStack
+- [x] Loading screen theme flash fix — theme CSS vars cached in `localStorage` and restored synchronously before React mounts
 - [x] Social links section
 - [x] News section
 - [x] Partners & Friends section

@@ -2101,11 +2101,13 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Spotify embed CI theming
- * Shifts Spotify's green accent (~hue 141°) to the site's orange-red accent (~hue 25°)
- * via hue-rotate(-116deg) so the embedded player matches the industrial CI.
+ * Shifts Spotify's green accent (~hue 141°) to the site's primary accent hue
+ * via --spotify-hue-rotate (computed in use-app-theme.ts as primaryHue - 141).
+ * Falls back to -116deg which matches the default orange-red preset (hue 25°).
  * Dark backgrounds and white text are achromatic and therefore unaffected.
  * Applied only to the inner iframe so the pre-consent UI keeps its original styling.
  */
 .spotify-ci-embed iframe {
-  filter: hue-rotate(-116deg) saturate(0.85);
+  filter: hue-rotate(var(--spotify-hue-rotate, -116deg)) saturate(0.85);
+  border-radius: 0 !important;
 }

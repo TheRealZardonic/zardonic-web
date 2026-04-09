@@ -1,5 +1,5 @@
 import { Suspense } from 'react'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { motion, useScroll, useSpring, useTransform } from 'framer-motion'
 import { CircuitBackground } from '@/components/CircuitBackground'
 import CyberpunkBackground from '@/components/CyberpunkBackground'
 import type { BackgroundType, HudTexts, AnimationSettings } from '@/lib/types'

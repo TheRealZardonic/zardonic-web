@@ -1,5 +1,5 @@
 import { useEffect, useRef, useMemo, useState, useCallback, memo } from 'react'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { motion, useScroll, useSpring, useTransform } from 'framer-motion'
 
 interface CircuitLine {
   id: number
@@ -40,13 +40,16 @@ export const CircuitBackground = memo(function CircuitBackground({
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll()
+  // Smooth out the raw scroll value so parallax layers ease to their target
+  // position rather than stopping abruptly when the user stops scrolling.
+  const smoothProgress = useSpring(scrollYProgress, { stiffness: 60, damping: 20, restDelta: 0.001 })
   const [pulses, setPulses] = useState<DataPulse[]>([])
   const pulseCounter = useRef(0)
   
   // Optimize transforms with reduced motion sensitivity
-  const layer1Y = useTransform(scrollYProgress, [0, 1], ['0%', '10%'])
-  const layer2Y = useTransform(scrollYProgress, [0, 1], ['0%', '25%'])
-  const layer3Y = useTransform(scrollYProgress, [0, 1], ['0%', '40%'])
+  const layer1Y = useTransform(smoothProgress, [0, 1], ['0%', '10%'])
+  const layer2Y = useTransform(smoothProgress, [0, 1], ['0%', '25%'])
+  const layer3Y = useTransform(smoothProgress, [0, 1], ['0%', '40%'])
 
   // Memoize line and node arrays to prevent recreation on every render
   const lines: CircuitLine[] = useMemo(() => [
@@ -202,12 +205,14 @@ export const CircuitBackground = memo(function CircuitBackground({
 
   return (
     <>
-      <motion.div 
+      <div
         ref={containerRef}
         className="fixed inset-0 overflow-hidden pointer-events-none"
-        style={{ y: layer3Y, willChange: 'transform', filter: `brightness(${0.5 + glow * 0.8})` }}
       >
-        <div className="absolute inset-0 opacity-[0.15]">
+        <motion.div
+          className="absolute inset-0 opacity-[0.15]"
+          style={{ y: layer3Y, filter: `brightness(${0.5 + glow * 0.8})`, top: '-50%', bottom: '-50%' }}
+        >
           {depth3Lines.map((line) => (
             <div
               key={line.id}

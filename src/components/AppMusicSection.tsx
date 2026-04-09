@@ -72,7 +72,7 @@ export default function AppMusicSection({
               {adminSettings?.animations?.blinkingCursor !== false && <span className="animate-pulse">_</span>}
             </h2>
 
-            <Card className="p-0 bg-card border-border relative cyber-card hover-noise overflow-hidden">
+            <Card className="p-0 bg-card border-border relative cyber-card hover-noise overflow-hidden rounded-none">
               <div className="scan-line"></div>
               <div className="p-4 pb-0">
                 {editMode && onLabelChange ? (
