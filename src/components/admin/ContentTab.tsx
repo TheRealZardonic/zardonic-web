@@ -1,10 +1,11 @@
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { TabsContent } from '@/components/ui/tabs'
 import { toast } from 'sonner'
-import type { AdminSettings, SectionLabels, ContactInfo, LoaderTexts } from '@/lib/types'
+import type { AdminSettings, SectionLabels, ContactInfo, LoaderTexts, DecorativeTexts } from '@/lib/types'
 import type { SiteData } from '@/App'
 
 const SOCIAL_FIELDS: { key: keyof SiteData['social']; label: string; placeholder: string }[] = [
@@ -411,6 +412,142 @@ export default function ContentTab({
           />
         </div>
       </section>
+      <Separator />
+
+      {/* Decorative Texts (// labels) */}
+      <DecorativeTextsSection
+        adminSettings={adminSettings}
+        setAdminSettings={setAdminSettings}
+      />
     </TabsContent>
+  )
+}
+
+/* ── Decorative Texts Section ─────────────────────────────────────────────────
+ * Collapsible accordion for editing all `//` style decorative texts throughout
+ * the site. Supports template variables like {session.id}, {data.releases}.
+ */
+
+const DECORATIVE_TEXT_GROUPS: {
+  title: string
+  fields: { key: keyof DecorativeTexts; label: string; placeholder: string }[]
+}[] = [
+  {
+    title: 'Overlay Headers',
+    fields: [
+      { key: 'overlaySystemLabel', label: 'Overlay Top Label', placeholder: '// SYSTEM.INTERFACE // v1.0.0' },
+    ],
+  },
+  {
+    title: 'Gig Overlay',
+    fields: [
+      { key: 'gigDataStreamLabel', label: 'Data Stream Label', placeholder: '// EVENT.DATA.STREAM' },
+      { key: 'gigStatusPrefix', label: 'Status Prefix', placeholder: '// SYSTEM.STATUS:' },
+    ],
+  },
+  {
+    title: 'Contact Overlay',
+    fields: [
+      { key: 'contactStreamLabel', label: 'Stream Label', placeholder: '// CONTACT.INTERFACE' },
+      { key: 'contactFormLabel', label: 'Form Label', placeholder: '// CONTACT.FORM' },
+      { key: 'contactStatusLabel', label: 'Status Label', placeholder: '// SYSTEM.STATUS: [ACTIVE]' },
+    ],
+  },
+  {
+    title: 'Privacy Overlay',
+    fields: [
+      { key: 'privacyStreamLabel', label: 'Stream Label', placeholder: '// PRIVACY.POLICY' },
+      { key: 'privacyStatusLabel', label: 'Status Label', placeholder: '// SYSTEM.STATUS: [ACTIVE]' },
+    ],
+  },
+  {
+    title: 'Impressum Overlay',
+    fields: [
+      { key: 'impressumStreamLabel', label: 'Stream Label', placeholder: '// LEGAL.INFORMATION' },
+      { key: 'impressumStatusLabel', label: 'Status Label', placeholder: '// SYSTEM.STATUS: [ACTIVE]' },
+    ],
+  },
+  {
+    title: 'Member Overlay',
+    fields: [
+      { key: 'memberProfileLabel', label: 'Profile Label', placeholder: '// MEMBER.PROFILE' },
+    ],
+  },
+  {
+    title: 'HUD Labels',
+    fields: [
+      { key: 'hudTimeLabel', label: 'Time Label', placeholder: 'SYS_TIME:' },
+      { key: 'hudSessionLabel', label: 'Session Label', placeholder: 'SESSION:' },
+      { key: 'hudUptimeLabel', label: 'Uptime Label', placeholder: 'UPTIME:' },
+      { key: 'hudSectorLabel', label: 'Sector Label', placeholder: 'SECTOR:' },
+      { key: 'hudDataRateLabel', label: 'Data Rate Label', placeholder: 'DATA_RATE:' },
+    ],
+  },
+  {
+    title: 'Loading Screen',
+    fields: [
+      { key: 'loaderBuildInfo', label: 'Build Info', placeholder: 'BUILD: {session.build}' },
+      { key: 'loaderPlatformInfo', label: 'Platform Info', placeholder: 'PLATFORM: {session.platform}' },
+      { key: 'loaderConnectionStatus', label: 'Connection Status', placeholder: '{session.connection}' },
+    ],
+  },
+]
+
+function DecorativeTextsSection({
+  adminSettings,
+  setAdminSettings,
+}: {
+  adminSettings?: AdminSettings | null
+  setAdminSettings?: (s: AdminSettings) => void
+}) {
+  const [isOpen, setIsOpen] = useState(false)
+
+  const decorativeTexts = adminSettings?.decorativeTexts ?? {}
+
+  const updateText = (key: keyof DecorativeTexts, value: string) => {
+    if (!setAdminSettings) return
+    setAdminSettings({
+      ...adminSettings,
+      decorativeTexts: { ...decorativeTexts, [key]: value || undefined },
+    })
+  }
+
+  return (
+    <section className="space-y-3">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between font-mono text-xs font-bold text-primary uppercase tracking-wider hover:text-primary/80 transition-colors"
+        type="button"
+      >
+        <span>Decorative Texts (// Labels)</span>
+        <span className="text-muted-foreground">{isOpen ? '▲' : '▼'}</span>
+      </button>
+      <p className="text-[10px] text-muted-foreground font-mono">
+        Template vars: {'{session.id}'} {'{session.sector}'} {'{session.build}'} {'{session.platform}'} {'{data.releases}'} {'{data.gigs}'}
+      </p>
+
+      {isOpen && (
+        <div className="space-y-4 pt-2">
+          {DECORATIVE_TEXT_GROUPS.map(({ title, fields }) => (
+            <div key={title} className="space-y-2">
+              <h4 className="font-mono text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                {title}
+              </h4>
+              {fields.map(({ key, label, placeholder }) => (
+                <div key={key} className="space-y-1">
+                  <Label className="font-mono text-[10px] text-muted-foreground">{label}</Label>
+                  <Input
+                    value={(decorativeTexts[key] as string) ?? ''}
+                    onChange={(e) => updateText(key, e.target.value)}
+                    placeholder={placeholder}
+                    className="bg-background border-border font-mono text-xs h-7"
+                  />
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   )
 }

@@ -80,7 +80,7 @@ export default function AppGigsSection({ gigs, sectionOrder, visible, editMode, 
             transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
           >
             <div className="flex items-center justify-between mb-12 flex-wrap gap-4">
-              <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-data-corrupt" data-text={`${headingPrefix ? headingPrefix + ' ' : ''}${sectionLabel || 'UPCOMING GIGS'}`}>
+              <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-data-corrupt" data-text={`${headingPrefix ? headingPrefix + ' ' : ''}${sectionLabel || 'UPCOMING GIGS'}`} data-theme-color="foreground primary">
                 {headingPrefix && <span className="text-primary/70 mr-2">{headingPrefix}</span>}
                 <EditableHeading
                   onChange={(v) => onLabelChange?.('upcomingGigs', v)}
@@ -118,7 +118,7 @@ export default function AppGigsSection({ gigs, sectionOrder, visible, editMode, 
                   </motion.div>
                   <div className="w-full max-w-md space-y-3">
                     <div className="flex justify-between items-center">
-                      <span className="data-label">{loadingLabel}</span>
+                      <span className="data-label" data-theme-color="data-label">{loadingLabel}</span>
                       <motion.span
                         className="font-mono text-sm text-primary"
                         animate={{ opacity: [0.4, 1, 0.4] }}
@@ -181,7 +181,7 @@ export default function AppGigsSection({ gigs, sectionOrder, visible, editMode, 
                       onClick={() => !editMode && onGigClick(gig)}
                     >
                       <div className="scan-line"></div>
-                      <div className="data-label mb-2">// EVENT.{formatEventBitz(gig)}</div>
+                      <div className="data-label mb-2" data-theme-color="data-label">// EVENT.{formatEventBitz(gig)}</div>
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="space-y-2">
                           <h3 className="text-xl font-bold uppercase font-mono hover-chromatic">{gig.venue}</h3>

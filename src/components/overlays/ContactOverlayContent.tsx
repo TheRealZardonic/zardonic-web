@@ -5,14 +5,18 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { PaperPlaneTilt } from '@phosphor-icons/react'
 import { toast } from 'sonner'
-import type { AdminSettings } from '@/lib/types'
+import type { AdminSettings, DecorativeTexts } from '@/lib/types'
 import { submitContactForm, contactFormSchema } from '@/lib/contact'
 
 interface ContactOverlayContentProps {
   adminSettings: AdminSettings | undefined
+  decorativeTexts?: DecorativeTexts
 }
 
-export function ContactOverlayContent({ adminSettings }: ContactOverlayContentProps) {
+export function ContactOverlayContent({ adminSettings, decorativeTexts }: ContactOverlayContentProps) {
+  const streamLabel = decorativeTexts?.contactStreamLabel ?? '// CONTACT.INTERFACE'
+  const formLabel = decorativeTexts?.contactFormLabel ?? '// CONTACT.FORM'
+  const statusLabel = decorativeTexts?.contactStatusLabel ?? '// SYSTEM.STATUS: [ACTIVE]'
   return (
     <motion.div
       className="mt-8 space-y-6"
@@ -26,7 +30,7 @@ export function ContactOverlayContent({ adminSettings }: ContactOverlayContentPr
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
-        <div className="data-label mb-2">// CONTACT.INTERFACE.STREAM</div>
+        <div className="data-label mb-2">{streamLabel}</div>
         <h2 className="text-4xl md:text-5xl font-bold uppercase font-mono mb-4 hover-chromatic crt-flash-in" data-text="CONTACT">
           CONTACT
         </h2>
@@ -86,7 +90,7 @@ export function ContactOverlayContent({ adminSettings }: ContactOverlayContentPr
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.45 }}
         >
-          <div className="data-label mb-4">// CONTACT.FORM</div>
+          <div className="data-label mb-4">{formLabel}</div>
           <form
             onSubmit={async (e) => {
               e.preventDefault()
@@ -157,7 +161,7 @@ export function ContactOverlayContent({ adminSettings }: ContactOverlayContentPr
         animate={{ opacity: 1 }}
         transition={{ delay: 0.7 }}
       >
-        <div className="data-label">// SYSTEM.STATUS: [ACTIVE]</div>
+        <div className="data-label">{statusLabel}</div>
       </motion.div>
     </motion.div>
   )

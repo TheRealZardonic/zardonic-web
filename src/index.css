@@ -2130,3 +2130,42 @@ h1, h2, h3, h4, h5, h6 {
   transform: scale(1.02);
   display: block;
 }
+
+/* ── Color Highlight System ─────────────────────────────────────────────────
+ * When the admin hovers a color picker in AppearanceTab, a data attribute
+ * `data-highlight-color="primary"` is set on <html>. Elements with a matching
+ * `data-theme-color="primary"` attribute receive a pulsing outline highlight
+ * so the user can see which parts of the site that color affects.
+ */
+@keyframes color-highlight-pulse {
+  0%, 100% { outline-color: oklch(0.7 0.25 140 / 0.6); }
+  50% { outline-color: oklch(0.9 0.25 140 / 1); }
+}
+
+/* Match: html[data-highlight-color="X"] [data-theme-color~="X"] */
+html[data-highlight-color="primary"] [data-theme-color~="primary"],
+html[data-highlight-color="primary-foreground"] [data-theme-color~="primary-foreground"],
+html[data-highlight-color="accent"] [data-theme-color~="accent"],
+html[data-highlight-color="accent-foreground"] [data-theme-color~="accent-foreground"],
+html[data-highlight-color="background"] [data-theme-color~="background"],
+html[data-highlight-color="foreground"] [data-theme-color~="foreground"],
+html[data-highlight-color="card"] [data-theme-color~="card"],
+html[data-highlight-color="card-foreground"] [data-theme-color~="card-foreground"],
+html[data-highlight-color="border"] [data-theme-color~="border"],
+html[data-highlight-color="secondary"] [data-theme-color~="secondary"],
+html[data-highlight-color="secondary-foreground"] [data-theme-color~="secondary-foreground"],
+html[data-highlight-color="muted"] [data-theme-color~="muted"],
+html[data-highlight-color="muted-foreground"] [data-theme-color~="muted-foreground"],
+html[data-highlight-color="destructive"] [data-theme-color~="destructive"],
+html[data-highlight-color="destructive-foreground"] [data-theme-color~="destructive-foreground"],
+html[data-highlight-color="data-label"] [data-theme-color~="data-label"],
+html[data-highlight-color="modal-glow"] [data-theme-color~="modal-glow"],
+html[data-highlight-color="input"] [data-theme-color~="input"],
+html[data-highlight-color="ring"] [data-theme-color~="ring"],
+html[data-highlight-color="hover"] [data-theme-color~="hover"],
+html[data-highlight-color="popover"] [data-theme-color~="popover"],
+html[data-highlight-color="popover-foreground"] [data-theme-color~="popover-foreground"] {
+  outline: 2px dashed oklch(0.7 0.25 140 / 0.8);
+  outline-offset: 2px;
+  animation: color-highlight-pulse 1.2s ease-in-out infinite;
+}

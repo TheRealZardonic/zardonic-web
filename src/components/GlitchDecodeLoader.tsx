@@ -144,13 +144,13 @@ const GlitchDecodeLoader = memo(function GlitchDecodeLoader({
             >
               {'> '}
               {progress < 20
-                ? 'INIT HARDWARE LAYER'
+                ? 'LOADING FONT FAMILIES'
                 : progress < 40
-                ? 'DECRYPT MEMORY BANKS'
+                ? 'FETCHING EVENT DATA'
                 : progress < 60
-                ? 'SYNC NEURAL INTERFACE'
+                ? 'PARSING RELEASE CATALOG'
                 : progress < 80
-                ? 'COMPILE VISUAL MATRIX'
+                ? 'INIT RENDER PIPELINE'
                 : progress < 100
                 ? 'FINALIZE BOOT SEQUENCE'
                 : 'ACCESS GRANTED'}

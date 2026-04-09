@@ -51,7 +51,7 @@ export default function AppMusicSection({
   return (
     <div style={{ order: sectionOrder }}>
       <Separator className="bg-border" />
-      <section id="music" className="py-24 px-4 bg-card/50 scanline-effect crt-effect">
+      <section id="music" className="py-24 px-4 bg-card/50 scanline-effect crt-effect" data-theme-color="card">
         <div className="container mx-auto max-w-6xl">
           <motion.div
             initial={{ opacity: 0, x: -30, filter: 'blur(10px)', clipPath: 'polygon(0 0, 0 0, 0 100%, 0 100%)' }}
@@ -59,7 +59,7 @@ export default function AppMusicSection({
             viewport={{ once: true }}
             transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
           >
-            <h2 className="text-4xl md:text-6xl font-bold mb-12 uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-crt-interference" data-text={`${headingPrefix ? headingPrefix + ' ' : ''}${sectionLabel || 'MUSIC PLAYER'}`}>
+            <h2 className="text-4xl md:text-6xl font-bold mb-12 uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-crt-interference" data-text={`${headingPrefix ? headingPrefix + ' ' : ''}${sectionLabel || 'MUSIC PLAYER'}`} data-theme-color="foreground primary">
               {headingPrefix && <span className="text-primary/70 mr-2">{headingPrefix}</span>}
               <EditableHeading onChange={() => {}}
                 text={sectionLabel}
@@ -72,7 +72,7 @@ export default function AppMusicSection({
               {adminSettings?.animations?.blinkingCursor !== false && <span className="animate-pulse">_</span>}
             </h2>
 
-            <Card className="p-0 bg-card border-border relative cyber-card hover-noise overflow-hidden rounded-none">
+            <Card className="p-0 bg-card border-border relative cyber-card hover-noise overflow-hidden rounded-none" data-theme-color="card border">
               <div className="scan-line"></div>
               <div className="p-4 pb-0">
                 {editMode && onLabelChange ? (
@@ -83,7 +83,7 @@ export default function AppMusicSection({
                     aria-label="Stream interface label"
                   />
                 ) : (
-                  <div className="data-label mb-2">{streamLabel}</div>
+                  <div className="data-label mb-2" data-theme-color="data-label">{streamLabel}</div>
                 )}
               </div>
               <div className="spotify-player-wrapper spotify-ci-embed bg-card">
@@ -103,7 +103,7 @@ export default function AppMusicSection({
                     aria-label="Stream status label"
                   />
                 ) : (
-                  <div className="data-label">{statusLabel}</div>
+                  <div className="data-label" data-theme-color="data-label">{statusLabel}</div>
                 )}
               </div>
             </Card>

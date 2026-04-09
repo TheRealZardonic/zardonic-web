@@ -2,12 +2,15 @@ import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { InstagramLogo } from '@phosphor-icons/react'
 import type { Member } from '@/lib/app-types'
+import type { DecorativeTexts } from '@/lib/types'
 
 interface MemberOverlayContentProps {
   data: Member
+  decorativeTexts?: DecorativeTexts
 }
 
-export function MemberOverlayContent({ data }: MemberOverlayContentProps) {
+export function MemberOverlayContent({ data, decorativeTexts }: MemberOverlayContentProps) {
+  const profileLabel = decorativeTexts?.memberProfileLabel ?? '// MEMBER.PROFILE'
   return (
     <motion.div
       className="mt-8 space-y-6"
@@ -32,7 +35,7 @@ export function MemberOverlayContent({ data }: MemberOverlayContentProps) {
           </div>
         )}
         <div className="flex-1">
-          <div className="text-xs text-primary uppercase tracking-widest font-mono mb-2">// MEMBER.PROFILE</div>
+          <div className="text-xs text-primary uppercase tracking-widest font-mono mb-2">{profileLabel}</div>
           <h2 className="text-4xl font-bold uppercase font-mono mb-2 crt-flash-in" data-text={data.name}>
             {data.name}
           </h2>

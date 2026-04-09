@@ -272,6 +272,7 @@ export interface AdminSettings {
   }
   loaderTexts?: LoaderTexts
   hudTexts?: HudTexts
+  decorativeTexts?: DecorativeTexts
   colorPresets?: CustomColorPreset[]
   locale?: string
   customTranslations?: Record<string, Record<string, string>>
@@ -385,6 +386,60 @@ export interface HudTexts {
   bottomRight?: string
   bottomRight1?: string
   bottomRight2?: string
+}
+
+/**
+ * Configurable decorative HUD-style texts displayed throughout the website.
+ * Supports template variables in `{var}` syntax that get replaced at runtime:
+ *   {session.id}          - 8-char hex session ID
+ *   {session.sector}      - timezone-based region (e.g. EU-CENTRAL)
+ *   {session.browser}     - browser name + version (e.g. CHROME.131)
+ *   {session.os}          - operating system (e.g. MACOS)
+ *   {session.platform}    - browser + os combined
+ *   {session.downlink}    - connection speed in Mbps
+ *   {session.build}       - app version + git hash
+ *   {session.connection}  - HTTPS status
+ *   {data.releases}       - number of releases loaded
+ *   {data.gigs}           - number of upcoming gigs
+ *   {data.tracks}         - number of tracks loaded
+ *   {data.members}        - number of members
+ */
+export interface DecorativeTexts {
+  // Overlay headers
+  overlaySystemLabel?: string
+  // Gig overlay
+  gigDataStreamLabel?: string
+  gigStatusPrefix?: string
+  // Contact overlay
+  contactStreamLabel?: string
+  contactFormLabel?: string
+  contactStatusLabel?: string
+  // Privacy overlay
+  privacyStreamLabel?: string
+  privacyStatusLabel?: string
+  // Impressum overlay
+  impressumStreamLabel?: string
+  impressumStatusLabel?: string
+  // Member overlay
+  memberProfileLabel?: string
+  // HUD labels
+  hudTimeLabel?: string
+  hudSessionLabel?: string
+  hudUptimeLabel?: string
+  hudSectorLabel?: string
+  hudDataRateLabel?: string
+  // Loading screen
+  loaderBuildInfo?: string
+  loaderPlatformInfo?: string
+  loaderConnectionStatus?: string
+  // GlitchDecodeLoader status texts
+  glitchStage1?: string
+  glitchStage2?: string
+  glitchStage3?: string
+  glitchStage4?: string
+  glitchStage5?: string
+  glitchStageComplete?: string
+  glitchBootLabel?: string
 }
 
 export interface Datenschutz {

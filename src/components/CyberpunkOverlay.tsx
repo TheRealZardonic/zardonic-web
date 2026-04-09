@@ -33,6 +33,8 @@ interface CyberpunkOverlayProps {
 export default function CyberpunkOverlay({ overlay, onClose, adminSettings, artistName = '' }: CyberpunkOverlayProps) {
   const [overlayPhase, setOverlayPhase] = useState<'loading' | 'glitch' | 'revealed'>('loading')
   const [loadingText, setLoadingText] = useState(OVERLAY_LOADING_TEXTS[0])
+  const decorativeTexts = adminSettings?.decorativeTexts
+  const systemLabel = decorativeTexts?.overlaySystemLabel ?? `// ${artistName ? `${artistName.toUpperCase()}.NET` : 'SYSTEM.INTERFACE'} // v${typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.0'}`
 
   useEffect(() => {
     if (!overlay) return
@@ -109,7 +111,7 @@ export default function CyberpunkOverlay({ overlay, onClose, adminSettings, arti
 
               {/* Top label */}
               <motion.div className="absolute top-2 left-1/2 -translate-x-1/2" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35, duration: 0.3 }}>
-                <div className="data-label">// SYSTEM.INTERFACE.v2.0</div>
+                <div className="data-label">{systemLabel}</div>
               </motion.div>
 
               {/* Scan lines */}
@@ -149,23 +151,23 @@ export default function CyberpunkOverlay({ overlay, onClose, adminSettings, arti
                       {overlayPhase === 'revealed' && (
                         <>
                           {overlay.type === 'impressum' && (
-                            <ImpressumOverlayContent adminSettings={adminSettings} onClose={onClose} />
+                            <ImpressumOverlayContent adminSettings={adminSettings} onClose={onClose} decorativeTexts={decorativeTexts} />
                           )}
 
                           {overlay.type === 'privacy' && (
-                            <PrivacyOverlayContent adminSettings={adminSettings} artistName={artistName} />
+                            <PrivacyOverlayContent adminSettings={adminSettings} artistName={artistName} decorativeTexts={decorativeTexts} />
                           )}
 
                           {overlay.type === 'contact' && (
-                            <ContactOverlayContent adminSettings={adminSettings} />
+                            <ContactOverlayContent adminSettings={adminSettings} decorativeTexts={decorativeTexts} />
                           )}
 
                           {overlay.type === 'member' && overlay.data && (
-                            <MemberOverlayContent data={overlay.data} />
+                            <MemberOverlayContent data={overlay.data} decorativeTexts={decorativeTexts} />
                           )}
 
                           {overlay.type === 'gig' && overlay.data && (
-                            <GigOverlayContent data={overlay.data} artistName={artistName} />
+                            <GigOverlayContent data={overlay.data} artistName={artistName} decorativeTexts={decorativeTexts} />
                           )}
 
                           {overlay.type === 'release' && overlay.data && (

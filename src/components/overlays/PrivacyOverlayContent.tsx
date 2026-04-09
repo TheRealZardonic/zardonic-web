@@ -1,15 +1,17 @@
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
-import type { AdminSettings } from '@/lib/types'
+import type { AdminSettings, DecorativeTexts } from '@/lib/types'
 import { useLocale } from '@/contexts/LocaleContext'
 
 interface PrivacyOverlayContentProps {
   adminSettings: AdminSettings | undefined
   artistName?: string
+  decorativeTexts?: DecorativeTexts
 }
 
-export function PrivacyOverlayContent({ adminSettings, artistName }: PrivacyOverlayContentProps) {
+export function PrivacyOverlayContent({ adminSettings, artistName, decorativeTexts }: PrivacyOverlayContentProps) {
   const { locale: language, setLocale: setLanguage } = useLocale()
+  const streamLabel = decorativeTexts?.privacyStreamLabel ?? '// PRIVACY.POLICY'
 
   const dataController = adminSettings?.contactInfo?.managementName || artistName || ''
 
@@ -28,7 +30,7 @@ export function PrivacyOverlayContent({ adminSettings, artistName }: PrivacyOver
         transition={{ delay: 0.1 }}
       >
         <div>
-          <div className="data-label mb-2">// PRIVACY.POLICY.STREAM</div>
+          <div className="data-label mb-2">{streamLabel}</div>
           <h2 className="text-4xl md:text-5xl font-bold uppercase font-mono mb-4 hover-chromatic crt-flash-in" data-text="PRIVACY POLICY">
             {language === 'de' ? 'DATENSCHUTZERKLÄRUNG' : 'PRIVACY POLICY'}
           </h2>
@@ -171,7 +173,7 @@ export function PrivacyOverlayContent({ adminSettings, artistName }: PrivacyOver
         animate={{ opacity: 1 }}
         transition={{ delay: 0.7 }}
       >
-        <div className="data-label">// SYSTEM.STATUS: [ACTIVE]</div>
+        <div className="data-label">{decorativeTexts?.privacyStatusLabel ?? '// SYSTEM.STATUS: [ACTIVE]'}</div>
       </motion.div>
     </motion.div>
   )

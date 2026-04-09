@@ -2,8 +2,27 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react-swc";
 import { defineConfig } from "vite";
 import { resolve } from 'path';
+import { execSync } from 'child_process';
+import { readFileSync } from 'fs';
 
 const projectRoot = process.env.PROJECT_ROOT || import.meta.dirname
+
+function getGitHash(): string {
+  try {
+    return execSync('git rev-parse --short HEAD', { encoding: 'utf-8' }).trim()
+  } catch {
+    return 'dev'
+  }
+}
+
+function getPackageVersion(): string {
+  try {
+    const pkg = JSON.parse(readFileSync(resolve(projectRoot, 'package.json'), 'utf-8')) as { version?: string }
+    return pkg.version ?? '0.0.0'
+  } catch {
+    return '0.0.0'
+  }
+}
 
 // https://vite.dev/config/
 // Use Vite's `mode` parameter (reliable) instead of process.env.NODE_ENV to
@@ -15,6 +34,10 @@ export default defineConfig(() => {
       react(),
       tailwindcss(),
     ],
+    define: {
+      __APP_VERSION__: JSON.stringify(getPackageVersion()),
+      __GIT_HASH__: JSON.stringify(getGitHash()),
+    },
     resolve: {
       alias: {
         '@': resolve(projectRoot, 'src')

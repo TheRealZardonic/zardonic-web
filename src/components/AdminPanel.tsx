@@ -16,6 +16,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRef, useState, useCallback, useEffect, useMemo, type ChangeEvent } from 'react'
 import AdminLoginDialog from '@/components/AdminLoginDialog'
+import { AdminSearch } from '@/components/admin/AdminSearch'
 import type {
   AdminSettings,
   SectionVisibility,
@@ -316,6 +317,7 @@ export default function AdminPanel({
                 </span>
               </div>
               <div className="flex items-center gap-1">
+                <AdminSearch onNavigate={setActiveTab} />
                 {onLogout && (
                   <button
                     onClick={async () => { await onLogout(); onClose() }}

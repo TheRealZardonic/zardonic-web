@@ -12,10 +12,10 @@ interface LoadingScreenProps {
 }
 
 const DEFAULT_MESSAGES = [
-  'INITIALIZING NEURAL INTERFACE',
-  'LOADING CORE SYSTEMS',
-  'SYNCHRONIZING WETWARE',
-  'ESTABLISHING CONNECTION',
+  'LOADING FONT FAMILIES',
+  'FETCHING EVENT DATA',
+  'SYNCING RELEASE CATALOG',
+  'ESTABLISHING API LINK',
   'SYSTEM READY'
 ] as const
 
@@ -23,6 +23,14 @@ const DEFAULT_MESSAGES = [
 function getCssVar(name: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim()
 }
+
+/** Real build version string from Vite defines, e.g. "1.0.0.abc1234" */
+const BUILD_VERSION = `${typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.0'}.${typeof __GIT_HASH__ !== 'undefined' ? __GIT_HASH__ : 'dev'}`
+
+/** Real connection status based on protocol */
+const CONNECTION_STATUS = typeof location !== 'undefined' && location.protocol === 'https:'
+  ? 'CONNECTION: HTTPS // SECURE'
+  : 'CONNECTION: HTTP // LOCAL'
 
 export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, precacheUrls = [], loaderTexts, mode = 'real', duration = 3 }: LoadingScreenProps) {
   const [loadingProgress, setLoadingProgress] = useState(0)
@@ -97,9 +105,9 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
   }, [loaderTexts?.stageMessages])
 
   const systemCheckLabels: [string, string, string] = [
-    loaderTexts?.systemChecks?.[0] ?? 'WETWARE',
-    loaderTexts?.systemChecks?.[1] ?? 'NEURAL',
-    loaderTexts?.systemChecks?.[2] ?? 'CYBERDECK',
+    loaderTexts?.systemChecks?.[0] ?? 'FONTS',
+    loaderTexts?.systemChecks?.[1] ?? 'EVENTS',
+    loaderTexts?.systemChecks?.[2] ?? 'RELEASES',
   ]
 
   // Complete when progress reaches 100% and background caching is done
@@ -265,8 +273,8 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
       </motion.div>
 
       <div className="absolute bottom-8 left-8 font-mono text-xs text-muted-foreground opacity-50">
-        <div>{loaderTexts?.buildInfo ?? 'BUILD: 2077.v1.23'}</div>
-        <div>{loaderTexts?.platformInfo ?? 'PLATFORM: WEB.NEURAL'}</div>
+        <div>{loaderTexts?.buildInfo ?? `BUILD: ${BUILD_VERSION}`}</div>
+        <div>{loaderTexts?.platformInfo ?? 'PLATFORM: WEB.SYS'}</div>
       </div>
 
       <div className="absolute bottom-8 right-8 font-mono text-xs text-muted-foreground opacity-50">
@@ -274,7 +282,7 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
           animate={{ opacity: [0.3, 0.7, 0.3] }}
           transition={{ duration: 2, repeat: Infinity }}
         >
-          {loaderTexts?.connectionStatus ?? 'CONNECTION: SECURE'}
+          {loaderTexts?.connectionStatus ?? CONNECTION_STATUS}
         </motion.div>
       </div>
     </motion.div>

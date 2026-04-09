@@ -1,13 +1,15 @@
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
-import type { AdminSettings } from '@/lib/types'
+import type { AdminSettings, DecorativeTexts } from '@/lib/types'
 
 interface ImpressumOverlayContentProps {
   adminSettings: AdminSettings | undefined
   onClose: () => void
+  decorativeTexts?: DecorativeTexts
 }
 
-export function ImpressumOverlayContent({ adminSettings, onClose }: ImpressumOverlayContentProps) {
+export function ImpressumOverlayContent({ adminSettings, onClose, decorativeTexts }: ImpressumOverlayContentProps) {
+  const streamLabel = decorativeTexts?.impressumStreamLabel ?? '// LEGAL.INFORMATION'
   return (
     <motion.div
       className="mt-8 space-y-6"
@@ -21,7 +23,7 @@ export function ImpressumOverlayContent({ adminSettings, onClose }: ImpressumOve
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
-        <div className="data-label mb-2">// LEGAL.INFORMATION.STREAM</div>
+        <div className="data-label mb-2">{streamLabel}</div>
         <h2 className="text-4xl md:text-5xl font-bold uppercase font-mono mb-4 hover-chromatic crt-flash-in" data-text="IMPRESSUM">
           IMPRESSUM
         </h2>
@@ -137,7 +139,7 @@ export function ImpressumOverlayContent({ adminSettings, onClose }: ImpressumOve
         animate={{ opacity: 1 }}
         transition={{ delay: 0.7 }}
       >
-        <div className="data-label">// SYSTEM.STATUS: [ACTIVE]</div>
+        <div className="data-label">{decorativeTexts?.impressumStatusLabel ?? '// SYSTEM.STATUS: [ACTIVE]'}</div>
       </motion.div>
 
       <Button

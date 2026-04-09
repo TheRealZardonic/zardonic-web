@@ -16,45 +16,49 @@ interface CyberpunkLoaderProps {
 }
 
 const DEFAULT_HACKING_TEXTS = [
-  '> INITIALIZING NEURAL INTERFACE...',
-  '> LOADING CORE MODULES...',
-  '> ESTABLISHING SECURE LINK...',
-  '> DECRYPTING DATASTREAM...',
-  '> COMPILING AUDIO ENGINE...',
-  '> SYNCING FREQUENCY MATRIX...',
+  '> INITIALIZING RENDER ENGINE...',
+  '> LOADING FONT FAMILIES...',
+  '> ESTABLISHING API LINK...',
+  '> FETCHING EVENT DATA...',
+  '> COMPILING AUDIO EMBEDS...',
+  '> SYNCING RELEASE CATALOG...',
   '> ACTIVATING HUD OVERLAY...',
-  '> LOADING VISUAL CORTEX...',
-  '> PROCESSING SIGNAL CHAIN...',
-  '> CALIBRATING BPM RESONANCE...',
+  '> LOADING GALLERY ASSETS...',
+  '> PROCESSING THEME VARS...',
+  '> CALIBRATING SCROLL ENGINE...',
   '> FINALIZING BOOT SEQUENCE...',
   '> SYSTEM ONLINE // ACCESS GRANTED'
 ]
 
+/** Build version string from Vite defines */
+const APP_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.0'
+const GIT_HASH = typeof __GIT_HASH__ !== 'undefined' ? __GIT_HASH__ : 'dev'
+
 const DEFAULT_CODE_FRAGMENTS = [
-  'fn init_neural() -> Result<()> {',
-  '  let freq = 150.0_f64;',
-  '  signal::process(bpm);',
+  'fn init_renderer() -> Result<()> {',
+  '  let theme = load_css_vars();',
+  '  hud.render(metrics)?;',
   '  audio.connect(output)?;',
-  '  hud.render(frame)?;',
-  'const NK = 0xFF2222;',
-  'mov eax, [neuro+0x1A]',
-  'jmp 0xDEADBEEF',
-  'syscall.exec("init")',
-  '  decrypt(stream, key);',
-  'class Neuroklast extends Core {',
-  '  this.bpm = 150;',
-  '  this.mode = "DARK";',
+  '  events.sync(bandsintown)?;',
+  `const VERSION = "${APP_VERSION}";`,
+  'import { useRealMetrics } from hooks;',
+  'export default App;',
+  'syscall.exec("vite build")',
+  '  releases.fetch(catalog);',
+  'class SystemMonitorHUD extends React {',
+  '  this.sector = timezone.resolve();',
+  '  this.session = crypto.randomUUID();',
   '00110101 01001110 01001011',
-  'KERNEL: audio_engine [OK]',
-  'SUBSYS: hud_display [OK]',
-  'NODE: freq_matrix v2.0.1',
-  'HASH: 0xA3F7B2C1D8E9',
+  'BUILD: vite.config.ts [OK]',
+  'SUBSYS: react-dom [OK]',
+  'NODE: framer-motion v11',
+  `HASH: 0x${GIT_HASH.toUpperCase().padEnd(8, '0')}`,
   '██████░░░░ 60%',
-  '> chmod +x neuroklast',
-  'export NK_MODE=ACTIVATED',
+  '> npm run build',
+  'export NODE_ENV=production',
 ]
 
-const DEFAULT_BOOT_LABEL = 'NK-SYS [v2.0] // BOOT SEQUENCE'
+const DEFAULT_BOOT_LABEL = `SYS [v${APP_VERSION}] // BOOT SEQUENCE`
 
 export default function CyberpunkLoader({ onLoadComplete, precacheUrls = [], loaderTexts }: CyberpunkLoaderProps) {
   const hackingTexts = useMemo(

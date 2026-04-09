@@ -9,6 +9,7 @@ import { TabsContent } from '@/components/ui/tabs'
 import { toast } from 'sonner'
 import { getContrastRatio } from '@/lib/contrast'
 import { oklchToHex } from '@/lib/color-utils'
+import { COLOR_TO_CSS_VAR, setHighlightColor } from '@/lib/color-highlight'
 import type {
   AdminSettings,
   ThemeCustomization,
@@ -403,7 +404,12 @@ export default function AppearanceTab({
           </div>
           <div className="space-y-3">
             {fields.map(({ key, label, placeholder }) => (
-              <div key={key} className="space-y-1">
+              <div
+                key={key}
+                className="space-y-1"
+                onMouseEnter={() => { const cssVar = COLOR_TO_CSS_VAR[key]; if (cssVar) setHighlightColor(cssVar) }}
+                onMouseLeave={() => setHighlightColor(null)}
+              >
                 <Label className="font-mono text-[11px] text-muted-foreground">{label}</Label>
                 <div className="flex gap-2 items-center">
                   <input

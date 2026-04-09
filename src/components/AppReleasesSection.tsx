@@ -92,7 +92,7 @@ export default function AppReleasesSection({ releases, sectionOrder, visible, ed
             transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
           >
             <div className="flex items-center justify-between mb-12 flex-wrap gap-4">
-              <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-crt-interference" data-text={`${headingPrefix ? headingPrefix + ' ' : ''}${sectionLabel || 'RELEASES'}`}>
+              <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-crt-interference" data-text={`${headingPrefix ? headingPrefix + ' ' : ''}${sectionLabel || 'RELEASES'}`} data-theme-color="foreground primary">
                 {headingPrefix && <span className="text-primary/70 mr-2">{headingPrefix}</span>}
                 <EditableHeading
                   onChange={(v) => onLabelChange?.('releases', v)}
@@ -145,7 +145,7 @@ export default function AppReleasesSection({ releases, sectionOrder, visible, ed
                   </motion.div>
                   <div className="w-full max-w-md space-y-3">
                     <div className="flex justify-between items-center">
-                      <span className="data-label">{loadingLabel}</span>
+                      <span className="data-label" data-theme-color="data-label">{loadingLabel}</span>
                       <motion.span
                         className="font-mono text-sm text-primary"
                         animate={{ opacity: [0.4, 1, 0.4] }}
@@ -233,7 +233,7 @@ export default function AppReleasesSection({ releases, sectionOrder, visible, ed
                             className="overflow-hidden bg-card border-border hover:border-primary/50 transition-all cursor-pointer cyber-card hover-noise relative"
                             onClick={() => !editMode && onReleaseClick(release)}
                           >
-                            <div className="data-label absolute top-2 left-2 z-10">// REL.{release.year}</div>
+                            <div className="data-label absolute top-2 left-2 z-10" data-theme-color="data-label">// REL.{release.year}</div>
                             {editMode && (
                               <div className="absolute top-2 right-2 z-10 flex gap-1">
                                 {onUpdateRelease && (

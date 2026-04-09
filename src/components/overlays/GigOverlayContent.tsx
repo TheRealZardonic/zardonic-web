@@ -2,13 +2,17 @@ import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { MapPin, CalendarBlank, Ticket } from '@phosphor-icons/react'
 import type { Gig } from '@/lib/app-types'
+import type { DecorativeTexts } from '@/lib/types'
 
 interface GigOverlayContentProps {
   data: Gig
   artistName?: string
+  decorativeTexts?: DecorativeTexts
 }
 
-export function GigOverlayContent({ data, artistName = '' }: GigOverlayContentProps) {
+export function GigOverlayContent({ data, artistName = '', decorativeTexts }: GigOverlayContentProps) {
+  const dataStreamLabel = decorativeTexts?.gigDataStreamLabel ?? '// EVENT.DATA.STREAM'
+  const statusPrefix = decorativeTexts?.gigStatusPrefix ?? '// SYSTEM.STATUS:'
   return (
     <motion.div
       className="mt-8 space-y-6"
@@ -22,7 +26,7 @@ export function GigOverlayContent({ data, artistName = '' }: GigOverlayContentPr
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
-        <div className="data-label mb-2">// EVENT.DATA.STREAM</div>
+        <div className="data-label mb-2">{dataStreamLabel}</div>
         {data.title && (
           <p className="text-sm font-mono text-primary uppercase tracking-widest mb-1">{data.title}</p>
         )}
@@ -156,7 +160,7 @@ export function GigOverlayContent({ data, artistName = '' }: GigOverlayContentPr
         animate={{ opacity: 1 }}
         transition={{ delay: 0.6 }}
       >
-        <div className="data-label">// SYSTEM.STATUS: [{data.soldOut ? 'SOLD_OUT' : 'ACTIVE'}]</div>
+        <div className="data-label">{statusPrefix} [{data.soldOut ? 'SOLD_OUT' : 'ACTIVE'}]</div>
       </motion.div>
     </motion.div>
   )

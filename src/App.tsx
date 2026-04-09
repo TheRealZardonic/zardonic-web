@@ -499,7 +499,15 @@ function App() {
               onOpenPrivacyPolicy={() => setCyberpunkOverlay({ type: 'privacy' })}
             />
             <Toaster />
-            <SystemMonitorHUD />
+            <SystemMonitorHUD
+              decorativeTexts={adminSettings?.decorativeTexts}
+              dataCounts={siteData ? {
+                releases: siteData.releases?.length ?? 0,
+                gigs: siteData.gigs?.length ?? 0,
+                tracks: siteData.tracks?.length ?? 0,
+                members: siteData.members?.length ?? 0,
+              } : undefined}
+            />
           </>
         }
       >

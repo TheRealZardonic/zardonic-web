@@ -23,7 +23,7 @@ export default function AppFooter({
 }: AppFooterProps) {
   const { setLocale } = useLocale()
   return (
-    <footer className="py-12 px-4 border-t border-border noise-effect">
+    <footer className="py-12 px-4 border-t border-border noise-effect" data-theme-color="border muted-foreground">
       <div className="container mx-auto text-center space-y-4">
         <div className="flex justify-center gap-6 flex-wrap">
           <button
