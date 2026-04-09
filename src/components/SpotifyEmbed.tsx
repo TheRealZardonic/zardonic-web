@@ -158,7 +158,7 @@ export function SpotifyEmbed({
         role="button"
         tabIndex={0}
         aria-label="Load Spotify Player"
-        className={`flex flex-col items-center justify-center bg-black/40 border border-primary/20 cursor-pointer hover:bg-primary/5 hover:border-primary/50 transition-all group rounded-md ${className}`}
+        className={`flex flex-col items-center justify-center bg-black/40 border border-primary/20 cursor-pointer hover:bg-primary/5 hover:border-primary/50 transition-all group rounded-none ${className}`}
         style={{ width, height }}
         onClick={handleConsent}
         onKeyDown={handleConsentKeyDown}
@@ -180,7 +180,7 @@ export function SpotifyEmbed({
   if (hasError) {
     return (
       <div
-        className={`flex flex-col items-center justify-center bg-black/40 border border-destructive/30 rounded-md ${className}`}
+        className={`flex flex-col items-center justify-center bg-black/40 border border-destructive/30 rounded-none ${className}`}
         style={{ width, height }}
         role="alert"
       >

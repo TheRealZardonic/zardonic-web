@@ -11,6 +11,7 @@ export interface ITunesRelease {
   deezer?: string
   tidal?: string
   amazonMusic?: string
+  type?: '' | 'album' | 'ep' | 'single' | 'remix' | 'compilation'
   streamingLinks?: {
     spotify?: string
     soundcloud?: string

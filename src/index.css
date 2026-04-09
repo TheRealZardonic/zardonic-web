@@ -2118,11 +2118,13 @@ h1, h2, h3, h4, h5, h6 {
  * Applied only to the inner iframe so the pre-consent UI keeps its original styling.
  */
 .spotify-ci-embed {
-  border-radius: var(--radius);
+  border-radius: 0;
   overflow: hidden;
 }
 
 .spotify-ci-embed iframe {
-  filter: hue-rotate(var(--spotify-hue-rotate, -116deg)) saturate(0.85);
+  filter: hue-rotate(var(--spotify-hue-rotate, -116deg)) saturate(0.7) brightness(0.9);
   border-radius: 0 !important;
+  transform: scale(1.02);
+  display: block;
 }
