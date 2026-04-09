@@ -80,7 +80,7 @@ export default function NewsSection({ news = [], editMode, onUpdate, sectionLabe
   if (!editMode && (!news || news.length === 0)) return null
 
   return (
-    <section ref={sectionRef} className="py-24 px-4 bg-gradient-to-b from-secondary/5 via-background to-background" id="news">
+    <section ref={sectionRef} className="py-24 px-4 bg-gradient-to-b from-secondary/5 via-background to-background" id="news" data-theme-color="card border foreground muted-foreground">
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-12">
           <motion.h2

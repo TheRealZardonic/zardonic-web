@@ -13,6 +13,7 @@ export function MemberOverlayContent({ data, decorativeTexts }: MemberOverlayCon
   const profileLabel = decorativeTexts?.memberProfileLabel ?? '// MEMBER.PROFILE'
   return (
     <motion.div
+      data-theme-color="card card-foreground border"
       className="mt-8 space-y-6"
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}

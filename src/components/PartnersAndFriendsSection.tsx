@@ -228,7 +228,7 @@ export default function PartnersAndFriendsSection({ friends = [], editMode, onUp
   if (!editMode && friends.length === 0) return null
 
   return (
-    <section ref={sectionRef} className="py-20 px-4 relative" id="partners">
+    <section ref={sectionRef} className="py-20 px-4 relative" id="partners" data-theme-color="card border primary">
       <div className="max-w-6xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 30 }}

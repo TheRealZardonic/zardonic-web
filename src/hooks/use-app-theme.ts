@@ -167,4 +167,46 @@ export function useAppTheme(adminSettings: AdminSettings | undefined): void {
     }
     link.href = faviconUrl
   }, [adminSettings?.faviconUrl])
+
+  // Effect 5: Effect colors, animation timings, CRT intensity
+  useEffect(() => {
+    const ec = adminSettings?.effectColors
+    const at = adminSettings?.animationTimings
+    const ci = adminSettings?.crtIntensity
+    const root = document.documentElement
+
+    if (ec?.chromaticColorLeft) root.style.setProperty('--chromatic-color-left', ec.chromaticColorLeft)
+    if (ec?.chromaticColorRight) root.style.setProperty('--chromatic-color-right', ec.chromaticColorRight)
+    if (ec?.glitchShadowColor1) root.style.setProperty('--glitch-shadow-color-1', ec.glitchShadowColor1)
+    if (ec?.glitchShadowColor2) root.style.setProperty('--glitch-shadow-color-2', ec.glitchShadowColor2)
+    if (typeof ec?.scanlineOpacity === 'number') root.style.setProperty('--scanline-opacity', String(ec.scanlineOpacity))
+    if (ec?.scrollbarThumbColor) root.style.setProperty('--scrollbar-thumb-color', ec.scrollbarThumbColor)
+
+    if (typeof at?.fadeInDuration === 'number') root.style.setProperty('--fade-in-duration', `${at.fadeInDuration}s`)
+    if (typeof at?.scanlineDuration === 'number') root.style.setProperty('--scanline-duration', `${at.scanlineDuration}s`)
+    if (typeof at?.crtFlickerDuration === 'number') root.style.setProperty('--crt-flicker-duration', `${at.crtFlickerDuration}s`)
+    if (typeof at?.glitchDuration === 'number') root.style.setProperty('--glitch-duration', `${at.glitchDuration}s`)
+    if (typeof at?.logoEntranceDuration === 'number') root.style.setProperty('--logo-entrance-duration', `${at.logoEntranceDuration}s`)
+
+    if (typeof ci?.vignetteOpacity === 'number') root.style.setProperty('--vignette-opacity', String(ci.vignetteOpacity))
+    if (typeof ci?.scanlineHeight === 'number') root.style.setProperty('--scanline-height', `${ci.scanlineHeight}px`)
+    if (typeof ci?.noiseFrequency === 'number') root.style.setProperty('--noise-frequency', String(ci.noiseFrequency))
+
+    return () => {
+      root.style.removeProperty('--chromatic-color-left')
+      root.style.removeProperty('--chromatic-color-right')
+      root.style.removeProperty('--glitch-shadow-color-1')
+      root.style.removeProperty('--glitch-shadow-color-2')
+      root.style.removeProperty('--scanline-opacity')
+      root.style.removeProperty('--scrollbar-thumb-color')
+      root.style.removeProperty('--fade-in-duration')
+      root.style.removeProperty('--scanline-duration')
+      root.style.removeProperty('--crt-flicker-duration')
+      root.style.removeProperty('--glitch-duration')
+      root.style.removeProperty('--logo-entrance-duration')
+      root.style.removeProperty('--vignette-opacity')
+      root.style.removeProperty('--scanline-height')
+      root.style.removeProperty('--noise-frequency')
+    }
+  }, [adminSettings?.effectColors, adminSettings?.animationTimings, adminSettings?.crtIntensity])
 }

@@ -30,7 +30,7 @@ export default function ShellSection({ setAdminSettings,
     {visible && (
     <>
     <Separator className="bg-border" />
-    <section id="shell" className="py-24 px-4 scanline-effect crt-effect">
+    <section id="shell" className="py-24 px-4 scanline-effect crt-effect" data-theme-color="card border primary foreground">
       <div className="container mx-auto max-w-4xl">
         <motion.div
           initial={{ opacity: 0, x: -30, filter: 'blur(10px)', clipPath: 'polygon(0 0, 0 0, 0 100%, 0 100%)' }}

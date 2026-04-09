@@ -17,6 +17,7 @@ export function PrivacyOverlayContent({ adminSettings, artistName, decorativeTex
 
   return (
     <motion.div
+      data-theme-color="card border muted-foreground"
       className="mt-8 space-y-6"
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}

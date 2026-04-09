@@ -19,6 +19,7 @@ export function ContactOverlayContent({ adminSettings, decorativeTexts }: Contac
   const statusLabel = decorativeTexts?.contactStatusLabel ?? '// SYSTEM.STATUS: [ACTIVE]'
   return (
     <motion.div
+      data-theme-color="card border input ring"
       className="mt-8 space-y-6"
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}

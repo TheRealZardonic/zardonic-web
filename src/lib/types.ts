@@ -249,6 +249,79 @@ export interface MediaFile {
   description?: string
 }
 
+export interface LayoutSpacingSettings {
+  sectionPaddingY?: string
+  sectionPaddingX?: string
+  containerMaxWidth?: string
+  containerMaxWidthWide?: string
+}
+
+export interface NavigationStylingSettings {
+  height?: string
+  backgroundOpacity?: number
+  backdropBlur?: boolean
+  logoHeight?: string
+  itemGap?: string
+}
+
+export interface FooterStylingSettings {
+  paddingY?: string
+  paddingX?: string
+  textColor?: string
+  linkColor?: string
+}
+
+export interface TypographyDetailSettings {
+  headingFontSize?: string
+  headingFontWeight?: string
+  headingLineHeight?: string
+  headingLetterSpacing?: string
+  headingTextShadow?: boolean
+  bodyFontSize?: string
+  bodyLineHeight?: string
+  monoFontSize?: string
+}
+
+export interface EffectColorSettings {
+  chromaticColorLeft?: string
+  chromaticColorRight?: string
+  glitchShadowColor1?: string
+  glitchShadowColor2?: string
+  scanlineOpacity?: number
+  scrollbarThumbColor?: string
+}
+
+export interface AnimationTimingSettings {
+  fadeInDuration?: number
+  scanlineDuration?: number
+  crtFlickerDuration?: number
+  glitchDuration?: number
+  logoEntranceDuration?: number
+}
+
+export interface GlitchParamSettings {
+  probability?: number
+  intervalMs?: number
+  durationMs?: number
+  enabled?: boolean
+}
+
+export interface CRTIntensitySettings {
+  vignetteOpacity?: number
+  scanlineHeight?: number
+  noiseFrequency?: number
+}
+
+export interface HeroSectionSettings {
+  minHeight?: string
+  paddingTop?: string
+}
+
+export interface BioSectionSettings {
+  readMoreMaxHeight?: string
+  textSize?: string
+}
+
 export interface AdminSettings {
   sectionVisibility?: SectionVisibility
   theme?: ThemeCustomization
@@ -276,6 +349,17 @@ export interface AdminSettings {
   colorPresets?: CustomColorPreset[]
   locale?: string
   customTranslations?: Record<string, Record<string, string>>
+  layoutSpacing?: LayoutSpacingSettings
+  navigationStyling?: NavigationStylingSettings
+  footerStyling?: FooterStylingSettings
+  typographyDetails?: TypographyDetailSettings
+  effectColors?: EffectColorSettings
+  animationTimings?: AnimationTimingSettings
+  glitchParams?: GlitchParamSettings
+  crtIntensity?: CRTIntensitySettings
+  heroSection?: HeroSectionSettings
+  bioSection?: BioSectionSettings
+  expertMode?: boolean
 }
 
 export interface CustomColorPreset {

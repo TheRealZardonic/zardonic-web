@@ -98,6 +98,7 @@ export default function CyberpunkOverlay({ overlay, onClose, adminSettings, arti
                   '0 0 20px rgba(180, 50, 50, 0.3)',
                 ],
               }}
+              data-theme-color="card card-foreground border"
               transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
               className="relative max-w-4xl w-full bg-background/98 border border-primary/30 pointer-events-auto overflow-hidden max-h-[90vh] scanline-effect cyber-card"
               style={{ borderRadius: 'var(--radius)' } as React.CSSProperties}
