@@ -204,7 +204,7 @@ export const CircuitBackground = memo(function CircuitBackground({
     <>
       <motion.div 
         ref={containerRef}
-        className="fixed inset-0 overflow-hidden pointer-events-none z-0"
+        className="fixed inset-0 overflow-hidden pointer-events-none"
         style={{ y: layer3Y, willChange: 'transform', filter: `brightness(${0.5 + glow * 0.8})` }}
       >
         <div className="absolute inset-0 opacity-[0.15]">
@@ -247,7 +247,7 @@ export const CircuitBackground = memo(function CircuitBackground({
       </motion.div>
 
       <motion.div 
-        className="fixed inset-0 overflow-hidden pointer-events-none z-0"
+        className="fixed inset-0 overflow-hidden pointer-events-none"
         style={{ y: layer2Y, willChange: 'transform' }}
       >
         <div className="absolute inset-0 opacity-[0.25]">
@@ -290,7 +290,7 @@ export const CircuitBackground = memo(function CircuitBackground({
       </motion.div>
 
       <motion.div 
-        className="fixed inset-0 overflow-hidden pointer-events-none z-0"
+        className="fixed inset-0 overflow-hidden pointer-events-none"
         style={{ y: layer1Y, willChange: 'transform' }}
       >
         <div className="absolute inset-0 opacity-[0.35]">

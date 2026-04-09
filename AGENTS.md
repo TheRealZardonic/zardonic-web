@@ -41,3 +41,33 @@
 2.  `npm run build`
 3.  `npm run test`
 And ensure all checks pass perfectly.
+
+## 6. Layer Architecture & Z-Index System
+
+All z-index values in the application are managed through CSS custom properties defined in `src/layers.css` and mirrored as TypeScript constants in `src/lib/layer-contract.ts`.
+
+**Token hierarchy (lowest → highest):**
+
+| Token | Value | Usage |
+|---|---|---|
+| `--z-bg-image` | 0 | Static background photo |
+| `--z-bg-animated` | 1 | AnimatedBg components (MatrixRain, CircuitBg…) |
+| `--z-bg-scanline` | 2 | CRT scanline background |
+| `--z-content` | 10 | All page sections, `PageLayout` content wrapper |
+| `--z-section-fx` | 15 | Section-local effects (must use `isolation: isolate`) |
+| `--z-hud` | 20 | `SystemMonitorHUD` floating readouts |
+| `--z-nav` | 30 | `AppNavBar` |
+| `--z-global-fx` | 40 | CRT overlay, vignette, full-page noise (pointer-events: none) |
+| `--z-overlay` | 50 | Modals, dialogs, galleries |
+| `--z-system` | 60 | Loading screen, cookie consent, toasts |
+
+**Rules — violation = instant PR rejection:**
+
+*   **No raw z-index numbers** anywhere in TSX or CSS. Always use `var(--z-*)` in CSS / `style={{ zIndex: 'var(--z-nav)' } as React.CSSProperties}` in TSX.
+*   **`PageLayout`** (`src/layouts/PageLayout.tsx`) MUST be used as the top-level layout for every page. Never build a `min-h-screen` container manually.
+*   **`isolation: isolate`** MUST be added to any component whose children use section-local z-index values (like `.crt-effect`, `.noise-effect`). This prevents local z-index from escaping into the global stacking context.
+*   **New background animations** → add to `BackgroundStack.tsx`, never to `App.tsx` directly.
+*   **New global post-processing effects** (CRT, noise, vignette) → add to `GlobalEffects.tsx`.
+*   **New modals / dialogs** → render inside the `overlays` slot of `PageLayout`.
+*   **New system UI** (toasts, loading screens, consent banners) → render inside the `system` slot of `PageLayout`.
+*   When changing any z-index token value in `src/layers.css`, also update the matching constant in `src/lib/layer-contract.ts` and ensure `src/test/layer-contract.test.tsx` still passes.

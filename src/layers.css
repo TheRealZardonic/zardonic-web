@@ -1,0 +1,66 @@
+/**
+ * Z-INDEX DESIGN TOKENS — Single Source of Truth
+ * ================================================
+ * All z-index values in the application MUST use these CSS custom properties.
+ * Raw z-index numbers are FORBIDDEN anywhere in the codebase.
+ *
+ * Layer architecture (lowest → highest):
+ *
+ *   ┌─────────────────────────────────────────────────┐
+ *   │  bg-image (0)       — static background image   │
+ *   │  bg-animated (1)    — animated overlays          │
+ *   │  bg-scanline (2)    — CRT scanline background    │
+ *   ├─────────────────────────────────────────────────┤
+ *   │  content (10)       — all page sections, footer  │
+ *   │  section-fx (15)    — section-local effects      │
+ *   │                       (MUST use isolation:isolate│
+ *   │                        to prevent escaping)      │
+ *   │  hud (20)           — SystemMonitorHUD readouts  │
+ *   │  nav (30)           — AppNavBar (always on top)  │
+ *   ├─────────────────────────────────────────────────┤
+ *   │  global-fx (40)     — CRT overlay, vignette,     │
+ *   │                       full-page noise            │
+ *   │                       (pointer-events: none)     │
+ *   ├─────────────────────────────────────────────────┤
+ *   │  overlay (50)       — modals, galleries, dialogs │
+ *   │  system (60)        — loading screen, toasts,    │
+ *   │                       cookie consent             │
+ *   └─────────────────────────────────────────────────┘
+ *
+ * Rules:
+ * - Never add a raw z-index number to any component.
+ * - Use `style={{ zIndex: 'var(--z-nav)' } as React.CSSProperties}` in TSX
+ *   or `z-index: var(--z-nav)` in CSS.
+ * - Any element with section-local z-index effects MUST have
+ *   `isolation: isolate` on its container to prevent z-index leakage.
+ * - New backgrounds → BackgroundStack, new effects → GlobalEffects,
+ *   new modals → overlays slot of PageLayout.
+ */
+
+:root {
+  /* Background layers — behind everything */
+  --z-bg-image:      0;
+  --z-bg-animated:   1;
+  --z-bg-scanline:   2;
+
+  /* Content layer — normal document flow */
+  --z-content:       10;
+
+  /* Section-local effects — above section content but contained by isolation:isolate */
+  --z-section-fx:    15;
+
+  /* HUD metadata — floating data readouts */
+  --z-hud:           20;
+
+  /* Navigation — always accessible */
+  --z-nav:           30;
+
+  /* Global post-processing FX — CRT, vignette, noise (pointer-events: none) */
+  --z-global-fx:     40;
+
+  /* Interactive overlays — modals, dialogs, galleries */
+  --z-overlay:       50;
+
+  /* System — loading screen, cookie consent, toasts */
+  --z-system:        60;
+}

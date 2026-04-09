@@ -28,21 +28,25 @@ describe('LAYERS z-index contract invariants', () => {
 
   it('CONTENT is strictly above ANIMATED_BG', () => {
     expect(LAYERS.CONTENT).toBeGreaterThan(LAYERS.ANIMATED_BG)
-    // Concrete values must match what App.tsx uses
-    expect(LAYERS.ANIMATED_BG).toBe(2)
-    expect(LAYERS.CONTENT).toBe(3)
+    // Concrete values must match the CSS tokens in src/layers.css
+    expect(LAYERS.ANIMATED_BG).toBe(1)
+    expect(LAYERS.CONTENT).toBe(10)
   })
 
-  it('CRT_VIGNETTE is above CONTENT', () => {
-    expect(LAYERS.CRT_VIGNETTE).toBeGreaterThan(LAYERS.CONTENT)
+  it('NAV is above HUD', () => {
+    expect(LAYERS.NAV).toBeGreaterThan(LAYERS.HUD)
   })
 
-  it('CRT_OVERLAY is above CRT_VIGNETTE', () => {
-    expect(LAYERS.CRT_OVERLAY).toBeGreaterThan(LAYERS.CRT_VIGNETTE)
+  it('GLOBAL_FX is above CONTENT', () => {
+    expect(LAYERS.GLOBAL_FX).toBeGreaterThan(LAYERS.CONTENT)
   })
 
-  it('NOISE is the topmost layer', () => {
-    expect(LAYERS.NOISE).toBeGreaterThan(LAYERS.CRT_OVERLAY)
+  it('OVERLAY is above GLOBAL_FX', () => {
+    expect(LAYERS.OVERLAY).toBeGreaterThan(LAYERS.GLOBAL_FX)
+  })
+
+  it('SYSTEM is the topmost layer', () => {
+    expect(LAYERS.SYSTEM).toBeGreaterThan(LAYERS.OVERLAY)
   })
 
   it('all LAYER_INVARIANTS are true', () => {
@@ -222,57 +226,53 @@ describe('AppFooter visibility', () => {
 // ---------------------------------------------------------------------------
 describe('App layout: sections wrapper z-index', () => {
   /**
-   * Structural test: the `div.relative.z-[3]` wrapper in App.tsx that hosts all
+   * Structural test: the PageLayout content wrapper in App.tsx that hosts all
    * page sections AND the footer must have z-index >= LAYERS.CONTENT so it is
    * rendered above the animated background wrapper (z-index = LAYERS.ANIMATED_BG).
    *
    * Because we cannot render the full App in unit tests, we verify the contract
    * using the LAYERS constants directly.
    */
-  it('CONTENT layer (z=3) is above ANIMATED_BG layer (z=2)', () => {
+  it('CONTENT layer is above ANIMATED_BG layer', () => {
     expect(LAYERS.CONTENT).toBeGreaterThan(LAYERS.ANIMATED_BG)
   })
 
-  it('CONTENT layer value matches the Tailwind z-[3] class used in App.tsx', () => {
-    // z-[3] in Tailwind means z-index: 3. Must match LAYERS.CONTENT.
-    const tailwindValue = 3
-    expect(LAYERS.CONTENT).toBe(tailwindValue)
+  it('CONTENT layer value matches the CSS token --z-content (10)', () => {
+    // --z-content in layers.css is 10. Must match LAYERS.CONTENT.
+    expect(LAYERS.CONTENT).toBe(10)
   })
 
-  it('ANIMATED_BG layer value matches the inline zIndex:2 used in App.tsx BackgroundLayer wrapper', () => {
-    // The wrapper div around BackgroundLayer uses style={{ zIndex: 2 }}
-    const appInlineZIndex = 2
-    expect(LAYERS.ANIMATED_BG).toBe(appInlineZIndex)
+  it('ANIMATED_BG layer value matches the CSS token --z-bg-animated (1)', () => {
+    // --z-bg-animated in layers.css is 1. Must match LAYERS.ANIMATED_BG.
+    expect(LAYERS.ANIMATED_BG).toBe(1)
   })
 })
 
 // ---------------------------------------------------------------------------
-// 5. CRT / Noise overlays – must be pointer-events-none & above content
+// 5. Global FX overlays – must be pointer-events-none & above content
 // ---------------------------------------------------------------------------
-describe('CRT and noise overlay classes in CSS contract', () => {
-  it('NOISE layer is above CRT_OVERLAY', () => {
-    expect(LAYERS.NOISE).toBeGreaterThan(LAYERS.CRT_OVERLAY)
+describe('Global FX overlay classes in CSS contract', () => {
+  it('GLOBAL_FX layer is above CONTENT', () => {
+    expect(LAYERS.GLOBAL_FX).toBeGreaterThan(LAYERS.CONTENT)
   })
 
-  it('CRT_OVERLAY is above CRT_VIGNETTE', () => {
-    expect(LAYERS.CRT_OVERLAY).toBeGreaterThan(LAYERS.CRT_VIGNETTE)
+  it('OVERLAY layer is above GLOBAL_FX', () => {
+    expect(LAYERS.OVERLAY).toBeGreaterThan(LAYERS.GLOBAL_FX)
   })
 
-  it('CRT_VIGNETTE is above CONTENT', () => {
-    expect(LAYERS.CRT_VIGNETTE).toBeGreaterThan(LAYERS.CONTENT)
+  it('SYSTEM layer is above OVERLAY', () => {
+    expect(LAYERS.SYSTEM).toBeGreaterThan(LAYERS.OVERLAY)
   })
 
-  it('full-page-noise z-index matches LAYERS.NOISE', () => {
-    // The .full-page-noise CSS class uses z-index: 9999.
-    // This test ensures the constant stays in sync.
-    expect(LAYERS.NOISE).toBe(9999)
+  it('GLOBAL_FX z-index matches CSS token --z-global-fx (40)', () => {
+    // The .full-page-noise, .crt-overlay and .crt-vignette classes all use
+    // z-index: var(--z-global-fx) = 40. This ensures the constant stays in sync.
+    expect(LAYERS.GLOBAL_FX).toBe(40)
   })
 
-  it('crt-overlay z-index matches LAYERS.CRT_OVERLAY', () => {
-    expect(LAYERS.CRT_OVERLAY).toBe(9998)
-  })
-
-  it('crt-vignette z-index matches LAYERS.CRT_VIGNETTE', () => {
-    expect(LAYERS.CRT_VIGNETTE).toBe(9997)
+  it('NAV is above HUD and CONTENT', () => {
+    expect(LAYERS.NAV).toBeGreaterThan(LAYERS.HUD)
+    expect(LAYERS.NAV).toBeGreaterThan(LAYERS.CONTENT)
   })
 })
+

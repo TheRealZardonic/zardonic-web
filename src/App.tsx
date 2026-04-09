@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import React, { Suspense } from 'react'
-import { AnimatePresence, motion, useScroll, useTransform } from 'framer-motion'
+import { AnimatePresence } from 'framer-motion'
 import { useKV } from '@/hooks/use-kv'
 import { useKonami } from '@/hooks/use-konami'
 import { trackPageView, trackHeatmapClick } from '@/hooks/use-analytics'
-import { useAnalyticsConsent, CookieConsent, CookiePreferencesButton } from '@/components/CookieConsent'
+import { useAnalyticsConsent, CookieConsent } from '@/components/CookieConsent'
 import { useAdminAuth } from '@/hooks/use-admin-auth'
-import type { AdminSettings, BackgroundType, HudTexts, SectionLabels, Release as FullRelease, TerminalCommand, AnimationSettings } from '@/lib/types'
+import type { AdminSettings, SectionLabels, Release as FullRelease, TerminalCommand, AnimationSettings } from '@/lib/types'
 import { useAppTheme } from '@/hooks/use-app-theme'
 import { useSiteDataSync } from '@/hooks/use-site-data-sync'
 import { LocaleProvider } from '@/contexts/LocaleContext'
@@ -14,17 +14,10 @@ import type { SiteData, CyberpunkOverlayState } from '@/lib/app-types'
 import { DEFAULT_SITE_DATA } from '@/lib/app-types'
 import { DEFAULT_SECTION_ORDER } from '@/lib/config'
 export type { SiteData } from '@/lib/app-types'
-import { Separator } from '@/components/ui/separator'
 import { Toaster } from '@/components/ui/sonner'
 import { toast } from 'sonner'
 import { SwipeableGallery } from '@/components/SwipeableGallery'
 import { LoadingScreen } from '@/components/LoadingScreen'
-import { CircuitBackground } from '@/components/CircuitBackground'
-import CyberpunkBackground from '@/components/CyberpunkBackground'
-const MatrixRain = React.lazy(() => import('@/components/MatrixRain'))
-const StarField = React.lazy(() => import('@/components/StarField'))
-const CloudChamberBackground = React.lazy(() => import('@/components/CloudChamberBackground'))
-const GlitchGridBackground = React.lazy(() => import('@/components/GlitchGridBackground'))
 const MinimalBarLoader = React.lazy(() => import('@/components/MinimalBarLoader'))
 const GlitchDecodeLoader = React.lazy(() => import('@/components/GlitchDecodeLoader'))
 import AdminLoginDialog from '@/components/AdminLoginDialog'
@@ -50,101 +43,10 @@ import CyberpunkOverlay from '@/components/CyberpunkOverlay'
 import { StructuredData } from '@/components/StructuredData'
 import { SectionErrorBoundary } from '@/components/SectionErrorBoundary'
 import { useDocumentTitle } from '@/hooks/use-document-title'
+import { PageLayout } from '@/layouts/PageLayout'
+import { BackgroundStack } from '@/components/BackgroundStack'
+import { GlobalEffects } from '@/components/GlobalEffects'
 
-/** Render the correct background component based on the configured type */
-
-function resolveImageUrl(raw: string): string {
-  if (!raw) return raw
-  try {
-    const u = new URL(raw)
-    if (u.hostname === 'drive.google.com') {
-      const fileMatch = u.pathname.match(/\/file\/d\/([A-Za-z0-9_-]+)/)
-      const idParam = u.searchParams.get('id')
-      const fileId = fileMatch?.[1] ?? idParam
-      if (fileId) {
-        const direct = `https://drive.google.com/uc?export=view&id=${fileId}`
-        return `/api/image-proxy?url=${encodeURIComponent(direct)}`
-      }
-    }
-  } catch { /* ignore */ }
-  return raw
-}
-
-function BackgroundLayer({ type, hudTexts, transparent, animSettings }: { type: BackgroundType | undefined; hudTexts?: HudTexts; transparent?: boolean; animSettings?: AnimationSettings }) {
-  const bg = type ?? 'cloud-chamber'
-  if (bg === 'circuit') return <CircuitBackground speed={animSettings?.circuitSpeed} glow={animSettings?.circuitGlow} />
-  if (bg === 'cyberpunk-hud') return <CyberpunkBackground hudTexts={hudTexts} />
-  if (bg === 'matrix') return <Suspense fallback={null}><MatrixRain transparent={transparent} speed={animSettings?.matrixSpeed} density={animSettings?.matrixDensity} color={animSettings?.matrixColor} /></Suspense>
-  if (bg === 'stars') return <Suspense fallback={null}><StarField transparent={transparent} starCount={animSettings?.starCount} starSpeed={animSettings?.starSpeed} /></Suspense>
-  if (bg === 'cloud-chamber') return <Suspense fallback={null}><CloudChamberBackground glowColor={animSettings?.cloudGlowColor} /></Suspense>
-  if (bg === 'glitch-grid') return <Suspense fallback={null}><GlitchGridBackground transparent={transparent} gridSize={animSettings?.glitchGridSize} scanSpeed={animSettings?.glitchScanSpeed} glitchFrequency={animSettings?.glitchFrequency} /></Suspense>
-  // 'minimal' – no decorative background
-  return null
-}
-
-/** Fixed (non-scrolling) background image. */
-function FixedBackgroundImage({ url, fit, opacity }: {
-  url: string
-  fit?: 'cover' | 'contain' | 'fill' | 'none'
-  opacity: number
-}) {
-  return (
-    <div
-      className="fixed inset-0 pointer-events-none"
-      style={{ zIndex: 0, opacity }}
-      aria-hidden="true"
-    >
-      <img
-        src={resolveImageUrl(url)}
-        alt=""
-        className="w-full h-full"
-        style={{ objectFit: fit ?? 'cover', objectPosition: 'center', display: 'block' }}
-      />
-    </div>
-  )
-}
-
-/** Parallax background image — moves upward as scroll progresses so it
- *  always covers the viewport. */
-function ParallaxBackgroundImage({ url, fit, opacity }: {
-  url: string
-  fit?: 'cover' | 'contain' | 'fill' | 'none'
-  opacity: number
-}) {
-  const { scrollYProgress } = useScroll()
-  const y = useTransform(scrollYProgress, [0, 1], ['0%', '-15%'])
-  return (
-    <div
-      className="fixed inset-0 overflow-hidden pointer-events-none"
-      style={{ zIndex: 0, opacity }}
-      aria-hidden="true"
-    >
-      <motion.div
-        style={{ y, willChange: 'transform', position: 'absolute', top: '-15%', left: 0, right: 0, bottom: '-15%' }}
-      >
-        <img
-          src={resolveImageUrl(url)}
-          alt=""
-          className="w-full h-full"
-          style={{ objectFit: fit ?? 'cover', objectPosition: 'center', display: 'block' }}
-        />
-      </motion.div>
-    </div>
-  )
-}
-
-/** Renders the background image in either fixed or parallax mode. Depth layer 0 – deepest. */
-function BackgroundImage({ url, fit, opacity, parallax }: {
-  url: string
-  fit?: 'cover' | 'contain' | 'fill' | 'none'
-  opacity: number
-  parallax: boolean
-}) {
-  if (parallax) {
-    return <ParallaxBackgroundImage url={url} fit={fit} opacity={opacity} />
-  }
-  return <FixedBackgroundImage url={url} fit={fit} opacity={opacity} />
-}
 
 // Code splitting for heavy components
 const Terminal = React.lazy(() => import('@/components/Terminal').then(m => ({ default: m.Terminal })))
@@ -380,111 +282,240 @@ function App() {
     <LocaleProvider customTranslations={adminSettings?.customTranslations}>
     <>
       {siteData && <StructuredData artistName={siteData.artistName} siteData={siteData} />}
-      <AnimatePresence>
-        {(!siteData || loading) && (() => {
-          const lsType = anim.loadingScreenType ?? 'cyberpunk'
-          if (lsType === 'none') {
-            // Still need to signal load complete
-            return null
-          }
-          if (lsType === 'minimal-bar') {
-            return (
-              <Suspense fallback={null}>
-                <MinimalBarLoader
-                  onLoadComplete={() => setLoading(false)}
-                  precacheUrls={precacheUrls}
-                  mode={anim.loadingScreenMode ?? 'real'}
-                  duration={anim.loadingScreenDuration ?? 3}
-                  loaderTexts={adminSettings?.loaderTexts}
-                />
-              </Suspense>
-            )
-          }
-          if (lsType === 'glitch-decode') {
-            return (
-              <Suspense fallback={null}>
-                <GlitchDecodeLoader
-                  onLoadComplete={() => setLoading(false)}
-                  precacheUrls={precacheUrls}
-                  mode={anim.loadingScreenMode ?? 'real'}
-                  duration={anim.loadingScreenDuration ?? 3}
-                  loaderTexts={adminSettings?.loaderTexts}
-                />
-              </Suspense>
-            )
-          }
-          // default: 'cyberpunk'
-          return (
-            <LoadingScreen
-              onLoadComplete={() => setLoading(false)}
-              precacheUrls={precacheUrls}
-              loaderTexts={adminSettings?.loaderTexts}
-              mode={anim.loadingScreenMode ?? 'real'}
-              duration={anim.loadingScreenDuration ?? 3}
-            />
-          )
-        })()}
-      </AnimatePresence>
-
-      <div className={`min-h-screen${anim.backgroundImageUrl ? ' bg-transparent' : ' bg-background'} text-foreground relative z-10${anim.glitchEnabled === false ? ' no-glitch' : ''}${anim.chromaticEnabled === false ? ' no-chromatic' : ''}`}>
-      {anim.crtEnabled !== false && <div className="crt-overlay" />}
-      {anim.crtEnabled !== false && <div className="crt-vignette" />}
-      {anim.scanlineEnabled !== false && <div className="crt-scanline-bg" />}
-      {anim.noiseEnabled !== false && <div className="full-page-noise periodic-noise-glitch" />}
-      {/* Depth layer 0 – background image (deepest). Parallax moves it at 40 % scroll speed. */}
-      {anim.backgroundImageUrl && (
-        <BackgroundImage
-          url={anim.backgroundImageUrl}
-          fit={anim.backgroundImageFit}
-          opacity={typeof anim.backgroundImageOpacity === 'number' ? anim.backgroundImageOpacity : 1}
-          parallax={anim.backgroundImageParallax === true}
-        />
-      )}
-      {/* Depth layer 1 – animated overlay effect (middle depth, above image, below content). */}
-      {anim.circuitBackgroundEnabled !== false && (!anim.backgroundImageUrl || anim.backgroundImageOverlay === true) && (
-        <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 2 }}>
-          <BackgroundLayer
-            type={anim.backgroundType}
+      <PageLayout
+        contentClassName={`text-foreground${anim.backgroundImageUrl ? ' bg-transparent' : ' bg-background'}${anim.glitchEnabled === false ? ' no-glitch' : ''}${anim.chromaticEnabled === false ? ' no-chromatic' : ''}`}
+        backgroundLayers={
+          <BackgroundStack
+            backgroundImageUrl={anim.backgroundImageUrl}
+            backgroundImageFit={anim.backgroundImageFit}
+            backgroundImageOpacity={typeof anim.backgroundImageOpacity === 'number' ? anim.backgroundImageOpacity : 1}
+            backgroundImageParallax={anim.backgroundImageParallax === true}
+            backgroundImageOverlay={anim.backgroundImageOverlay === true}
+            backgroundType={anim.backgroundType}
+            circuitBackgroundEnabled={anim.circuitBackgroundEnabled !== false}
             hudTexts={adminSettings?.hudTexts}
-            transparent={Boolean(anim.backgroundImageUrl && anim.backgroundImageOverlay)}
             animSettings={anim}
           />
-        </div>
-      )}
-      <SystemMonitorHUD />
-      
-      <Toaster />
-      {siteData?.tracks && siteData.tracks.length > 0 && siteData.tracks[0]?.url && (
-        <audio src={siteData.tracks[0].url} aria-label="Background music player" />
-      )}
+        }
+        nav={
+          <AppNavBar
+            artistName={siteData?.artistName ?? ''}
+            editMode={editMode}
+            isOwner={isOwner}
+            setEditMode={setEditMode}
+            hasPassword={!needsSetup}
+            setShowLoginDialog={setShowLoginDialog}
+            mobileMenuOpen={mobileMenuOpen}
+            setMobileMenuOpen={setMobileMenuOpen}
+            scrollToSection={scrollToSection}
+            sectionLabels={sectionLabels}
+            sectionVisibility={vis}
+          />
+        }
+        footer={
+          <AppFooter
+            artistName={siteData?.artistName || ''}
+            isOwner={isOwner}
+            hasPassword={!needsSetup}
+            setShowLoginDialog={setShowLoginDialog}
+            setShowSetupDialog={setShowSetupDialog}
+            setCyberpunkOverlay={setCyberpunkOverlay}
+          />
+        }
+        globalEffects={
+          <GlobalEffects
+            crtEnabled={anim.crtEnabled !== false}
+            scanlineEnabled={anim.scanlineEnabled !== false}
+            noiseEnabled={anim.noiseEnabled !== false}
+          />
+        }
+        overlays={
+          <>
+            <AnimatePresence>
+              {galleryIndex !== null && siteData && (
+                <SwipeableGallery
+                  images={siteData.gallery}
+                  initialIndex={galleryIndex}
+                  onClose={() => setGalleryIndex(null)}
+                />
+              )}
+            </AnimatePresence>
 
-      <AppNavBar
-        artistName={siteData?.artistName ?? ''}
-        editMode={editMode}
-        isOwner={isOwner}
-        setEditMode={setEditMode}
-        hasPassword={!needsSetup}
-        setShowLoginDialog={setShowLoginDialog}
-        mobileMenuOpen={mobileMenuOpen}
-        setMobileMenuOpen={setMobileMenuOpen}
-        scrollToSection={scrollToSection}
-        sectionLabels={sectionLabels}
-        sectionVisibility={vis}
-      />
+            <Suspense fallback={null}>
+              <Terminal
+                isOpen={terminalOpen}
+                onClose={() => setTerminalOpen(false)}
+                customCommands={terminalCommands}
+                editMode={editMode}
+                onSaveCommands={handleSaveTerminalCommands}
+              />
+            </Suspense>
 
-      <AppHeroSection
-        contentLoaded={contentLoaded}
-        editMode={editMode}
-        scrollToSection={scrollToSection}
-        artistName={siteData?.artistName ?? ''}
-        adminSettings={adminSettings}
-        sectionVisibility={vis}
-        onUpdateSiteData={editMode ? handleUpdateSiteData : undefined}
-        siteData={siteData}
-        hasCustomBackground={Boolean(anim.backgroundImageUrl)}
-      />
+            <Suspense fallback={null}>
+              <StatsDashboard open={showStats} onClose={() => setShowStats(false)} />
+            </Suspense>
 
-      <div className="relative z-[3] flex flex-col">
+            <CyberpunkOverlay
+              overlay={cyberpunkOverlay}
+              onClose={() => setCyberpunkOverlay(null)}
+              adminSettings={adminSettings}
+            />
+
+            {isOwner && (
+              <EditControls
+                editMode={editMode}
+                onToggleEdit={() => setEditMode(!editMode)}
+                hasPassword={!needsSetup}
+                onChangePassword={handleSetAdminPassword}
+                onSetPassword={handleSetAdminPassword}
+                adminSettings={adminSettings}
+                setAdminSettings={handleUpdateAdminSettings}
+                siteData={siteData}
+                onImportData={(data) => handleUpdateSiteData(data as SiteData)}
+                onOpenConfigEditor={() => setShowConfigEditor(true)}
+                onOpenStats={() => setShowStats(true)}
+                onOpenSecurityIncidents={() => setShowSecurityIncidents(true)}
+                onOpenSecuritySettings={() => setShowSecuritySettings(true)}
+                onOpenBlocklist={() => setShowBlocklist(true)}
+                onOpenContactInbox={() => setShowContactInbox(true)}
+                onOpenSubscriberList={() => setShowSubscriberList(true)}
+                onUpdateSiteData={handleUpdateSiteData}
+                onLogout={handleLogout}
+              />
+            )}
+
+            <Suspense fallback={null}>
+              <ConfigEditorDialog
+                open={showConfigEditor}
+                onClose={() => setShowConfigEditor(false)}
+                overrides={adminSettings?.configOverrides || {}}
+                onSave={(configOverrides) => handleUpdateAdminSettings({ ...(adminSettings || {}), configOverrides })}
+              />
+            </Suspense>
+
+            {/* Security admin dialogs — only rendered when admin is logged in */}
+            {isOwner && (
+              <Suspense fallback={null}>
+                <SecurityIncidentsDashboard
+                  open={showSecurityIncidents}
+                  onClose={() => setShowSecurityIncidents(false)}
+                  onViewProfile={(hashedIp) => {
+                    setSelectedAttackerIp(hashedIp)
+                    setShowAttackerProfile(true)
+                  }}
+                />
+                <SecuritySettingsDialog
+                  open={showSecuritySettings}
+                  onClose={() => setShowSecuritySettings(false)}
+                />
+                <BlocklistManagerDialog
+                  open={showBlocklist}
+                  onClose={() => setShowBlocklist(false)}
+                />
+                <AttackerProfileDialog
+                  open={showAttackerProfile}
+                  onClose={() => setShowAttackerProfile(false)}
+                  hashedIp={selectedAttackerIp}
+                />
+                <ContactInboxDialog
+                  open={showContactInbox}
+                  onClose={() => setShowContactInbox(false)}
+                />
+                <SubscriberListDialog
+                  open={showSubscriberList}
+                  onClose={() => setShowSubscriberList(false)}
+                />
+              </Suspense>
+            )}
+
+            {/* Admin Login Dialogs */}
+            <AdminLoginDialog
+              open={showLoginDialog}
+              onOpenChange={setShowLoginDialog}
+              mode="login"
+              onLogin={handleAdminLogin}
+              onSetPassword={handleSetAdminPassword}
+            />
+
+            <AdminLoginDialog
+              open={showSetupDialog}
+              onOpenChange={setShowSetupDialog}
+              mode="setup"
+              onSetPassword={handleSetupAdminPassword}
+            />
+          </>
+        }
+        system={
+          <>
+            <AnimatePresence>
+              {(!siteData || loading) && (() => {
+                const lsType = anim.loadingScreenType ?? 'cyberpunk'
+                if (lsType === 'none') {
+                  return null
+                }
+                if (lsType === 'minimal-bar') {
+                  return (
+                    <Suspense fallback={null}>
+                      <MinimalBarLoader
+                        onLoadComplete={() => setLoading(false)}
+                        precacheUrls={precacheUrls}
+                        mode={anim.loadingScreenMode ?? 'real'}
+                        duration={anim.loadingScreenDuration ?? 3}
+                        loaderTexts={adminSettings?.loaderTexts}
+                      />
+                    </Suspense>
+                  )
+                }
+                if (lsType === 'glitch-decode') {
+                  return (
+                    <Suspense fallback={null}>
+                      <GlitchDecodeLoader
+                        onLoadComplete={() => setLoading(false)}
+                        precacheUrls={precacheUrls}
+                        mode={anim.loadingScreenMode ?? 'real'}
+                        duration={anim.loadingScreenDuration ?? 3}
+                        loaderTexts={adminSettings?.loaderTexts}
+                      />
+                    </Suspense>
+                  )
+                }
+                // default: 'cyberpunk'
+                return (
+                  <LoadingScreen
+                    onLoadComplete={() => setLoading(false)}
+                    precacheUrls={precacheUrls}
+                    loaderTexts={adminSettings?.loaderTexts}
+                    mode={anim.loadingScreenMode ?? 'real'}
+                    duration={anim.loadingScreenDuration ?? 3}
+                  />
+                )
+              })()}
+            </AnimatePresence>
+            {/* GDPR Cookie Consent Banner */}
+            <CookieConsent
+              onOpenPrivacyPolicy={() => setCyberpunkOverlay({ type: 'privacy' })}
+            />
+            <Toaster />
+            <SystemMonitorHUD />
+          </>
+        }
+      >
+        {/* Main content — inside <main className="flex-1 flex flex-col"> */}
+        {siteData?.tracks && siteData.tracks.length > 0 && siteData.tracks[0]?.url && (
+          <audio src={siteData.tracks[0].url} aria-label="Background music player" />
+        )}
+        <AppHeroSection
+          contentLoaded={contentLoaded}
+          editMode={editMode}
+          scrollToSection={scrollToSection}
+          artistName={siteData?.artistName ?? ''}
+          adminSettings={adminSettings}
+          sectionVisibility={vis}
+          onUpdateSiteData={editMode ? handleUpdateSiteData : undefined}
+          siteData={siteData}
+          hasCustomBackground={Boolean(anim.backgroundImageUrl)}
+        />
+        <div className="flex flex-col flex-1">
 
       {siteData && (<>
       <SectionErrorBoundary sectionName="Biography">
@@ -676,137 +707,8 @@ function App() {
       </SectionErrorBoundary>
 
       </>)}
-
-      <AppFooter
-        artistName={siteData?.artistName || ''}
-        isOwner={isOwner}
-        hasPassword={!needsSetup}
-        setShowLoginDialog={setShowLoginDialog}
-        setShowSetupDialog={setShowSetupDialog}
-        setCyberpunkOverlay={setCyberpunkOverlay}
-      />
-
-      </div>{/* end flex container for reorderable sections + footer */}
-
-      <AnimatePresence>
-        {galleryIndex !== null && siteData && (
-          <SwipeableGallery
-            images={siteData.gallery}
-            initialIndex={galleryIndex}
-            onClose={() => setGalleryIndex(null)}
-          />
-        )}
-      </AnimatePresence>
-
-      <Suspense fallback={null}>
-        <Terminal
-          isOpen={terminalOpen}
-          onClose={() => setTerminalOpen(false)}
-          customCommands={terminalCommands}
-          editMode={editMode}
-          onSaveCommands={handleSaveTerminalCommands}
-        />
-      </Suspense>
-
-      <Suspense fallback={null}>
-        <StatsDashboard open={showStats} onClose={() => setShowStats(false)} />
-      </Suspense>
-
-      <CyberpunkOverlay
-        overlay={cyberpunkOverlay}
-        onClose={() => setCyberpunkOverlay(null)}
-        adminSettings={adminSettings}
-      />
-
-      {/* GDPR Cookie Consent Banner */}
-      <CookieConsent
-        onOpenPrivacyPolicy={() => setCyberpunkOverlay({ type: 'privacy' })}
-      />
-
-
-      {isOwner && (
-        <EditControls
-          editMode={editMode}
-          onToggleEdit={() => setEditMode(!editMode)}
-          hasPassword={!needsSetup}
-          onChangePassword={handleSetAdminPassword}
-          onSetPassword={handleSetAdminPassword}
-          adminSettings={adminSettings}
-          setAdminSettings={handleUpdateAdminSettings}
-          siteData={siteData}
-          onImportData={(data) => handleUpdateSiteData(data as SiteData)}
-          onOpenConfigEditor={() => setShowConfigEditor(true)}
-          onOpenStats={() => setShowStats(true)}
-          onOpenSecurityIncidents={() => setShowSecurityIncidents(true)}
-          onOpenSecuritySettings={() => setShowSecuritySettings(true)}
-          onOpenBlocklist={() => setShowBlocklist(true)}
-          onOpenContactInbox={() => setShowContactInbox(true)}
-          onOpenSubscriberList={() => setShowSubscriberList(true)}
-          onUpdateSiteData={handleUpdateSiteData}
-          onLogout={handleLogout}
-        />
-      )}
-
-      <Suspense fallback={null}>
-        <ConfigEditorDialog
-          open={showConfigEditor}
-          onClose={() => setShowConfigEditor(false)}
-          overrides={adminSettings?.configOverrides || {}}
-          onSave={(configOverrides) => handleUpdateAdminSettings({ ...(adminSettings || {}), configOverrides })}
-        />
-      </Suspense>
-
-      {/* Security admin dialogs — only rendered when admin is logged in */}
-      {isOwner && (
-        <Suspense fallback={null}>
-          <SecurityIncidentsDashboard
-            open={showSecurityIncidents}
-            onClose={() => setShowSecurityIncidents(false)}
-            onViewProfile={(hashedIp) => {
-              setSelectedAttackerIp(hashedIp)
-              setShowAttackerProfile(true)
-            }}
-          />
-          <SecuritySettingsDialog
-            open={showSecuritySettings}
-            onClose={() => setShowSecuritySettings(false)}
-          />
-          <BlocklistManagerDialog
-            open={showBlocklist}
-            onClose={() => setShowBlocklist(false)}
-          />
-          <AttackerProfileDialog
-            open={showAttackerProfile}
-            onClose={() => setShowAttackerProfile(false)}
-            hashedIp={selectedAttackerIp}
-          />
-          <ContactInboxDialog
-            open={showContactInbox}
-            onClose={() => setShowContactInbox(false)}
-          />
-          <SubscriberListDialog
-            open={showSubscriberList}
-            onClose={() => setShowSubscriberList(false)}
-          />
-        </Suspense>
-      )}
-
-      {/* Admin Login Dialogs */}
-      <AdminLoginDialog
-        open={showLoginDialog}
-        onOpenChange={setShowLoginDialog}
-        mode="login"
-        onLogin={handleAdminLogin}
-        onSetPassword={handleSetAdminPassword}
-      />
-
-      <AdminLoginDialog
-        open={showSetupDialog}
-        onOpenChange={setShowSetupDialog}
-        mode="setup"
-        onSetPassword={handleSetupAdminPassword}
-      />
-    </div>
+        </div>{/* end flex-1 sections container */}
+      </PageLayout>
     </>
     </LocaleProvider>
   )

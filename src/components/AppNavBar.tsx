@@ -52,8 +52,8 @@ export default function AppNavBar({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className="fixed top-0 left-0 right-0 z-50 bg-background/98 backdrop-blur-sm border-b border-border scanline-effect"
-      style={{ position: 'fixed', top: 0 }}
+      className="fixed top-0 left-0 right-0 bg-background/98 backdrop-blur-sm border-b border-border scanline-effect"
+      style={{ position: 'fixed', top: 0, zIndex: 'var(--z-nav)' } as React.CSSProperties}
     >
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <motion.div
