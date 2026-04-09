@@ -42,15 +42,22 @@ export default function TranslationsTab({ adminSettings, setAdminSettings, trans
       try {
         const result = ev.target?.result
         if (typeof result !== 'string') return
-        const data = JSON.parse(result)
+        let data: unknown
+        try {
+          data = JSON.parse(result)
+        } catch (parseError) {
+          toast.error(`JSON parse error: ${parseError instanceof Error ? parseError.message : 'invalid JSON'}`)
+          return
+        }
         if (typeof data !== 'object' || data === null || Array.isArray(data)) {
-          throw new Error('invalid')
+          toast.error('Invalid format: expected a JSON object with translation keys as properties.')
+          return
         }
         const existing = adminSettings?.customTranslations ?? {}
-        setAdminSettings?.({ ...(adminSettings ?? {}), customTranslations: { ...existing, ...data } })
+        setAdminSettings?.({ ...(adminSettings ?? {}), customTranslations: { ...existing, ...(data as Record<string, Record<string, string>>) } })
         toast.success('Translations imported successfully!')
       } catch {
-        toast.error('Invalid translation file format. Please upload a valid JSON file.')
+        toast.error('Failed to read the file. Please try again.')
       }
     }
     reader.readAsText(file)

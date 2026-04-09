@@ -11,7 +11,7 @@ interface PrivacyOverlayContentProps {
 export function PrivacyOverlayContent({ adminSettings, artistName }: PrivacyOverlayContentProps) {
   const { locale: language, setLocale: setLanguage } = useLocale()
 
-  const operatorName = adminSettings?.contactInfo?.managementName || artistName || ''
+  const dataController = adminSettings?.contactInfo?.managementName || artistName || ''
 
   return (
     <motion.div
@@ -69,7 +69,7 @@ export function PrivacyOverlayContent({ adminSettings, artistName }: PrivacyOver
                   <p className="font-bold text-primary">General Information</p>
                   <p>The following information provides a simple overview of what happens to your personal data when you visit this website. Personal data is any data that can be used to identify you personally. For detailed information on data protection, please refer to our privacy policy listed below.</p>
                   <p className="font-bold text-primary mt-4">Data Collection on this Website</p>
-                  <p>{`Data processing on this website is carried out by the website operator${operatorName ? `: ${operatorName}` : ''}.`}</p>
+                  <p>{`Data processing on this website is carried out by the website operator${dataController ? `: ${dataController}` : ''}.`}</p>
                   <p>Your data is collected either because you provide it to us or because it is automatically recorded by our IT systems when you visit the website (e.g., technical data such as your internet browser, operating system, or time of access). This data is collected automatically as soon as you enter our website.</p>
                   <p className="font-bold text-primary mt-4">What do we use your data for?</p>
                   <p>Some data is collected to ensure the error-free provision of the website. No data is used for analyzing user behavior or marketing purposes.</p>
@@ -90,7 +90,7 @@ export function PrivacyOverlayContent({ adminSettings, artistName }: PrivacyOver
                   <p className="font-bold text-primary">Data Protection</p>
                   <p>We take the protection of your personal data very seriously. We treat your personal data confidentially and in accordance with the statutory data protection regulations (GDPR, BDSG) and this privacy policy.</p>
                   <p className="font-bold text-primary mt-4">Note on the Responsible Party</p>
-                  <p>{`The responsible party for data processing on this website is${operatorName ? `: ${operatorName}` : ' the site operator'}.`}</p>
+                  <p>{`The responsible party for data processing on this website is${dataController ? `: ${dataController}` : ' the site operator'}.`}</p>
                   <p>The responsible party is the natural person who alone or jointly with others decides on the purposes and means of the processing of personal data.</p>
                   <p className="font-bold text-primary mt-4">Storage Duration</p>
                   <p>Unless a specific storage period is mentioned within this privacy policy, your personal data will remain with us until the purpose for data processing no longer applies. If you assert a legitimate request for deletion or revoke consent for data processing, your data will be deleted unless we have other legally permissible reasons for storing your personal data; in such cases, deletion will take place after these reasons cease to apply.</p>
@@ -119,7 +119,7 @@ export function PrivacyOverlayContent({ adminSettings, artistName }: PrivacyOver
                   <p className="font-bold text-primary">Allgemeine Hinweise</p>
                   <p>Die folgenden Hinweise geben einen einfachen Überblick darüber, was mit Ihren personenbezogenen Daten passiert, wenn Sie diese Website besuchen. Personenbezogene Daten sind alle Daten, mit denen Sie persönlich identifiziert werden können. Ausführliche Informationen zum Thema Datenschutz entnehmen Sie unserer unter diesem Text aufgeführten Datenschutzerklärung.</p>
                   <p className="font-bold text-primary mt-4">Datenerfassung auf dieser Website</p>
-                  <p>{`Die Datenverarbeitung auf dieser Website erfolgt durch den Websitebetreiber${operatorName ? `: ${operatorName}` : ''}.`}</p>
+                  <p>{`Die Datenverarbeitung auf dieser Website erfolgt durch den Websitebetreiber${dataController ? `: ${dataController}` : ''}.`}</p>
                   <p>Ihre Daten werden zum einen dadurch erhoben, dass Sie uns diese mitteilen. Hierbei kann es sich z. B. um Daten handeln, die Sie in ein Kontaktformular eingeben. Andere Daten werden automatisch oder nach Ihrer Einwilligung beim Besuch der Website durch unsere IT-Systeme erfasst. Das sind vor allem technische Daten (z. B. Internetbrowser, Betriebssystem oder Uhrzeit des Seitenaufrufs).</p>
                   <p className="font-bold text-primary mt-4">Wofür nutzen wir Ihre Daten?</p>
                   <p>Ein Teil der Daten wird erhoben, um eine fehlerfreie Bereitstellung der Website zu gewährleisten. Andere Daten können zur Analyse Ihres Nutzerverhaltens verwendet werden.</p>
@@ -140,7 +140,7 @@ export function PrivacyOverlayContent({ adminSettings, artistName }: PrivacyOver
                   <p className="font-bold text-primary">Datenschutz</p>
                   <p>Die Betreiber dieser Seiten nehmen den Schutz Ihrer persönlichen Daten sehr ernst. Wir behandeln Ihre personenbezogenen Daten vertraulich und entsprechend den gesetzlichen Datenschutzvorschriften (DSGVO, BDSG) sowie dieser Datenschutzerklärung.</p>
                   <p className="font-bold text-primary mt-4">Hinweis zur verantwortlichen Stelle</p>
-                  <p>{`Verantwortlich für die Datenverarbeitung auf dieser Website ist${operatorName ? `: ${operatorName}` : ' der Websitebetreiber'}.`}</p>
+                  <p>{`Verantwortlich für die Datenverarbeitung auf dieser Website ist${dataController ? `: ${dataController}` : ' der Websitebetreiber'}.`}</p>
                   <p>Die verantwortliche Stelle entscheidet allein oder gemeinsam mit anderen über die Zwecke und Mittel der Verarbeitung von personenbezogenen Daten.</p>
                   <p className="font-bold text-primary mt-4">Speicherdauer</p>
                   <p>Soweit innerhalb dieser Datenschutzerklärung keine speziellere Speicherdauer genannt wurde, verbleiben Ihre personenbezogenen Daten bei uns, bis der Zweck für die Datenverarbeitung entfällt. Wenn Sie ein berechtigtes Löschersuchen geltend machen oder eine Einwilligung zur Datenverarbeitung widerrufen, werden Ihre Daten gelöscht, sofern wir keine anderen rechtlich zulässigen Gründe für die Speicherung Ihrer personenbezogenen Daten haben; im letztgenannten Fall erfolgt die Löschung nach Fortfall dieser Gründe.</p>

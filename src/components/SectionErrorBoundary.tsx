@@ -33,6 +33,9 @@ export class SectionErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
+      // Only expose error details in development environments to avoid
+      // leaking internal implementation details (file paths, stack frames, etc.)
+      const isDev = typeof process !== 'undefined' && process.env.NODE_ENV === 'development'
       return (
         <div
           className="py-12 px-6 flex flex-col items-center gap-4 text-center"
@@ -42,7 +45,7 @@ export class SectionErrorBoundary extends Component<Props, State> {
           <div className="font-mono text-sm text-destructive border border-destructive/30 bg-destructive/10 rounded px-4 py-2">
             [{this.props.sectionName}] – Failed to render
           </div>
-          {this.state.errorMessage && (
+          {isDev && this.state.errorMessage && (
             <p className="font-mono text-xs text-muted-foreground max-w-sm break-words">
               {this.state.errorMessage}
             </p>
