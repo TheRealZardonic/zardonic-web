@@ -83,7 +83,7 @@ export default function CreditHighlightsSection({
     <div style={{ order: sectionOrder }}>
     {visible && (
     <>
-    <section className="py-16 px-4 bg-card/50 noise-effect overflow-hidden">
+    <section className="py-16 px-4 bg-card/50 noise-effect overflow-hidden" data-theme-color="primary accent card border">
       <div className="container mx-auto max-w-6xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

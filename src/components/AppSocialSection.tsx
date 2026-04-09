@@ -38,7 +38,7 @@ export default function AppSocialSection({ social, sectionOrder, visible, editMo
   return (
     <div style={{ order: sectionOrder }}>
       <Separator className="bg-border" />
-      <section id="connect" className="py-24 px-4 bg-card/50 scanline-effect crt-effect">
+      <section id="connect" className="py-24 px-4 bg-card/50 scanline-effect crt-effect" data-theme-color="primary accent">
         <div className="container mx-auto max-w-6xl">
           <motion.div
             initial={{ opacity: 0, x: -30, filter: 'blur(10px)', clipPath: 'polygon(0 0, 0 0, 0 100%, 0 100%)' }}

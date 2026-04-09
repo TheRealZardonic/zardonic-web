@@ -118,6 +118,7 @@ interface AppearanceTabProps {
   onOpenConfigEditor?: () => void
   newPresetName: string
   setNewPresetName: (v: string) => void
+  expertMode?: boolean
 }
 
 const animItems: { key: keyof AnimationSettings; label: string }[] = [
@@ -258,6 +259,7 @@ export default function AppearanceTab({
   onOpenConfigEditor,
   newPresetName,
   setNewPresetName,
+  expertMode = false,
 }: AppearanceTabProps) {
   // Auto-contrast: sets all text foreground colors so they contrast sufficiently
   const handleAutoContrast = () => {
@@ -652,6 +654,343 @@ export default function AppearanceTab({
           <Sliders size={14} className="mr-2" />
           Advanced Config Editor
         </Button>
+      )}
+
+      {/* Expert Mode: Typography Details */}
+      {expertMode && (
+        <>
+          <Separator />
+          <section className="space-y-3">
+            <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
+              Typography Details
+            </h3>
+            <div className="space-y-2">
+              <Label className="font-mono text-xs">Heading Font Size</Label>
+              <Input
+                className="font-mono text-xs h-8"
+                placeholder="e.g. 3rem"
+                value={adminSettings?.typographyDetails?.headingFontSize ?? ''}
+                onChange={(e) => setAdminSettings?.({
+                  ...(adminSettings ?? {}),
+                  typographyDetails: { ...(adminSettings?.typographyDetails ?? {}), headingFontSize: e.target.value || undefined },
+                })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="font-mono text-xs">Heading Font Weight</Label>
+              <Input
+                className="font-mono text-xs h-8"
+                placeholder="e.g. 700"
+                value={adminSettings?.typographyDetails?.headingFontWeight ?? ''}
+                onChange={(e) => setAdminSettings?.({
+                  ...(adminSettings ?? {}),
+                  typographyDetails: { ...(adminSettings?.typographyDetails ?? {}), headingFontWeight: e.target.value || undefined },
+                })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="font-mono text-xs">Body Font Size</Label>
+              <Input
+                className="font-mono text-xs h-8"
+                placeholder="e.g. 1rem"
+                value={adminSettings?.typographyDetails?.bodyFontSize ?? ''}
+                onChange={(e) => setAdminSettings?.({
+                  ...(adminSettings ?? {}),
+                  typographyDetails: { ...(adminSettings?.typographyDetails ?? {}), bodyFontSize: e.target.value || undefined },
+                })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="font-mono text-xs">Body Line Height</Label>
+              <Input
+                className="font-mono text-xs h-8"
+                placeholder="e.g. 1.6"
+                value={adminSettings?.typographyDetails?.bodyLineHeight ?? ''}
+                onChange={(e) => setAdminSettings?.({
+                  ...(adminSettings ?? {}),
+                  typographyDetails: { ...(adminSettings?.typographyDetails ?? {}), bodyLineHeight: e.target.value || undefined },
+                })}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <Label className="font-mono text-xs">Heading Text Shadow</Label>
+              <Switch
+                checked={adminSettings?.typographyDetails?.headingTextShadow !== false}
+                onCheckedChange={(v) => setAdminSettings?.({
+                  ...(adminSettings ?? {}),
+                  typographyDetails: { ...(adminSettings?.typographyDetails ?? {}), headingTextShadow: v },
+                })}
+              />
+            </div>
+          </section>
+
+          <Separator />
+
+          <section className="space-y-3">
+            <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
+              Effect Colors
+            </h3>
+            <div className="space-y-2">
+              <Label className="font-mono text-xs">Chromatic Color Left</Label>
+              <Input
+                className="font-mono text-xs h-8"
+                placeholder="rgba(255,0,100,0.5)"
+                value={adminSettings?.effectColors?.chromaticColorLeft ?? ''}
+                onChange={(e) => setAdminSettings?.({
+                  ...(adminSettings ?? {}),
+                  effectColors: { ...(adminSettings?.effectColors ?? {}), chromaticColorLeft: e.target.value || undefined },
+                })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="font-mono text-xs">Chromatic Color Right</Label>
+              <Input
+                className="font-mono text-xs h-8"
+                placeholder="rgba(0,255,255,0.5)"
+                value={adminSettings?.effectColors?.chromaticColorRight ?? ''}
+                onChange={(e) => setAdminSettings?.({
+                  ...(adminSettings ?? {}),
+                  effectColors: { ...(adminSettings?.effectColors ?? {}), chromaticColorRight: e.target.value || undefined },
+                })}
+              />
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label className="font-mono text-xs">Scanline Opacity</Label>
+                <span className="font-mono text-xs text-muted-foreground">
+                  {Math.round((adminSettings?.effectColors?.scanlineOpacity ?? 0.03) * 100)}%
+                </span>
+              </div>
+              <Slider
+                value={[(adminSettings?.effectColors?.scanlineOpacity ?? 0.03) * 100]}
+                min={0}
+                max={20}
+                step={1}
+                onValueChange={([v]) => setAdminSettings?.({
+                  ...(adminSettings ?? {}),
+                  effectColors: { ...(adminSettings?.effectColors ?? {}), scanlineOpacity: v / 100 },
+                })}
+              />
+            </div>
+          </section>
+
+          <Separator />
+
+          <section className="space-y-3">
+            <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
+              Animation Timings
+            </h3>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label className="font-mono text-xs">Fade-In Duration</Label>
+                <span className="font-mono text-xs text-muted-foreground">
+                  {adminSettings?.animationTimings?.fadeInDuration ?? 0.8}s
+                </span>
+              </div>
+              <Slider
+                value={[(adminSettings?.animationTimings?.fadeInDuration ?? 0.8) * 10]}
+                min={1}
+                max={30}
+                step={1}
+                onValueChange={([v]) => setAdminSettings?.({
+                  ...(adminSettings ?? {}),
+                  animationTimings: { ...(adminSettings?.animationTimings ?? {}), fadeInDuration: v / 10 },
+                })}
+              />
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label className="font-mono text-xs">Scanline Duration</Label>
+                <span className="font-mono text-xs text-muted-foreground">
+                  {adminSettings?.animationTimings?.scanlineDuration ?? 8}s
+                </span>
+              </div>
+              <Slider
+                value={[adminSettings?.animationTimings?.scanlineDuration ?? 8]}
+                min={2}
+                max={30}
+                step={1}
+                onValueChange={([v]) => setAdminSettings?.({
+                  ...(adminSettings ?? {}),
+                  animationTimings: { ...(adminSettings?.animationTimings ?? {}), scanlineDuration: v },
+                })}
+              />
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label className="font-mono text-xs">CRT Flicker Duration</Label>
+                <span className="font-mono text-xs text-muted-foreground">
+                  {adminSettings?.animationTimings?.crtFlickerDuration ?? 4}s
+                </span>
+              </div>
+              <Slider
+                value={[adminSettings?.animationTimings?.crtFlickerDuration ?? 4]}
+                min={1}
+                max={20}
+                step={1}
+                onValueChange={([v]) => setAdminSettings?.({
+                  ...(adminSettings ?? {}),
+                  animationTimings: { ...(adminSettings?.animationTimings ?? {}), crtFlickerDuration: v },
+                })}
+              />
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label className="font-mono text-xs">Glitch Duration</Label>
+                <span className="font-mono text-xs text-muted-foreground">
+                  {adminSettings?.animationTimings?.glitchDuration ?? 0.2}s
+                </span>
+              </div>
+              <Slider
+                value={[(adminSettings?.animationTimings?.glitchDuration ?? 0.2) * 100]}
+                min={5}
+                max={100}
+                step={5}
+                onValueChange={([v]) => setAdminSettings?.({
+                  ...(adminSettings ?? {}),
+                  animationTimings: { ...(adminSettings?.animationTimings ?? {}), glitchDuration: v / 100 },
+                })}
+              />
+            </div>
+          </section>
+
+          <Separator />
+
+          <section className="space-y-3">
+            <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
+              CRT Intensity
+            </h3>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label className="font-mono text-xs">Vignette Opacity</Label>
+                <span className="font-mono text-xs text-muted-foreground">
+                  {Math.round((adminSettings?.crtIntensity?.vignetteOpacity ?? 0.6) * 100)}%
+                </span>
+              </div>
+              <Slider
+                value={[(adminSettings?.crtIntensity?.vignetteOpacity ?? 0.6) * 100]}
+                min={0}
+                max={100}
+                step={5}
+                onValueChange={([v]) => setAdminSettings?.({
+                  ...(adminSettings ?? {}),
+                  crtIntensity: { ...(adminSettings?.crtIntensity ?? {}), vignetteOpacity: v / 100 },
+                })}
+              />
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label className="font-mono text-xs">Noise Frequency</Label>
+                <span className="font-mono text-xs text-muted-foreground">
+                  {adminSettings?.crtIntensity?.noiseFrequency ?? 2.5}
+                </span>
+              </div>
+              <Slider
+                value={[(adminSettings?.crtIntensity?.noiseFrequency ?? 2.5) * 10]}
+                min={5}
+                max={100}
+                step={5}
+                onValueChange={([v]) => setAdminSettings?.({
+                  ...(adminSettings ?? {}),
+                  crtIntensity: { ...(adminSettings?.crtIntensity ?? {}), noiseFrequency: v / 10 },
+                })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="font-mono text-xs">Scanline Height</Label>
+              <div className="grid grid-cols-2 gap-1.5">
+                {[1, 2].map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => setAdminSettings?.({
+                      ...(adminSettings ?? {}),
+                      crtIntensity: { ...(adminSettings?.crtIntensity ?? {}), scanlineHeight: v },
+                    })}
+                    className={`px-3 py-2 border rounded font-mono text-xs transition-colors ${
+                      (adminSettings?.crtIntensity?.scanlineHeight ?? 1) === v
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'
+                    }`}
+                  >
+                    {v}px
+                  </button>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <Separator />
+
+          <section className="space-y-3">
+            <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
+              Glitch Parameters
+            </h3>
+            <div className="flex items-center justify-between">
+              <Label className="font-mono text-xs">Glitch Enabled</Label>
+              <Switch
+                checked={adminSettings?.glitchParams?.enabled !== false}
+                onCheckedChange={(v) => setAdminSettings?.({
+                  ...(adminSettings ?? {}),
+                  glitchParams: { ...(adminSettings?.glitchParams ?? {}), enabled: v },
+                })}
+              />
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label className="font-mono text-xs">Probability</Label>
+                <span className="font-mono text-xs text-muted-foreground">
+                  {Math.round((adminSettings?.glitchParams?.probability ?? 0.05) * 100)}%
+                </span>
+              </div>
+              <Slider
+                value={[(adminSettings?.glitchParams?.probability ?? 0.05) * 100]}
+                min={0}
+                max={100}
+                step={1}
+                onValueChange={([v]) => setAdminSettings?.({
+                  ...(adminSettings ?? {}),
+                  glitchParams: { ...(adminSettings?.glitchParams ?? {}), probability: v / 100 },
+                })}
+              />
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label className="font-mono text-xs">Interval (ms)</Label>
+                <span className="font-mono text-xs text-muted-foreground">
+                  {adminSettings?.glitchParams?.intervalMs ?? 3000}ms
+                </span>
+              </div>
+              <Slider
+                value={[adminSettings?.glitchParams?.intervalMs ?? 3000]}
+                min={500}
+                max={10000}
+                step={500}
+                onValueChange={([v]) => setAdminSettings?.({
+                  ...(adminSettings ?? {}),
+                  glitchParams: { ...(adminSettings?.glitchParams ?? {}), intervalMs: v },
+                })}
+              />
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label className="font-mono text-xs">Duration (ms)</Label>
+                <span className="font-mono text-xs text-muted-foreground">
+                  {adminSettings?.glitchParams?.durationMs ?? 200}ms
+                </span>
+              </div>
+              <Slider
+                value={[adminSettings?.glitchParams?.durationMs ?? 200]}
+                min={50}
+                max={2000}
+                step={50}
+                onValueChange={([v]) => setAdminSettings?.({
+                  ...(adminSettings ?? {}),
+                  glitchParams: { ...(adminSettings?.glitchParams ?? {}), durationMs: v },
+                })}
+              />
+            </div>
+          </section>
+        </>
       )}
     </TabsContent>
   )

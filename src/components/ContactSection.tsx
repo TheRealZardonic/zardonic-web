@@ -100,7 +100,7 @@ export default function ContactSection({
   if (!editMode && contactSettings?.showSection === false) return null
 
   return (
-    <section ref={sectionRef} className="py-24 px-4 bg-gradient-to-b from-secondary/5 via-background to-background" id="contact">
+    <section ref={sectionRef} className="py-24 px-4 bg-gradient-to-b from-secondary/5 via-background to-background" id="contact" data-theme-color="input border ring primary">
       <div className="max-w-6xl mx-auto">
         <motion.div
           initial={{ opacity: 0, x: -30, filter: 'blur(10px)', clipPath: 'polygon(0 0, 0 0, 0 100%, 0 100%)' }}

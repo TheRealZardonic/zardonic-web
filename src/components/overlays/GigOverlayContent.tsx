@@ -15,6 +15,7 @@ export function GigOverlayContent({ data, artistName = '', decorativeTexts }: Gi
   const statusPrefix = decorativeTexts?.gigStatusPrefix ?? '// SYSTEM.STATUS:'
   return (
     <motion.div
+      data-theme-color="card border primary"
       className="mt-8 space-y-6"
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}

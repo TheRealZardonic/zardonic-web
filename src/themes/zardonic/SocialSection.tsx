@@ -78,8 +78,7 @@ export default function SocialSection({
               <iframe
                 src={videoEmbedUrl}
                 className="absolute inset-0 w-full h-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture"
               />
             </motion.div>
           )}

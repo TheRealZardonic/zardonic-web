@@ -33,9 +33,8 @@ export default function YouTubeEmbed({ videoId, title }: YouTubeEmbedProps) {
           src={`https://www.youtube-nocookie.com/embed/${safeVideoId}`}
           title={title || 'YouTube video'}
           className="absolute inset-0 w-full h-full"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture"
           sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
-          allowFullScreen
           loading="lazy"
           referrerPolicy="no-referrer"
         />

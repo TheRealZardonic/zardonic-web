@@ -11,6 +11,7 @@ import {
   Monitor,
   SignOut,
   Translate,
+  Columns,
 } from '@phosphor-icons/react'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -31,6 +32,7 @@ import { toast } from 'sonner'
 import { DEFAULT_SECTION_ORDER } from '@/lib/config'
 import AppearanceTab from '@/components/admin/AppearanceTab'
 import BackgroundTab from '@/components/admin/BackgroundTab'
+import LayoutTab from '@/components/admin/LayoutTab'
 import ContentTab from '@/components/admin/ContentTab'
 import SectionsTab from '@/components/admin/SectionsTab'
 import SectionConfigTab from '@/components/admin/SectionConfigTab'
@@ -89,6 +91,7 @@ export default function AdminPanel({
   const [showPasswordDialog, setShowPasswordDialog] = useState(false)
   const importInputRef = useRef<HTMLInputElement>(null)
   const translationImportRef = useRef<HTMLInputElement>(null)
+  const expertMode = adminSettings?.expertMode ?? false
 
   // Local content state for optimistic edits
   const [localArtistName, setLocalArtistName] = useState(siteData?.artistName ?? '')
@@ -318,6 +321,19 @@ export default function AdminPanel({
               </div>
               <div className="flex items-center gap-1">
                 <AdminSearch onNavigate={setActiveTab} />
+                <button
+                  onClick={() => setAdminSettings?.({ ...(adminSettings ?? {}), expertMode: !expertMode })}
+                  className={`flex items-center gap-1 font-mono text-[10px] uppercase tracking-wide px-2 py-1 rounded border transition-colors ${
+                    expertMode
+                      ? 'bg-primary/20 border-primary text-primary'
+                      : 'border-border text-muted-foreground hover:border-primary/40'
+                  }`}
+                  title="Toggle Expert Mode"
+                  aria-label="Toggle Expert Mode"
+                >
+                  <GearSix size={12} weight={expertMode ? 'bold' : 'regular'} />
+                  <span className="hidden sm:inline">Expert</span>
+                </button>
                 {onLogout && (
                   <button
                     onClick={async () => { await onLogout(); onClose() }}
@@ -350,6 +366,7 @@ export default function AdminPanel({
                   { value: 'content', label: 'Content', icon: <FileText size={13} /> },
                   { value: 'appearance', label: 'Appearance', icon: <Palette size={13} /> },
                   { value: 'background', label: 'Background', icon: <Monitor size={13} /> },
+                  { value: 'layout', label: 'Layout', icon: <Columns size={13} /> },
                   { value: 'sections', label: 'Sections', icon: <Eye size={13} /> },
                   { value: 'section-config', label: 'Section Config', icon: <GearSix size={13} /> },
                   { value: 'security', label: 'Security', icon: <Shield size={13} /> },
@@ -415,6 +432,7 @@ export default function AdminPanel({
                 onOpenConfigEditor={onOpenConfigEditor}
                 newPresetName={newPresetName}
                 setNewPresetName={setNewPresetName}
+                expertMode={expertMode}
               />
 
               <BackgroundTab
@@ -422,6 +440,12 @@ export default function AdminPanel({
                 setAdminSettings={setAdminSettings}
                 anim={anim}
                 updateAnimationNumber={updateAnimationNumber}
+              />
+
+              <LayoutTab
+                adminSettings={adminSettings}
+                setAdminSettings={setAdminSettings}
+                expertMode={expertMode}
               />
 
               <SectionsTab

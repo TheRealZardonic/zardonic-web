@@ -18,7 +18,7 @@ export default function Footer({ socialLinks: _socialLinks, genres, label, onAdm
   }
 
   return (
-    <footer className="relative border-t border-primary/20 bg-background hud-element">
+    <footer className="relative border-t border-primary/20 bg-background hud-element" data-theme-color="background border muted-foreground">
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
       
       <div className="max-w-7xl mx-auto px-4 py-16 relative">

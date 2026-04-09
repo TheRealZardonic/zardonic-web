@@ -21,6 +21,7 @@ export function ReleaseOverlayContent({ data, sectionLabels }: ReleaseOverlayCon
 
   return (
     <motion.div
+      data-theme-color="card border accent"
       className="mt-8"
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}

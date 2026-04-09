@@ -22,6 +22,9 @@ export function useKV<T>(key: string, defaultValue: T): [T, (updater: T | ((curr
   // AbortController for cancelling in-flight POST requests when a newer
   // update supersedes them.
   const abortRef = useRef<AbortController | null>(null)
+  // Debounce timer for KV writes — prevents 429 rate-limit errors when the
+  // admin panel fires rapid successive updates (e.g. color pickers, sliders).
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Incrementing counter used to re-trigger the fetch effect after refetch()
   const [fetchTick, setFetchTick] = useState(0)
 
@@ -71,7 +74,10 @@ export function useKV<T>(key: string, defaultValue: T): [T, (updater: T | ((curr
   // Cancel any in-flight KV POST on unmount to prevent writes after the
   // component has been removed from the tree.
   useEffect(() => {
-    return () => { abortRef.current?.abort() }
+    return () => {
+      abortRef.current?.abort()
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
   }, [])
 
   const updateValue = useCallback((updater: T | ((current: T) => T)) => {
@@ -89,51 +95,60 @@ export function useKV<T>(key: string, defaultValue: T): [T, (updater: T | ((curr
     // Write to the remote KV once the initial load has finished.
     // Auth is handled via HttpOnly session cookie (sent automatically).
     // Non-admin writes will get 403 which we suppress silently.
-    // Cancel any previous in-flight request so only the latest value is synced.
+    // Debounce the POST to avoid flooding the API with rapid successive writes
+    // (e.g. admin color pickers / sliders) which cause 429 rate-limit errors.
     if (loadedRef.current) {
-      abortRef.current?.abort()
-      abortRef.current = new AbortController()
+      // Clear any pending debounce timer — only the latest value will be sent.
+      if (debounceRef.current) clearTimeout(debounceRef.current)
 
-      fetch('/api/kv', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({ key, value: newValue }),
-        signal: abortRef.current.signal,
-      }).then(async res => {
-        if (res.status === 403) {
-          // Session may have expired — check auth status and reload if needed
-          // so the next login starts with a clean state (no stale 503 errors)
-          try {
-            const authRes = await fetch('/api/auth', { credentials: 'same-origin' })
-            if (authRes.ok) {
-              const authData = await authRes.json()
-              if (!authData.authenticated) {
-                window.location.reload()
-                return
+      debounceRef.current = setTimeout(() => {
+        debounceRef.current = null
+
+        // Cancel any previous in-flight request so only the latest value is synced.
+        abortRef.current?.abort()
+        abortRef.current = new AbortController()
+
+        fetch('/api/kv', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ key, value: valueRef.current }),
+          signal: abortRef.current.signal,
+        }).then(async res => {
+          if (res.status === 403) {
+            // Session may have expired — check auth status and reload if needed
+            // so the next login starts with a clean state (no stale 503 errors)
+            try {
+              const authRes = await fetch('/api/auth', { credentials: 'same-origin' })
+              if (authRes.ok) {
+                const authData = await authRes.json()
+                if (!authData.authenticated) {
+                  window.location.reload()
+                  return
+                }
               }
-            }
-          } catch { /* ignore — transient network error */ }
-          return
-        }
-        if (!res.ok) {
-          try {
-            const errorData = await res.json()
-            if (res.status === 503) {
-              console.error(`KV service unavailable (${res.status}) for key "${key}":`, errorData.message || errorData.error)
-            } else {
-              console.error(`KV POST failed (${res.status}) for key "${key}":`, errorData)
-            }
-          } catch {
-            console.warn(`KV POST failed (${res.status}) for key "${key}"`)
+            } catch { /* ignore — transient network error */ }
+            return
           }
-        }
-      }).catch(err => {
-        // Suppress AbortError from cancelled requests — this is expected when
-        // a newer update supersedes an in-flight one.
-        if (err instanceof DOMException && err.name === 'AbortError') return
-        console.error('KV POST error:', err)
-      })
+          if (!res.ok) {
+            try {
+              const errorData = await res.json()
+              if (res.status === 503) {
+                console.error(`KV service unavailable (${res.status}) for key "${key}":`, errorData.message || errorData.error)
+              } else {
+                console.error(`KV POST failed (${res.status}) for key "${key}":`, errorData)
+              }
+            } catch {
+              console.warn(`KV POST failed (${res.status}) for key "${key}"`)
+            }
+          }
+        }).catch(err => {
+          // Suppress AbortError from cancelled requests — this is expected when
+          // a newer update supersedes an in-flight one.
+          if (err instanceof DOMException && err.name === 'AbortError') return
+          console.error('KV POST error:', err)
+        })
+      }, 800)
     }
   }, [key])
 

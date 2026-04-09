@@ -114,8 +114,7 @@ function MediaOverlay({ file, onClose }: { file: MediaFile; onClose: () => void 
             <iframe
               src={file.url.replace('watch?v=', 'embed/').replace('youtu.be/', 'www.youtube-nocookie.com/embed/')}
               title={file.name}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture"
               className="w-full h-full"
             />
           </div>

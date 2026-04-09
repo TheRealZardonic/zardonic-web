@@ -52,7 +52,7 @@ export default function AppHeroSection({
   const genId = () => (typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : Math.random().toString(36).slice(2))
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden scanline-effect">
+    <section className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden scanline-effect" data-theme-color="foreground primary">
       {!hasCustomBackground && <div className="absolute inset-0 bg-black" />}
       
       <div className="absolute inset-0 noise-effect" />
