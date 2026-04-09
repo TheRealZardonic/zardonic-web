@@ -56,7 +56,7 @@ describe('LAYERS z-index contract invariants', () => {
 // 2. Animated background components – class/style enforcement
 // ---------------------------------------------------------------------------
 describe('GlitchGridBackground layer enforcement', () => {
-  it('renders a canvas with z-index: 0 (ANIMATED_BG level, inside fixed wrapper)', async () => {
+  it('renders a canvas that is pointer-events-none with z-index at or below ANIMATED_BG', async () => {
     const GlitchGridBackground = (
       await vi.importActual<typeof import('@/components/GlitchGridBackground')>(
         '@/components/GlitchGridBackground'
@@ -68,7 +68,9 @@ describe('GlitchGridBackground layer enforcement', () => {
     expect(canvas).not.toBeNull()
     // Must have pointer-events-none so it never blocks interaction
     expect(canvas!.className).toContain('pointer-events-none')
-    // z-index must be at ANIMATED_BG level (= 0 inline style, wrapped in z:2 div by App)
+    // Individual background components use z-index: 0 locally; in App.tsx they are
+    // wrapped in a parent div with style={{ zIndex: LAYERS.ANIMATED_BG }} (= 2).
+    // The canvas itself must not exceed that wrapper's level.
     const zIndex = Number(canvas!.style.zIndex)
     expect(zIndex).toBeLessThanOrEqual(LAYERS.ANIMATED_BG)
   })
