@@ -2100,6 +2100,16 @@ h1, h2, h3, h4, h5, h6 {
   animation: cc-flicker 0.18s infinite;
 }
 
+/* Stop CloudChamberBackground animations when user prefers reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .cc-scanlines,
+  .cc-noise,
+  .cc-interference,
+  .cc-flicker {
+    animation: none;
+  }
+}
+
 /* Spotify embed CI theming
  * Shifts Spotify's green accent (~hue 141°) to the site's orange-red accent (~hue 25°)
  * via hue-rotate(-116deg) so the embedded player matches the industrial CI.

@@ -7,6 +7,7 @@ import { trackPageView, trackHeatmapClick } from '@/hooks/use-analytics'
 import { useAnalyticsConsent, CookieConsent } from '@/components/CookieConsent'
 import { useAdminAuth } from '@/hooks/use-admin-auth'
 import type { AdminSettings, SectionLabels, Release as FullRelease, TerminalCommand, AnimationSettings } from '@/lib/types'
+import { fullReleaseToStored, mergeFullReleaseIntoStored } from '@/lib/release-adapters'
 import { useAppTheme } from '@/hooks/use-app-theme'
 import { useSiteDataSync } from '@/hooks/use-site-data-sync'
 import { LocaleProvider } from '@/contexts/LocaleContext'
@@ -604,22 +605,9 @@ function App() {
         onUpdateRelease={editMode ? (updated: FullRelease) => {
           handleUpdateSiteData(prev => ({
             ...prev,
-            releases: prev.releases.map(r => r.id === updated.id ? {
-              ...r,
-              title: updated.title,
-              artwork: updated.artwork || r.artwork,
-              year: updated.releaseDate ? new Date(updated.releaseDate).getFullYear().toString() : (updated.year || r.year),
-              releaseDate: updated.releaseDate,
-              type: updated.type ?? r.type,
-              spotify: updated.streamingLinks?.spotify || r.spotify,
-              soundcloud: updated.streamingLinks?.soundcloud || r.soundcloud,
-              youtube: updated.streamingLinks?.youtube || r.youtube,
-              bandcamp: updated.streamingLinks?.bandcamp || r.bandcamp,
-              appleMusic: updated.streamingLinks?.appleMusic || r.appleMusic,
-              deezer: updated.streamingLinks?.deezer || r.deezer,
-              tidal: updated.streamingLinks?.tidal || r.tidal,
-              amazonMusic: updated.streamingLinks?.amazonMusic || r.amazonMusic,
-            } : r),
+            releases: prev.releases.map(r =>
+              r.id === updated.id ? mergeFullReleaseIntoStored(updated, r) : r
+            ),
           }))
         } : undefined}
         onDeleteRelease={editMode ? (id) => {
@@ -631,22 +619,7 @@ function App() {
         onAddRelease={editMode ? (release: FullRelease) => {
           handleUpdateSiteData(prev => ({
             ...prev,
-            releases: [...prev.releases, {
-              id: release.id,
-              title: release.title,
-              artwork: release.artwork || '',
-              year: release.releaseDate ? new Date(release.releaseDate).getFullYear().toString() : (release.year || ''),
-              releaseDate: release.releaseDate,
-              type: release.type,
-              spotify: release.streamingLinks?.spotify,
-              soundcloud: release.streamingLinks?.soundcloud,
-              youtube: release.streamingLinks?.youtube,
-              bandcamp: release.streamingLinks?.bandcamp,
-              appleMusic: release.streamingLinks?.appleMusic,
-              deezer: release.streamingLinks?.deezer,
-              tidal: release.streamingLinks?.tidal,
-              amazonMusic: release.streamingLinks?.amazonMusic,
-            }],
+            releases: [...prev.releases, fullReleaseToStored(release)],
           }))
         } : undefined}
         onRefreshReleases={editMode ? handleFetchITunesReleases : undefined}

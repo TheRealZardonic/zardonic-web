@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import type { AdminSettings } from '@/lib/types'
-import { useLocale } from '@/contexts/LocaleContext'
 
 interface ImpressumOverlayContentProps {
   adminSettings: AdminSettings | undefined
