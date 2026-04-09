@@ -2,6 +2,24 @@ import { useEffect } from 'react'
 import type { AdminSettings } from '@/lib/types'
 import { applyConfigOverrides } from '@/lib/config'
 
+/** localStorage key used to persist the theme CSS variable map for instant
+ *  restoration on the next page load (eliminates the red-flash on the loading
+ *  screen before admin settings arrive from the KV store). */
+const THEME_CACHE_KEY = 'nk-theme-cache'
+
+/** Parse the hue component from an oklch color string: "oklch(L C H)" → H */
+function parseOklchHue(oklchStr: string): number | null {
+  const m = oklchStr.match(/oklch\(\s*[\d.]+\s+[\d.]+\s+([\d.]+)/)
+  return m ? parseFloat(m[1]) : null
+}
+
+/** Parse all three oklch components from a color string. */
+function parseOklchComponents(oklchStr: string): { l: number; c: number; h: number } | null {
+  const m = oklchStr.match(/oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)/)
+  if (!m) return null
+  return { l: parseFloat(m[1]), c: parseFloat(m[2]), h: parseFloat(m[3]) }
+}
+
 export function useAppTheme(adminSettings: AdminSettings | undefined): void {
   // Effect 1: Apply theme CSS variables
   useEffect(() => {
@@ -9,40 +27,73 @@ export function useAppTheme(adminSettings: AdminSettings | undefined): void {
     if (!t) return
     const root = document.documentElement
 
-    if (t.primaryColor) root.style.setProperty('--primary', t.primaryColor)
-    if (t.primaryForegroundColor) root.style.setProperty('--primary-foreground', t.primaryForegroundColor)
+    // Map of CSS variable → value; built up as we apply each setting so we
+    // can persist the entire set to localStorage for instant next-load restore.
+    const applied: Record<string, string> = {}
+    const set = (prop: string, value: string) => {
+      root.style.setProperty(prop, value)
+      applied[prop] = value
+    }
+
+    if (t.primaryColor) set('--primary', t.primaryColor)
+    if (t.primaryForegroundColor) set('--primary-foreground', t.primaryForegroundColor)
     if (t.accentColor) {
-      root.style.setProperty('--accent', t.accentColor)
-      if (!t.hoverColor) root.style.setProperty('--hover-color', t.accentColor)
+      set('--accent', t.accentColor)
+      if (!t.hoverColor) set('--hover-color', t.accentColor)
+      // Keep the separated L/C/H vars in sync so CSS glow effects stay correct.
+      const comps = parseOklchComponents(t.accentColor)
+      if (comps) {
+        set('--accent-l', String(comps.l))
+        set('--accent-c', String(comps.c))
+        set('--accent-h', String(comps.h))
+      }
     }
-    if (t.accentForegroundColor) root.style.setProperty('--accent-foreground', t.accentForegroundColor)
-    if (t.backgroundColor) root.style.setProperty('--background', t.backgroundColor)
-    if (t.foregroundColor) root.style.setProperty('--foreground', t.foregroundColor)
-    if (t.cardColor) root.style.setProperty('--card', t.cardColor)
-    if (t.cardForegroundColor) root.style.setProperty('--card-foreground', t.cardForegroundColor)
-    if (t.popoverColor) root.style.setProperty('--popover', t.popoverColor)
-    if (t.popoverForegroundColor) root.style.setProperty('--popover-foreground', t.popoverForegroundColor)
-    if (t.secondaryColor) root.style.setProperty('--secondary', t.secondaryColor)
-    if (t.secondaryForegroundColor) root.style.setProperty('--secondary-foreground', t.secondaryForegroundColor)
-    if (t.mutedColor) root.style.setProperty('--muted', t.mutedColor)
-    if (t.mutedForegroundColor) root.style.setProperty('--muted-foreground', t.mutedForegroundColor)
-    if (t.destructiveColor) root.style.setProperty('--destructive', t.destructiveColor)
-    if (t.destructiveForegroundColor) root.style.setProperty('--destructive-foreground', t.destructiveForegroundColor)
+    if (t.accentForegroundColor) set('--accent-foreground', t.accentForegroundColor)
+    if (t.backgroundColor) set('--background', t.backgroundColor)
+    if (t.foregroundColor) set('--foreground', t.foregroundColor)
+    if (t.cardColor) set('--card', t.cardColor)
+    if (t.cardForegroundColor) set('--card-foreground', t.cardForegroundColor)
+    if (t.popoverColor) set('--popover', t.popoverColor)
+    if (t.popoverForegroundColor) set('--popover-foreground', t.popoverForegroundColor)
+    if (t.secondaryColor) set('--secondary', t.secondaryColor)
+    if (t.secondaryForegroundColor) set('--secondary-foreground', t.secondaryForegroundColor)
+    if (t.mutedColor) set('--muted', t.mutedColor)
+    if (t.mutedForegroundColor) set('--muted-foreground', t.mutedForegroundColor)
+    if (t.destructiveColor) set('--destructive', t.destructiveColor)
+    if (t.destructiveForegroundColor) set('--destructive-foreground', t.destructiveForegroundColor)
     if (t.borderColor) {
-      root.style.setProperty('--border-color', t.borderColor)
-      root.style.setProperty('--border', t.borderColor)
+      set('--border-color', t.borderColor)
+      set('--border', t.borderColor)
     }
-    if (t.inputColor) root.style.setProperty('--input', t.inputColor)
-    if (t.ringColor) root.style.setProperty('--ring', t.ringColor)
-    if (t.hoverColor) root.style.setProperty('--hover-color', t.hoverColor)
-    if (t.borderRadius) root.style.setProperty('--radius', t.borderRadius)
-    if (t.fontHeading) root.style.setProperty('--font-heading', t.fontHeading)
-    if (t.fontBody) root.style.setProperty('--font-body', t.fontBody)
-    if (t.fontMono) root.style.setProperty('--font-mono', t.fontMono)
-    if (t.dataLabelColor) root.style.setProperty('--data-label-color', t.dataLabelColor)
-    if (t.dataLabelFontSize) root.style.setProperty('--data-label-font-size', t.dataLabelFontSize)
-    if (t.dataLabelFontFamily) root.style.setProperty('--data-label-font-family', t.dataLabelFontFamily)
-    if (t.modalGlowColor) root.style.setProperty('--modal-glow-color', t.modalGlowColor)
+    if (t.inputColor) set('--input', t.inputColor)
+    if (t.ringColor) set('--ring', t.ringColor)
+    if (t.hoverColor) set('--hover-color', t.hoverColor)
+    if (t.borderRadius) set('--radius', t.borderRadius)
+    if (t.fontHeading) set('--font-heading', t.fontHeading)
+    if (t.fontBody) set('--font-body', t.fontBody)
+    if (t.fontMono) set('--font-mono', t.fontMono)
+    if (t.dataLabelColor) set('--data-label-color', t.dataLabelColor)
+    if (t.dataLabelFontSize) set('--data-label-font-size', t.dataLabelFontSize)
+    if (t.dataLabelFontFamily) set('--data-label-font-family', t.dataLabelFontFamily)
+    if (t.modalGlowColor) set('--modal-glow-color', t.modalGlowColor)
+
+    // Compute the Spotify hue-rotate offset from the primary colour's hue so
+    // the embedded player's accent colour matches the current CI preset.
+    // Spotify's native accent is green ≈ hue 141°; we rotate from there.
+    const colorForHue = t.primaryColor ?? t.accentColor
+    if (colorForHue) {
+      const hue = parseOklchHue(colorForHue)
+      if (hue !== null) {
+        set('--spotify-hue-rotate', `${Math.round(hue - 141)}deg`)
+      }
+    }
+
+    // Persist to localStorage so the inline script in index.html can restore
+    // these values synchronously on the very next page load, preventing the
+    // default-colour flash during the loading screen.
+    try {
+      localStorage.setItem(THEME_CACHE_KEY, JSON.stringify(applied))
+    } catch { /* quota exceeded or private browsing — silently ignore */ }
 
     return () => {
       root.style.removeProperty('--primary')
@@ -74,6 +125,10 @@ export function useAppTheme(adminSettings: AdminSettings | undefined): void {
       root.style.removeProperty('--data-label-font-size')
       root.style.removeProperty('--data-label-font-family')
       root.style.removeProperty('--modal-glow-color')
+      root.style.removeProperty('--accent-l')
+      root.style.removeProperty('--accent-c')
+      root.style.removeProperty('--accent-h')
+      root.style.removeProperty('--spotify-hue-rotate')
     }
   }, [adminSettings?.theme])
 

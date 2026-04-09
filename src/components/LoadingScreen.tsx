@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { useEffect, useState, useMemo, memo } from 'react'
+import { useEffect, useState, useMemo, memo, useRef } from 'react'
 import { cacheImage } from '@/lib/image-cache'
 import type { LoaderTexts, LoadingScreenMode } from '@/lib/types'
 
@@ -19,10 +19,20 @@ const DEFAULT_MESSAGES = [
   'SYSTEM READY'
 ] as const
 
+/** Read the current value of a CSS custom property from the document root. */
+function getCssVar(name: string): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+}
+
 export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, precacheUrls = [], loaderTexts, mode = 'real', duration = 3 }: LoadingScreenProps) {
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [loadingStage, setLoadingStage] = useState(0)
   const [cachingDone, setCachingDone] = useState(precacheUrls.length === 0)
+
+  // Read the primary colour once at mount so glow/indicator animations match
+  // the current CI preset even before admin settings arrive from the KV store.
+  const primaryColorRef = useRef(getCssVar('--primary') || 'oklch(0.55 0.25 25)')
+  const primaryColor = primaryColorRef.current
 
   // Simulated progress so the bar always moves
   useEffect(() => {
@@ -212,9 +222,9 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
                   className="text-primary font-mono text-sm min-w-[4ch] tabular-nums"
                   animate={{
                     textShadow: [
-                      '0 0 10px rgba(180, 50, 50, 0.5)',
-                      '0 0 20px rgba(180, 50, 50, 0.8)',
-                      '0 0 10px rgba(180, 50, 50, 0.5)',
+                      `0 0 10px color-mix(in srgb, ${primaryColor} 50%, transparent)`,
+                      `0 0 20px color-mix(in srgb, ${primaryColor} 80%, transparent)`,
+                      `0 0 10px color-mix(in srgb, ${primaryColor} 50%, transparent)`,
                     ],
                   }}
                   transition={{
@@ -238,7 +248,7 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
                   >
                     <motion.span
                       animate={{
-                        color: loadingProgress > threshold ? 'oklch(0.55 0.25 25)' : 'oklch(0.6 0 0)',
+                        color: loadingProgress > threshold ? primaryColor : 'oklch(0.6 0 0)',
                       }}
                     >
                       ▸
