@@ -1,33 +1,18 @@
 import {
   X,
-  Key,
-  Export,
-  ArrowSquareIn,
-  Eye,
-  Palette,
-  GearSix,
-  ChartLine,
-  ShieldWarning,
-  ShieldCheck,
-  ProhibitInset,
-  Envelope,
-  Users,
   House,
   FileText,
+  Palette,
+  Eye,
+  GearSix,
   Shield,
   ChartBar,
   Database,
-  PencilSimple,
-  CheckCircle,
-  Warning,
-  ArrowCounterClockwise,
   Monitor,
   SignOut,
   Translate,
 } from '@phosphor-icons/react'
-import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRef, useState, useCallback, useEffect, useMemo, type ChangeEvent } from 'react'
 import AdminLoginDialog from '@/components/AdminLoginDialog'
@@ -43,12 +28,16 @@ import type {
 import type { SiteData } from '@/App'
 import { toast } from 'sonner'
 import { DEFAULT_SECTION_ORDER } from '@/lib/config'
-import { getTranslations, LOCALES } from '@/lib/i18n'
 import AppearanceTab from '@/components/admin/AppearanceTab'
 import BackgroundTab from '@/components/admin/BackgroundTab'
 import ContentTab from '@/components/admin/ContentTab'
 import SectionsTab from '@/components/admin/SectionsTab'
 import SectionConfigTab from '@/components/admin/SectionConfigTab'
+import OverviewTab from '@/components/admin/OverviewTab'
+import SecurityTab from '@/components/admin/SecurityTab'
+import AnalyticsTab from '@/components/admin/AnalyticsTab'
+import DataTab from '@/components/admin/DataTab'
+import TranslationsTab from '@/components/admin/TranslationsTab'
 
 interface AdminPanelProps {
   open: boolean
@@ -72,7 +61,6 @@ interface AdminPanelProps {
   onSetPassword: (password: string) => Promise<void>
   onLogout?: () => Promise<void>
 }
-
 
 export default function AdminPanel({
   open,
@@ -176,22 +164,15 @@ export default function AdminPanel({
   const updateTheme = useCallback(
     (key: keyof ThemeCustomization, value: string) => {
       if (!setAdminSettings) return
-      setAdminSettings({
-        ...adminSettings,
-        theme: { ...adminSettings?.theme, [key]: value },
-      })
+      setAdminSettings({ ...adminSettings, theme: { ...adminSettings?.theme, [key]: value } })
     },
     [adminSettings, setAdminSettings],
   )
 
-  // Apply a full preset in a single setState call to avoid stale-closure overwrites
   const applyPreset = useCallback(
     (themeUpdate: Partial<ThemeCustomization>) => {
       if (!setAdminSettings) return
-      setAdminSettings({
-        ...adminSettings,
-        theme: { ...adminSettings?.theme, ...themeUpdate },
-      })
+      setAdminSettings({ ...adminSettings, theme: { ...adminSettings?.theme, ...themeUpdate } })
     },
     [adminSettings, setAdminSettings],
   )
@@ -199,10 +180,7 @@ export default function AdminPanel({
   const updateAnimation = useCallback(
     (key: keyof AnimationSettings, value: boolean) => {
       if (!setAdminSettings) return
-      setAdminSettings({
-        ...adminSettings,
-        animations: { ...adminSettings?.animations, [key]: value },
-      })
+      setAdminSettings({ ...adminSettings, animations: { ...adminSettings?.animations, [key]: value } })
     },
     [adminSettings, setAdminSettings],
   )
@@ -210,10 +188,7 @@ export default function AdminPanel({
   const updateAnimationNumber = useCallback(
     (key: keyof AnimationSettings, value: number) => {
       if (!setAdminSettings) return
-      setAdminSettings({
-        ...adminSettings,
-        animations: { ...adminSettings?.animations, [key]: value },
-      })
+      setAdminSettings({ ...adminSettings, animations: { ...adminSettings?.animations, [key]: value } })
     },
     [adminSettings, setAdminSettings],
   )
@@ -236,9 +211,7 @@ export default function AdminPanel({
         const data = await res.json() as { status: string; services: Record<string, unknown> }
         setApiHealth(data)
       }
-    } catch {
-      // ignore
-    }
+    } catch { /* ignore */ }
   }, [])
 
   useEffect(() => {
@@ -254,7 +227,7 @@ export default function AdminPanel({
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `zardonic-data-${new Date().toISOString().split('T')[0]}.json`
+    a.download = `site-data-${new Date().toISOString().split('T')[0]}.json`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -269,10 +242,7 @@ export default function AdminPanel({
     reader.onload = () => {
       try {
         const parsed = JSON.parse(reader.result as string) as Record<string, unknown>
-        if (!parsed.artistName) {
-          toast.error('Invalid site data file')
-          return
-        }
+        if (!parsed.artistName) { toast.error('Invalid site data file'); return }
         const { _adminSettings, ...siteDataOnly } = parsed
         onImportData(siteDataOnly as unknown as SiteData)
         if (_adminSettings && setAdminSettings) {
@@ -281,23 +251,16 @@ export default function AdminPanel({
         } else {
           toast.success('Data imported successfully')
         }
-      } catch {
-        toast.error('Failed to parse JSON file')
-      }
+      } catch { toast.error('Failed to parse JSON file') }
     }
     reader.readAsText(file)
     e.target.value = ''
   }
 
-
   const vis = adminSettings?.sectionVisibility ?? {}
   const theme = adminSettings?.theme ?? {}
   const anim = adminSettings?.animations ?? {}
   const progModes = adminSettings?.progressiveOverlayModes ?? {}
-
-
-
-
 
   const [isDesktop, setIsDesktop] = useState(
     typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches,
@@ -314,7 +277,7 @@ export default function AdminPanel({
     <AnimatePresence>
       {open && (
         <>
-          {/* Backdrop — only on mobile; on desktop the panel slides in without darkening the page */}
+          {/* Backdrop — only on mobile */}
           <motion.div
             className="fixed inset-0 z-[9997] bg-black/70 backdrop-blur-sm md:hidden"
             initial={{ opacity: 0 }}
@@ -344,13 +307,11 @@ export default function AdminPanel({
                 <span className="font-mono font-bold text-sm tracking-widest text-foreground uppercase">
                   Admin Panel
                 </span>
-                <span
-                  className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${
-                    editMode
-                      ? 'bg-primary/20 border-primary text-primary'
-                      : 'bg-muted border-border text-muted-foreground'
-                  }`}
-                >
+                <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${
+                  editMode
+                    ? 'bg-primary/20 border-primary text-primary'
+                    : 'bg-muted border-border text-muted-foreground'
+                }`}>
                   {editMode ? 'EDIT MODE' : 'VIEW MODE'}
                 </span>
               </div>
@@ -405,183 +366,20 @@ export default function AdminPanel({
                 ))}
               </TabsList>
 
-              {/* ─── OVERVIEW TAB ─────────────────────────────── */}
-              <TabsContent value="overview" className="flex-1 overflow-y-auto p-4 space-y-4 mt-0">
-                {/* Status bar */}
-                <div className="bg-background border border-border rounded-md p-3 space-y-2">
-                  <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
-                    System Status
-                  </h3>
-                  <div className="flex items-center gap-2">
-                    {editMode ? (
-                      <CheckCircle size={14} className="text-green-500" weight="fill" />
-                    ) : (
-                      <Warning size={14} className="text-yellow-500" weight="fill" />
-                    )}
-                    <span className="font-mono text-xs">
-                      Edit Mode: {editMode ? 'Active' : 'Inactive'}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle size={14} className="text-green-500" weight="fill" />
-                    <span className="font-mono text-xs">Admin: Authenticated</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {hasPassword ? (
-                      <CheckCircle size={14} className="text-green-500" weight="fill" />
-                    ) : (
-                      <Warning size={14} className="text-yellow-500" weight="fill" />
-                    )}
-                    <span className="font-mono text-xs">
-                      Password: {hasPassword ? 'Set' : 'Not configured'}
-                    </span>
-                  </div>
-                </div>
+              <OverviewTab
+                siteData={siteData}
+                editMode={editMode}
+                hasPassword={hasPassword}
+                apiHealth={apiHealth}
+                setActiveTab={setActiveTab}
+                onToggleEdit={onToggleEdit}
+                onExport={handleExport}
+                onImportClick={() => importInputRef.current?.click()}
+                onImportData={onImportData}
+                onOpenPasswordDialog={() => setShowPasswordDialog(true)}
+                fetchApiHealth={fetchApiHealth}
+              />
 
-                {/* Quick actions */}
-                <div className="space-y-2">
-                  <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
-                    Quick Actions
-                  </h3>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button
-                      variant="outline"
-                      className="justify-start gap-2 font-mono text-xs h-9"
-                      onClick={onToggleEdit}
-                    >
-                      <PencilSimple size={14} />
-                      {editMode ? 'Exit Edit Mode' : 'Enter Edit Mode'}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="justify-start gap-2 font-mono text-xs h-9"
-                      onClick={() => setShowPasswordDialog(true)}
-                    >
-                      <Key size={14} />
-                      {hasPassword ? 'Change Password' : 'Set Password'}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="justify-start gap-2 font-mono text-xs h-9"
-                      onClick={handleExport}
-                      disabled={!siteData}
-                    >
-                      <Export size={14} />
-                      Export Data
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="justify-start gap-2 font-mono text-xs h-9"
-                      onClick={() => importInputRef.current?.click()}
-                      disabled={!onImportData}
-                    >
-                      <ArrowSquareIn size={14} />
-                      Import Data
-                    </Button>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Navigation shortcuts */}
-                <div className="space-y-2">
-                  <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
-                    Navigate
-                  </h3>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { tab: 'content', label: 'Content', icon: <FileText size={16} /> },
-                      { tab: 'appearance', label: 'Appearance', icon: <Palette size={16} /> },
-                      { tab: 'background', label: 'Background', icon: <Monitor size={16} /> },
-                      { tab: 'sections', label: 'Sections', icon: <Eye size={16} /> },
-                      { tab: 'security', label: 'Security', icon: <Shield size={16} /> },
-                      { tab: 'analytics', label: 'Analytics', icon: <ChartBar size={16} /> },
-                      { tab: 'data', label: 'Data', icon: <Database size={16} /> },
-                    ].map(({ tab, label, icon }) => (
-                      <button
-                        key={tab}
-                        onClick={() => setActiveTab(tab)}
-                        className="flex flex-col items-center gap-1.5 p-3 bg-background border border-border rounded-md hover:border-primary hover:text-primary transition-colors"
-                      >
-                        {icon}
-                        <span className="font-mono text-[10px] uppercase tracking-wide">{label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* API Health */}
-                <section className="space-y-3">
-                  <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
-                    API Health
-                  </h3>
-                  {apiHealth ? (
-                    <div className="space-y-2">
-                      {Object.entries(apiHealth.services).map(([service, status]) => (
-                        <div key={service} className="space-y-1">
-                          <div className="flex items-center justify-between">
-                            <span className="font-mono text-xs uppercase">{service}</span>
-                            <span className={`font-mono text-[10px] px-2 py-0.5 rounded border ${
-                              status === 'ok' || status === 'configured'
-                                ? 'border-green-500/40 text-green-400 bg-green-500/10'
-                                : status === 'unconfigured'
-                                ? 'border-yellow-500/40 text-yellow-400 bg-yellow-500/10'
-                                : 'border-destructive/40 text-destructive bg-destructive/10'
-                            }`}>
-                              {String(status).toUpperCase()}
-                            </span>
-                          </div>
-                          {(status === 'unconfigured' || status === 'error') && (
-                            <div className="ml-2 border-l-2 border-yellow-500/30 pl-2 font-mono text-[10px] text-muted-foreground space-y-0.5">
-                              {service === 'redis' && (<>
-                                <div>Set env: <code className="text-yellow-400">UPSTASH_REDIS_REST_URL</code></div>
-                                <div>Set env: <code className="text-yellow-400">UPSTASH_REDIS_REST_TOKEN</code></div>
-                                <div className="text-foreground/40">→ Free Redis at upstash.com</div>
-                              </>)}
-                              {service === 'spotify' && (<>
-                                <div>Set env: <code className="text-yellow-400">SPOTIFY_CLIENT_ID</code></div>
-                                <div>Set env: <code className="text-yellow-400">SPOTIFY_CLIENT_SECRET</code></div>
-                                <div className="text-foreground/40">→ developer.spotify.com</div>
-                              </>)}
-                              {service === 'bandsintown' && (<>
-                                <div>Set env: <code className="text-yellow-400">BANDSINTOWN_API_KEY</code></div>
-                                <div className="text-foreground/40">→ artists.bandsintown.com</div>
-                              </>)}
-                              {service === 'itunes' && (<>
-                                <div>Set env: <code className="text-yellow-400">ITUNES_ARTIST_ID</code></div>
-                                <div className="text-foreground/40">→ iTunes artist ID from store URL</div>
-                              </>)}
-                              {service === 'sanity' && (<>
-                                <div>Set env: <code className="text-yellow-400">SANITY_PROJECT_ID</code></div>
-                                <div>Set env: <code className="text-yellow-400">SANITY_DATASET</code></div>
-                                <div>Set env: <code className="text-yellow-400">SANITY_API_TOKEN</code></div>
-                                <div className="text-foreground/40">→ sanity.io</div>
-                              </>)}
-                              {!['redis','spotify','bandsintown','itunes','sanity'].includes(service) && (
-                                <div>See <code className="text-yellow-400">.env.example</code></div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="font-mono text-xs text-muted-foreground">Loading health status...</p>
-                  )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="font-mono text-xs w-full"
-                    onClick={() => { fetchApiHealth().catch(() => {}) }}
-                  >
-                    <ArrowCounterClockwise size={13} className="mr-1" /> Refresh
-                  </Button>
-                </section>
-              </TabsContent>
-
-              {/* ─── CONTENT TAB ──────────────────────────────── */}
               <ContentTab
                 adminSettings={adminSettings}
                 setAdminSettings={setAdminSettings}
@@ -600,7 +398,6 @@ export default function AdminPanel({
                 setLocalContactInfo={setLocalContactInfo}
               />
 
-              {/* ─── APPEARANCE TAB ───────────────────────────── */}
               <AppearanceTab
                 adminSettings={adminSettings}
                 setAdminSettings={setAdminSettings}
@@ -618,7 +415,6 @@ export default function AdminPanel({
                 setNewPresetName={setNewPresetName}
               />
 
-              {/* ─── BACKGROUND TAB ───────────────────────────── */}
               <BackgroundTab
                 adminSettings={adminSettings}
                 setAdminSettings={setAdminSettings}
@@ -626,7 +422,6 @@ export default function AdminPanel({
                 updateAnimationNumber={updateAnimationNumber}
               />
 
-              {/* ─── SECTIONS TAB ─────────────────────────────── */}
               <SectionsTab
                 adminSettings={adminSettings}
                 setAdminSettings={setAdminSettings}
@@ -638,280 +433,53 @@ export default function AdminPanel({
                 moveSectionDown={moveSectionDown}
               />
 
-              {/* ─── SECURITY TAB ─────────────────────────────── */}
-              <TabsContent value="security" className="flex-1 overflow-y-auto p-4 space-y-3 mt-0">
-                <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider mb-4">
-                  Security Management
-                </h3>
-                {[
-                  {
-                    icon: <ShieldWarning size={20} weight="bold" className="text-yellow-500" />,
-                    title: 'Security Incidents',
-                    desc: 'View and manage security events and alerts',
-                    action: onOpenSecurityIncidents,
-                  },
-                  {
-                    icon: <ShieldCheck size={20} weight="bold" className="text-green-500" />,
-                    title: 'Security Settings',
-                    desc: 'Configure rate limiting, IP blocking rules',
-                    action: onOpenSecuritySettings,
-                  },
-                  {
-                    icon: <ProhibitInset size={20} weight="bold" className="text-red-500" />,
-                    title: 'Blocklist',
-                    desc: 'Manage blocked IP addresses and patterns',
-                    action: onOpenBlocklist,
-                  },
-                  {
-                    icon: <Users size={20} weight="bold" className="text-blue-500" />,
-                    title: 'Subscribers',
-                    desc: 'View and manage newsletter subscribers',
-                    action: onOpenSubscriberList,
-                  },
-                  {
-                    icon: <Key size={20} weight="bold" className="text-primary" />,
-                    title: hasPassword ? 'Change Password' : 'Set Password',
-                    desc: hasPassword
-                      ? 'Update your admin panel password'
-                      : 'Set an admin panel password',
-                    action: () => setShowPasswordDialog(true),
-                  },
-                ].map(({ icon, title, desc, action }) =>
-                  action ? (
-                    <button
-                      key={title}
-                      onClick={() => {
-                        onClose()
-                        if (title === 'Change Password' || title === 'Set Password') {
-                          setShowPasswordDialog(true)
-                        } else {
-                          action()
-                        }
-                      }}
-                      className="w-full flex items-center gap-4 p-4 bg-background border border-border rounded-md hover:border-primary text-left transition-colors group"
-                    >
-                      <div className="shrink-0">{icon}</div>
-                      <div>
-                        <div className="font-mono text-sm font-bold group-hover:text-primary transition-colors">
-                          {title}
-                        </div>
-                        <div className="font-mono text-xs text-muted-foreground">{desc}</div>
-                      </div>
-                    </button>
-                  ) : null,
-                )}
-              </TabsContent>
-
-              {/* ─── ANALYTICS TAB ────────────────────────────── */}
-              <TabsContent value="analytics" className="flex-1 overflow-y-auto p-4 space-y-3 mt-0">
-                <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider mb-4">
-                  Analytics & Inbox
-                </h3>
-                {[
-                  {
-                    icon: <ChartLine size={20} weight="bold" className="text-primary" />,
-                    title: 'Statistics Dashboard',
-                    desc: 'View site traffic, visitor analytics, and performance metrics',
-                    action: onOpenStats,
-                  },
-                  {
-                    icon: <Envelope size={20} weight="bold" className="text-blue-500" />,
-                    title: 'Contact Inbox',
-                    desc: 'Read and manage messages sent through the contact form',
-                    action: onOpenContactInbox,
-                  },
-                ].map(({ icon, title, desc, action }) =>
-                  action ? (
-                    <button
-                      key={title}
-                      onClick={() => {
-                        onClose()
-                        action()
-                      }}
-                      className="w-full flex items-center gap-4 p-4 bg-background border border-border rounded-md hover:border-primary text-left transition-colors group"
-                    >
-                      <div className="shrink-0">{icon}</div>
-                      <div>
-                        <div className="font-mono text-sm font-bold group-hover:text-primary transition-colors">
-                          {title}
-                        </div>
-                        <div className="font-mono text-xs text-muted-foreground">{desc}</div>
-                      </div>
-                    </button>
-                  ) : null,
-                )}
-              </TabsContent>
-
-              {/* ─── DATA TAB ─────────────────────────────────── */}
-              <TabsContent value="data" className="flex-1 overflow-y-auto p-4 space-y-4 mt-0">
-                <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
-                  Data Management
-                </h3>
-                <p className="font-mono text-xs text-muted-foreground">
-                  Export all site data and settings as a JSON file, or import a previously exported
-                  backup.
-                </p>
-
-                <div className="space-y-3">
-                  <button
-                    onClick={handleExport}
-                    disabled={!siteData}
-                    className="w-full flex items-center gap-4 p-4 bg-background border border-border rounded-md hover:border-primary text-left transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Export size={20} weight="bold" className="text-green-500 shrink-0" />
-                    <div>
-                      <div className="font-mono text-sm font-bold group-hover:text-primary transition-colors">
-                        Export JSON
-                      </div>
-                      <div className="font-mono text-xs text-muted-foreground">
-                        Download all site data and admin settings as a JSON backup
-                      </div>
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => importInputRef.current?.click()}
-                    disabled={!onImportData}
-                    className="w-full flex items-center gap-4 p-4 bg-background border border-border rounded-md hover:border-primary text-left transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <ArrowSquareIn size={20} weight="bold" className="text-blue-500 shrink-0" />
-                    <div>
-                      <div className="font-mono text-sm font-bold group-hover:text-primary transition-colors">
-                        Import JSON
-                      </div>
-                      <div className="font-mono text-xs text-muted-foreground">
-                        Restore site data and settings from a previously exported JSON file
-                      </div>
-                    </div>
-                  </button>
-                </div>
-              </TabsContent>
-
-              {/* ─── TRANSLATIONS TAB ──────────────────────────── */}
-              <TabsContent value="translations" className="flex-1 overflow-y-auto p-4 space-y-4 mt-0">
-                <div className="space-y-1">
-                  <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">Translation Manager</h3>
-                  <p className="font-mono text-xs text-muted-foreground">
-                    {Object.keys(getTranslations()).length} keys · {LOCALES.length} languages
-                  </p>
-                </div>
-
-                {/* Export */}
-                <div className="bg-background border border-border rounded-md p-4 space-y-2">
-                  <h4 className="font-mono text-xs font-bold text-foreground uppercase tracking-wider">Export Translations</h4>
-                  <p className="font-mono text-xs text-muted-foreground">Download all translation keys as a JSON file for editing.</p>
-                  <button
-                    onClick={() => {
-                      const base = getTranslations()
-                      const merged = adminSettings?.customTranslations
-                        ? (() => {
-                            const out = { ...base }
-                            for (const [key, langs] of Object.entries(adminSettings.customTranslations)) {
-                              out[key] = { ...(out[key] ?? {}), ...langs }
-                            }
-                            return out
-                          })()
-                        : base
-                      const blob = new Blob([JSON.stringify(merged, null, 2)], { type: 'application/json' })
-                      const url = URL.createObjectURL(blob)
-                      const a = document.createElement('a')
-                      a.href = url
-                      a.download = 'translations.json'
-                      document.body.appendChild(a)
-                      a.click()
-                      document.body.removeChild(a)
-                      URL.revokeObjectURL(url)
-                    }}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/30 rounded font-mono text-xs text-primary hover:bg-primary/20 transition-colors"
-                  >
-                    <Export size={13} />
-                    Export JSON
-                  </button>
-                </div>
-
-                {/* Import */}
-                <div className="bg-background border border-border rounded-md p-4 space-y-2">
-                  <h4 className="font-mono text-xs font-bold text-foreground uppercase tracking-wider">Import Translations</h4>
-                  <p className="font-mono text-xs text-muted-foreground">Upload a translation JSON file to add or override translations.</p>
-                  <button
-                    onClick={() => translationImportRef.current?.click()}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/30 rounded font-mono text-xs text-primary hover:bg-primary/20 transition-colors"
-                  >
-                    <ArrowSquareIn size={13} />
-                    Import JSON
-                  </button>
-                </div>
-
-                {/* Reset */}
-                {adminSettings?.customTranslations && Object.keys(adminSettings.customTranslations).length > 0 && (
-                  <div className="bg-background border border-border rounded-md p-4 space-y-2">
-                    <h4 className="font-mono text-xs font-bold text-foreground uppercase tracking-wider">Custom Translations Active</h4>
-                    <p className="font-mono text-xs text-muted-foreground">
-                      {Object.keys(adminSettings.customTranslations).length} custom key overrides loaded.
-                    </p>
-                    <button
-                      onClick={() => {
-                        const updated = { ...(adminSettings ?? {}) }
-                        delete updated.customTranslations
-                        setAdminSettings?.(updated)
-                      }}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-destructive/10 border border-destructive/30 rounded font-mono text-xs text-destructive hover:bg-destructive/20 transition-colors"
-                    >
-                      <ArrowCounterClockwise size={13} />
-                      Reset to Defaults
-                    </button>
-                  </div>
-                )}
-              </TabsContent>
-
               <SectionConfigTab
                 adminSettings={adminSettings}
                 setAdminSettings={setAdminSettings}
                 siteData={siteData}
                 onUpdateSiteData={onUpdateSiteData}
               />
-            </Tabs>
-          </motion.div>
 
-          {/* Hidden file input for import */}
-          <input
-            ref={importInputRef}
-            type="file"
-            accept=".json,application/json"
-            className="hidden"
-            onChange={handleImportFile}
-            aria-hidden="true"
-          />
-          {/* Hidden file input for translation import */}
-          <input
-            ref={translationImportRef}
-            type="file"
-            accept=".json,application/json"
-            className="hidden"
-            onChange={(e: ChangeEvent<HTMLInputElement>) => {
-              const file = e.target.files?.[0]
-              if (!file) return
-              const reader = new FileReader()
-              reader.onload = (ev) => {
-                try {
-                  const result = ev.target?.result
-                  if (typeof result !== 'string') return
-                  const data = JSON.parse(result)
-                  if (typeof data !== 'object' || data === null || Array.isArray(data)) {
-                    throw new Error('invalid')
-                  }
-                  const existing = adminSettings?.customTranslations ?? {}
-                  setAdminSettings?.({ ...(adminSettings ?? {}), customTranslations: { ...existing, ...data } })
-                  toast.success('Translations imported successfully!')
-                } catch {
-                  toast.error('Invalid translation file format. Please upload a valid JSON file.')
-                }
-              }
-              reader.readAsText(file)
-              e.target.value = ''
-            }}
-            aria-hidden="true"
-          />
+              <SecurityTab
+                hasPassword={hasPassword}
+                onOpenSecurityIncidents={onOpenSecurityIncidents}
+                onOpenSecuritySettings={onOpenSecuritySettings}
+                onOpenBlocklist={onOpenBlocklist}
+                onOpenSubscriberList={onOpenSubscriberList}
+                onClose={onClose}
+                onOpenPasswordDialog={() => setShowPasswordDialog(true)}
+              />
+
+              <AnalyticsTab
+                onOpenStats={onOpenStats}
+                onOpenContactInbox={onOpenContactInbox}
+                onClose={onClose}
+              />
+
+              <DataTab
+                siteData={siteData}
+                onImportData={onImportData}
+                onExport={handleExport}
+                onImportClick={() => importInputRef.current?.click()}
+              />
+
+              <TranslationsTab
+                adminSettings={adminSettings}
+                setAdminSettings={setAdminSettings}
+                translationImportRef={translationImportRef}
+              />
+            </Tabs>
+
+            {/* Hidden file input for data import */}
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".json,application/json"
+              className="hidden"
+              onChange={handleImportFile}
+              aria-hidden="true"
+            />
+          </motion.div>
         </>
       )}
 

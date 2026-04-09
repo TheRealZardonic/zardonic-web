@@ -83,7 +83,7 @@ export default defineConfig(() => {
           rewrite: (path: string) => {
             const url = new URL(path, 'http://localhost')
             const params = url.searchParams
-            const artist = params.get('artist') || 'Zardonic'
+            const artist = params.get('artist') || ''
             params.delete('artist')
             return `/artists/${encodeURIComponent(artist)}/events?${params.toString()}`
           },

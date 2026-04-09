@@ -7,6 +7,9 @@ import { useEffect, useRef, memo } from 'react'
  *
  * When `transparent` is true (overlay mode over a background image) the solid
  * black base fill is replaced with clearRect so the image behind shows through.
+ *
+ * Respects `prefers-reduced-motion`: the rAF animation loop is stopped and only
+ * a single static frame is drawn.
  */
 const GlitchGridBackground = memo(function GlitchGridBackground({ transparent, gridSize: gridSizeProp, scanSpeed: scanSpeedProp, glitchFrequency: glitchFrequencyProp }: {
   transparent?: boolean
@@ -15,6 +18,7 @@ const GlitchGridBackground = memo(function GlitchGridBackground({ transparent, g
   glitchFrequency?: number
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const prefersReduced = typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -173,16 +177,20 @@ const GlitchGridBackground = memo(function GlitchGridBackground({ transparent, g
       ctx.fillStyle = vig
       ctx.fillRect(0, 0, W, H)
 
-      animFrame = requestAnimationFrame(draw)
+      // Stop animation loop when user prefers reduced motion — single static frame only
+      if (!prefersReduced) {
+        animFrame = requestAnimationFrame(draw)
+      }
     }
 
-    animFrame = requestAnimationFrame(draw)
+    // Draw one frame regardless; only loop if motion is allowed
+    draw()
 
     return () => {
       cancelAnimationFrame(animFrame)
       window.removeEventListener('resize', resize)
     }
-  }, [transparent, gridSizeProp, scanSpeedProp, glitchFrequencyProp])
+  }, [transparent, gridSizeProp, scanSpeedProp, glitchFrequencyProp, prefersReduced])
 
   return (
     <canvas

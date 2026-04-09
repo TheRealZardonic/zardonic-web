@@ -10,10 +10,10 @@ import { Redis } from '@upstash/redis'
  *    expensive Serverless Function (api/denied.ts etc.) never starts.
  *
  * 2. **Global Circuit Breaker** — counts ALL incoming requests in 10-second
- *    time windows.  When the count exceeds THRESHOLD (500) the system sets
- *    `zd_under_attack` in Redis with a 5-minute TTL.  While that flag is set
- *    every single request is rejected (429, empty body).  After the TTL
- *    expires the flag auto-deletes and normal operation resumes.
+ *    time windows.  When the count exceeds THRESHOLD the system sets
+ *    `zd_under_attack` in Redis with a COOLDOWN_SECONDS TTL.  While that
+ *    flag is set every single request is rejected (429, empty body).  After
+ *    the TTL expires the flag auto-deletes and normal operation resumes.
  *
  * Edge Functions are billed by CPU cycles, not wall-clock time, so the
  * Redis round-trip costs almost nothing compared to a Serverless Function.
@@ -21,11 +21,39 @@ import { Redis } from '@upstash/redis'
 
 const SALT = process.env.RATE_LIMIT_SALT
 
+/** Requests per 10-second window before the circuit breaker trips. */
+const THRESHOLD = Number(process.env.RATE_LIMIT_THRESHOLD) || 500
+
+/** How long (seconds) the circuit breaker stays open once tripped. */
+const COOLDOWN_SECONDS = Number(process.env.RATE_LIMIT_COOLDOWN_SECONDS) || 300
+
+/**
+ * Module-level Redis client — instantiated once per Edge worker lifetime
+ * rather than on every request to avoid unnecessary object allocation.
+ * The client is lazily created on the first request that reaches this code.
+ */
+let _redis: Redis | null = null
+
+function getRedis(): Redis | null {
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+    return null
+  }
+  if (!_redis) {
+    _redis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    })
+  }
+  return _redis
+}
+
 /**
  * Hash an IP with SHA-256 + salt using the Web Crypto API (Edge-compatible).
  */
-async function hashIp(ip: string): Promise<string> {
-  const data = new TextEncoder().encode(SALT + ip)
+async function hashIp(ip: string, salt: string): Promise<string> {
+  // Use '|' as separator — pipe never appears in IPv4 or IPv6 addresses, preventing
+  // any theoretical length-extension/collision between salt and IP components.
+  const data = new TextEncoder().encode(`${salt}|${ip}`)
   const buf = await crypto.subtle.digest('SHA-256', data)
   return Array.from(new Uint8Array(buf))
     .map(b => b.toString(16).padStart(2, '0'))
@@ -40,27 +68,22 @@ function getClientIp(req: Request): string {
   return '127.0.0.1'
 }
 
-/** Requests per 10-second window before the circuit breaker trips. */
-const THRESHOLD = 500
-
-/** How long (seconds) the circuit breaker stays open once tripped. */
-const COOLDOWN_SECONDS = 300
-
 export default async function middleware(req: Request): Promise<Response | undefined> {
+  const redis = getRedis()
+
   // Skip when Redis is not configured (local development)
-  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+  if (!redis) {
     return
   }
 
+  // Hard-fail when RATE_LIMIT_SALT is missing in production.
+  // Without a salt the IP hash is predictable, undermining GDPR-compliant
+  // IP anonymisation. Log the error and skip rate-limiting — do NOT fall
+  // back to a hardcoded default that an attacker could exploit.
   if (!SALT) {
-    console.error('[middleware] RATE_LIMIT_SALT env var is not set. Skipping rate limiting.')
+    console.error('[middleware] RATE_LIMIT_SALT env var is not set. Rate limiting disabled — set this variable in production.')
     return
   }
-
-  const redis = new Redis({
-    url: process.env.UPSTASH_REDIS_REST_URL,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN,
-  })
 
   try {
     // ── 1. Circuit Breaker ──────────────────────────────────────────
@@ -71,7 +94,7 @@ export default async function middleware(req: Request): Promise<Response | undef
 
     // ── 2. Hard-Blocked IP Gate ─────────────────────────────────────
     const ip = getClientIp(req)
-    const hashedIp = await hashIp(ip)
+    const hashedIp = await hashIp(ip, SALT)
     const isBlocked = await redis.get(`zd-blocked:${hashedIp}`)
     if (isBlocked) {
       return new Response(null, { status: 403 })

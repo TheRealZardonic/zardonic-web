@@ -27,9 +27,10 @@ interface TerminalProps {
   customCommands?: TerminalCommand[]
   editMode?: boolean
   onSaveCommands?: (commands: TerminalCommand[]) => void
+  artistName?: string
 }
 
-export function Terminal({ isOpen, onClose, customCommands = [], editMode = false, onSaveCommands }: TerminalProps) {
+export function Terminal({ isOpen, onClose, customCommands = [], editMode = false, onSaveCommands, artistName = 'ARTIST' }: TerminalProps) {
   const [input, setInput] = useState('')
   const [history, setHistory] = useState<string[]>([
     '> SYSTEM INITIALIZED',
@@ -158,7 +159,7 @@ export function Terminal({ isOpen, onClose, customCommands = [], editMode = fals
         return
       }
       case 'about': {
-        const aboutLines = ['ZARDONIC - METAL & BASS ARTIST', 'GENRE: INDUSTRIAL / DRUM & BASS', 'STATUS: ACTIVE']
+        const aboutLines = [`${artistName.toUpperCase()} - ARTIST`, 'STATUS: ACTIVE']
         setInput('')
         typeOutput(aboutLines, newHistory)
         return

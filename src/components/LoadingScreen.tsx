@@ -28,6 +28,7 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [loadingStage, setLoadingStage] = useState(0)
   const [cachingDone, setCachingDone] = useState(precacheUrls.length === 0)
+  const prefersReducedMotion = useReducedMotion()
 
   // Read the primary colour once at mount so glow/indicator animations match
   // the current CI preset even before admin settings arrive from the KV store.
@@ -112,8 +113,8 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
   return (
     <motion.div
       initial={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.5 }}
+      exit={{ opacity: prefersReducedMotion ? 1 : 0 }}
+      transition={{ duration: prefersReducedMotion ? 0 : 0.5 }}
       className="fixed inset-0 z-[9999] bg-background flex items-center justify-center overflow-hidden"
     >
       <div className="full-page-noise periodic-noise-glitch" />
@@ -161,7 +162,7 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
               repeat: Infinity,
             }}
           >
-            {'>'} {loaderTexts?.titleLabel ?? 'ZARDONIC.SYS v2.077'} {'<'}
+            {'>'} {loaderTexts?.titleLabel ?? 'ARTIST.SYS v2.0'} {'<'}
           </motion.div>
         </div>
         

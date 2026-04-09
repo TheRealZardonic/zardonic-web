@@ -21,6 +21,8 @@ jobs:
       - run: npm ci
       - name: npm audit
         run: npm audit --audit-level=moderate
+      - name: TypeScript type check
+        run: npm run typecheck
       - name: Run tests
         run: npm test
       - name: notify vercel
