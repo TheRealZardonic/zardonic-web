@@ -29,6 +29,8 @@ function formatEventBitz(gig: Gig): string {
   return gig.id
 }
 
+const INITIAL_VISIBLE = 3
+
 interface AppGigsSectionProps {
   gigs: Gig[]
   sectionOrder: number

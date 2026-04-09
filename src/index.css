@@ -2117,6 +2117,11 @@ h1, h2, h3, h4, h5, h6 {
  * Dark backgrounds and white text are achromatic and therefore unaffected.
  * Applied only to the inner iframe so the pre-consent UI keeps its original styling.
  */
+.spotify-ci-embed {
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
 .spotify-ci-embed iframe {
   filter: hue-rotate(var(--spotify-hue-rotate, -116deg)) saturate(0.85);
   border-radius: 0 !important;

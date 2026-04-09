@@ -42,7 +42,33 @@ export interface OdesliResult {
   entityType?: string
 }
 
-export async function fetchOdesliLinks(streamingUrl: string): Promise<OdesliResult | null> {
+/** Minimum delay between consecutive Odesli API requests (empirically chosen to stay well
+ *  under Odesli's observed rate limit of ~2 req/s while keeping enrichment reasonably fast). */
+const ODESLI_REQUEST_DELAY_MS = 400
+
+interface QueueEntry {
+  url: string
+  resolve: (value: OdesliResult | null) => void
+}
+
+const requestQueue: QueueEntry[] = []
+let queueRunning = false
+
+async function runQueue(): Promise<void> {
+  if (queueRunning) return
+  queueRunning = true
+  while (requestQueue.length > 0) {
+    const entry = requestQueue.shift()
+    if (!entry) break
+    entry.resolve(await _fetchOdesliLinksRaw(entry.url))
+    if (requestQueue.length > 0) {
+      await new Promise<void>(res => setTimeout(res, ODESLI_REQUEST_DELAY_MS))
+    }
+  }
+  queueRunning = false
+}
+
+async function _fetchOdesliLinksRaw(streamingUrl: string): Promise<OdesliResult | null> {
   try {
     const response = await fetch(
       `/api/odesli?url=${encodeURIComponent(streamingUrl)}&userCountry=DE`
@@ -97,4 +123,11 @@ export async function fetchOdesliLinks(streamingUrl: string): Promise<OdesliResu
     console.error('Error fetching Odesli links:', error)
     return null
   }
+}
+
+export function fetchOdesliLinks(streamingUrl: string): Promise<OdesliResult | null> {
+  return new Promise<OdesliResult | null>(resolve => {
+    requestQueue.push({ url: streamingUrl, resolve })
+    void runQueue().catch(err => console.error('Odesli queue error:', err))
+  })
 }
