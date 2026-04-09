@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { ReactNode, CSSProperties } from 'react'
 
 interface PageLayoutProps {
   /** Background layers — rendered behind all content (position: fixed) */
@@ -49,7 +49,7 @@ export function PageLayout({
       {/* Layer 10: Content — Holy Grail flex column keeps footer at viewport bottom */}
       <div
         className={`relative min-h-screen flex flex-col${contentClassName ? ` ${contentClassName}` : ''}`}
-        style={{ zIndex: 'var(--z-content)' } as React.CSSProperties}
+        style={{ zIndex: 'var(--z-content)' } as CSSProperties}
       >
         {nav}
         <main className="flex-1 flex flex-col">
