@@ -309,6 +309,13 @@ export default function BackgroundTab({
             onCheckedChange={v => updateAnim({ backgroundImageOverlay: v })}
           />
         </div>
+        <div className="flex items-center justify-between">
+          <Label className="font-mono text-xs">Parallax scrolling</Label>
+          <Switch
+            checked={anim.backgroundImageParallax === true}
+            onCheckedChange={v => updateAnim({ backgroundImageParallax: v })}
+          />
+        </div>
       </section>
 
       <Separator />

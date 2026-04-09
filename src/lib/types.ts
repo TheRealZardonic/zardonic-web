@@ -97,6 +97,7 @@ export interface AnimationSettings {
   backgroundImageFit?: 'cover' | 'contain' | 'fill' | 'none'
   backgroundImageOpacity?: number
   backgroundImageOverlay?: boolean
+  backgroundImageParallax?: boolean
   // Loading screen
   loadingScreenType?: LoadingScreenType
   loadingScreenMode?: LoadingScreenMode

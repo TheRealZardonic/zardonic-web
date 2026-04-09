@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import React, { Suspense } from 'react'
-import { AnimatePresence } from 'framer-motion'
+import { AnimatePresence, motion, useScroll, useTransform } from 'framer-motion'
 import { useKV } from '@/hooks/use-kv'
 import { useKonami } from '@/hooks/use-konami'
 import { trackPageView, trackHeatmapClick } from '@/hooks/use-analytics'
@@ -62,6 +62,51 @@ function BackgroundLayer({ type, hudTexts, transparent }: { type: BackgroundType
   if (bg === 'glitch-grid') return <Suspense fallback={null}><GlitchGridBackground transparent={transparent} /></Suspense>
   // 'minimal' – no decorative background
   return null
+}
+
+/** Background image with optional CSS parallax (background-attachment: fixed).
+ *  Depth layer 0 – always the deepest visual layer. */
+function BackgroundImage({ url, fit, opacity, parallax }: {
+  url: string
+  fit?: 'cover' | 'contain' | 'fill' | 'none'
+  opacity: number
+  parallax: boolean
+}) {
+  const { scrollYProgress } = useScroll()
+  // Move the image at 40 % of the scroll speed (positive = moves down slower than content)
+  const y = useTransform(scrollYProgress, [0, 1], ['0%', '40%'])
+
+  if (parallax) {
+    return (
+      <motion.div
+        className="fixed inset-0 pointer-events-none"
+        style={{ zIndex: 0, opacity, y, willChange: 'transform' }}
+        aria-hidden="true"
+      >
+        <img
+          src={url}
+          alt=""
+          className="w-full h-full"
+          style={{ objectFit: fit ?? 'cover', objectPosition: 'center', display: 'block' }}
+        />
+      </motion.div>
+    )
+  }
+
+  return (
+    <div
+      className="fixed inset-0 pointer-events-none"
+      style={{ zIndex: 0, opacity }}
+      aria-hidden="true"
+    >
+      <img
+        src={url}
+        alt=""
+        className="w-full h-full"
+        style={{ objectFit: fit ?? 'cover', objectPosition: 'center', display: 'block' }}
+      />
+    </div>
+  )
 }
 
 // Code splitting for heavy components
@@ -349,35 +394,24 @@ function App() {
       {anim.crtEnabled !== false && <div className="crt-vignette" />}
       {anim.scanlineEnabled !== false && <div className="crt-scanline-bg" />}
       {anim.noiseEnabled !== false && <div className="full-page-noise periodic-noise-glitch" />}
-      {/* Background image layer – rendered at z-index 1 so it sits above the body
-          background but below the page content sections (which are transparent/semi-transparent).
-          Uses background-size: cover so the image fills the screen without distortion.
-          position: fixed keeps the image anchored during scrolling. */}
+      {/* Depth layer 0 – background image (deepest). Parallax moves it at 40 % scroll speed. */}
       {anim.backgroundImageUrl && (
-        <div
-          className="fixed inset-0 pointer-events-none"
-          style={{ zIndex: 0, opacity: typeof anim.backgroundImageOpacity === 'number' ? anim.backgroundImageOpacity : 1 }}
-          aria-hidden="true"
-        >
-          <img
-            src={anim.backgroundImageUrl}
-            alt=""
-            className="w-full h-full"
-            style={{
-              objectFit: anim.backgroundImageFit ?? 'cover',
-              objectPosition: 'center',
-              display: 'block',
-            }}
+        <BackgroundImage
+          url={anim.backgroundImageUrl}
+          fit={anim.backgroundImageFit}
+          opacity={typeof anim.backgroundImageOpacity === 'number' ? anim.backgroundImageOpacity : 1}
+          parallax={anim.backgroundImageParallax === true}
+        />
+      )}
+      {/* Depth layer 1 – animated overlay effect (middle depth, above image, below content). */}
+      {anim.circuitBackgroundEnabled !== false && (!anim.backgroundImageUrl || anim.backgroundImageOverlay === true) && (
+        <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 2 }}>
+          <BackgroundLayer
+            type={anim.backgroundType}
+            hudTexts={adminSettings?.hudTexts}
+            transparent={Boolean(anim.backgroundImageUrl && anim.backgroundImageOverlay)}
           />
         </div>
-      )}
-      {/* Animated background effect: show when enabled and (no image, or overlay mode is on) */}
-      {anim.circuitBackgroundEnabled !== false && (!anim.backgroundImageUrl || anim.backgroundImageOverlay === true) && (
-        <BackgroundLayer
-          type={anim.backgroundType}
-          hudTexts={adminSettings?.hudTexts}
-          transparent={Boolean(anim.backgroundImageUrl && anim.backgroundImageOverlay)}
-        />
       )}
       <SystemMonitorHUD />
       
