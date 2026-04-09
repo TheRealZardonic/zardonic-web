@@ -248,8 +248,8 @@ export const CircuitBackground = memo(function CircuitBackground({
               }}
             />
           ))}
-        </div>
-      </motion.div>
+        </motion.div>
+      </div>
 
       <motion.div 
         className="fixed inset-0 overflow-hidden pointer-events-none"
