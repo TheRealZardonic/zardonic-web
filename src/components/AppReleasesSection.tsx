@@ -37,12 +37,16 @@ function toFullRelease(r: Release): FullRelease {
     artwork: r.artwork,
     year: r.year,
     releaseDate: r.releaseDate,
+    type: r.type,
     streamingLinks: {
       spotify: r.spotify,
       soundcloud: r.soundcloud,
       youtube: r.youtube,
       bandcamp: r.bandcamp,
       appleMusic: r.appleMusic,
+      deezer: r.deezer,
+      tidal: r.tidal,
+      amazonMusic: r.amazonMusic,
     },
   }
 }
@@ -50,6 +54,7 @@ function toFullRelease(r: Release): FullRelease {
 export default function AppReleasesSection({ releases, sectionOrder, visible, editMode, sectionLabel, headingPrefix, adminSettings, iTunesFetching, hasAutoLoaded, sectionLabels, onLabelChange, onReleaseClick, onUpdateRelease, onDeleteRelease, onAddRelease, onRefreshReleases }: AppReleasesSectionProps) {
   const [showAllReleases, setShowAllReleases] = useState(false)
   const [editingRelease, setEditingRelease] = useState<FullRelease | null | 'new'>(null)
+  const [activeFilter, setActiveFilter] = useState<'' | 'album' | 'ep' | 'single' | 'remix' | 'compilation'>('')
   const { t } = useLocale()
 
   const loadingLabel = sectionLabels?.releasesLoadingLabel ?? '// LOADING.ITUNES.RELEASES'
@@ -181,96 +186,114 @@ export default function AppReleasesSection({ releases, sectionOrder, visible, ed
                 </p>
               </Card>
             ) : (
-              <>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                  {(() => {
-                    const sorted = [...releases].sort((a, b) => {
-                      const yearA = a.releaseDate ? new Date(a.releaseDate).getTime() : parseInt(a.year) || 0
-                      const yearB = b.releaseDate ? new Date(b.releaseDate).getTime() : parseInt(b.year) || 0
-                      return yearB - yearA
-                    })
-                    const visibleReleases = showAllReleases ? sorted : sorted.slice(0, 6)
-                    return visibleReleases.map((release, index) => (
-                      <motion.div
-                        key={release.id}
-                        initial={{ opacity: 0, clipPath: 'inset(0 0 100% 0)' }}
-                        whileInView={{ opacity: 1, clipPath: 'inset(0 0 0% 0)' }}
-                        viewport={{ once: true }}
-                        transition={{
-                          duration: 0.6,
-                          delay: index * 0.08,
-                          ease: [0.25, 0.46, 0.45, 0.94]
-                        }}
-                      >
-                        <Card
-                          className="overflow-hidden bg-card border-border hover:border-primary/50 transition-all cursor-pointer cyber-card hover-noise relative"
-                          onClick={() => !editMode && onReleaseClick(release)}
+              (() => {
+                const sorted = [...releases].sort((a, b) => {
+                  const yearA = a.releaseDate ? new Date(a.releaseDate).getTime() : parseInt(a.year) || 0
+                  const yearB = b.releaseDate ? new Date(b.releaseDate).getTime() : parseInt(b.year) || 0
+                  return yearB - yearA
+                })
+                const filtered = activeFilter ? sorted.filter(r => r.type === activeFilter) : sorted
+                const visibleReleases = showAllReleases ? filtered : filtered.slice(0, 8)
+                return (
+                  <>
+                    <div className="flex gap-2 mb-6 flex-wrap">
+                      {(['', 'album', 'ep', 'single', 'remix', 'compilation'] as const).map(f => (
+                        <button
+                          key={f}
+                          onClick={() => setActiveFilter(f)}
+                          className={`px-3 py-1 border font-mono text-xs uppercase tracking-wider transition-colors ${
+                            activeFilter === f
+                              ? 'border-primary bg-primary/10 text-primary'
+                              : 'border-border text-muted-foreground hover:border-primary/40'
+                          }`}
                         >
-                          <div className="data-label absolute top-2 left-2 z-10">// REL.{release.year}</div>
-                          {editMode && (
-                            <div className="absolute top-2 right-2 z-10 flex gap-1">
-                              {onUpdateRelease && (
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setEditingRelease(toFullRelease(release)) }}
-                                  className="p-1 bg-black/60 hover:bg-primary/80 text-foreground hover:text-primary-foreground rounded transition-colors"
-                                  aria-label={`Edit ${release.title}`}
-                                >
-                                  <PencilSimple className="w-3.5 h-3.5" />
-                                </button>
-                              )}
-                              {onDeleteRelease && (
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); onDeleteRelease(release.id) }}
-                                  className="p-1 bg-black/60 hover:bg-destructive/80 text-foreground hover:text-destructive-foreground rounded transition-colors"
-                                  aria-label={`Delete ${release.title}`}
-                                >
-                                  <Trash className="w-3.5 h-3.5" />
-                                </button>
+                          {f === '' ? 'All' : f}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                      {visibleReleases.map((release, index) => (
+                        <motion.div
+                          key={release.id}
+                          initial={{ opacity: 0, clipPath: 'inset(0 0 100% 0)' }}
+                          whileInView={{ opacity: 1, clipPath: 'inset(0 0 0% 0)' }}
+                          viewport={{ once: true }}
+                          transition={{
+                            duration: 0.6,
+                            delay: index * 0.08,
+                            ease: [0.25, 0.46, 0.45, 0.94]
+                          }}
+                        >
+                          <Card
+                            className="overflow-hidden bg-card border-border hover:border-primary/50 transition-all cursor-pointer cyber-card hover-noise relative"
+                            onClick={() => !editMode && onReleaseClick(release)}
+                          >
+                            <div className="data-label absolute top-2 left-2 z-10">// REL.{release.year}</div>
+                            {editMode && (
+                              <div className="absolute top-2 right-2 z-10 flex gap-1">
+                                {onUpdateRelease && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setEditingRelease(toFullRelease(release)) }}
+                                    className="p-1 bg-black/60 hover:bg-primary/80 text-foreground hover:text-primary-foreground rounded transition-colors"
+                                    aria-label={`Edit ${release.title}`}
+                                  >
+                                    <PencilSimple className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                                {onDeleteRelease && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); onDeleteRelease(release.id) }}
+                                    className="p-1 bg-black/60 hover:bg-destructive/80 text-foreground hover:text-destructive-foreground rounded transition-colors"
+                                    aria-label={`Delete ${release.title}`}
+                                  >
+                                    <Trash className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                            <div className="aspect-square bg-muted relative">
+                              {release.artwork && (
+                                <img src={release.artwork} alt={release.title} className="w-full h-full object-cover glitch-image hover-chromatic-image" loading="lazy" decoding="async" />
                               )}
                             </div>
+                            <div className="p-4">
+                              <h3 className="font-bold uppercase text-sm mb-1 truncate font-mono hover-chromatic">{release.title}</h3>
+                              <p className="text-xs text-muted-foreground mb-3 font-mono">{release.year}</p>
+                            </div>
+                          </Card>
+                        </motion.div>
+                      ))}
+                    </div>
+                    {filtered.length > 8 && (
+                      <motion.div
+                        className="flex justify-center mt-8"
+                        initial={{ opacity: 0 }}
+                        whileInView={{ opacity: 1 }}
+                        viewport={{ once: true }}
+                      >
+                        <Button
+                          variant="outline"
+                          size="lg"
+                          onClick={() => setShowAllReleases(!showAllReleases)}
+                          className="gap-2 uppercase font-mono cyber-border hover-glitch"
+                        >
+                          {showAllReleases ? (
+                            <>
+                              <CaretUp className="w-4 h-4" />
+                              {showLessText}
+                            </>
+                          ) : (
+                            <>
+                              <CaretDown className="w-4 h-4" />
+                              {showAllText} ({filtered.length})
+                            </>
                           )}
-                          <div className="aspect-square bg-muted relative">
-                            {release.artwork && (
-                              <img src={release.artwork} alt={release.title} className="w-full h-full object-cover glitch-image hover-chromatic-image" loading="lazy" decoding="async" />
-                            )}
-                          </div>
-                          <div className="p-4">
-                            <h3 className="font-bold uppercase text-sm mb-1 truncate font-mono hover-chromatic">{release.title}</h3>
-                            <p className="text-xs text-muted-foreground mb-3 font-mono">{release.year}</p>
-                          </div>
-                        </Card>
+                        </Button>
                       </motion.div>
-                    ))
-                  })()}
-                </div>
-                {releases.length > 6 && (
-                  <motion.div
-                    className="flex justify-center mt-8"
-                    initial={{ opacity: 0 }}
-                    whileInView={{ opacity: 1 }}
-                    viewport={{ once: true }}
-                  >
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      onClick={() => setShowAllReleases(!showAllReleases)}
-                      className="gap-2 uppercase font-mono cyber-border hover-glitch"
-                    >
-                      {showAllReleases ? (
-                        <>
-                          <CaretUp className="w-4 h-4" />
-                          {showLessText}
-                        </>
-                      ) : (
-                        <>
-                          <CaretDown className="w-4 h-4" />
-                          {showAllText} ({releases.length})
-                        </>
-                      )}
-                    </Button>
-                  </motion.div>
-                )}
-              </>
+                    )}
+                  </>
+                )
+              })()
             )}
           </motion.div>
         </div>

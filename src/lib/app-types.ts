@@ -36,6 +36,7 @@ export interface Release {
   deezer?: string
   tidal?: string
   amazonMusic?: string
+  type?: '' | 'album' | 'ep' | 'single' | 'remix' | 'compilation'
 }
 
 export interface Member {

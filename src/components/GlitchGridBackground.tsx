@@ -8,7 +8,12 @@ import { useEffect, useRef, memo } from 'react'
  * When `transparent` is true (overlay mode over a background image) the solid
  * black base fill is replaced with clearRect so the image behind shows through.
  */
-const GlitchGridBackground = memo(function GlitchGridBackground({ transparent }: { transparent?: boolean }) {
+const GlitchGridBackground = memo(function GlitchGridBackground({ transparent, gridSize: gridSizeProp, scanSpeed: scanSpeedProp, glitchFrequency: glitchFrequencyProp }: {
+  transparent?: boolean
+  gridSize?: number
+  scanSpeed?: number
+  glitchFrequency?: number
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -61,7 +66,7 @@ const GlitchGridBackground = memo(function GlitchGridBackground({ transparent }:
       }
 
       // Fine crosshatch grid
-      const gridSize = 28
+      const gridSize = gridSizeProp ?? 28
       ctx.strokeStyle = 'rgba(160, 170, 200, 0.045)'
       ctx.lineWidth = 0.5
       for (let x = 0; x < W; x += gridSize) {
@@ -104,7 +109,7 @@ const GlitchGridBackground = memo(function GlitchGridBackground({ transparent }:
       }
 
       // Slow vertical scan beam
-      const scanX = ((tick * 0.3) % (W + 80)) - 40
+      const scanX = ((tick * 0.3 * (scanSpeedProp ?? 1)) % (W + 80)) - 40
       const scanGrad = ctx.createLinearGradient(scanX - 30, 0, scanX + 30, 0)
       scanGrad.addColorStop(0, 'rgba(180,200,255,0)')
       scanGrad.addColorStop(0.5, 'rgba(180,200,255,0.04)')
@@ -113,7 +118,7 @@ const GlitchGridBackground = memo(function GlitchGridBackground({ transparent }:
       ctx.fillRect(scanX - 30, 0, 60, H)
 
       // Horizontal glitch strips with chromatic offset
-      if (tick % 8 === 0 && Math.random() < 0.4) spawnStrip()
+      if (tick % 8 === 0 && Math.random() < (glitchFrequencyProp ?? 0.4)) spawnStrip()
 
       for (let i = strips.length - 1; i >= 0; i--) {
         const s = strips[i]
@@ -177,7 +182,7 @@ const GlitchGridBackground = memo(function GlitchGridBackground({ transparent }:
       cancelAnimationFrame(animFrame)
       window.removeEventListener('resize', resize)
     }
-  }, [transparent])
+  }, [transparent, gridSizeProp, scanSpeedProp, glitchFrequencyProp])
 
   return (
     <canvas

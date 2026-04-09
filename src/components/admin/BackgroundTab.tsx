@@ -88,6 +88,30 @@ export default function BackgroundTab({
               onCheckedChange={(v) => updateAnim({ scanlineEnabled: v })}
             />
           </div>
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <Label className="font-mono text-xs">Speed</Label>
+              <span className="font-mono text-xs text-muted-foreground">{anim.circuitSpeed ?? 1}x</span>
+            </div>
+            <Slider value={[(anim.circuitSpeed ?? 1) * 100]} min={50} max={300} step={10}
+              onValueChange={([v]) => updateAnim({ circuitSpeed: v / 100 })} />
+          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <Label className="font-mono text-xs">Density</Label>
+              <span className="font-mono text-xs text-muted-foreground">{anim.circuitDensity ?? 40}</span>
+            </div>
+            <Slider value={[anim.circuitDensity ?? 40]} min={10} max={100} step={5}
+              onValueChange={([v]) => updateAnim({ circuitDensity: v })} />
+          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <Label className="font-mono text-xs">Glow</Label>
+              <span className="font-mono text-xs text-muted-foreground">{Math.round((anim.circuitGlow ?? 0.8) * 100)}%</span>
+            </div>
+            <Slider value={[(anim.circuitGlow ?? 0.8) * 100]} min={0} max={100} step={5}
+              onValueChange={([v]) => updateAnim({ circuitGlow: v / 100 })} />
+          </div>
         </section>
       )}
 
@@ -109,6 +133,31 @@ export default function BackgroundTab({
             <Switch
               checked={anim.scanlineEnabled !== false}
               onCheckedChange={(v) => updateAnim({ scanlineEnabled: v })}
+            />
+          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <Label className="font-mono text-xs">Speed</Label>
+              <span className="font-mono text-xs text-muted-foreground">{anim.matrixSpeed ?? 1}x</span>
+            </div>
+            <Slider value={[(anim.matrixSpeed ?? 1) * 100]} min={50} max={300} step={10}
+              onValueChange={([v]) => updateAnim({ matrixSpeed: v / 100 })} />
+          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <Label className="font-mono text-xs">Density</Label>
+              <span className="font-mono text-xs text-muted-foreground">{Math.round((anim.matrixDensity ?? 0.7) * 100)}%</span>
+            </div>
+            <Slider value={[(anim.matrixDensity ?? 0.7) * 100]} min={30} max={100} step={5}
+              onValueChange={([v]) => updateAnim({ matrixDensity: v / 100 })} />
+          </div>
+          <div className="space-y-1">
+            <Label className="font-mono text-xs text-muted-foreground">Rain Color (hex)</Label>
+            <Input
+              value={anim.matrixColor ?? ''}
+              onChange={e => updateAnim({ matrixColor: e.target.value || undefined })}
+              className="font-mono text-xs"
+              placeholder="#00ff41"
             />
           </div>
         </section>
@@ -133,6 +182,22 @@ export default function BackgroundTab({
               checked={anim.scanlineEnabled !== false}
               onCheckedChange={(v) => updateAnim({ scanlineEnabled: v })}
             />
+          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <Label className="font-mono text-xs">Star Count</Label>
+              <span className="font-mono text-xs text-muted-foreground">{anim.starCount ?? 200}</span>
+            </div>
+            <Slider value={[anim.starCount ?? 200]} min={50} max={500} step={10}
+              onValueChange={([v]) => updateAnim({ starCount: v })} />
+          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <Label className="font-mono text-xs">Speed</Label>
+              <span className="font-mono text-xs text-muted-foreground">{anim.starSpeed ?? 1}x</span>
+            </div>
+            <Slider value={[(anim.starSpeed ?? 1) * 100]} min={50} max={300} step={10}
+              onValueChange={([v]) => updateAnim({ starSpeed: v / 100 })} />
           </div>
         </section>
       )}
@@ -159,6 +224,62 @@ export default function BackgroundTab({
               checked={anim.scanlineEnabled !== false}
               onCheckedChange={(v) => updateAnim({ scanlineEnabled: v })}
             />
+          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <Label className="font-mono text-xs">Particle Count</Label>
+              <span className="font-mono text-xs text-muted-foreground">{anim.cloudParticleCount ?? 80}</span>
+            </div>
+            <Slider value={[anim.cloudParticleCount ?? 80]} min={20} max={200} step={10}
+              onValueChange={([v]) => updateAnim({ cloudParticleCount: v })} />
+          </div>
+          <div className="space-y-1">
+            <Label className="font-mono text-xs text-muted-foreground">Glow Color (hex)</Label>
+            <Input
+              value={anim.cloudGlowColor ?? ''}
+              onChange={e => updateAnim({ cloudGlowColor: e.target.value || undefined })}
+              className="font-mono text-xs"
+              placeholder="#00ffaa"
+            />
+          </div>
+        </section>
+      )}
+
+      {/* Glitch grid options */}
+      {currentBg === 'glitch-grid' && (
+        <section className="space-y-3">
+          <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">Glitch Grid Options</h3>
+          <div className="flex items-center justify-between">
+            <Label className="font-mono text-xs">Noise layer</Label>
+            <Switch checked={anim.noiseEnabled !== false} onCheckedChange={v => updateAnim({ noiseEnabled: v })} />
+          </div>
+          <div className="flex items-center justify-between">
+            <Label className="font-mono text-xs">Scanlines</Label>
+            <Switch checked={anim.scanlineEnabled !== false} onCheckedChange={v => updateAnim({ scanlineEnabled: v })} />
+          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <Label className="font-mono text-xs">Grid Cell Size</Label>
+              <span className="font-mono text-xs text-muted-foreground">{anim.glitchGridSize ?? 28}px</span>
+            </div>
+            <Slider value={[anim.glitchGridSize ?? 28]} min={10} max={80} step={2}
+              onValueChange={([v]) => updateAnim({ glitchGridSize: v })} />
+          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <Label className="font-mono text-xs">Scan Speed</Label>
+              <span className="font-mono text-xs text-muted-foreground">{anim.glitchScanSpeed ?? 1}x</span>
+            </div>
+            <Slider value={[(anim.glitchScanSpeed ?? 1) * 100]} min={10} max={300} step={10}
+              onValueChange={([v]) => updateAnim({ glitchScanSpeed: v / 100 })} />
+          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <Label className="font-mono text-xs">Glitch Frequency</Label>
+              <span className="font-mono text-xs text-muted-foreground">{Math.round((anim.glitchFrequency ?? 0.4) * 100)}%</span>
+            </div>
+            <Slider value={[(anim.glitchFrequency ?? 0.4) * 100]} min={0} max={100} step={5}
+              onValueChange={([v]) => updateAnim({ glitchFrequency: v / 100 })} />
           </div>
         </section>
       )}

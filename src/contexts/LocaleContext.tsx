@@ -22,13 +22,6 @@ function detectLocale(): Locale {
   } catch {
     // localStorage unavailable
   }
-  try {
-    const browserLang = navigator.language.split('-')[0]
-    const supported = LOCALES.map(l => l.code)
-    if ((supported as string[]).includes(browserLang)) return browserLang as Locale
-  } catch {
-    // navigator unavailable
-  }
   return 'en'
 }
 

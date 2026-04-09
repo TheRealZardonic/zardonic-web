@@ -6,7 +6,7 @@ import { useKonami } from '@/hooks/use-konami'
 import { trackPageView, trackHeatmapClick } from '@/hooks/use-analytics'
 import { useAnalyticsConsent, CookieConsent, CookiePreferencesButton } from '@/components/CookieConsent'
 import { useAdminAuth } from '@/hooks/use-admin-auth'
-import type { AdminSettings, BackgroundType, HudTexts, SectionLabels, Release as FullRelease, TerminalCommand } from '@/lib/types'
+import type { AdminSettings, BackgroundType, HudTexts, SectionLabels, Release as FullRelease, TerminalCommand, AnimationSettings } from '@/lib/types'
 import { useAppTheme } from '@/hooks/use-app-theme'
 import { useSiteDataSync } from '@/hooks/use-site-data-sync'
 import { LocaleProvider } from '@/contexts/LocaleContext'
@@ -52,14 +52,32 @@ import { SectionErrorBoundary } from '@/components/SectionErrorBoundary'
 import { useDocumentTitle } from '@/hooks/use-document-title'
 
 /** Render the correct background component based on the configured type */
-function BackgroundLayer({ type, hudTexts, transparent }: { type: BackgroundType | undefined; hudTexts?: HudTexts; transparent?: boolean }) {
+
+function resolveImageUrl(raw: string): string {
+  if (!raw) return raw
+  try {
+    const u = new URL(raw)
+    if (u.hostname === 'drive.google.com') {
+      const fileMatch = u.pathname.match(/\/file\/d\/([A-Za-z0-9_-]+)/)
+      const idParam = u.searchParams.get('id')
+      const fileId = fileMatch?.[1] ?? idParam
+      if (fileId) {
+        const direct = `https://drive.google.com/uc?export=view&id=${fileId}`
+        return `/api/image-proxy?url=${encodeURIComponent(direct)}`
+      }
+    }
+  } catch { /* ignore */ }
+  return raw
+}
+
+function BackgroundLayer({ type, hudTexts, transparent, animSettings }: { type: BackgroundType | undefined; hudTexts?: HudTexts; transparent?: boolean; animSettings?: AnimationSettings }) {
   const bg = type ?? 'cloud-chamber'
   if (bg === 'circuit') return <CircuitBackground />
   if (bg === 'cyberpunk-hud') return <CyberpunkBackground hudTexts={hudTexts} />
   if (bg === 'matrix') return <Suspense fallback={null}><MatrixRain transparent={transparent} /></Suspense>
   if (bg === 'stars') return <Suspense fallback={null}><StarField transparent={transparent} /></Suspense>
   if (bg === 'cloud-chamber') return <Suspense fallback={null}><CloudChamberBackground /></Suspense>
-  if (bg === 'glitch-grid') return <Suspense fallback={null}><GlitchGridBackground transparent={transparent} /></Suspense>
+  if (bg === 'glitch-grid') return <Suspense fallback={null}><GlitchGridBackground transparent={transparent} gridSize={animSettings?.glitchGridSize} scanSpeed={animSettings?.glitchScanSpeed} glitchFrequency={animSettings?.glitchFrequency} /></Suspense>
   // 'minimal' – no decorative background
   return null
 }
@@ -77,7 +95,7 @@ function FixedBackgroundImage({ url, fit, opacity }: {
       aria-hidden="true"
     >
       <img
-        src={url}
+        src={resolveImageUrl(url)}
         alt=""
         className="w-full h-full"
         style={{ objectFit: fit ?? 'cover', objectPosition: 'center', display: 'block' }}
@@ -86,28 +104,32 @@ function FixedBackgroundImage({ url, fit, opacity }: {
   )
 }
 
-/** Parallax background image — moves at 40% of the scroll speed so it
- *  appears deeper than the page content. */
+/** Parallax background image — moves upward as scroll progresses so it
+ *  always covers the viewport. */
 function ParallaxBackgroundImage({ url, fit, opacity }: {
   url: string
   fit?: 'cover' | 'contain' | 'fill' | 'none'
   opacity: number
 }) {
   const { scrollYProgress } = useScroll()
-  const y = useTransform(scrollYProgress, [0, 1], ['0%', '40%'])
+  const y = useTransform(scrollYProgress, [0, 1], ['0%', '-15%'])
   return (
-    <motion.div
-      className="fixed inset-0 pointer-events-none"
-      style={{ zIndex: 0, opacity, y, willChange: 'transform' }}
+    <div
+      className="fixed inset-0 overflow-hidden pointer-events-none"
+      style={{ zIndex: 0, opacity }}
       aria-hidden="true"
     >
-      <img
-        src={url}
-        alt=""
-        className="w-full h-full"
-        style={{ objectFit: fit ?? 'cover', objectPosition: 'center', display: 'block' }}
-      />
-    </motion.div>
+      <motion.div
+        style={{ y, willChange: 'transform', position: 'absolute', top: '-15%', left: 0, right: 0, bottom: '-15%' }}
+      >
+        <img
+          src={resolveImageUrl(url)}
+          alt=""
+          className="w-full h-full"
+          style={{ objectFit: fit ?? 'cover', objectPosition: 'center', display: 'block' }}
+        />
+      </motion.div>
+    </div>
   )
 }
 
@@ -404,7 +426,7 @@ function App() {
         })()}
       </AnimatePresence>
 
-      <div className={`min-h-screen${anim.backgroundImageUrl ? ' bg-transparent' : ' bg-background'} text-foreground relative${anim.glitchEnabled === false ? ' no-glitch' : ''}${anim.chromaticEnabled === false ? ' no-chromatic' : ''}`}>
+      <div className={`min-h-screen${anim.backgroundImageUrl ? ' bg-transparent' : ' bg-background'} text-foreground relative z-10${anim.glitchEnabled === false ? ' no-glitch' : ''}${anim.chromaticEnabled === false ? ' no-chromatic' : ''}`}>
       {anim.crtEnabled !== false && <div className="crt-overlay" />}
       {anim.crtEnabled !== false && <div className="crt-vignette" />}
       {anim.scanlineEnabled !== false && <div className="crt-scanline-bg" />}
@@ -425,6 +447,7 @@ function App() {
             type={anim.backgroundType}
             hudTexts={adminSettings?.hudTexts}
             transparent={Boolean(anim.backgroundImageUrl && anim.backgroundImageOverlay)}
+            animSettings={anim}
           />
         </div>
       )}
@@ -554,11 +577,15 @@ function App() {
               artwork: updated.artwork || r.artwork,
               year: updated.releaseDate ? new Date(updated.releaseDate).getFullYear().toString() : (updated.year || r.year),
               releaseDate: updated.releaseDate,
+              type: updated.type ?? r.type,
               spotify: updated.streamingLinks?.spotify || r.spotify,
               soundcloud: updated.streamingLinks?.soundcloud || r.soundcloud,
               youtube: updated.streamingLinks?.youtube || r.youtube,
               bandcamp: updated.streamingLinks?.bandcamp || r.bandcamp,
               appleMusic: updated.streamingLinks?.appleMusic || r.appleMusic,
+              deezer: updated.streamingLinks?.deezer || r.deezer,
+              tidal: updated.streamingLinks?.tidal || r.tidal,
+              amazonMusic: updated.streamingLinks?.amazonMusic || r.amazonMusic,
             } : r),
           }))
         } : undefined}
@@ -577,11 +604,15 @@ function App() {
               artwork: release.artwork || '',
               year: release.releaseDate ? new Date(release.releaseDate).getFullYear().toString() : (release.year || ''),
               releaseDate: release.releaseDate,
+              type: release.type,
               spotify: release.streamingLinks?.spotify,
               soundcloud: release.streamingLinks?.soundcloud,
               youtube: release.streamingLinks?.youtube,
               bandcamp: release.streamingLinks?.bandcamp,
               appleMusic: release.streamingLinks?.appleMusic,
+              deezer: release.streamingLinks?.deezer,
+              tidal: release.streamingLinks?.tidal,
+              amazonMusic: release.streamingLinks?.amazonMusic,
             }],
           }))
         } : undefined}

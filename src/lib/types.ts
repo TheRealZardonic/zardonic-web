@@ -102,6 +102,24 @@ export interface AnimationSettings {
   loadingScreenType?: LoadingScreenType
   loadingScreenMode?: LoadingScreenMode
   loadingScreenDuration?: number
+  // Circuit background options
+  circuitSpeed?: number
+  circuitDensity?: number
+  circuitGlow?: number
+  // Matrix rain options
+  matrixSpeed?: number
+  matrixDensity?: number
+  matrixColor?: string
+  // Stars options
+  starCount?: number
+  starSpeed?: number
+  // Cloud chamber options
+  cloudParticleCount?: number
+  cloudGlowColor?: string
+  // Glitch grid options
+  glitchGridSize?: number
+  glitchScanSpeed?: number
+  glitchFrequency?: number
 }
 
 export interface LoaderTexts {

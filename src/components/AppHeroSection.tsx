@@ -68,7 +68,7 @@ export default function AppHeroSection({
           initial={{ opacity: 1 }}
           animate={contentLoaded ? { opacity: 1 } : { opacity: 0 }}
         >
-          <div className="relative mx-auto w-fit hero-logo-glitch">
+          <div className="relative mx-auto w-fit hero-logo-glitch hover-glitch cyber2077-scan-build">
             <img 
               src={logoImage} 
               alt={artistName} 
