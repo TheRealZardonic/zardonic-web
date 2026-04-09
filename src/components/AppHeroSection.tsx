@@ -1,6 +1,6 @@
 import React from 'react'
 import logoImage from '@/assets/images/meta_eyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ==.webp'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Upload, Storefront, Plus, Trash, PencilSimple, Check } from '@phosphor-icons/react'
 import type { SiteData, HeroLink } from '@/lib/app-types'
@@ -10,7 +10,6 @@ import { useState } from 'react'
 const DEFAULT_HERO_LINKS: HeroLink[] = [
   { id: 'listen', label: 'Listen Now', type: 'section', target: 'music' },
   { id: 'tour', label: 'Tour Dates', type: 'section', target: 'gigs' },
-  { id: 'merch', label: 'Merch', type: 'url', target: 'https://zardonic.channl.co/merch', icon: 'Storefront' },
 ]
 
 interface AppHeroSectionProps {
@@ -38,6 +37,7 @@ export default function AppHeroSection({
   const heroLinks = siteData?.heroLinks ?? DEFAULT_HERO_LINKS
   const [editingLinks, setEditingLinks] = useState(false)
   const [linksDraft, setLinksDraft] = useState<HeroLink[]>(heroLinks)
+  const prefersReducedMotion = useReducedMotion()
 
   const startEditLinks = () => {
     setLinksDraft(siteData?.heroLinks ?? DEFAULT_HERO_LINKS)
@@ -60,7 +60,7 @@ export default function AppHeroSection({
       <motion.div
         initial={{ opacity: 0 }}
         animate={contentLoaded ? { opacity: 1 } : { opacity: 0 }}
-        transition={{ duration: 0.15 }}
+        transition={{ duration: prefersReducedMotion ? 0 : 0.15 }}
         className="relative z-10 text-center px-4"
       >
         <motion.div 
@@ -112,7 +112,7 @@ export default function AppHeroSection({
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={contentLoaded ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-          transition={{ delay: 1.2, duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
+          transition={{ delay: prefersReducedMotion ? 0 : 1.2, duration: prefersReducedMotion ? 0 : 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
           className="mt-12 flex gap-4 justify-center flex-wrap"
         >
           {heroLinks.map((link) => {

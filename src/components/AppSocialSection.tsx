@@ -1,5 +1,5 @@
 import React from 'react'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import EditableHeading from '@/components/EditableHeading'
@@ -32,6 +32,7 @@ interface AppSocialSectionProps {
 
 export default function AppSocialSection({ social, sectionOrder, visible, editMode, sectionLabel, headingPrefix, adminSettings, onContactClick }: AppSocialSectionProps) {
   const { t } = useLocale()
+  const prefersReducedMotion = useReducedMotion()
   if (!visible) return null
 
   return (
@@ -43,7 +44,7 @@ export default function AppSocialSection({ social, sectionOrder, visible, editMo
             initial={{ opacity: 0, x: -30, filter: 'blur(10px)', clipPath: 'polygon(0 0, 0 0, 0 100%, 0 100%)' }}
             whileInView={{ opacity: 1, x: 0, filter: 'blur(0px)', clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' }}
             viewport={{ once: true }}
-            transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
+            transition={{ duration: prefersReducedMotion ? 0 : 1, ease: [0.25, 0.46, 0.45, 0.94] }}
             className=""
           >
             <div className="flex items-center justify-between mb-12">
@@ -103,12 +104,14 @@ export default function AppSocialSection({ social, sectionOrder, visible, editMo
               transition={{ duration: 0.6, delay: 0.8 }}
               className="mt-12 flex flex-wrap justify-center gap-4"
             >
-              <Button asChild size="lg" variant="outline" className="uppercase font-mono hover-glitch cyber-border">
-                <a href="https://zardonic.channl.co/merch" target="_blank" rel="noopener noreferrer">
-                  <Storefront className="w-5 h-5 mr-2" />
-                  <span className="hover-chromatic">{t('social.merchShop')}</span>
-                </a>
-              </Button>
+              {social.merch && (
+                <Button asChild size="lg" variant="outline" className="uppercase font-mono hover-glitch cyber-border">
+                  <a href={social.merch} target="_blank" rel="noopener noreferrer">
+                    <Storefront className="w-5 h-5 mr-2" />
+                    <span className="hover-chromatic">{t('social.merchShop')}</span>
+                  </a>
+                </Button>
+              )}
               <Button
                 size="lg"
                 variant="outline"

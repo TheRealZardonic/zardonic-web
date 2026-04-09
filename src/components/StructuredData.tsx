@@ -86,7 +86,7 @@ function buildAlbumSchemas(artistName: string, releases: Release[]) {
   }))
 }
 
-export function StructuredData({ artistName, siteData, canonicalUrl = 'https://zardonic.com/' }: StructuredDataProps) {
+export function StructuredData({ artistName, siteData, canonicalUrl = '' }: StructuredDataProps) {
   const schemas = [
     buildMusicGroupSchema(artistName, siteData, canonicalUrl),
     ...buildEventSchemas(artistName, siteData.gigs ?? []),

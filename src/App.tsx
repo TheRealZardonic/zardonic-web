@@ -348,6 +348,7 @@ function App() {
                 customCommands={terminalCommands}
                 editMode={editMode}
                 onSaveCommands={handleSaveTerminalCommands}
+                artistName={siteData?.artistName}
               />
             </Suspense>
 
@@ -359,6 +360,7 @@ function App() {
               overlay={cyberpunkOverlay}
               onClose={() => setCyberpunkOverlay(null)}
               adminSettings={adminSettings}
+              artistName={siteData?.artistName}
             />
 
             {isOwner && (

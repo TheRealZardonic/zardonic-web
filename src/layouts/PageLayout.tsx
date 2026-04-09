@@ -17,6 +17,8 @@ interface PageLayoutProps {
   system?: ReactNode
   /** Additional className for the content wrapper */
   contentClassName?: string
+  /** ID of the main content element, used by the skip-to-content link */
+  mainContentId?: string
 }
 
 /**
@@ -30,6 +32,10 @@ interface PageLayoutProps {
  * The content wrapper uses `min-h-screen flex flex-col` so the footer is
  * always pushed to the bottom even when page content is shorter than the
  * viewport. `<main>` gets `flex-1` to fill remaining space.
+ *
+ * A visually-hidden skip-to-content link is rendered first so keyboard
+ * users can bypass the navigation and jump directly to main content
+ * (WCAG 2.1 AA — Success Criterion 2.4.1 Bypass Blocks).
  */
 export function PageLayout({
   backgroundLayers,
@@ -40,9 +46,18 @@ export function PageLayout({
   overlays,
   system,
   contentClassName,
+  mainContentId = 'main-content',
 }: PageLayoutProps) {
   return (
     <>
+      {/* WCAG 2.1 AA — Skip-to-content link (visible on :focus, hidden otherwise) */}
+      <a
+        href={`#${mainContentId}`}
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:font-mono focus:text-sm focus:uppercase focus:tracking-wider focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+      >
+        Skip to content
+      </a>
+
       {/* Layer 0-2: Backgrounds (fixed, non-interactive) */}
       {backgroundLayers}
 
@@ -52,7 +67,7 @@ export function PageLayout({
         style={{ zIndex: 'var(--z-content)' } as CSSProperties}
       >
         {nav}
-        <main className="flex-1 flex flex-col">
+        <main id={mainContentId} className="flex-1 flex flex-col">
           {children}
         </main>
         {footer}
