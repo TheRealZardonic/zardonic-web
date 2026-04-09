@@ -271,23 +271,22 @@ export default function SectionConfigTab({
                   { key: 'releaseShowYear' as keyof SectionLabels, label: 'Show Release Year' },
                   { key: 'releaseShowDescription' as keyof SectionLabels, label: 'Show Description' },
                   { key: 'releaseShowTracks' as keyof SectionLabels, label: 'Show Tracklist' },
-                ] as { key: keyof SectionLabels; label: string }[]).map(({ key, label }) => (
-                  <div key={key} className="flex items-center justify-between">
-                    <Label className="font-mono text-xs text-muted-foreground">{label}</Label>
-                    <button
-                      type="button"
-                      onClick={() => updateLabel(key, (labels[key] as boolean | undefined) !== false ? false : true)}
-                      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                        (labels[key] as boolean | undefined) !== false ? 'bg-primary' : 'bg-muted'
-                      }`}
-                      aria-label={`Toggle ${label}`}
-                    >
-                      <span className={`inline-block h-3 w-3 rounded-full bg-white transition-transform ${
-                        (labels[key] as boolean | undefined) !== false ? 'translate-x-5' : 'translate-x-1'
-                      }`} />
-                    </button>
-                  </div>
-                ))}
+                ] as { key: keyof SectionLabels; label: string }[]).map(({ key, label }) => {
+                  const isOn = (labels[key] as boolean | undefined) !== false
+                  return (
+                    <div key={key} className="flex items-center justify-between">
+                      <Label className="font-mono text-xs text-muted-foreground">{label}</Label>
+                      <button
+                        type="button"
+                        onClick={() => updateLabel(key, !isOn)}
+                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${isOn ? 'bg-primary' : 'bg-muted'}`}
+                        aria-label={`Toggle ${label}`}
+                      >
+                        <span className={`inline-block h-3 w-3 rounded-full bg-white transition-transform ${isOn ? 'translate-x-5' : 'translate-x-1'}`} />
+                      </button>
+                    </div>
+                  )
+                })}
               </div>
             )}
 
@@ -358,7 +357,7 @@ export default function SectionConfigTab({
                   <Label className="font-mono text-xs text-muted-foreground uppercase tracking-wider">Show Heading</Label>
                   <button
                     type="button"
-                    onClick={() => updateLabel('creditHighlightsHeadingVisible', labels.creditHighlightsHeadingVisible !== false ? false : true)}
+                    onClick={() => updateLabel('creditHighlightsHeadingVisible', labels.creditHighlightsHeadingVisible === false)}
                     className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
                       labels.creditHighlightsHeadingVisible !== false ? 'bg-primary' : 'bg-muted'
                     }`}

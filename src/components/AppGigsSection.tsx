@@ -13,13 +13,17 @@ import { useLocale } from '@/contexts/LocaleContext'
 /** Format the event identifier as DDMMYYYY-LAT-LON when coordinates are available,
  * falling back to the raw gig id. */
 function formatEventBitz(gig: Gig): string {
-  const datePart = gig.date
-    ? gig.date.replace(/-/g, '').slice(6, 8) + gig.date.replace(/-/g, '').slice(4, 6) + gig.date.replace(/-/g, '').slice(0, 4)
-    : null
+  let datePart: string | null = null
+  if (gig.date) {
+    const d = gig.date.replace(/-/g, '')
+    datePart = d.slice(6, 8) + d.slice(4, 6) + d.slice(0, 4)
+  }
   if (datePart && gig.latitude && gig.longitude) {
-    const lat = parseFloat(gig.latitude).toFixed(4)
-    const lon = parseFloat(gig.longitude).toFixed(4)
-    return `${datePart}-${lat}-${lon}`
+    const latNum = parseFloat(gig.latitude)
+    const lonNum = parseFloat(gig.longitude)
+    if (!isNaN(latNum) && !isNaN(lonNum)) {
+      return `${datePart}-${latNum.toFixed(4)}-${lonNum.toFixed(4)}`
+    }
   }
   if (datePart) return datePart
   return gig.id

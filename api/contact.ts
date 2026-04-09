@@ -95,7 +95,7 @@ async function sendEmailViaResend({ name, email, subject, message, toEmail }: { 
       from: `${siteName} Contact Form <${fromAddress}>`,
       to: [toEmail],
       replyTo: `${name} <${email}>`,
-      subject: `Contact Form: ${esc(subject)}`,
+      subject: `Contact Form: ${subject}`,
       html: `<p><strong>From:</strong> ${esc(name)} &lt;${esc(email)}&gt;</p><p><strong>Subject:</strong> ${esc(subject)}</p><p>${esc(message).replace(/\n/g, '<br>')}</p>`,
     })
     if (error) {

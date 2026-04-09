@@ -143,7 +143,7 @@ function detectReleaseType(
   if (entityType === 'song' || trackCount <= 2) return 'single'
   if (trackCount >= 3 && trackCount <= 6) return 'ep'
   // 7+ tracks → album or compilation
-  const isMainArtist = artistName.toLowerCase().includes('zardonic')
+  const isMainArtist = artistName.toLowerCase().includes(ARTIST_NAME.toLowerCase())
   return isMainArtist ? 'album' : 'compilation'
 }
 
@@ -241,11 +241,16 @@ async function fetchITunesReleases(): Promise<Release[]> {
   return releases
 }
 
+interface OdesliEnrichedLinks {
+  links: Partial<Release>
+  entityType?: string
+}
+
 async function enrichWithOdesli(
   release: Release,
   redis: NonNullable<ReturnType<typeof getRedisOrNull>>,
-): Promise<Partial<Release>> {
-  if (!release.appleMusic) return {}
+): Promise<OdesliEnrichedLinks> {
+  if (!release.appleMusic) return { links: {} }
 
   const cacheKey = odesliCacheKey(release.appleMusic)
 
@@ -263,7 +268,7 @@ async function enrichWithOdesli(
   )
   if (!response.ok) {
     console.warn(`[releases-enrich] Odesli ${response.status} for ${release.title}`)
-    return {}
+    return { links: {} }
   }
 
   const data: OdesliResponse = await response.json()
@@ -274,9 +279,9 @@ async function enrichWithOdesli(
   return extractLinks(data)
 }
 
-function extractLinks(data: OdesliResponse): Partial<Release> {
+function extractLinks(data: OdesliResponse): OdesliEnrichedLinks {
   const p = data.linksByPlatform
-  if (!p) return {}
+  if (!p) return { links: {} }
 
   // Extract entity type from Odesli response to help with type detection
   let entityType: string | undefined
@@ -285,17 +290,18 @@ function extractLinks(data: OdesliResponse): Partial<Release> {
   }
 
   return {
-    spotify: p.spotify?.url,
-    appleMusic: p.appleMusic?.url,
-    soundcloud: p.soundcloud?.url,
-    youtube: p.youtube?.url,
-    bandcamp: p.bandcamp?.url,
-    deezer: p.deezer?.url,
-    tidal: p.tidal?.url,
-    amazonMusic: p.amazon?.url,
-    // Expose entity type so the handler can store it (mapped through a temp property)
-    ...(entityType ? { _odesliEntityType: entityType } : {}),
-  } as Partial<Release> & { _odesliEntityType?: string }
+    links: {
+      spotify: p.spotify?.url,
+      appleMusic: p.appleMusic?.url,
+      soundcloud: p.soundcloud?.url,
+      youtube: p.youtube?.url,
+      bandcamp: p.bandcamp?.url,
+      deezer: p.deezer?.url,
+      tidal: p.tidal?.url,
+      amazonMusic: p.amazon?.url,
+    },
+    entityType,
+  }
 }
 
 function needsEnrichment(r: Release): boolean {
@@ -376,17 +382,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         let odesliEntityType: string | undefined
 
         if (shouldEnrich) {
-          const linksRaw = await enrichWithOdesli(release, redis) as Partial<Release> & { _odesliEntityType?: string }
-          odesliEntityType = linksRaw._odesliEntityType
-          if (linksRaw.spotify || linksRaw.soundcloud || linksRaw.youtube) {
-            if (linksRaw.spotify) updated.spotify = linksRaw.spotify
-            if (linksRaw.soundcloud) updated.soundcloud = linksRaw.soundcloud
-            if (linksRaw.youtube) updated.youtube = linksRaw.youtube
-            if (linksRaw.bandcamp) updated.bandcamp = linksRaw.bandcamp
-            if (linksRaw.deezer) updated.deezer = linksRaw.deezer
-            if (linksRaw.tidal) updated.tidal = linksRaw.tidal
-            if (linksRaw.amazonMusic) updated.amazonMusic = linksRaw.amazonMusic
-            if (linksRaw.appleMusic) updated.appleMusic = linksRaw.appleMusic
+          const { links, entityType } = await enrichWithOdesli(release, redis)
+          odesliEntityType = entityType
+          if (links.spotify || links.soundcloud || links.youtube) {
+            if (links.spotify) updated.spotify = links.spotify
+            if (links.soundcloud) updated.soundcloud = links.soundcloud
+            if (links.youtube) updated.youtube = links.youtube
+            if (links.bandcamp) updated.bandcamp = links.bandcamp
+            if (links.deezer) updated.deezer = links.deezer
+            if (links.tidal) updated.tidal = links.tidal
+            if (links.amazonMusic) updated.amazonMusic = links.amazonMusic
+            if (links.appleMusic) updated.appleMusic = links.appleMusic
             enriched++
           }
           // Delay between Odesli calls to avoid rate limits
