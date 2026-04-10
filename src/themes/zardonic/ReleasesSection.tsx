@@ -43,6 +43,16 @@ const placeholderReleases: Release[] = [
   },
 ]
 
+function getPlatformLabel(platform: string): string {
+  const labels: Record<string, string> = {
+    appleMusic: 'Apple',
+    amazonMusic: 'Amazon',
+    soundcloud: 'SC',
+  }
+  if (!platform) return '?'
+  return labels[platform] ?? platform.charAt(0).toUpperCase() + platform.slice(1)
+}
+
 export default function ReleasesSection({
   title = 'RELEASES',
   releases = placeholderReleases,
@@ -118,10 +128,7 @@ export default function ReleasesSection({
                               className="px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider border border-border text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors"
                               aria-label={`Listen on ${link.platform}`}
                             >
-                              {link.platform === 'appleMusic' ? 'Apple' :
-                               link.platform === 'amazonMusic' ? 'Amazon' :
-                               link.platform === 'soundcloud' ? 'SC' :
-                               link.platform.charAt(0).toUpperCase() + link.platform.slice(1)}
+                              {getPlatformLabel(link.platform)}
                             </a>
                           ))}
                         </div>

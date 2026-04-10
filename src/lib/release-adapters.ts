@@ -60,8 +60,8 @@ export function mergeFullReleaseIntoStored(
   return {
     ...existing,
     title: stored.title,
-    artwork: stored.artwork || existing.artwork,
-    year: stored.year || existing.year,
+    artwork: stored.artwork ?? existing.artwork,
+    year: stored.year ?? existing.year,
     releaseDate: stored.releaseDate,
     type: stored.type ?? existing.type,
     tracks: stored.tracks ?? existing.tracks,
