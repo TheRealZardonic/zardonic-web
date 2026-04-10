@@ -172,23 +172,24 @@ export function useSiteDataSync(
         return
       }
 
-      // Geocode events that are missing coordinates (only on manual admin refresh)
+      // Geocode events that are missing coordinates.
+      // Runs on both auto-load and manual sync so new gigs get coordinates
+      // persisted to KV immediately; the !latitude/!longitude guard prevents
+      // re-geocoding events that already have coordinates stored.
       let geocodedCount = 0
       let geocodeFailed = 0
-      if (!isAutoLoad) {
-        for (const event of events) {
-          if (!event.latitude && !event.longitude && event.location) {
-            const coords = await geocodeLocation(event.location)
-            if (coords) {
-              event.latitude = coords.latitude
-              event.longitude = coords.longitude
-              geocodedCount++
-            } else {
-              geocodeFailed++
-            }
-            // Respect Nominatim's 1 req/sec policy
-            await new Promise<void>(r => setTimeout(r, NOMINATIM_DELAY_MS))
+      for (const event of events) {
+        if (!event.latitude && !event.longitude && event.location) {
+          const coords = await geocodeLocation(event.location)
+          if (coords) {
+            event.latitude = coords.latitude
+            event.longitude = coords.longitude
+            geocodedCount++
+          } else {
+            geocodeFailed++
           }
+          // Respect Nominatim's 1 req/sec policy
+          await new Promise<void>(r => setTimeout(r, NOMINATIM_DELAY_MS))
         }
       }
 
