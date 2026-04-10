@@ -37,11 +37,14 @@ import {
 const BAND_DATA_KEY = 'band-data'
 const ODESLI_CACHE_TTL = 86_400
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 interface Track {
   title: string
   duration?: string
+}
+
+interface StreamingLink {
+  platform: string
+  url: string
 }
 
 interface Release {
@@ -50,7 +53,7 @@ interface Release {
   artwork: string
   year: string
   releaseDate?: string
-  streamingLinks?: Array<{ platform: string; url: string }>
+  streamingLinks?: StreamingLink[]
   type?: '' | 'album' | 'ep' | 'single' | 'remix' | 'compilation'
   description?: string
   tracks?: Track[]
@@ -66,21 +69,8 @@ interface SiteData {
 interface OdesliLink { url: string }
 
 interface OdesliResponse {
-  entityUniqueId?: string
-  entitiesByUniqueId?: Record<string, { id: string; type: string }>
-  linksByPlatform?: {
-    spotify?:    OdesliLink
-    appleMusic?: OdesliLink
-    soundcloud?: OdesliLink
-    youtube?:    OdesliLink
-    bandcamp?:   OdesliLink
-    deezer?:     OdesliLink
-    tidal?:      OdesliLink
-    amazon?:     OdesliLink
-  }
+  linksByPlatform?: Record<string, OdesliLink>
 }
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function odesliCacheKey(url: string): string {
   return `odesli:links:${url.replace(/^https?:\/\//, '').replace(/[^a-zA-Z0-9._/-]/g, '_').slice(0, 200)}`
@@ -94,16 +84,14 @@ async function fetchOdesliLinks(
   try {
     const cached = await redis.get<OdesliResponse>(cacheKey)
     if (cached) return cached
-  } catch { /* cache miss */ }
+  } catch { }
   const apiUrl = `https://api.song.link/v1-alpha.1/links?url=${encodeURIComponent(lookupUrl)}&userCountry=US`
   const res = await fetchWithRetry(apiUrl)
   if (!res.ok) return null
   const data: OdesliResponse = await res.json()
-  try { await redis.set(cacheKey, data, { ex: ODESLI_CACHE_TTL }) } catch { /* non-fatal */ }
+  try { await redis.set(cacheKey, data, { ex: ODESLI_CACHE_TTL }) } catch { }
   return data
 }
-
-// ─── Handler ──────────────────────────────────────────────────────────────────
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (req.method === 'OPTIONS') { res.status(200).end(); return }
@@ -132,13 +120,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     const updated: Release = { ...release }
     const steps: string[] = []
 
-    // ── Step 1: MusicBrainz ───────────────────────────────────────────────────
     let mbSpotifyUrl: string | undefined
     let mbAppleMusicUrl: string | undefined
+    
+    const existingAppleUrl = release.streamingLinks?.find(l => l.platform === 'appleMusic')?.url
 
     const mbSearch = await searchMusicBrainz(release.title)
     if (mbSearch) {
-      steps.push(`MusicBrainz: found "${mbSearch.title}" (score ${mbSearch.score ?? '?'})`)
+      steps.push(`MusicBrainz: found "${mbSearch.title}"`)
       const mbFull = await fetchMusicBrainzRelease(mbSearch.id)
       if (mbFull) {
         const detectedType = mbTypeToReleaseType(mbFull['primary-type'], mbFull['secondary-types'])
@@ -170,44 +159,47 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
           if (!mbSpotifyUrl && isTrustedHost(u, 'open.spotify.com'))  mbSpotifyUrl = u
           if (!mbAppleMusicUrl && isTrustedHost(u, 'music.apple.com')) mbAppleMusicUrl = u
         }
-        if (mbSpotifyUrl)    steps.push('MusicBrainz Spotify URL found')
-        if (mbAppleMusicUrl) steps.push('MusicBrainz Apple Music URL found')
       }
     } else {
-      steps.push('MusicBrainz: no match — using title heuristics')
+      steps.push('MusicBrainz: keine Treffer gefunden')
       const fromTitle = inferTypeFromTitle(release.title)
       if (fromTitle && !updated.type) updated.type = fromTitle
     }
 
-    // ── Step 2: Odesli ────────────────────────────────────────────────────────
-    const existingAppleMusic = updated.streamingLinks?.find(l => l.platform === 'appleMusic')?.url
-    const odesliLookupUrl = mbSpotifyUrl ?? mbAppleMusicUrl ?? existingAppleMusic
+    const odesliLookupUrl = mbSpotifyUrl ?? mbAppleMusicUrl ?? existingAppleUrl
     if (odesliLookupUrl) {
       const odesli = await fetchOdesliLinks(odesliLookupUrl, redis)
       if (odesli?.linksByPlatform) {
         const p = odesli.linksByPlatform
-        const freshLinks: Array<{ platform: string; url: string }> = []
-        if (p.spotify?.url)    freshLinks.push({ platform: 'spotify',     url: p.spotify.url })
-        if (p.appleMusic?.url) freshLinks.push({ platform: 'appleMusic',  url: p.appleMusic.url })
-        if (p.soundcloud?.url) freshLinks.push({ platform: 'soundcloud',  url: p.soundcloud.url })
-        if (p.youtube?.url)    freshLinks.push({ platform: 'youtube',     url: p.youtube.url })
-        if (p.bandcamp?.url)   freshLinks.push({ platform: 'bandcamp',    url: p.bandcamp.url })
-        if (p.deezer?.url)     freshLinks.push({ platform: 'deezer',      url: p.deezer.url })
-        if (p.tidal?.url)      freshLinks.push({ platform: 'tidal',       url: p.tidal.url })
-        if (p.amazon?.url)     freshLinks.push({ platform: 'amazonMusic', url: p.amazon.url })
-        // Odesli wins on platform overlap; keep existing links not returned by Odesli.
-        const freshPlatforms = new Set(freshLinks.map(l => l.platform))
-        const keptExisting = (updated.streamingLinks ?? []).filter(l => !freshPlatforms.has(l.platform))
-        updated.streamingLinks = [...freshLinks, ...keptExisting]
-        steps.push(`Odesli: ${freshLinks.length} platform(s) found`)
+        const newLinks: StreamingLink[] = []
+        
+        if (p.spotify?.url) newLinks.push({ platform: 'spotify', url: p.spotify.url })
+        if (p.appleMusic?.url) newLinks.push({ platform: 'appleMusic', url: p.appleMusic.url })
+        if (p.soundcloud?.url) newLinks.push({ platform: 'soundcloud', url: p.soundcloud.url })
+        if (p.youtube?.url) newLinks.push({ platform: 'youtube', url: p.youtube.url })
+        if (p.bandcamp?.url) newLinks.push({ platform: 'bandcamp', url: p.bandcamp.url })
+        if (p.deezer?.url) newLinks.push({ platform: 'deezer', url: p.deezer.url })
+        if (p.tidal?.url) newLinks.push({ platform: 'tidal', url: p.tidal.url })
+        if (p.amazon?.url) newLinks.push({ platform: 'amazonMusic', url: p.amazon.url })
+        
+        updated.streamingLinks = newLinks
+        steps.push(`Odesli: ${newLinks.length} Plattformen gefunden`)
       } else {
-        steps.push('Odesli: no links returned')
+        steps.push('Odesli: keine Links erhalten')
       }
     } else {
-      steps.push('Odesli: skipped (no lookup URL)')
+      steps.push('Odesli: übersprungen wegen fehlender Quell-URL')
     }
 
-    // ── Persist ───────────────────────────────────────────────────────────────
+    delete (updated as any).spotify
+    delete (updated as any).soundcloud
+    delete (updated as any).youtube
+    delete (updated as any).bandcamp
+    delete (updated as any).appleMusic
+    delete (updated as any).deezer
+    delete (updated as any).tidal
+    delete (updated as any).amazonMusic
+
     updated.isEnriched = true
     const updatedReleases = releases.map(r => (r.id === id ? updated : r))
     await redis.set(BAND_DATA_KEY, { ...(existing ?? {}), releases: updatedReleases })
