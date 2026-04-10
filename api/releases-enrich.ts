@@ -50,14 +50,7 @@ interface Release {
   artwork: string
   year: string
   releaseDate?: string
-  spotify?: string
-  soundcloud?: string
-  youtube?: string
-  bandcamp?: string
-  appleMusic?: string
-  deezer?: string
-  tidal?: string
-  amazonMusic?: string
+  streamingLinks?: Array<{ platform: string; url: string }>
   type?: '' | 'album' | 'ep' | 'single' | 'remix' | 'compilation'
   description?: string
   tracks?: Array<{ title: string; duration?: string }>
@@ -216,6 +209,7 @@ async function fetchITunesReleases(): Promise<Release[]> {
     // Derive artist name for type detection
     const mainArtist = track.collectionArtistName || track.artistName || ARTIST_NAME
 
+    const appleMusicUrl = track.collectionViewUrl || track.trackViewUrl || ''
     map.set(id, {
       id,
       title: track.collectionName,
@@ -225,7 +219,7 @@ async function fetchITunesReleases(): Promise<Release[]> {
       releaseDate: track.releaseDate
         ? new Date(track.releaseDate).toISOString().split('T')[0]
         : undefined,
-      appleMusic: track.collectionViewUrl || track.trackViewUrl || '',
+      streamingLinks: appleMusicUrl ? [{ platform: 'appleMusic', url: appleMusicUrl }] : [],
       // Store artist so handler can use it for type detection
       description: mainArtist !== ARTIST_NAME ? `ft. ${mainArtist}` : undefined,
     })
@@ -242,7 +236,7 @@ async function fetchITunesReleases(): Promise<Release[]> {
 }
 
 interface OdesliEnrichedLinks {
-  links: Partial<Release>
+  streamingLinks: Array<{ platform: string; url: string }>
   entityType?: string
 }
 
@@ -281,7 +275,7 @@ async function enrichWithOdesli(
 
 function extractLinks(data: OdesliResponse): OdesliEnrichedLinks {
   const p = data.linksByPlatform
-  if (!p) return { links: {} }
+  if (!p) return { streamingLinks: [] }
 
   // Extract entity type from Odesli response to help with type detection
   let entityType: string | undefined
@@ -289,19 +283,17 @@ function extractLinks(data: OdesliResponse): OdesliEnrichedLinks {
     entityType = data.entitiesByUniqueId[data.entityUniqueId]?.type
   }
 
-  return {
-    links: {
-      spotify: p.spotify?.url,
-      appleMusic: p.appleMusic?.url,
-      soundcloud: p.soundcloud?.url,
-      youtube: p.youtube?.url,
-      bandcamp: p.bandcamp?.url,
-      deezer: p.deezer?.url,
-      tidal: p.tidal?.url,
-      amazonMusic: p.amazon?.url,
-    },
-    entityType,
-  }
+  const streamingLinks: Array<{ platform: string; url: string }> = []
+  if (p.spotify?.url)    streamingLinks.push({ platform: 'spotify',     url: p.spotify.url })
+  if (p.appleMusic?.url) streamingLinks.push({ platform: 'appleMusic',  url: p.appleMusic.url })
+  if (p.soundcloud?.url) streamingLinks.push({ platform: 'soundcloud',  url: p.soundcloud.url })
+  if (p.youtube?.url)    streamingLinks.push({ platform: 'youtube',     url: p.youtube.url })
+  if (p.bandcamp?.url)   streamingLinks.push({ platform: 'bandcamp',    url: p.bandcamp.url })
+  if (p.deezer?.url)     streamingLinks.push({ platform: 'deezer',      url: p.deezer.url })
+  if (p.tidal?.url)      streamingLinks.push({ platform: 'tidal',       url: p.tidal.url })
+  if (p.amazon?.url)     streamingLinks.push({ platform: 'amazonMusic', url: p.amazon.url })
+
+  return { streamingLinks, entityType }
 }
 
 function needsEnrichment(r: Release): boolean {
@@ -356,10 +348,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         // iTunes is the source of truth for artwork and Apple Music URL.
         // The cache (MusicBrainz) is the source of truth for year/releaseDate —
         // never let iTunes overwrite more precise historical dates already stored.
+        // Merge streamingLinks: fresh Apple Music URL wins; existing links are kept.
+        const freshAppleMusic = fresh.streamingLinks?.find(l => l.platform === 'appleMusic')
+        const currentLinks = current.streamingLinks ?? []
+        const currentWithoutApple = currentLinks.filter(l => l.platform !== 'appleMusic')
+        const mergedLinks: Array<{ platform: string; url: string }> = [
+          ...(freshAppleMusic ? [freshAppleMusic] : currentLinks.filter(l => l.platform === 'appleMusic')),
+          ...currentWithoutApple,
+        ]
         existingById.set(fresh.id, {
           ...current,
           artwork: fresh.artwork || current.artwork,
-          appleMusic: fresh.appleMusic || current.appleMusic,
+          streamingLinks: mergedLinks.length > 0 ? mergedLinks : undefined,
           year: current.year || fresh.year,
           releaseDate: current.releaseDate || fresh.releaseDate,
         })
@@ -443,20 +443,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
           await delay(MB_DELAY_MS)
 
           // Use MusicBrainz Spotify URL for Odesli if available (better results).
-          // Pass the URL directly — do not pollute release.appleMusic with a Spotify URL.
-          const odesliLookupUrl = mbSpotifyUrl ?? mbAppleMusicUrl ?? release.appleMusic ?? ''
+          // Pass the URL directly — do not pollute release.streamingLinks with a Spotify URL.
+          const existingAppleMusic = release.streamingLinks?.find(l => l.platform === 'appleMusic')?.url
+          const odesliLookupUrl = mbSpotifyUrl ?? mbAppleMusicUrl ?? existingAppleMusic ?? ''
 
-          const { links, entityType } = await enrichWithOdesli(odesliLookupUrl, redis)
+          const { streamingLinks: odesliLinks, entityType } = await enrichWithOdesli(odesliLookupUrl, redis)
           odesliEntityType = entityType
 
-          if (links.spotify) updated.spotify = links.spotify
-          if (links.soundcloud) updated.soundcloud = links.soundcloud
-          if (links.youtube) updated.youtube = links.youtube
-          if (links.bandcamp) updated.bandcamp = links.bandcamp
-          if (links.deezer) updated.deezer = links.deezer
-          if (links.tidal) updated.tidal = links.tidal
-          if (links.amazonMusic) updated.amazonMusic = links.amazonMusic
-          if (links.appleMusic) updated.appleMusic = links.appleMusic
+          // Merge Odesli links with existing: Odesli wins on platform overlap.
+          const existingLinks = updated.streamingLinks ?? []
+          const odesliPlatforms = new Set(odesliLinks.map(l => l.platform))
+          const keptExisting = existingLinks.filter(l => !odesliPlatforms.has(l.platform))
+          updated.streamingLinks = [...odesliLinks, ...keptExisting]
 
           // Mark as enriched regardless of whether links were found, so this
           // release is skipped on future runs (avoids unnecessary API calls).

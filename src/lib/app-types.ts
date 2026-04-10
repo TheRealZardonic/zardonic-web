@@ -30,14 +30,7 @@ export interface Release {
   artwork: string
   year: string
   releaseDate?: string
-  spotify?: string
-  soundcloud?: string
-  youtube?: string
-  bandcamp?: string
-  appleMusic?: string
-  deezer?: string
-  tidal?: string
-  amazonMusic?: string
+  streamingLinks?: Array<{ platform: string; url: string }>
   type?: '' | 'album' | 'ep' | 'single' | 'remix' | 'compilation'
   description?: string
   tracks?: Array<{ title: string; duration?: string }>

@@ -30,8 +30,12 @@ interface AppReleasesSectionProps {
   onRefreshReleases?: () => void
 }
 
-/** Convert an app-types Release to the richer types.ts Release for the edit dialog */
+/** Convert an app-types Release (streamingLinks array) to the richer types.ts Release for the edit dialog */
 function toFullRelease(r: Release): FullRelease {
+  const streamingLinks: Record<string, string> = {}
+  for (const link of r.streamingLinks ?? []) {
+    streamingLinks[link.platform] = link.url
+  }
   return {
     id: r.id,
     title: r.title,
@@ -39,16 +43,7 @@ function toFullRelease(r: Release): FullRelease {
     year: r.year,
     releaseDate: r.releaseDate,
     type: r.type,
-    streamingLinks: {
-      spotify: r.spotify,
-      soundcloud: r.soundcloud,
-      youtube: r.youtube,
-      bandcamp: r.bandcamp,
-      appleMusic: r.appleMusic,
-      deezer: r.deezer,
-      tidal: r.tidal,
-      amazonMusic: r.amazonMusic,
-    },
+    streamingLinks: streamingLinks as FullRelease['streamingLinks'],
   }
 }
 

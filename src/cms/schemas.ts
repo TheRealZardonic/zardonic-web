@@ -43,7 +43,7 @@ export const releaseSchema = z.object({
   title: z.string().min(1).max(200),
   coverUrl: z.string().max(2000).optional(),
   releaseDate: z.string(),
-  type: z.enum(['album', 'single', 'ep', 'remix']),
+  type: z.enum(['album', 'single', 'ep', 'remix', 'compilation']),
   streamingLinks: z.array(z.object({
     platform: z.string().max(50),
     url: z.string().url().max(500),
@@ -221,6 +221,7 @@ export const FIELD_REGISTRY: Record<string, FieldMeta> = {
     { value: 'ep', label: 'EP' },
     { value: 'single', label: 'Single' },
     { value: 'remix', label: 'Remix' },
+    { value: 'compilation', label: 'Compilation' },
   ], group: 'Core', tooltip: 'Release format. Controls the badge shown on the release card.' },
   'release.description':      { label: 'Description', widget: 'textarea', group: 'Core', advanced: true, tooltip: 'Optional notes or liner text shown in the release detail overlay.' },
 

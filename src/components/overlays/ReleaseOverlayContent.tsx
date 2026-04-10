@@ -19,6 +19,9 @@ export function ReleaseOverlayContent({ data, sectionLabels }: ReleaseOverlayCon
   const tracksLabel = sectionLabels?.releaseTracksLabel ?? 'Tracklist'
   const statusLabel = sectionLabels?.releaseStatusLabel ?? '// MEDIA.STATUS: [AVAILABLE]'
 
+  const getLink = (platform: string) =>
+    data.streamingLinks?.find(l => l.platform === platform)?.url
+
   return (
     <motion.div
       data-theme-color="card border accent"
@@ -83,61 +86,61 @@ export function ReleaseOverlayContent({ data, sectionLabels }: ReleaseOverlayCon
           >
             <div className="data-label mb-3">{streamLabel}</div>
             <div className="flex flex-wrap gap-4">
-              {data.spotify && (
+              {getLink('spotify') && (
                 <Button asChild variant="outline" className="font-mono">
-                  <a href={data.spotify} target="_blank" rel="noopener noreferrer">
+                  <a href={getLink('spotify')} target="_blank" rel="noopener noreferrer">
                     <SpotifyLogo className="w-5 h-5 mr-2" weight="fill" />
                     <span className="hover-chromatic">Spotify</span>
                   </a>
                 </Button>
               )}
-              {data.youtube && (
+              {getLink('youtube') && (
                 <Button asChild variant="outline" className="font-mono">
-                  <a href={data.youtube} target="_blank" rel="noopener noreferrer">
+                  <a href={getLink('youtube')} target="_blank" rel="noopener noreferrer">
                     <YoutubeLogo className="w-5 h-5 mr-2" weight="fill" />
                     <span className="hover-chromatic">YouTube</span>
                   </a>
                 </Button>
               )}
-              {data.soundcloud && (
+              {getLink('soundcloud') && (
                 <Button asChild variant="outline" className="font-mono">
-                  <a href={data.soundcloud} target="_blank" rel="noopener noreferrer">
+                  <a href={getLink('soundcloud')} target="_blank" rel="noopener noreferrer">
                     <span className="hover-chromatic">SoundCloud</span>
                   </a>
                 </Button>
               )}
-              {data.bandcamp && (
+              {getLink('bandcamp') && (
                 <Button asChild variant="outline" className="font-mono">
-                  <a href={data.bandcamp} target="_blank" rel="noopener noreferrer">
+                  <a href={getLink('bandcamp')} target="_blank" rel="noopener noreferrer">
                     <span className="hover-chromatic">Bandcamp</span>
                   </a>
                 </Button>
               )}
-              {data.appleMusic && (
+              {getLink('appleMusic') && (
                 <Button asChild variant="outline" className="font-mono">
-                  <a href={data.appleMusic} target="_blank" rel="noopener noreferrer">
+                  <a href={getLink('appleMusic')} target="_blank" rel="noopener noreferrer">
                     <ApplePodcastsLogo className="w-5 h-5 mr-2" weight="fill" />
                     <span className="hover-chromatic">Apple Music</span>
                   </a>
                 </Button>
               )}
-              {data.deezer && (
+              {getLink('deezer') && (
                 <Button asChild variant="outline" className="font-mono">
-                  <a href={data.deezer} target="_blank" rel="noopener noreferrer">
+                  <a href={getLink('deezer')} target="_blank" rel="noopener noreferrer">
                     <span className="hover-chromatic">Deezer</span>
                   </a>
                 </Button>
               )}
-              {data.tidal && (
+              {getLink('tidal') && (
                 <Button asChild variant="outline" className="font-mono">
-                  <a href={data.tidal} target="_blank" rel="noopener noreferrer">
+                  <a href={getLink('tidal')} target="_blank" rel="noopener noreferrer">
                     <span className="hover-chromatic">Tidal</span>
                   </a>
                 </Button>
               )}
-              {data.amazonMusic && (
+              {getLink('amazonMusic') && (
                 <Button asChild variant="outline" className="font-mono">
-                  <a href={data.amazonMusic} target="_blank" rel="noopener noreferrer">
+                  <a href={getLink('amazonMusic')} target="_blank" rel="noopener noreferrer">
                     <span className="hover-chromatic">Amazon Music</span>
                   </a>
                 </Button>
