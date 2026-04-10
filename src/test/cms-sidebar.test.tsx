@@ -36,6 +36,12 @@ vi.mock('lucide-react', () => {
     LogOut: stub('LogOut'),
     Pencil: stub('Pencil'),
     SlidersHorizontal: stub('SlidersHorizontal'),
+    Inbox: stub('Inbox'),
+    Mail: stub('Mail'),
+    Calendar: stub('Calendar'),
+    HardDrive: stub('HardDrive'),
+    Shield: stub('Shield'),
+    InfoIcon: stub('InfoIcon'),
   }
 })
 
@@ -52,11 +58,11 @@ describe('CmsSidebar — click interactions', () => {
       })
     )
     expect(screen.getByText('Dashboard')).toBeInTheDocument()
-    expect(screen.getByText('Site-Konfiguration')).toBeInTheDocument()
+    expect(screen.getByText('Site Config')).toBeInTheDocument()
     expect(screen.getByText('Navigation')).toBeInTheDocument()
     expect(screen.getByText('Theme')).toBeInTheDocument()
-    expect(screen.getByText('Medien')).toBeInTheDocument()
-    expect(screen.getByText('Vorschau')).toBeInTheDocument()
+    expect(screen.getByText('Media')).toBeInTheDocument()
+    expect(screen.getByText('Preview')).toBeInTheDocument()
   })
 
   it('renders content group navigation items', () => {
@@ -67,8 +73,8 @@ describe('CmsSidebar — click interactions', () => {
       })
     )
     expect(screen.getByText('Hero')).toBeInTheDocument()
-    expect(screen.getByText('Biografie')).toBeInTheDocument()
-    expect(screen.getByText('Mitglieder')).toBeInTheDocument()
+    expect(screen.getByText('Biography')).toBeInTheDocument()
+    expect(screen.getByText('Members')).toBeInTheDocument()
     expect(screen.getByText('Releases')).toBeInTheDocument()
     expect(screen.getByText('News')).toBeInTheDocument()
     expect(screen.getByText('Social Links')).toBeInTheDocument()
@@ -95,7 +101,7 @@ describe('CmsSidebar — click interactions', () => {
         onNavigate,
       })
     )
-    fireEvent.click(screen.getByText('Site-Konfiguration'))
+    fireEvent.click(screen.getByText('Site Config'))
     expect(onNavigate).toHaveBeenCalledWith('cms/site-config')
   })
 
@@ -130,7 +136,7 @@ describe('CmsSidebar — click interactions', () => {
         onLogout,
       })
     )
-    const logoutBtn = screen.getByLabelText(/abmelden/i)
+    const logoutBtn = screen.getByLabelText(/log out/i)
     fireEvent.click(logoutBtn)
     expect(onLogout).toHaveBeenCalledTimes(1)
   })
@@ -159,7 +165,7 @@ describe('CmsSidebar — click interactions', () => {
     expect(onNavigate).toHaveBeenCalledWith('cms/content/releases')
   })
 
-  it('navigates to Media when Medien link clicked', () => {
+  it('navigates to Media when Media link clicked', () => {
     const onNavigate = vi.fn()
     render(
       React.createElement(CmsSidebar, {
@@ -167,7 +173,7 @@ describe('CmsSidebar — click interactions', () => {
         onNavigate,
       })
     )
-    fireEvent.click(screen.getByText('Medien'))
+    fireEvent.click(screen.getByText('Media'))
     expect(onNavigate).toHaveBeenCalledWith('cms/media')
   })
 })

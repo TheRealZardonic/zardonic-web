@@ -247,27 +247,27 @@ interface OdesliEnrichedLinks {
 }
 
 async function enrichWithOdesli(
-  release: Release,
+  url: string,
   redis: NonNullable<ReturnType<typeof getRedisOrNull>>,
 ): Promise<OdesliEnrichedLinks> {
-  if (!release.appleMusic) return { links: {} }
+  if (!url) return { links: {} }
 
-  const cacheKey = odesliCacheKey(release.appleMusic)
+  const cacheKey = odesliCacheKey(url)
 
   // Try Redis cache first
   try {
     const cached = await redis.get<OdesliResponse>(cacheKey)
     if (cached) return extractLinks(cached)
   } catch (e) {
-    console.warn(`[releases-enrich] Redis cache miss for ${release.title}:`, e)
+    console.warn(`[releases-enrich] Redis cache miss for ${url}:`, e)
   }
 
   // Call the external Odesli API (server-to-server, no rate limiter overhead)
   const response = await fetchWithRetry(
-    `https://api.song.link/v1-alpha.1/links?url=${encodeURIComponent(release.appleMusic)}&userCountry=US`,
+    `https://api.song.link/v1-alpha.1/links?url=${encodeURIComponent(url)}&userCountry=US`,
   )
   if (!response.ok) {
-    console.warn(`[releases-enrich] Odesli ${response.status} for ${release.title}`)
+    console.warn(`[releases-enrich] Odesli ${response.status} for ${url}`)
     return { links: {} }
   }
 
@@ -313,7 +313,7 @@ function needsTypeDetection(r: Release): boolean {
 }
 
 function needsTracklist(r: Release): boolean {
-  return (r.type === 'album' || r.type === 'compilation') && (!r.tracks || r.tracks.length === 0)
+  return (r.type === 'album' || r.type === 'compilation' || r.type === 'ep' || r.type === 'single') && (!r.tracks || r.tracks.length === 0)
 }
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
@@ -353,13 +353,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     for (const fresh of iTunesReleases) {
       const current = existingById.get(fresh.id)
       if (current) {
-        // Update artwork and Apple Music URL, preserve existing streaming links and type/tracks
+        // iTunes is the source of truth for artwork and Apple Music URL.
+        // The cache (MusicBrainz) is the source of truth for year/releaseDate —
+        // never let iTunes overwrite more precise historical dates already stored.
         existingById.set(fresh.id, {
           ...current,
           artwork: fresh.artwork || current.artwork,
           appleMusic: fresh.appleMusic || current.appleMusic,
-          year: fresh.year || current.year,
-          releaseDate: fresh.releaseDate || current.releaseDate,
+          year: current.year || fresh.year,
+          releaseDate: current.releaseDate || fresh.releaseDate,
         })
       } else {
         existingById.set(fresh.id, fresh)
@@ -394,7 +396,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
           let mbAppleMusicUrl: string | undefined
 
           try {
-            const mbSearch = await searchMusicBrainz(release.title, ARTIST_NAME)
+            // Strip iTunes-specific suffixes to maximise MusicBrainz hit rate.
+            // The original release.title is never modified.
+            const cleanedTitle = release.title
+              .replace(/\s*-\s*(EP|Single|Remixes|Remix|Deluxe Edition|Special Edition)\s*$/i, '')
+              .replace(/\s*\(feat\.[^)]*\)/gi, '')
+              .trim()
+
+            const mbSearch = await searchMusicBrainz(cleanedTitle, ARTIST_NAME)
             if (mbSearch) {
               const mbFull = await fetchMusicBrainzRelease(mbSearch.id)
               if (mbFull) {
@@ -423,20 +432,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
                   if (!mbAppleMusicUrl && isTrustedHost(u, 'music.apple.com')) mbAppleMusicUrl = u
                 }
               }
-              // Respect MusicBrainz 1 req/sec policy before Odesli call
-              await delay(MB_DELAY_MS)
             }
           } catch (mbErr) {
             console.warn(`[releases-enrich] MusicBrainz lookup failed for "${release.title}":`, mbErr)
+            // Always delay after a MusicBrainz error to avoid hammering the API
+            await delay(MB_DELAY_MS)
           }
+          // Respect MusicBrainz 1 req/sec policy unconditionally (whether we got
+          // results, got nothing, or hit an error without entering the catch above)
+          await delay(MB_DELAY_MS)
 
-          // Use MusicBrainz Spotify URL for Odesli if available (better results)
-          const odesliLookupUrl = mbSpotifyUrl ?? mbAppleMusicUrl ?? release.appleMusic
-          const enrichTarget: Release = odesliLookupUrl
-            ? { ...release, appleMusic: odesliLookupUrl }
-            : release
+          // Use MusicBrainz Spotify URL for Odesli if available (better results).
+          // Pass the URL directly — do not pollute release.appleMusic with a Spotify URL.
+          const odesliLookupUrl = mbSpotifyUrl ?? mbAppleMusicUrl ?? release.appleMusic ?? ''
 
-          const { links, entityType } = await enrichWithOdesli(enrichTarget, redis)
+          const { links, entityType } = await enrichWithOdesli(odesliLookupUrl, redis)
           odesliEntityType = entityType
 
           if (links.spotify) updated.spotify = links.spotify

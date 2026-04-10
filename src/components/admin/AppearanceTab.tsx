@@ -1,3 +1,4 @@
+// @deprecated — functionality superseded by src/cms/editors/ThemeEditor.tsx. Do not extend; use the CMS editors instead.
 import { X, FloppyDisk, Sliders, Warning, MagicWand } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'

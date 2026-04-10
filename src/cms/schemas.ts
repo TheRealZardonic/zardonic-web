@@ -178,58 +178,60 @@ export interface FieldMeta {
   group?: string
   /** Whether this field acts as a global design token (can be inherited) */
   isDesignToken?: boolean
+  /** Contextual help text shown in an inline tooltip next to the label */
+  tooltip?: string
 }
 
 /** Registry of all editable CMS fields, keyed by "schemaName.fieldName". */
 export const FIELD_REGISTRY: Record<string, FieldMeta> = {
   // ── Site Config ──────────────────────────────────────────────────────────
-  'siteConfig.name':          { label: 'Site Name', widget: 'text', placeholder: 'ZARDONIC', group: 'Identity' },
-  'siteConfig.description':   { label: 'Description', widget: 'textarea', placeholder: 'ZARDONIC – Official Website.', group: 'Identity' },
-  'siteConfig.logoUrl':       { label: 'Logo URL', widget: 'image-url', placeholder: 'https://...', group: 'Branding' },
-  'siteConfig.faviconUrl':    { label: 'Favicon URL', widget: 'image-url', placeholder: 'https://...', group: 'Branding' },
-  'siteConfig.ogImageUrl':    { label: 'OG Image URL', widget: 'image-url', placeholder: 'https://...', group: 'Branding' },
-  'siteConfig.analyticsId':   { label: 'Analytics ID', widget: 'text', placeholder: 'UA-XXXXXXX', group: 'Analytics', advanced: true },
+  'siteConfig.name':          { label: 'Site Name', widget: 'text', placeholder: 'ZARDONIC', group: 'Identity', tooltip: 'The public name of your site, used in the browser tab title and social share previews.' },
+  'siteConfig.description':   { label: 'Description', widget: 'textarea', placeholder: 'ZARDONIC – Official Website.', group: 'Identity', tooltip: 'A short description of your site used in search engine results and social previews.' },
+  'siteConfig.logoUrl':       { label: 'Logo URL', widget: 'image-url', placeholder: 'https://...', group: 'Branding', tooltip: 'URL of your site logo. Displayed in the header and social previews.' },
+  'siteConfig.faviconUrl':    { label: 'Favicon URL', widget: 'image-url', placeholder: 'https://...', group: 'Branding', tooltip: 'URL of your favicon (16×16 or 32×32 PNG/ICO). Shown in the browser tab.' },
+  'siteConfig.ogImageUrl':    { label: 'OG Image URL', widget: 'image-url', placeholder: 'https://...', group: 'Branding', tooltip: 'Open Graph image shown when your site is shared on social media (1200×630 recommended).' },
+  'siteConfig.analyticsId':   { label: 'Analytics ID', widget: 'text', placeholder: 'UA-XXXXXXX', group: 'Analytics', advanced: true, tooltip: 'Your Google Analytics or Plausible tracking ID. Leave empty to disable analytics.' },
 
   // ── Hero ─────────────────────────────────────────────────────────────────
-  'hero.headline':            { label: 'Headline', widget: 'text', placeholder: 'ZARDONIC', group: 'Content' },
-  'hero.subheadline':         { label: 'Sub-headline', widget: 'textarea', placeholder: 'Industrial / Drum & Bass', group: 'Content' },
-  'hero.ctaText':             { label: 'CTA Button Text', widget: 'text', placeholder: 'LISTEN NOW', group: 'CTA' },
-  'hero.ctaLink':             { label: 'CTA Button Link', widget: 'url', placeholder: '#music', group: 'CTA' },
-  'hero.backgroundImageUrl':  { label: 'Background Image', widget: 'image-url', placeholder: 'https://...', group: 'Design' },
-  'hero.overlayOpacity':      { label: 'Overlay Opacity', widget: 'range', min: 0, max: 1, step: 0.05, group: 'Design', advanced: true },
+  'hero.headline':            { label: 'Headline', widget: 'text', placeholder: 'ZARDONIC', group: 'Content', tooltip: 'The main title displayed in large text in the hero section at the top of your page.' },
+  'hero.subheadline':         { label: 'Sub-headline', widget: 'textarea', placeholder: 'Industrial / Drum & Bass', group: 'Content', tooltip: 'A supporting line below the headline. Good for genre, tagline, or tour info.' },
+  'hero.ctaText':             { label: 'CTA Button Text', widget: 'text', placeholder: 'LISTEN NOW', group: 'CTA', tooltip: 'Text on the call-to-action button in the hero section (e.g. "Listen Now", "Buy Tickets").' },
+  'hero.ctaLink':             { label: 'CTA Button Link', widget: 'url', placeholder: '#music', group: 'CTA', tooltip: 'Where the CTA button links to. Can be an anchor (#music) or a full URL.' },
+  'hero.backgroundImageUrl':  { label: 'Background Image', widget: 'image-url', placeholder: 'https://...', group: 'Design', tooltip: 'Full-bleed background image for the hero section. Use a high-resolution image (min. 1920×1080).' },
+  'hero.overlayOpacity':      { label: 'Overlay Opacity', widget: 'range', min: 0, max: 1, step: 0.05, group: 'Design', advanced: true, tooltip: 'Controls how dark the overlay is over the hero background image. 0 = transparent, 1 = fully opaque.' },
 
   // ── Theme ─────────────────────────────────────────────────────────────────
-  'theme.primaryColor':       { label: 'Primary Color', widget: 'color', group: 'Colors', isDesignToken: true },
-  'theme.secondaryColor':     { label: 'Secondary Color', widget: 'color', group: 'Colors', isDesignToken: true },
-  'theme.accentColor':        { label: 'Accent Color', widget: 'color', group: 'Colors', isDesignToken: true },
-  'theme.fontFamily':         { label: 'Font Family', widget: 'text', placeholder: 'Orbitron, monospace', group: 'Typography', advanced: true },
+  'theme.primaryColor':       { label: 'Primary Color', widget: 'color', group: 'Colors', isDesignToken: true, tooltip: 'The main brand color used for buttons, active links, and highlights throughout the site.' },
+  'theme.secondaryColor':     { label: 'Secondary Color', widget: 'color', group: 'Colors', isDesignToken: true, tooltip: 'Used for card backgrounds, hover states, and secondary UI elements.' },
+  'theme.accentColor':        { label: 'Accent Color', widget: 'color', group: 'Colors', isDesignToken: true, tooltip: 'Used for glowing borders, hover effects on gig cards, and interactive accent elements.' },
+  'theme.fontFamily':         { label: 'Font Family', widget: 'text', placeholder: 'Orbitron, monospace', group: 'Typography', advanced: true, tooltip: 'CSS font-family stack for the entire site. Use Google Fonts names or system font stacks.' },
 
   // ── Footer ───────────────────────────────────────────────────────────────
-  'footer.copyrightText':     { label: 'Copyright Text', widget: 'text', placeholder: '© 2025 Zardonic', group: 'Content' },
-  'footer.contactEmail':      { label: 'Contact Email', widget: 'email', placeholder: 'info@zardonic.com', group: 'Contact' },
+  'footer.copyrightText':     { label: 'Copyright Text', widget: 'text', placeholder: '© 2025 Zardonic', group: 'Content', tooltip: 'Copyright line displayed in the page footer.' },
+  'footer.contactEmail':      { label: 'Contact Email', widget: 'email', placeholder: 'info@zardonic.com', group: 'Contact', tooltip: 'Public contact email shown in the footer. Also used as the reply-to address for contact form emails.' },
 
   // ── Release ──────────────────────────────────────────────────────────────
-  'release.title':            { label: 'Title', widget: 'text', placeholder: 'Release Name', group: 'Core' },
-  'release.coverUrl':         { label: 'Artwork URL', widget: 'image-url', placeholder: 'https://...', group: 'Core' },
-  'release.releaseDate':      { label: 'Release Date', widget: 'date', group: 'Core' },
+  'release.title':            { label: 'Title', widget: 'text', placeholder: 'Release Name', group: 'Core', tooltip: 'Official release title as it appears in the music section and release overlays.' },
+  'release.coverUrl':         { label: 'Artwork URL', widget: 'image-url', placeholder: 'https://...', group: 'Core', tooltip: 'URL of the album/EP/single artwork. Square images (1:1) work best.' },
+  'release.releaseDate':      { label: 'Release Date', widget: 'date', group: 'Core', tooltip: 'The official release date. Used for sorting and display in the releases section.' },
   'release.type':             { label: 'Type', widget: 'select', options: [
     { value: 'album', label: 'Album' },
     { value: 'ep', label: 'EP' },
     { value: 'single', label: 'Single' },
     { value: 'remix', label: 'Remix' },
-  ], group: 'Core' },
-  'release.description':      { label: 'Description', widget: 'textarea', group: 'Core', advanced: true },
+  ], group: 'Core', tooltip: 'Release format. Controls the badge shown on the release card.' },
+  'release.description':      { label: 'Description', widget: 'textarea', group: 'Core', advanced: true, tooltip: 'Optional notes or liner text shown in the release detail overlay.' },
 
   // ── Member ───────────────────────────────────────────────────────────────
-  'member.name':              { label: 'Name', widget: 'text', group: 'Identity' },
-  'member.role':              { label: 'Role', widget: 'text', group: 'Identity' },
-  'member.photoUrl':          { label: 'Photo URL', widget: 'image-url', group: 'Identity' },
-  'member.bio':               { label: 'Bio', widget: 'textarea', group: 'Identity', advanced: true },
+  'member.name':              { label: 'Name', widget: 'text', group: 'Identity', tooltip: 'Full display name of this band member or entity, shown on the member card.' },
+  'member.role':              { label: 'Role', widget: 'text', group: 'Identity', tooltip: 'Their role in the project (e.g. "Producer", "Drummer", "Vocalist").' },
+  'member.photoUrl':          { label: 'Photo URL', widget: 'image-url', group: 'Identity', tooltip: 'Portrait photo URL. Square images work best; used in the members section and overlays.' },
+  'member.bio':               { label: 'Bio', widget: 'textarea', group: 'Identity', advanced: true, tooltip: 'Short biography displayed when clicking on the member card.' },
 
   // ── Navigation ───────────────────────────────────────────────────────────
-  'navItem.label':            { label: 'Label', widget: 'text', group: 'Nav' },
-  'navItem.anchor':           { label: 'Anchor Target', widget: 'text', placeholder: '#section-id', group: 'Nav' },
-  'navItem.enabled':          { label: 'Visible', widget: 'checkbox', group: 'Nav' },
+  'navItem.label':            { label: 'Label', widget: 'text', group: 'Nav', tooltip: 'Text shown in the navigation bar for this item.' },
+  'navItem.anchor':           { label: 'Anchor Target', widget: 'text', placeholder: '#section-id', group: 'Nav', tooltip: 'The anchor or URL this nav item scrolls to or links to (e.g. "#releases").' },
+  'navItem.enabled':          { label: 'Visible', widget: 'checkbox', group: 'Nav', tooltip: 'Toggle whether this nav item is visible in the navigation bar.' },
 }
 
 /** Return all field metadata for a given schema prefix (e.g. "hero"). */

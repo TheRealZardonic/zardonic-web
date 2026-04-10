@@ -1,6 +1,5 @@
+// @deprecated — replaced by functional CMS dashboards (e.g. ReleasesEditor, InboxEditor). Do not extend.
 import { useState, useCallback } from 'react'
-import { Export, ArrowSquareIn, ArrowsClockwise } from '@phosphor-icons/react'
-import { TabsContent } from '@/components/ui/tabs'
 import type { SiteData } from '@/App'
 import { ReleaseEnrichProgress, type PendingRelease } from '@/components/admin/ReleaseEnrichProgress'
 

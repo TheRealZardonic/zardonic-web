@@ -7,22 +7,22 @@
  */
 
 export interface EnvStatus {
-  KV_REST_API_URL: boolean
-  KV_REST_API_TOKEN: boolean
+  UPSTASH_REDIS_REST_URL: boolean
+  UPSTASH_REDIS_REST_TOKEN: boolean
   ADMIN_SETUP_TOKEN: boolean
   RESEND_API_KEY: boolean
 }
 
 export const REQUIRED_ENV_VARS: { key: keyof EnvStatus; label: string; description: string; required: boolean }[] = [
-  { key: 'KV_REST_API_URL', label: 'KV REST API URL', description: 'Upstash Redis URL for data persistence', required: true },
-  { key: 'KV_REST_API_TOKEN', label: 'KV REST API Token', description: 'Upstash Redis token for data persistence', required: true },
+  { key: 'UPSTASH_REDIS_REST_URL', label: 'Upstash Redis URL', description: 'Upstash Redis URL for data persistence', required: true },
+  { key: 'UPSTASH_REDIS_REST_TOKEN', label: 'Upstash Redis Token', description: 'Upstash Redis token for data persistence', required: true },
   { key: 'ADMIN_SETUP_TOKEN', label: 'Admin Setup Token', description: 'One-time token to create your admin password', required: true },
   { key: 'RESEND_API_KEY', label: 'Resend API Key', description: 'API key for contact form email forwarding', required: false },
 ]
 
 const EMPTY_STATUS: EnvStatus = {
-  KV_REST_API_URL: false,
-  KV_REST_API_TOKEN: false,
+  UPSTASH_REDIS_REST_URL: false,
+  UPSTASH_REDIS_REST_TOKEN: false,
   ADMIN_SETUP_TOKEN: false,
   RESEND_API_KEY: false,
 }

@@ -1,31 +1,49 @@
-name: CI
+name: CI - Build & Test
 
 on:
   push:
-    branches: [main]
+    branches: [ "main" ]
   pull_request:
-    branches: [main]
+    branches: [ "main" ]
 
 jobs:
-  security-audit:
-    name: Security Audit & Tests
+  verify-and-build:
+    name: Verify & Build
     runs-on: ubuntu-latest
     permissions:
       contents: read
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-      - run: npm ci
-      - name: npm audit
+
+      - name: Install Dependencies
+        run: npm ci
+        # 'npm ci' uses package-lock.json strictly — no unexpected minor updates
+        # that could break the build.
+
+      - name: Security Audit
         run: npm audit --audit-level=moderate
-      - name: TypeScript type check
+
+      - name: Type Checking
         run: npm run typecheck
-      - name: Run tests
+        # Catches TypeScript errors that Vite silently ignores during development
+        # but that would cause Vercel to reject the build.
+
+      - name: Linting
+        run: npm run lint
+        # Enforces eslint.config.js rules.
+
+      - name: Run Unit Tests
         run: npm test
-      - name: notify vercel
-        uses: vercel/repository-dispatch/actions/status@v1
-        with:
-          name: Vercel - zardonic-industrial: lint
+        # Runs all tests in src/test/ via Vitest.
+
+      - name: Test Build (Vite)
+        run: npm run build
+        # The final gate — if this passes, Vercel will pass too.

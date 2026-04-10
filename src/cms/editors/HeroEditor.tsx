@@ -5,14 +5,16 @@ import { heroSchema, type HeroConfig } from '../schemas'
 import { useCmsContent } from '../hooks/useCmsContent'
 import { useAutoSave } from '../hooks/useAutoSave'
 import { useUnsavedChanges } from '../hooks/useUnsavedChanges'
-import { Loader2 } from 'lucide-react'
+import { FieldLabel } from '../components/FieldLabel'
+import * as Collapsible from '@radix-ui/react-collapsible'
+import { Loader2, ChevronDown } from 'lucide-react'
 
 const inputClass = 'bg-[#1a1a1a] border border-zinc-700 text-zinc-100 rounded px-3 py-2 w-full focus:outline-none focus:border-red-500'
-const labelClass = 'text-zinc-400 text-sm'
 
 export default function HeroEditor() {
   const { data, isLoading, isDraft, save } = useCmsContent<HeroConfig>('zd-cms:hero')
   const [isSaving, setIsSaving] = useState(false)
+  const [advancedOpen, setAdvancedOpen] = useState(false)
 
   const { register, handleSubmit, control, watch, reset, formState: { errors } } = useForm<HeroConfig>({
     resolver: zodResolver(heroSchema),
@@ -57,37 +59,60 @@ export default function HeroEditor() {
         {isDraft && <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded">Draft</span>}
       </div>
 
+      {/* ── Essential content fields ──────────────────────────────── */}
       <div className="bg-[#111] border border-zinc-800 rounded p-5 space-y-4">
         <div>
-          <label className={labelClass}>Background Image URL</label>
-          <input {...register('backgroundImageUrl')} className={inputClass} placeholder="https://…" />
-          {errors.backgroundImageUrl && <p className="text-red-500 text-xs mt-1">{errors.backgroundImageUrl.message}</p>}
-        </div>
-        <div>
-          <label className={labelClass}>Headline *</label>
-          <input {...register('headline')} className={inputClass} placeholder="Headline" />
+          <FieldLabel label="Headline *" tooltip="The main title displayed in large text in the hero section at the top of your page." htmlFor="headline" />
+          <input id="headline" {...register('headline')} className={inputClass} placeholder="Headline" />
           {errors.headline && <p className="text-red-500 text-xs mt-1">{errors.headline.message}</p>}
         </div>
         <div>
-          <label className={labelClass}>Subheadline</label>
-          <input {...register('subheadline')} className={inputClass} placeholder="Subheadline" />
+          <FieldLabel label="Subheadline" tooltip="A supporting line below the headline. Good for genre, tagline, or tour info." htmlFor="subheadline" />
+          <input id="subheadline" {...register('subheadline')} className={inputClass} placeholder="Subheadline" />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={labelClass}>CTA Text</label>
-            <input {...register('ctaText')} className={inputClass} placeholder="Get in touch" />
+            <FieldLabel label="CTA Text" tooltip="Text on the call-to-action button in the hero section (e.g. 'Listen Now', 'Buy Tickets')." htmlFor="ctaText" />
+            <input id="ctaText" {...register('ctaText')} className={inputClass} placeholder="Get in touch" />
           </div>
           <div>
-            <label className={labelClass}>CTA Link</label>
-            <input {...register('ctaLink')} className={inputClass} placeholder="#contact" />
+            <FieldLabel label="CTA Link" tooltip="Where the CTA button links to. Can be an anchor (#music) or a full URL." htmlFor="ctaLink" />
+            <input id="ctaLink" {...register('ctaLink')} className={inputClass} placeholder="#contact" />
           </div>
-        </div>
-        <div>
-          <label className={labelClass}>Overlay Opacity: {overlayOpacity}</label>
-          <input type="range" min={0} max={1} step={0.05} {...register('overlayOpacity', { valueAsNumber: true })} className="w-full accent-red-500 mt-1" />
         </div>
       </div>
 
+      {/* ── Advanced: background + overlay (progressive disclosure) ─ */}
+      <Collapsible.Root open={advancedOpen} onOpenChange={setAdvancedOpen}>
+        <Collapsible.Trigger asChild>
+          <button
+            type="button"
+            className="flex items-center justify-between w-full bg-[#111] border border-zinc-800 rounded px-5 py-3 text-sm text-zinc-400 hover:text-zinc-200 transition-colors"
+            aria-expanded={advancedOpen}
+          >
+            <span className="font-medium">Background & Overlay</span>
+            <ChevronDown
+              size={16}
+              className={`transition-transform duration-200 ${advancedOpen ? 'rotate-180' : ''}`}
+            />
+          </button>
+        </Collapsible.Trigger>
+        <Collapsible.Content className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+          <div className="bg-[#111] border border-zinc-800 border-t-0 rounded-b p-5 space-y-4">
+            <div>
+              <FieldLabel label="Background Image URL" tooltip="Full-bleed background image for the hero section. Use a high-resolution image (min. 1920×1080)." htmlFor="backgroundImageUrl" />
+              <input id="backgroundImageUrl" {...register('backgroundImageUrl')} className={inputClass} placeholder="https://…" />
+              {errors.backgroundImageUrl && <p className="text-red-500 text-xs mt-1">{errors.backgroundImageUrl.message}</p>}
+            </div>
+            <div>
+              <FieldLabel label={`Overlay Opacity: ${overlayOpacity}`} tooltip="Controls how dark the overlay is over the hero background image. 0 = transparent, 1 = fully opaque." htmlFor="overlayOpacity" />
+              <input id="overlayOpacity" type="range" min={0} max={1} step={0.05} {...register('overlayOpacity', { valueAsNumber: true })} className="w-full accent-red-500 mt-1" />
+            </div>
+          </div>
+        </Collapsible.Content>
+      </Collapsible.Root>
+
+      {/* Preview */}
       <div className="bg-[#111] border border-zinc-800 rounded p-3">
         <p className="text-zinc-500 text-xs mb-2">Preview</p>
         <div

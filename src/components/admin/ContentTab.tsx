@@ -1,7 +1,5 @@
+// @deprecated — functionality superseded by src/cms/editors/. Do not extend; use the CMS editors instead.
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { TabsContent } from '@/components/ui/tabs'
 import { toast } from 'sonner'

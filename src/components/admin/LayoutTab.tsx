@@ -1,3 +1,4 @@
+// @deprecated — functionality superseded by src/cms/editors/. Do not extend; use the CMS editors instead.
 import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
 import { Separator } from '@/components/ui/separator'

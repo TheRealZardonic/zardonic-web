@@ -21,10 +21,16 @@ import {
   LogOut,
   Pencil,
   SlidersHorizontal,
+  Inbox,
+  Mail,
+  Calendar,
+  HardDrive,
+  Shield,
 } from 'lucide-react'
 import { useCmsEdit } from './CmsEditContext'
 import { getFieldsForSchema, SCHEMA_ROUTE_MAP } from './schemas'
 import type { FieldMeta, FieldWidgetType } from './schemas'
+import { FieldLabel } from './components/FieldLabel'
 
 // ─── Schema-driven field renderer ────────────────────────────────────────────
 
@@ -162,7 +168,10 @@ function InlineEditorPanel({ schemaName }: { schemaName: string }) {
         <div className="space-y-2">
           {groupFields.map(({ path, meta }) => (
             <div key={path} className="px-1">
-              <label className="block text-xs text-zinc-400 mb-1">{meta.label}</label>
+              {meta.tooltip
+                ? <FieldLabel label={meta.label} tooltip={meta.tooltip} htmlFor={`field-${path}`} />
+                : <label className="block text-xs text-zinc-400 mb-1">{meta.label}</label>
+              }
               <SchemaFieldInput
                 fieldPath={path}
                 meta={meta}
@@ -190,7 +199,7 @@ function InlineEditorPanel({ schemaName }: { schemaName: string }) {
           aria-expanded={showAdvanced}
         >
           <SlidersHorizontal size={10} />
-          {showAdvanced ? 'Weniger' : 'Erweitert'}
+          {showAdvanced ? 'Less' : 'Advanced'}
         </button>
       </div>
 
@@ -202,7 +211,7 @@ function InlineEditorPanel({ schemaName }: { schemaName: string }) {
         {showAdvanced && advancedFields.length > 0 && (
           <div className="mt-2 pt-2 border-t border-zinc-800/50">
             <div className="text-[10px] font-mono text-zinc-700 mb-2 px-1 uppercase tracking-widest">
-              Erweiterte Einstellungen
+              Advanced Settings
             </div>
             {groups.map(g => renderGroup(g, advancedFields))}
           </div>
@@ -226,30 +235,40 @@ interface NavGroup {
 
 const topItems: NavItem[] = [
   { label: 'Dashboard', route: 'cms/dashboard', icon: <LayoutDashboard size={16} /> },
-  { label: 'Site-Konfiguration', route: 'cms/site-config', icon: <Settings size={16} /> },
+  { label: 'Site Config', route: 'cms/site-config', icon: <Settings size={16} /> },
   { label: 'Navigation', route: 'cms/navigation', icon: <NavIcon size={16} /> },
   { label: 'Theme', route: 'cms/theme', icon: <Palette size={16} /> },
-  { label: 'Medien', route: 'cms/media', icon: <ImageIcon size={16} /> },
-  { label: 'Vorschau', route: 'cms/preview', icon: <Eye size={16} /> },
+  { label: 'Media', route: 'cms/media', icon: <ImageIcon size={16} /> },
+  { label: 'Preview', route: 'cms/preview', icon: <Eye size={16} /> },
 ]
 
 const navGroups: NavGroup[] = [
   {
-    label: 'Seiten',
+    label: 'Pages',
     items: [
-      { label: 'Startseite', route: 'cms/pages/home', icon: <Layers size={16} /> },
+      { label: 'Home', route: 'cms/pages/home', icon: <Layers size={16} /> },
     ],
   },
   {
-    label: 'Inhalte',
+    label: 'Content',
     items: [
       { label: 'Hero', route: 'cms/content/hero', icon: <Globe size={16} /> },
-      { label: 'Biografie', route: 'cms/content/biography', icon: <FileText size={16} /> },
-      { label: 'Mitglieder', route: 'cms/content/members', icon: <Users size={16} /> },
+      { label: 'Biography', route: 'cms/content/biography', icon: <FileText size={16} /> },
+      { label: 'Members', route: 'cms/content/members', icon: <Users size={16} /> },
       { label: 'Releases', route: 'cms/content/releases', icon: <Music size={16} /> },
       { label: 'News', route: 'cms/content/news', icon: <Newspaper size={16} /> },
       { label: 'Social Links', route: 'cms/content/social', icon: <Share2 size={16} /> },
       { label: 'Footer', route: 'cms/content/footer', icon: <FileText size={16} /> },
+    ],
+  },
+  {
+    label: 'API & Services',
+    items: [
+      { label: 'Inbox', route: 'cms/api/inbox', icon: <Inbox size={16} /> },
+      { label: 'Newsletter', route: 'cms/api/newsletter', icon: <Mail size={16} /> },
+      { label: 'Tour & Live', route: 'cms/api/tour', icon: <Calendar size={16} /> },
+      { label: 'Cloud Storage', route: 'cms/api/storage', icon: <HardDrive size={16} /> },
+      { label: 'Security', route: 'cms/api/security', icon: <Shield size={16} /> },
     ],
   },
 ]
@@ -305,7 +324,7 @@ function CollapsibleGroup({
         <button
           type="button"
           className="flex items-center justify-between w-full px-3 py-1.5 text-xs font-mono uppercase tracking-widest text-zinc-600 hover:text-zinc-400 transition-colors"
-          aria-label={`Gruppe ${group.label} ${open ? 'schließen' : 'öffnen'}`}
+          aria-label={`Toggle group ${group.label}`}
         >
           <span className={hasActive ? 'text-zinc-400' : ''}>{group.label}</span>
           {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
@@ -367,7 +386,7 @@ function SidebarContent({
             type="button"
             onClick={() => editCtx.closeEditor()}
             className="text-zinc-600 hover:text-zinc-400 ml-2 flex-shrink-0"
-            aria-label="Inline-Editor schließen"
+            aria-label="Close inline editor"
           >
             <X size={12} />
           </button>
@@ -413,10 +432,10 @@ function SidebarContent({
             type="button"
             onClick={onLogout}
             className="flex items-center gap-2.5 w-full px-3 py-2 rounded text-sm text-zinc-500 hover:text-red-400 hover:bg-red-900/20 transition-colors"
-            aria-label="Abmelden"
+            aria-label="Log out"
           >
             <LogOut size={16} />
-            <span>Abmelden</span>
+            <span>Log out</span>
           </button>
         </div>
       )}
@@ -432,7 +451,7 @@ export function CmsSidebar({ currentRoute, onNavigate, onLogout }: CmsSidebarPro
       {/* Desktop sidebar */}
       <aside
         className="hidden md:flex flex-col w-56 shrink-0 bg-[#0a0a0a] border-r border-zinc-800 h-screen sticky top-0"
-        aria-label="CMS Seitenleiste"
+        aria-label="CMS Sidebar"
       >
         <SidebarContent
           currentRoute={currentRoute}
@@ -446,7 +465,7 @@ export function CmsSidebar({ currentRoute, onNavigate, onLogout }: CmsSidebarPro
         type="button"
         onClick={() => setMobileOpen(true)}
         className="md:hidden fixed top-4 left-4 z-50 p-2 bg-[#111] border border-zinc-800 rounded text-zinc-400 hover:text-zinc-100"
-        aria-label="Menü öffnen"
+        aria-label="Open menu"
       >
         <Menu size={20} />
       </button>
@@ -472,7 +491,7 @@ export function CmsSidebar({ currentRoute, onNavigate, onLogout }: CmsSidebarPro
               type="button"
               onClick={() => setMobileOpen(false)}
               className="absolute top-4 right-4 p-1 text-zinc-500 hover:text-zinc-100"
-              aria-label="Menü schließen"
+              aria-label="Close menu"
             >
               <X size={18} />
             </button>
