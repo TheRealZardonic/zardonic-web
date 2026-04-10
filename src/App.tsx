@@ -57,12 +57,25 @@ const SecuritySettingsDialog = React.lazy(() => import('@/components/SecuritySet
 const BlocklistManagerDialog = React.lazy(() => import('@/components/BlocklistManagerDialog'))
 const AttackerProfileDialog = React.lazy(() => import('@/components/AttackerProfileDialog'))
 
+// Module-level constant so it can be used in the lazy useState initialiser
+// before the rest of the App function body runs.
+const LOADER_TYPE_KEY = 'nk-loader-type'
+
 
 
 function App() {
   const konamiActivated = useKonami()
   const [terminalOpen, setTerminalOpen] = useState(false)
-  const [loading, setLoading] = useState(true)
+
+  // Read the persisted loader type synchronously so we can initialise `loading`
+  // with the correct value on the very first render — preventing a FOUC where
+  // the loading screen briefly flashes when loaderType === 'none'.
+  const [initialLoaderType] = useState<string>(() => {
+    try { return localStorage.getItem(LOADER_TYPE_KEY) ?? 'cyberpunk' } catch { return 'cyberpunk' }
+  })
+
+  // If the stored loader type is 'none', skip the loading screen from frame 0.
+  const [loading, setLoading] = useState(() => initialLoaderType !== 'none')
   const [contentLoaded, setContentLoaded] = useState(false)
 
   // Admin authentication via cookie-based session (no KV read on page load)
@@ -212,17 +225,6 @@ function App() {
   const anim = adminSettings?.animations ?? {}
   const sectionLabels = adminSettings?.sectionLabels ?? {}
   const terminalCommands = adminSettings?.terminalCommands ?? []
-
-  // Persist the loading screen type to localStorage so it can be read synchronously
-  // on the next page load, preventing a FOUC from the default 'cyberpunk' loader.
-  const LOADER_TYPE_KEY = 'nk-loader-type'
-
-  // Read loading screen type synchronously from localStorage for the first render.
-  // This is safe: useKV/adminSettings takes time to arrive from the network, but
-  // localStorage is available immediately, so the correct loader renders from frame 1.
-  const [initialLoaderType] = useState<string>(() => {
-    try { return localStorage.getItem(LOADER_TYPE_KEY) ?? 'cyberpunk' } catch { return 'cyberpunk' }
-  })
 
   // When KV settings arrive, persist the type so the next load is instant.
   useEffect(() => {

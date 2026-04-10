@@ -193,6 +193,19 @@ export function useSiteDataSync(
         }
       }
 
+      // Identify existing stored gigs without coords that won't be covered by
+      // the Bandsintown event merge (i.e. no matching event, or matching event
+      // also had no coords). Geocode these in a separate pass after the merge.
+      const gigsNeedingPostGeocode: { id: string; location: string }[] = (
+        siteData?.gigs ?? []
+      ).filter(g => {
+        if (g.latitude || g.longitude) return false   // already has coords
+        if (!g.location) return false                  // no location to geocode
+        const match = events.find(e => e.id === g.id)
+        if (match?.latitude || match?.longitude) return false  // match has coords
+        return true
+      }).map(g => ({ id: g.id, location: g.location }))
+
       let newCount = 0
       let updatedCount = 0
       setSiteData((data) => {
@@ -219,7 +232,9 @@ export function useSiteDataSync(
           }))
         newCount = newGigs.length
 
-        // Also update existing gigs with enriched data from API
+        // Also update existing gigs with enriched data from API.
+        // Use ?? (nullish coalescing) so that a valid "0.0" string coord from
+        // Bandsintown is never discarded by falsy-value fallthrough.
         const updatedGigs = currentData.gigs.map(existing => {
           const match = events.find(e => e.id === existing.id)
           if (match) {
@@ -229,8 +244,8 @@ export function useSiteDataSync(
               lineup: match.lineup || existing.lineup,
               streetAddress: match.streetAddress || existing.streetAddress,
               postalCode: match.postalCode || existing.postalCode,
-              latitude: match.latitude || existing.latitude,
-              longitude: match.longitude || existing.longitude,
+              latitude: match.latitude ?? existing.latitude,
+              longitude: match.longitude ?? existing.longitude,
               soldOut: match.soldOut ?? existing.soldOut,
               startsAt: match.startsAt || existing.startsAt,
               ticketUrl: match.ticketUrl || existing.ticketUrl,
@@ -241,6 +256,30 @@ export function useSiteDataSync(
 
         return { ...currentData, gigs: [...updatedGigs, ...newGigs] }
       })
+
+      // Post-merge geocoding: geocode stored gigs that still have no coordinates
+      // (these are gigs stored before geocoding was added, or whose Bandsintown
+      // event also lacked coordinates and Nominatim geocoding was needed).
+      for (const { id, location } of gigsNeedingPostGeocode) {
+        const coords = await geocodeLocation(location)
+        if (coords) {
+          setSiteData(data => {
+            if (!data) return data
+            return {
+              ...data,
+              gigs: data.gigs.map(g =>
+                g.id === id
+                  ? { ...g, latitude: coords.latitude, longitude: coords.longitude }
+                  : g
+              ),
+            }
+          })
+          geocodedCount++
+        } else {
+          geocodeFailed++
+        }
+        await new Promise<void>(r => setTimeout(r, NOMINATIM_DELAY_MS))
+      }
 
       if (!isAutoLoad) {
         const parts: string[] = [

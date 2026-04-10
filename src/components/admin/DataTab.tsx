@@ -1,7 +1,7 @@
 // @deprecated — replaced by functional CMS dashboards (e.g. ReleasesEditor, InboxEditor). Do not extend.
 import { useState, useCallback } from 'react'
 import { TabsContent } from '@/components/ui/tabs'
-import { Export, ArrowSquareIn, ArrowsClockwise } from '@phosphor-icons/react'
+import { Export, ArrowSquareIn, ArrowsClockwise, MapPin } from '@phosphor-icons/react'
 import type { SiteData } from '@/App'
 import { ReleaseEnrichProgress, type PendingRelease } from '@/components/admin/ReleaseEnrichProgress'
 
@@ -11,11 +11,15 @@ interface DataTabProps {
   onRefreshSiteData?: () => void
   onExport: () => void
   onImportClick: () => void
+  onFetchBandsintown?: () => Promise<void>
+  onFetchITunes?: () => Promise<void>
 }
 
-export default function DataTab({ siteData, onImportData, onRefreshSiteData, onExport, onImportClick }: DataTabProps) {
+export default function DataTab({ siteData, onImportData, onRefreshSiteData, onExport, onImportClick, onFetchBandsintown, onFetchITunes }: DataTabProps) {
   const [syncState, setSyncState] = useState<'idle' | 'loading' | 'open'>('idle')
   const [pendingReleases, setPendingReleases] = useState<PendingRelease[]>([])
+  const [gigsSyncing, setGigsSyncing] = useState(false)
+  const [iTunesSyncing, setITunesSyncing] = useState(false)
 
   const handleSyncClick = useCallback(async () => {
     setSyncState('loading')
@@ -30,6 +34,26 @@ export default function DataTab({ siteData, onImportData, onRefreshSiteData, onE
       setSyncState('idle')
     }
   }, [])
+
+  const handleGigsSync = useCallback(async () => {
+    if (!onFetchBandsintown || gigsSyncing) return
+    setGigsSyncing(true)
+    try {
+      await onFetchBandsintown()
+    } finally {
+      setGigsSyncing(false)
+    }
+  }, [onFetchBandsintown, gigsSyncing])
+
+  const handleITunesSync = useCallback(async () => {
+    if (!onFetchITunes || iTunesSyncing) return
+    setITunesSyncing(true)
+    try {
+      await onFetchITunes()
+    } finally {
+      setITunesSyncing(false)
+    }
+  }, [onFetchITunes, iTunesSyncing])
 
   return (
     <TabsContent value="data" className="flex-1 overflow-y-auto p-4 space-y-4 mt-0">
