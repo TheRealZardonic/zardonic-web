@@ -291,8 +291,11 @@ export function useSiteDataSync(
     } finally {
       setBandsintownFetching(false)
     }
-  // siteData?.gigs is read once at call-time for post-merge geocoding. Adding it
-  // to deps would recreate the callback on every data change → infinite re-render.
+  // siteData?.gigs is read at call-time (line ~197, gigsNeedingPostGeocode).
+  // Adding siteData to deps would recreate the callback on every data change →
+  // the useEffect auto-load loop would re-trigger on every gig update → infinite
+  // re-renders. The stale-closure risk is acceptable here (we only read gigs once
+  // per sync call to identify which ones still need geocoding).
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setSiteData])
 
