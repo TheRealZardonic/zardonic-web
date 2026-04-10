@@ -146,7 +146,7 @@ function App() {
   const [siteData, setSiteData] = useState<SiteData | undefined>(undefined)
   const [adminSettings, setAdminSettings] = useState<AdminSettings | undefined>(undefined)
 
-  const [kvSiteData, setKvSiteData, isSiteDataLoaded] = useKV<SiteData>('band-data', DEFAULT_SITE_DATA)
+  const [kvSiteData, setKvSiteData, isSiteDataLoaded, refetchSiteData] = useKV<SiteData>('band-data', DEFAULT_SITE_DATA)
   const [kvAdminSettings, setKvAdminSettings, isAdminSettingsLoaded, refetchAdminSettings] = useKV<AdminSettings | undefined>('admin:settings', undefined)
 
   useEffect(() => {
@@ -396,6 +396,7 @@ function App() {
                 setAdminSettings={handleUpdateAdminSettings}
                 siteData={siteData}
                 onImportData={(data) => handleUpdateSiteData(data as SiteData)}
+                onRefreshSiteData={refetchSiteData}
                 onOpenConfigEditor={() => setShowConfigEditor(true)}
                 onOpenStats={() => setShowStats(true)}
                 onOpenSecurityIncidents={() => setShowSecurityIncidents(true)}

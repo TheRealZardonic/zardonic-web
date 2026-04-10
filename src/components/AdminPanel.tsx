@@ -49,6 +49,7 @@ interface AdminPanelProps {
   adminSettings?: AdminSettings | null
   setAdminSettings?: (settings: AdminSettings) => void
   onImportData?: (data: SiteData) => void
+  onRefreshSiteData?: () => void
   onUpdateSiteData?: (updater: SiteData | ((current: SiteData) => SiteData)) => void
   onOpenConfigEditor?: () => void
   onOpenStats?: () => void
@@ -72,6 +73,7 @@ export default function AdminPanel({
   adminSettings,
   setAdminSettings,
   onImportData,
+  onRefreshSiteData,
   onUpdateSiteData,
   onOpenConfigEditor,
   onOpenStats,
@@ -485,6 +487,7 @@ export default function AdminPanel({
               <DataTab
                 siteData={siteData}
                 onImportData={onImportData}
+                onRefreshSiteData={onRefreshSiteData}
                 onExport={handleExport}
                 onImportClick={() => importInputRef.current?.click()}
               />
