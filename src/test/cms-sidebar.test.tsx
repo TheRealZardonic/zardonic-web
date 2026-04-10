@@ -34,6 +34,8 @@ vi.mock('lucide-react', () => {
     Menu: stub('Menu'),
     X: stub('X'),
     LogOut: stub('LogOut'),
+    Pencil: stub('Pencil'),
+    SlidersHorizontal: stub('SlidersHorizontal'),
   }
 })
 

@@ -1,6 +1,7 @@
 import type React from 'react'
 import { useState, useMemo } from 'react'
 import { MagnifyingGlass, X } from '@phosphor-icons/react'
+import { FIELD_REGISTRY, SCHEMA_ROUTE_MAP } from '@/cms/schemas'
 
 interface SearchableItem {
   label: string
@@ -155,6 +156,26 @@ const SEARCHABLE_ITEMS: SearchableItem[] = [
   { label: 'Glitch Duration (ms)', tab: 'appearance', tabLabel: 'Appearance', group: 'Glitch' },
 ]
 
+// Dynamically derive additional searchable items from the schema field registry
+// so that the global search always stays in sync with src/cms/schemas.ts.
+function buildSchemaItems(): SearchableItem[] {
+  return Object.entries(FIELD_REGISTRY).map(([path, meta]) => {
+    const [schemaName] = path.split('.')
+    const tab = SCHEMA_ROUTE_MAP[schemaName] ?? schemaName
+    // Derive a human-readable tab label from the route string
+    const tabLabel = tab.split('/').pop()?.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) ?? schemaName
+    return {
+      label: meta.label,
+      tab,
+      tabLabel,
+      group: meta.group,
+    }
+  })
+}
+
+// Merge static items with schema-derived items (deduplicated by label+tab)
+const SCHEMA_ITEMS: SearchableItem[] = buildSchemaItems()
+
 interface AdminSearchProps {
   onNavigate: (tab: string) => void
 }
@@ -166,12 +187,21 @@ export function AdminSearch({ onNavigate }: AdminSearchProps) {
   const results = useMemo(() => {
     if (!query.trim()) return []
     const q = query.toLowerCase()
-    return SEARCHABLE_ITEMS.filter(
-      (item) =>
-        item.label.toLowerCase().includes(q) ||
-        item.tabLabel.toLowerCase().includes(q) ||
-        (item.group && item.group.toLowerCase().includes(q)),
-    ).slice(0, 8)
+    const allItems = [...SEARCHABLE_ITEMS, ...SCHEMA_ITEMS]
+    // Deduplicate by label+tab to avoid duplicates between static list and schema
+    const seen = new Set<string>()
+    return allItems
+      .filter(item => {
+        const key = `${item.tab}:${item.label}`
+        if (seen.has(key)) return false
+        seen.add(key)
+        return (
+          item.label.toLowerCase().includes(q) ||
+          item.tabLabel.toLowerCase().includes(q) ||
+          (item.group && item.group.toLowerCase().includes(q))
+        )
+      })
+      .slice(0, 8)
   }, [query])
 
   return (

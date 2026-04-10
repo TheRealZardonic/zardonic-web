@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { UploadSimple, Plus, X } from '@phosphor-icons/react'
+import { UploadSimple, Plus, X, ArrowsClockwise } from '@phosphor-icons/react'
 import type { Release } from '@/lib/types'
 import { fetchOdesliLinks } from '@/lib/odesli'
 import { toast } from 'sonner'
@@ -33,6 +33,7 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
   const [tracks, setTracks] = useState<Array<{ title: string; duration?: string }>>([])
   const [newTrack, setNewTrack] = useState({ title: '', duration: '' })
   const [isSaving, setIsSaving] = useState(false)
+  const [isSyncing, setIsSyncing] = useState(false)
   const artworkInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -80,6 +81,38 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
       setFormData(prev => ({ ...prev, [field]: dataUrl }))
     }
     reader.readAsDataURL(file)
+  }
+
+  const handleOdesliSync = async () => {
+    if (!release?.id) return
+    setIsSyncing(true)
+    try {
+      const resp = await fetch('/api/releases-enrich-single', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ id: release.id }),
+      })
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}))
+        toast.error(err.error ?? 'Odesli sync failed')
+        return
+      }
+      const { links } = await resp.json()
+      setFormData(prev => ({
+        ...prev,
+        spotify: prev.spotify || links.spotify || '',
+        soundcloud: prev.soundcloud || links.soundcloud || '',
+        youtube: prev.youtube || links.youtube || '',
+        bandcamp: prev.bandcamp || links.bandcamp || '',
+        appleMusic: prev.appleMusic || links.appleMusic || '',
+      }))
+      toast.success('Odesli sync complete')
+    } catch {
+      toast.error('Odesli sync failed')
+    } finally {
+      setIsSyncing(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -239,7 +272,23 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
           </div>
 
           <div className="border-t border-border pt-4">
-            <h4 className="font-semibold mb-3">Streaming Links (optional)</h4>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-semibold">Streaming Links (optional)</h4>
+              {release?.id && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleOdesliSync}
+                  disabled={isSyncing || isSaving}
+                  className="border-primary/30 hover:bg-primary/10 text-xs gap-1.5"
+                  title="Sync streaming links from Odesli"
+                >
+                  <ArrowsClockwise size={14} className={isSyncing ? 'animate-spin' : ''} />
+                  {isSyncing ? 'Syncing…' : 'Sync Odesli'}
+                </Button>
+              )}
+            </div>
             
             <div className="space-y-3">
               <div>

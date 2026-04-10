@@ -55,6 +55,7 @@ interface Release {
   description?: string
   tracks?: Array<{ title: string; duration?: string }>
   trackCount?: number
+  isEnriched?: boolean
 }
 
 interface SiteData {
@@ -305,7 +306,7 @@ function extractLinks(data: OdesliResponse): OdesliEnrichedLinks {
 }
 
 function needsEnrichment(r: Release): boolean {
-  return !r.spotify && !r.soundcloud && !r.youtube
+  return !r.isEnriched
 }
 
 function needsTypeDetection(r: Release): boolean {
@@ -370,6 +371,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     let enriched = 0
     let typeDetected = 0
     let tracklistsFetched = 0
+    let enrichCount = 0
+    const MAX_ENRICH_PER_RUN = 3
+
     const releasesArray = Array.from(existingById.values())
     for (const release of releasesArray) {
       const shouldEnrich = needsEnrichment(release)
@@ -378,24 +382,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       if (!shouldEnrich && !shouldDetectType) continue
 
       try {
-        let updated: Release = { ...release }
+        const updated: Release = { ...release }
         let odesliEntityType: string | undefined
 
         if (shouldEnrich) {
+          if (enrichCount >= MAX_ENRICH_PER_RUN) continue
+
           const { links, entityType } = await enrichWithOdesli(release, redis)
           odesliEntityType = entityType
-          if (links.spotify || links.soundcloud || links.youtube) {
-            if (links.spotify) updated.spotify = links.spotify
-            if (links.soundcloud) updated.soundcloud = links.soundcloud
-            if (links.youtube) updated.youtube = links.youtube
-            if (links.bandcamp) updated.bandcamp = links.bandcamp
-            if (links.deezer) updated.deezer = links.deezer
-            if (links.tidal) updated.tidal = links.tidal
-            if (links.amazonMusic) updated.amazonMusic = links.amazonMusic
-            if (links.appleMusic) updated.appleMusic = links.appleMusic
-            enriched++
-          }
-          // Delay between Odesli calls to avoid rate limits
+
+          if (links.spotify) updated.spotify = links.spotify
+          if (links.soundcloud) updated.soundcloud = links.soundcloud
+          if (links.youtube) updated.youtube = links.youtube
+          if (links.bandcamp) updated.bandcamp = links.bandcamp
+          if (links.deezer) updated.deezer = links.deezer
+          if (links.tidal) updated.tidal = links.tidal
+          if (links.amazonMusic) updated.amazonMusic = links.amazonMusic
+          if (links.appleMusic) updated.appleMusic = links.appleMusic
+
+          // Mark as enriched regardless of whether links were found, so this
+          // release is skipped on future runs (avoids unnecessary API calls).
+          updated.isEnriched = true
+          enriched++
+          enrichCount++
+
           await delay(ODESLI_DELAY_MS)
         }
 
@@ -416,6 +426,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         }
 
         existingById.set(release.id, updated)
+
+        // Persist progress after each enrichment so a Vercel timeout doesn't
+        // lose all work (the save at the end of the handler is the canonical
+        // write, but we also checkpoint here to be safe).
+        if (shouldEnrich) {
+          const checkpoint: SiteData = {
+            ...(existing ?? {}),
+            releases: Array.from(existingById.values()),
+          }
+          await redis.set(BAND_DATA_KEY, checkpoint)
+        }
       } catch (e) {
         console.warn(`[releases-enrich] enrichment failed for "${release.title}":`, e)
       }

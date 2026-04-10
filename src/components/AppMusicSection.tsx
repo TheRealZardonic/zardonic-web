@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
@@ -25,22 +24,7 @@ export default function AppMusicSection({
   sectionLabels,
   onLabelChange,
 }: AppMusicSectionProps) {
-  const [spotifyTheme, setSpotifyTheme] = useState<'0' | '1'>('0')
 
-  useEffect(() => {
-    const updateTheme = () => {
-      const computedBg = getComputedStyle(document.documentElement).getPropertyValue('--background').trim()
-      const match = computedBg.match(/^([\d.]+)/)
-      if (match) {
-        const lightness = parseFloat(match[1])
-        setSpotifyTheme(lightness > 0.6 ? '1' : '0')
-      }
-    }
-    updateTheme()
-    const observer = new MutationObserver(updateTheme)
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['style', 'class'] })
-    return () => observer.disconnect()
-  }, [])
 
   if (!visible) return null
 
@@ -91,7 +75,7 @@ export default function AppMusicSection({
                   uri="spotify:artist:7BqEidErPMNiUXCRE0dV2n"
                   width="100%"
                   height={352}
-                  theme={spotifyTheme}
+                  theme="0"
                 />
               </div>
               <div className="p-4 pt-2">

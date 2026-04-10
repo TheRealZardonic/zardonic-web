@@ -140,8 +140,124 @@ export const cmsSectionsPostSchema = z.object({
   sections: z.array(sectionConfigSchema).max(50),
 })
 
-// Inferred TypeScript types
-export type SiteConfig = z.infer<typeof siteConfigSchema>
+// ─── UI Field Metadata ────────────────────────────────────────────────────────
+//
+// Describes each schema field for the schema-driven form renderer in CmsSidebar.
+// Maps field paths ("schema.field") to their display label, input widget type,
+// and whether they are "advanced" (hidden behind the progressive-disclosure toggle).
+
+export type FieldWidgetType =
+  | 'text'
+  | 'textarea'
+  | 'number'
+  | 'url'
+  | 'email'
+  | 'color'
+  | 'checkbox'
+  | 'select'
+  | 'image-url'
+  | 'date'
+  | 'range'
+
+export interface FieldMeta {
+  /** Human-readable label shown in the form */
+  label: string
+  /** Input widget to use */
+  widget: FieldWidgetType
+  /** Shown as placeholder text in the input */
+  placeholder?: string
+  /** If true, hidden behind "Advanced" toggle (progressive disclosure) */
+  advanced?: boolean
+  /** For 'select' or 'range' widgets */
+  options?: Array<{ value: string; label: string }>
+  /** For 'range' widget */
+  min?: number
+  max?: number
+  step?: number
+  /** For grouping fields visually */
+  group?: string
+  /** Whether this field acts as a global design token (can be inherited) */
+  isDesignToken?: boolean
+}
+
+/** Registry of all editable CMS fields, keyed by "schemaName.fieldName". */
+export const FIELD_REGISTRY: Record<string, FieldMeta> = {
+  // ── Site Config ──────────────────────────────────────────────────────────
+  'siteConfig.name':          { label: 'Site Name', widget: 'text', placeholder: 'ZARDONIC', group: 'Identity' },
+  'siteConfig.description':   { label: 'Description', widget: 'textarea', placeholder: 'ZARDONIC – Official Website.', group: 'Identity' },
+  'siteConfig.logoUrl':       { label: 'Logo URL', widget: 'image-url', placeholder: 'https://...', group: 'Branding' },
+  'siteConfig.faviconUrl':    { label: 'Favicon URL', widget: 'image-url', placeholder: 'https://...', group: 'Branding' },
+  'siteConfig.ogImageUrl':    { label: 'OG Image URL', widget: 'image-url', placeholder: 'https://...', group: 'Branding' },
+  'siteConfig.analyticsId':   { label: 'Analytics ID', widget: 'text', placeholder: 'UA-XXXXXXX', group: 'Analytics', advanced: true },
+
+  // ── Hero ─────────────────────────────────────────────────────────────────
+  'hero.headline':            { label: 'Headline', widget: 'text', placeholder: 'ZARDONIC', group: 'Content' },
+  'hero.subheadline':         { label: 'Sub-headline', widget: 'textarea', placeholder: 'Industrial / Drum & Bass', group: 'Content' },
+  'hero.ctaText':             { label: 'CTA Button Text', widget: 'text', placeholder: 'LISTEN NOW', group: 'CTA' },
+  'hero.ctaLink':             { label: 'CTA Button Link', widget: 'url', placeholder: '#music', group: 'CTA' },
+  'hero.backgroundImageUrl':  { label: 'Background Image', widget: 'image-url', placeholder: 'https://...', group: 'Design' },
+  'hero.overlayOpacity':      { label: 'Overlay Opacity', widget: 'range', min: 0, max: 1, step: 0.05, group: 'Design', advanced: true },
+
+  // ── Theme ─────────────────────────────────────────────────────────────────
+  'theme.primaryColor':       { label: 'Primary Color', widget: 'color', group: 'Colors', isDesignToken: true },
+  'theme.secondaryColor':     { label: 'Secondary Color', widget: 'color', group: 'Colors', isDesignToken: true },
+  'theme.accentColor':        { label: 'Accent Color', widget: 'color', group: 'Colors', isDesignToken: true },
+  'theme.fontFamily':         { label: 'Font Family', widget: 'text', placeholder: 'Orbitron, monospace', group: 'Typography', advanced: true },
+
+  // ── Footer ───────────────────────────────────────────────────────────────
+  'footer.copyrightText':     { label: 'Copyright Text', widget: 'text', placeholder: '© 2025 Zardonic', group: 'Content' },
+  'footer.contactEmail':      { label: 'Contact Email', widget: 'email', placeholder: 'info@zardonic.com', group: 'Contact' },
+
+  // ── Release ──────────────────────────────────────────────────────────────
+  'release.title':            { label: 'Title', widget: 'text', placeholder: 'Release Name', group: 'Core' },
+  'release.coverUrl':         { label: 'Artwork URL', widget: 'image-url', placeholder: 'https://...', group: 'Core' },
+  'release.releaseDate':      { label: 'Release Date', widget: 'date', group: 'Core' },
+  'release.type':             { label: 'Type', widget: 'select', options: [
+    { value: 'album', label: 'Album' },
+    { value: 'ep', label: 'EP' },
+    { value: 'single', label: 'Single' },
+    { value: 'remix', label: 'Remix' },
+  ], group: 'Core' },
+  'release.description':      { label: 'Description', widget: 'textarea', group: 'Core', advanced: true },
+
+  // ── Member ───────────────────────────────────────────────────────────────
+  'member.name':              { label: 'Name', widget: 'text', group: 'Identity' },
+  'member.role':              { label: 'Role', widget: 'text', group: 'Identity' },
+  'member.photoUrl':          { label: 'Photo URL', widget: 'image-url', group: 'Identity' },
+  'member.bio':               { label: 'Bio', widget: 'textarea', group: 'Identity', advanced: true },
+
+  // ── Navigation ───────────────────────────────────────────────────────────
+  'navItem.label':            { label: 'Label', widget: 'text', group: 'Nav' },
+  'navItem.anchor':           { label: 'Anchor Target', widget: 'text', placeholder: '#section-id', group: 'Nav' },
+  'navItem.enabled':          { label: 'Visible', widget: 'checkbox', group: 'Nav' },
+}
+
+/** Return all field metadata for a given schema prefix (e.g. "hero"). */
+export function getFieldsForSchema(schemaName: string): Array<{ path: string; meta: FieldMeta }> {
+  const prefix = `${schemaName}.`
+  return Object.entries(FIELD_REGISTRY)
+    .filter(([path]) => path.startsWith(prefix))
+    .map(([path, meta]) => ({ path, meta }))
+}
+
+/** Return the field meta for an exact path. */
+export function getFieldMeta(path: string): FieldMeta | undefined {
+  return FIELD_REGISTRY[path]
+}
+
+// ─── Schema → Route mapping ───────────────────────────────────────────────────
+/** Maps a schema name to the CMS route where it is edited. */
+export const SCHEMA_ROUTE_MAP: Record<string, string> = {
+  siteConfig: 'cms/site-config',
+  hero:       'cms/content/hero',
+  member:     'cms/content/members',
+  release:    'cms/content/releases',
+  newsArticle:'cms/content/news',
+  footer:     'cms/content/footer',
+  navItem:    'cms/navigation',
+  theme:      'cms/theme',
+}
+
 export type HeroConfig = z.infer<typeof heroSchema>
 export type MemberSlot = z.infer<typeof memberSlotSchema>
 export type Release = z.infer<typeof releaseSchema>
