@@ -7,16 +7,18 @@ import type { AdminSettings, SectionLabels } from '@/lib/types'
 
 /** Convert a Spotify profile URL to a `spotify:type:id` URI.
  *  e.g. "https://open.spotify.com/artist/7BqEidErPMNiUXCRE0dV2n" → "spotify:artist:7BqEidErPMNiUXCRE0dV2n"
+ *  Also handles locale-prefixed URLs like "https://open.spotify.com/intl-de/artist/..."
  *  Returns null when the URL is not a recognisable Spotify URL. */
 function spotifyUrlToUri(url: string): string | null {
   try {
     const { hostname, pathname } = new URL(url)
     // Strict domain check: must be exactly open.spotify.com or a subdomain of spotify.com
     if (hostname !== 'open.spotify.com' && !hostname.endsWith('.spotify.com')) return null
-    // pathname is like /artist/7BqEidErPMNiUXCRE0dV2n or /track/...
+    // Strip leading slash and optional locale segment (intl-de, intl-en, intl-xx, etc.)
     const parts = pathname.replace(/^\//, '').split('/')
-    if (parts.length >= 2 && parts[0] && parts[1]) {
-      return `spotify:${parts[0]}:${parts[1]}`
+    const filtered = parts.filter(p => !p.startsWith('intl-'))
+    if (filtered.length >= 2 && filtered[0] && filtered[1]) {
+      return `spotify:${filtered[0]}:${filtered[1]}`
     }
     return null
   } catch {

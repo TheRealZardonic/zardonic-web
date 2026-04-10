@@ -3,37 +3,36 @@
 // key is written by use-app-theme.ts whenever the admin theme is applied.
 // This is strictly-necessary functional data; no consent is required.
 //
-// On first visit (no cache), apply the site's default dark theme so even
+// On first visit (no cache), apply the DIGICE preset as the default theme so
 // cold-start visitors see the correct colours from frame 0.
 (function() {
   var _root = document.documentElement;
 
-  // Static fallback: the site's default dark oklch theme (matches the
-  // "Neon Red" preset in ThemeCustomizerDialog and use-app-theme.ts).
+  // Static fallback: the DIGICE preset (matches AppearanceTab.tsx DIGICIDE preset).
   // These values are applied first so every visitor — including first-timers
   // and private-browsing users — never sees a flash of light/blue defaults.
   var _defaults = {
-    '--primary':                 'oklch(0.50 0.22 25)',
-    '--primary-foreground':      'oklch(0.98 0 0)',
-    '--accent':                  'oklch(0.60 0.24 25)',
-    '--accent-foreground':       'oklch(0.98 0 0)',
-    '--background':              'oklch(0.05 0 0)',
-    '--foreground':              'oklch(0.95 0 0)',
-    '--card':                    'oklch(0.08 0 0)',
-    '--card-foreground':         'oklch(0.95 0 0)',
-    '--popover':                 'oklch(0.08 0 0)',
-    '--popover-foreground':      'oklch(0.95 0 0)',
-    '--secondary':               'oklch(0.15 0 0)',
-    '--secondary-foreground':    'oklch(0.95 0 0)',
-    '--muted':                   'oklch(0.12 0 0)',
-    '--muted-foreground':        'oklch(0.55 0 0)',
-    '--border':                  'oklch(0.20 0 0)',
-    '--input':                   'oklch(0.20 0 0)',
-    '--ring':                    'oklch(0.50 0.22 25)',
-    '--destructive':             'oklch(0.55 0.22 25)',
-    '--destructive-foreground':  'oklch(0.98 0 0)',
-    // Spotify embed accent (primary hue 25° → 25 - 141 = -116deg)
-    '--spotify-hue-rotate':      '-116deg',
+    '--primary':                 'oklch(0.78 0.03 220)',
+    '--primary-foreground':      'oklch(0.82 0.03 210)',
+    '--accent':                  'oklch(0.65 0.06 215)',
+    '--accent-foreground':       'oklch(0.82 0.03 210)',
+    '--background':              'oklch(0.015 0.005 240)',
+    '--foreground':              'oklch(0.82 0.03 210)',
+    '--card':                    'oklch(0.045 0.008 230)',
+    '--card-foreground':         'oklch(0.82 0.03 210)',
+    '--popover':                 'oklch(0.045 0.008 230)',
+    '--popover-foreground':      'oklch(0.82 0.03 210)',
+    '--secondary':               'oklch(0.07 0.01 230)',
+    '--secondary-foreground':    'oklch(0.82 0.03 210)',
+    '--muted':                   'oklch(0.07 0.01 230)',
+    '--muted-foreground':        'oklch(0.40 0.02 220)',
+    '--border':                  'oklch(0.10 0.01 225)',
+    '--input':                   'oklch(0.10 0.01 225)',
+    '--ring':                    'oklch(0.78 0.03 220)',
+    '--destructive':             'oklch(0.45 0.18 20)',
+    '--destructive-foreground':  'oklch(0.82 0.03 210)',
+    // Spotify embed accent (primary hue 220° → 220 - 141 = 79deg)
+    '--spotify-hue-rotate':      '79deg',
   };
   var _dk = Object.keys(_defaults);
   for (var _di = 0; _di < _dk.length; _di++) {
@@ -59,9 +58,8 @@
 // Restore the loader type so the correct loading screen variant renders
 // from the very first React frame, preventing a flash of the default loader.
 // The 'nk-loader-type' key is written by App.tsx when KV settings arrive.
+// Default to 'minimal-bar' when no persisted value exists (lightweight, no FOUC).
 try {
-  var _lt = localStorage.getItem('nk-loader-type');
-  if (_lt) {
-    document.documentElement.setAttribute('data-loader-type', _lt);
-  }
+  var _lt = localStorage.getItem('nk-loader-type') ?? 'minimal-bar';
+  document.documentElement.setAttribute('data-loader-type', _lt);
 } catch(e) { /* ignore */ }

@@ -71,7 +71,7 @@ function App() {
   // with the correct value on the very first render — preventing a FOUC where
   // the loading screen briefly flashes when loaderType === 'none'.
   const [initialLoaderType] = useState<string>(() => {
-    try { return localStorage.getItem(LOADER_TYPE_KEY) ?? 'cyberpunk' } catch { return 'cyberpunk' }
+    try { return localStorage.getItem(LOADER_TYPE_KEY) ?? 'minimal-bar' } catch { return 'minimal-bar' }
   })
 
   // If the stored loader type is 'none', skip the loading screen from frame 0.
