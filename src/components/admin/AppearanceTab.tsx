@@ -531,6 +531,70 @@ export default function AppearanceTab({
 
       <Separator />
 
+      {/* Spotify Player Color */}
+      <section className="space-y-3">
+        <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
+          Spotify Player Color
+        </h3>
+        <p className="font-mono text-[11px] text-muted-foreground">
+          Shifts the Spotify embed's accent color via CSS hue-rotate. The auto value is derived
+          from the primary color hue (primaryHue − 141°). Use the override to fine-tune.
+        </p>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="font-mono text-xs">Hue Rotation Override</Label>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-xs text-muted-foreground tabular-nums w-16 text-right">
+                {typeof theme.spotifyHueRotate === 'number'
+                  ? `${theme.spotifyHueRotate}°`
+                  : 'auto'}
+              </span>
+              {typeof theme.spotifyHueRotate === 'number' && (
+                <button
+                  onClick={() => updateTheme('spotifyHueRotate', '')}
+                  className="font-mono text-[10px] text-muted-foreground hover:text-primary transition-colors border border-border hover:border-primary px-1.5 py-0.5 rounded"
+                  title="Reset to auto (derived from primary color)"
+                >
+                  reset
+                </button>
+              )}
+            </div>
+          </div>
+          <Slider
+            value={[typeof theme.spotifyHueRotate === 'number' ? theme.spotifyHueRotate : 0]}
+            min={-180}
+            max={180}
+            step={1}
+            onValueChange={([v]) => updateTheme('spotifyHueRotate', String(v))}
+          />
+          <div className="flex justify-between font-mono text-[10px] text-muted-foreground">
+            <span>−180°</span>
+            <span>0°</span>
+            <span>+180°</span>
+          </div>
+        </div>
+        {/* Live preview swatch */}
+        <div className="flex items-center gap-2 text-[11px] font-mono text-muted-foreground">
+          <div
+            className="w-5 h-5 rounded-sm border border-border shrink-0"
+            style={{ backgroundColor: 'oklch(0.65 0.29 141)' }}
+            title="Spotify green (original)"
+          />
+          <span>→</span>
+          <div
+            className="w-5 h-5 rounded-sm border border-border shrink-0"
+            style={{
+              filter: `hue-rotate(var(--spotify-hue-rotate, -116deg)) saturate(1.2)`,
+              backgroundColor: 'oklch(0.65 0.29 141)',
+            }}
+            title="After hue-rotate"
+          />
+          <span className="opacity-70">Preview: Spotify green → CI color</span>
+        </div>
+      </section>
+
+      <Separator />
+
       {/* Animations */}
       <section className="space-y-3">
         <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">

@@ -18,8 +18,8 @@ interface DataTabProps {
 export default function DataTab({ siteData, onImportData, onRefreshSiteData, onExport, onImportClick, onFetchBandsintown, onFetchITunes }: DataTabProps) {
   const [syncState, setSyncState] = useState<'idle' | 'loading' | 'open'>('idle')
   const [pendingReleases, setPendingReleases] = useState<PendingRelease[]>([])
-  const [gigsSyncing, setGigsSyncing] = useState(false)
-  const [iTunesSyncing, setITunesSyncing] = useState(false)
+  const [isGigsSyncing, setIsGigsSyncing] = useState(false)
+  const [isITunesSyncing, setIsITunesSyncing] = useState(false)
 
   const handleSyncClick = useCallback(async () => {
     setSyncState('loading')
@@ -36,24 +36,24 @@ export default function DataTab({ siteData, onImportData, onRefreshSiteData, onE
   }, [])
 
   const handleGigsSync = useCallback(async () => {
-    if (!onFetchBandsintown || gigsSyncing) return
-    setGigsSyncing(true)
+    if (!onFetchBandsintown || isGigsSyncing) return
+    setIsGigsSyncing(true)
     try {
       await onFetchBandsintown()
     } finally {
-      setGigsSyncing(false)
+      setIsGigsSyncing(false)
     }
-  }, [onFetchBandsintown, gigsSyncing])
+  }, [onFetchBandsintown, isGigsSyncing])
 
   const handleITunesSync = useCallback(async () => {
-    if (!onFetchITunes || iTunesSyncing) return
-    setITunesSyncing(true)
+    if (!onFetchITunes || isITunesSyncing) return
+    setIsITunesSyncing(true)
     try {
       await onFetchITunes()
     } finally {
-      setITunesSyncing(false)
+      setIsITunesSyncing(false)
     }
-  }, [onFetchITunes, iTunesSyncing])
+  }, [onFetchITunes, isITunesSyncing])
 
   return (
     <TabsContent value="data" className="flex-1 overflow-y-auto p-4 space-y-4 mt-0">
@@ -98,10 +98,33 @@ export default function DataTab({ siteData, onImportData, onRefreshSiteData, onE
         </button>
 
         {/* ── Release Enrichment ─────────────────────────────────────────── */}
-        <div className="border-t border-border pt-3">
+        <div className="border-t border-border pt-3 space-y-2">
           <h4 className="font-mono text-xs font-bold text-primary uppercase tracking-wider mb-3">
-            Release Enrichment
+            Manual Sync
           </h4>
+
+          {/* iTunes Sync */}
+          <button
+            onClick={handleITunesSync}
+            disabled={isITunesSyncing || !onFetchITunes}
+            className="w-full flex items-center gap-4 p-4 bg-background border border-border rounded-md hover:border-primary text-left transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ArrowsClockwise
+              size={20}
+              weight="bold"
+              className={`text-blue-400 shrink-0 ${isITunesSyncing ? 'animate-spin' : ''}`}
+            />
+            <div>
+              <div className="font-mono text-sm font-bold group-hover:text-primary transition-colors">
+                {isITunesSyncing ? 'Syncing iTunes…' : 'Sync Releases (iTunes)'}
+              </div>
+              <div className="font-mono text-xs text-muted-foreground">
+                Fetches latest releases from iTunes — updates artwork, titles, release dates
+              </div>
+            </div>
+          </button>
+
+          {/* Release Enrichment */}
           <button
             onClick={handleSyncClick}
             disabled={syncState === 'loading'}
@@ -114,10 +137,31 @@ export default function DataTab({ siteData, onImportData, onRefreshSiteData, onE
             />
             <div>
               <div className="font-mono text-sm font-bold group-hover:text-primary transition-colors">
-                Sync Releases (MusicBrainz + Odesli)
+                Enrich Releases (MusicBrainz + Odesli)
               </div>
               <div className="font-mono text-xs text-muted-foreground">
-                Enriches all non-enriched releases one by one: type, tracklist, streaming links
+                Enriches non-enriched releases one by one: type, tracklist, streaming links
+              </div>
+            </div>
+          </button>
+
+          {/* Gig Sync */}
+          <button
+            onClick={handleGigsSync}
+            disabled={isGigsSyncing || !onFetchBandsintown}
+            className="w-full flex items-center gap-4 p-4 bg-background border border-border rounded-md hover:border-primary text-left transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <MapPin
+              size={20}
+              weight="bold"
+              className={`text-green-400 shrink-0 ${isGigsSyncing ? 'animate-pulse' : ''}`}
+            />
+            <div>
+              <div className="font-mono text-sm font-bold group-hover:text-primary transition-colors">
+                {isGigsSyncing ? 'Syncing Gigs…' : 'Sync Gigs (Bandsintown + Geocode)'}
+              </div>
+              <div className="font-mono text-xs text-muted-foreground">
+                Fetches upcoming shows from Bandsintown, geocodes missing lat/lon via OpenStreetMap
               </div>
             </div>
           </button>

@@ -58,6 +58,8 @@ interface AdminPanelProps {
   onOpenBlocklist?: () => void
   onOpenContactInbox?: () => void
   onOpenSubscriberList?: () => void
+  onFetchBandsintown?: () => Promise<void>
+  onFetchITunes?: () => Promise<void>
   editMode: boolean
   onToggleEdit: () => void
   hasPassword: boolean
@@ -82,6 +84,8 @@ export default function AdminPanel({
   onOpenBlocklist,
   onOpenContactInbox,
   onOpenSubscriberList,
+  onFetchBandsintown,
+  onFetchITunes,
   editMode,
   onToggleEdit,
   hasPassword,
@@ -171,7 +175,19 @@ export default function AdminPanel({
   const updateTheme = useCallback(
     (key: keyof ThemeCustomization, value: string) => {
       if (!setAdminSettings) return
-      setAdminSettings({ ...adminSettings, theme: { ...adminSettings?.theme, [key]: value } })
+      // spotifyHueRotate is stored as a number; empty string means "remove override"
+      if (key === 'spotifyHueRotate') {
+        const parsed = value === '' ? undefined : parseInt(value, 10)
+        const newTheme = { ...adminSettings?.theme }
+        if (parsed === undefined) {
+          delete newTheme.spotifyHueRotate
+        } else if (!isNaN(parsed)) {
+          newTheme.spotifyHueRotate = parsed
+        }
+        setAdminSettings({ ...adminSettings, theme: newTheme })
+      } else {
+        setAdminSettings({ ...adminSettings, theme: { ...adminSettings?.theme, [key]: value } })
+      }
     },
     [adminSettings, setAdminSettings],
   )
@@ -492,6 +508,8 @@ export default function AdminPanel({
                 onRefreshSiteData={onRefreshSiteData}
                 onExport={handleExport}
                 onImportClick={() => importInputRef.current?.click()}
+                onFetchBandsintown={onFetchBandsintown}
+                onFetchITunes={onFetchITunes}
               />
 
               <TranslationsTab

@@ -74,6 +74,12 @@ export interface ThemeCustomization {
 
   // Modal glow color
   modalGlowColor?: string
+
+  // Spotify embed hue-rotation override (degrees, integer).
+  // When set, overrides the auto-computed value (primaryHue - 141) so the
+  // admin can fine-tune the embedded player's accent colour manually.
+  // Range: -180 … 180 (or any integer; CSS hue-rotate wraps automatically).
+  spotifyHueRotate?: number
 }
 
 export type BackgroundType = 'circuit' | 'cyberpunk-hud' | 'matrix' | 'stars' | 'minimal' | 'cloud-chamber' | 'glitch-grid'

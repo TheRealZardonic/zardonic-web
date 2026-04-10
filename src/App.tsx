@@ -236,6 +236,14 @@ function App() {
   // Effective loader type: KV value takes precedence once loaded; localStorage used before that.
   const effectiveLoaderType = anim.loadingScreenType ?? initialLoaderType
 
+  // Lock the visible loading screen type to what was active on mount.
+  // Without this, when KV arrives with a DIFFERENT type than localStorage,
+  // the component key changes → React unmounts the old loader and mounts the
+  // new one → visible flash between two loading screen components (FOUC).
+  // We only allow the locked type to change if it transitions to 'none'
+  // (handled by the useEffect below which sets loading = false directly).
+  const [activeLoaderType] = useState(initialLoaderType)
+
   const sectionOrder = adminSettings?.sectionOrder ?? DEFAULT_SECTION_ORDER
   const getSectionOrder = useCallback((section: string) => {
     const idx = sectionOrder.indexOf(section as SectionKey)
@@ -246,7 +254,8 @@ function App() {
   const { iTunesFetching, bandsintownFetching, hasAutoLoaded, iTunesProgress, handleFetchBandsintownEvents, handleFetchITunesReleases } = useSiteDataSync(siteData, setSiteData, isSiteDataLoaded)
   useDocumentTitle(siteData?.artistName ?? '')
 
-  // When loading screen type is 'none', skip loading immediately
+  // If the effective loader type is 'none' (either from localStorage or KV),
+  // skip loading immediately — covers both first-render and late KV arrival.
   useEffect(() => {
     if (effectiveLoaderType === 'none') {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -414,6 +423,8 @@ function App() {
                 onOpenSubscriberList={() => setShowSubscriberList(true)}
                 onUpdateSiteData={handleUpdateSiteData}
                 onLogout={handleLogout}
+                onFetchBandsintown={handleFetchBandsintownEvents}
+                onFetchITunes={handleFetchITunesReleases}
               />
             )}
 
@@ -482,7 +493,11 @@ function App() {
           <>
             <AnimatePresence>
               {(!siteData || loading) && (() => {
-                const lsType = effectiveLoaderType
+                // Use activeLoaderType (locked on mount) — NOT effectiveLoaderType —
+                // so the active loading screen never switches mid-load when KV
+                // arrives with a different type (which would cause a FOUC flash).
+                // effectiveLoaderType is still used for the 'none' skip-logic above.
+                const lsType = activeLoaderType
                 if (lsType === 'none') {
                   return null
                 }

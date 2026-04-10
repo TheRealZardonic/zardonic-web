@@ -54,3 +54,8 @@ function Root() {
 }
 
 createRoot(document.getElementById('root')!).render(<Root />)
+
+// Mark the root as hydrated so the #root:not(.hydrated) opacity guard is
+// lifted. This prevents the single-frame flash between browser HTML parse
+// and the first React paint (FOUC fix, see index.html).
+document.getElementById('root')?.classList.add('hydrated')

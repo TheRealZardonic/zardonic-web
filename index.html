@@ -26,6 +26,15 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <link href="/src/main.css" rel="stylesheet" />
+    <!-- FOUC prevention: hide #root until React has mounted and added
+         the 'hydrated' class. This prevents raw DOM from flashing through
+         between the browser parse and the first React paint. The transition
+         is kept at 0ms so there is no perceptible delay — it only prevents
+         the single-frame flash between browser-rendered HTML and React. -->
+    <style>
+      #root:not(.hydrated) { opacity: 0; }
+      #root.hydrated { opacity: 1; }
+    </style>
 </head>
 
 <body>
