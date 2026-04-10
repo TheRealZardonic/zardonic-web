@@ -109,9 +109,9 @@ export function SystemMonitorHUD({ decorativeTexts, dataCounts }: SystemMonitorH
 
   return (
     <>
-      {/* Top Left Corner */}
+      {/* Top Left Corner — positioned below navbar (~72px mobile / ~80px desktop) */}
       <div
-        className="pointer-events-none fixed left-2 top-2 font-mono text-xs leading-tight tracking-wider text-primary/60 sm:left-4 sm:top-4 sm:text-xs"
+        className="pointer-events-none fixed left-2 top-[76px] font-mono text-xs leading-tight tracking-wider text-primary/60 sm:left-4 md:top-[84px]"
         style={{ zIndex: 'var(--z-hud)' } as React.CSSProperties}
         data-theme-color="primary"
       >
@@ -123,9 +123,9 @@ export function SystemMonitorHUD({ decorativeTexts, dataCounts }: SystemMonitorH
         </div>
       </div>
 
-      {/* Top Right Corner */}
+      {/* Top Right Corner — positioned below navbar (~72px mobile / ~80px desktop) */}
       <div
-        className="pointer-events-none fixed right-2 top-2 font-mono text-xs leading-tight tracking-wider text-primary/60 sm:right-4 sm:top-4 sm:text-xs"
+        className="pointer-events-none fixed right-2 top-[76px] font-mono text-xs leading-tight tracking-wider text-primary/60 sm:right-4 md:top-[84px]"
         style={{ zIndex: 'var(--z-hud)' } as React.CSSProperties}
         data-theme-color="primary"
       >

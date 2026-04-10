@@ -211,6 +211,27 @@ function App() {
   const terminalCommands = adminSettings?.terminalCommands ?? []
   const contactSettings = adminSettings?.contactSettings ?? {}
 
+  // Persist the loading screen type to localStorage so it can be read synchronously
+  // on the next page load, preventing a FOUC from the default 'cyberpunk' loader.
+  const LOADER_TYPE_KEY = 'nk-loader-type'
+
+  // Read loading screen type synchronously from localStorage for the first render.
+  // This is safe: useKV/adminSettings takes time to arrive from the network, but
+  // localStorage is available immediately, so the correct loader renders from frame 1.
+  const [initialLoaderType] = useState<string>(() => {
+    try { return localStorage.getItem(LOADER_TYPE_KEY) ?? 'cyberpunk' } catch { return 'cyberpunk' }
+  })
+
+  // When KV settings arrive, persist the type so the next load is instant.
+  useEffect(() => {
+    if (anim.loadingScreenType) {
+      try { localStorage.setItem(LOADER_TYPE_KEY, anim.loadingScreenType) } catch { /* quota */ }
+    }
+  }, [anim.loadingScreenType])
+
+  // Effective loader type: KV value takes precedence once loaded; localStorage used before that.
+  const effectiveLoaderType = anim.loadingScreenType ?? initialLoaderType
+
   const sectionOrder = adminSettings?.sectionOrder ?? DEFAULT_SECTION_ORDER
   const getSectionOrder = useCallback((section: string) => {
     const idx = sectionOrder.indexOf(section)
@@ -223,11 +244,11 @@ function App() {
 
   // When loading screen type is 'none', skip loading immediately
   useEffect(() => {
-    if (anim.loadingScreenType === 'none') {
+    if (effectiveLoaderType === 'none') {
       setLoading(false)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [anim.loadingScreenType])
+  }, [effectiveLoaderType])
 
   // Collect image URLs for precaching during loading screen
   const precacheUrls = useMemo(() => {
@@ -452,7 +473,7 @@ function App() {
           <>
             <AnimatePresence>
               {(!siteData || loading) && (() => {
-                const lsType = anim.loadingScreenType ?? 'cyberpunk'
+                const lsType = effectiveLoaderType
                 if (lsType === 'none') {
                   return null
                 }
@@ -670,7 +691,7 @@ function App() {
             id: f.id,
             name: f.name,
             url: f.url,
-            type: f.type === 'audio' || f.type === 'youtube' ? f.type : ('download' as 'download'),
+            type: f.type === 'audio' || f.type === 'youtube' ? f.type : 'download' as const,
             size: f.description ?? '',
           })),
         })) : undefined}

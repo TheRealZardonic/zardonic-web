@@ -19,7 +19,199 @@ import {
   Menu,
   X,
   LogOut,
+  Pencil,
+  SlidersHorizontal,
 } from 'lucide-react'
+import { useCmsEdit } from './CmsEditContext'
+import { getFieldsForSchema, SCHEMA_ROUTE_MAP } from './schemas'
+import type { FieldMeta, FieldWidgetType } from './schemas'
+
+// ─── Schema-driven field renderer ────────────────────────────────────────────
+
+/** Render a single form input widget based on the field's FieldMeta. */
+function SchemaFieldInput({
+  fieldPath,
+  meta,
+  value,
+  onChange,
+}: {
+  fieldPath: string
+  meta: FieldMeta
+  value: string | number | boolean
+  onChange: (path: string, value: string | number | boolean) => void
+}) {
+  const baseInput = 'w-full bg-zinc-900 border border-zinc-700 rounded px-2 py-1.5 text-xs font-mono text-zinc-200 focus:outline-none focus:border-red-500/60'
+  const widget: FieldWidgetType = meta.widget
+
+  if (widget === 'checkbox') {
+    return (
+      <input
+        type="checkbox"
+        checked={Boolean(value)}
+        onChange={e => onChange(fieldPath, e.target.checked)}
+        className="accent-red-600 w-4 h-4"
+        aria-label={meta.label}
+      />
+    )
+  }
+  if (widget === 'color') {
+    return (
+      <div className="flex items-center gap-2">
+        <input
+          type="color"
+          value={String(value || '#000000')}
+          onChange={e => onChange(fieldPath, e.target.value)}
+          className="w-8 h-8 rounded border border-zinc-700 bg-transparent cursor-pointer"
+          aria-label={meta.label}
+        />
+        <input
+          type="text"
+          value={String(value || '')}
+          onChange={e => onChange(fieldPath, e.target.value)}
+          placeholder="#000000"
+          className={baseInput + ' flex-1'}
+        />
+      </div>
+    )
+  }
+  if (widget === 'textarea') {
+    return (
+      <textarea
+        value={String(value || '')}
+        onChange={e => onChange(fieldPath, e.target.value)}
+        placeholder={meta.placeholder}
+        rows={3}
+        className={baseInput + ' resize-y'}
+        aria-label={meta.label}
+      />
+    )
+  }
+  if (widget === 'select' && meta.options) {
+    return (
+      <select
+        value={String(value || '')}
+        onChange={e => onChange(fieldPath, e.target.value)}
+        className={baseInput}
+        aria-label={meta.label}
+      >
+        <option value="">— Auswählen —</option>
+        {meta.options.map(opt => (
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
+        ))}
+      </select>
+    )
+  }
+  if (widget === 'range') {
+    return (
+      <div className="flex items-center gap-2">
+        <input
+          type="range"
+          min={meta.min ?? 0}
+          max={meta.max ?? 1}
+          step={meta.step ?? 0.1}
+          value={Number(value ?? meta.min ?? 0)}
+          onChange={e => onChange(fieldPath, parseFloat(e.target.value))}
+          className="flex-1 accent-red-600"
+          aria-label={meta.label}
+        />
+        <span className="text-zinc-400 text-xs font-mono w-10 text-right tabular-nums">
+          {Number(value ?? 0).toFixed(2)}
+        </span>
+      </div>
+    )
+  }
+  // Default: text / url / email / date / number / image-url
+  return (
+    <input
+      type={widget === 'email' ? 'email' : widget === 'date' ? 'date' : widget === 'number' ? 'number' : 'text'}
+      value={String(value || '')}
+      onChange={e => onChange(fieldPath, e.target.value)}
+      placeholder={meta.placeholder}
+      className={baseInput}
+      aria-label={meta.label}
+    />
+  )
+}
+
+/** Schema-driven inline editor panel shown below the nav when a field is selected. */
+function InlineEditorPanel({ schemaName }: { schemaName: string }) {
+  const [values, setValues] = useState<Record<string, string | number | boolean>>({})
+  const [showAdvanced, setShowAdvanced] = useState(false)
+
+  const allFields = getFieldsForSchema(schemaName)
+  const coreFields = allFields.filter(f => !f.meta.advanced)
+  const advancedFields = allFields.filter(f => f.meta.advanced)
+
+  const handleChange = (path: string, val: string | number | boolean) => {
+    setValues(prev => ({ ...prev, [path]: val }))
+  }
+
+  if (allFields.length === 0) return null
+
+  // Group fields
+  const groups = Array.from(new Set(allFields.map(f => f.meta.group ?? 'General')))
+
+  const renderGroup = (groupName: string, fields: Array<{ path: string; meta: FieldMeta }>) => {
+    const groupFields = fields.filter(f => (f.meta.group ?? 'General') === groupName)
+    if (groupFields.length === 0) return null
+    return (
+      <div key={groupName} className="mb-3">
+        <div className="text-[10px] font-mono uppercase tracking-widest text-zinc-600 mb-2 px-1">
+          {groupName}
+        </div>
+        <div className="space-y-2">
+          {groupFields.map(({ path, meta }) => (
+            <div key={path} className="px-1">
+              <label className="block text-xs text-zinc-400 mb-1">{meta.label}</label>
+              <SchemaFieldInput
+                fieldPath={path}
+                meta={meta}
+                value={values[path] ?? ''}
+                onChange={handleChange}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="border-t border-zinc-800 bg-[#0d0d0d]">
+      <div className="px-3 py-2 flex items-center justify-between border-b border-zinc-800/50">
+        <span className="text-xs font-mono uppercase tracking-widest text-zinc-500 flex items-center gap-1.5">
+          <Pencil size={11} />
+          {schemaName}
+        </span>
+        <button
+          type="button"
+          onClick={() => setShowAdvanced(v => !v)}
+          className="flex items-center gap-1 text-[10px] font-mono text-zinc-600 hover:text-zinc-400 transition-colors"
+          aria-expanded={showAdvanced}
+        >
+          <SlidersHorizontal size={10} />
+          {showAdvanced ? 'Weniger' : 'Erweitert'}
+        </button>
+      </div>
+
+      <div className="px-2 py-3 max-h-80 overflow-y-auto">
+        {/* Core fields */}
+        {groups.map(g => renderGroup(g, coreFields))}
+
+        {/* Advanced fields (progressive disclosure) */}
+        {showAdvanced && advancedFields.length > 0 && (
+          <div className="mt-2 pt-2 border-t border-zinc-800/50">
+            <div className="text-[10px] font-mono text-zinc-700 mb-2 px-1 uppercase tracking-widest">
+              Erweiterte Einstellungen
+            </div>
+            {groups.map(g => renderGroup(g, advancedFields))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 
 interface NavItem {
   label: string
@@ -140,6 +332,13 @@ function SidebarContent({
   onNavigate,
   onLogout,
 }: CmsSidebarProps) {
+  // Try to resolve the active schema for the current route for the inline editor
+  const activeSchemaEntry = Object.entries(SCHEMA_ROUTE_MAP).find(([, route]) => route === currentRoute)
+  const activeSchemaName = activeSchemaEntry?.[0] ?? null
+
+  // CmsEditContext — returns default no-op context when used outside provider
+  const editCtx = useCmsEdit()
+
   return (
     <div className="flex flex-col h-full">
       {/* Header / Logo */}
@@ -156,6 +355,24 @@ function SidebarContent({
           </div>
         </div>
       </div>
+
+      {/* Currently-editing indicator (from CmsEditContext / PreviewFrame click) */}
+      {editCtx?.editorOpen && editCtx.selectedPath && (
+        <div className="flex items-center justify-between px-3 py-2 bg-red-900/10 border-b border-red-500/20">
+          <span className="text-[10px] font-mono text-red-400 flex items-center gap-1.5 truncate">
+            <Pencil size={10} />
+            {editCtx.selectedPath}
+          </span>
+          <button
+            type="button"
+            onClick={() => editCtx.closeEditor()}
+            className="text-zinc-600 hover:text-zinc-400 ml-2 flex-shrink-0"
+            aria-label="Inline-Editor schließen"
+          >
+            <X size={12} />
+          </button>
+        </div>
+      )}
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-1" aria-label="CMS Navigation">
@@ -183,6 +400,11 @@ function SidebarContent({
           ))}
         </div>
       </nav>
+
+      {/* Schema-driven inline editor for the currently active section */}
+      {activeSchemaName && (
+        <InlineEditorPanel schemaName={activeSchemaName} />
+      )}
 
       {/* Logout */}
       {onLogout && (

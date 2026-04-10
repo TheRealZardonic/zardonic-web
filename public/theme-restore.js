@@ -15,3 +15,13 @@ try {
     }
   }
 } catch(e) { /* ignore – private browsing or parse error */ }
+
+// Restore the loader type so the correct loading screen variant renders
+// from the very first React frame, preventing a flash of the default loader.
+// The 'nk-loader-type' key is written by App.tsx when KV settings arrive.
+try {
+  var _lt = localStorage.getItem('nk-loader-type');
+  if (_lt) {
+    document.documentElement.setAttribute('data-loader-type', _lt);
+  }
+} catch(e) { /* ignore */ }

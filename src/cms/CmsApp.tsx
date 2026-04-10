@@ -7,6 +7,7 @@ import { useCmsRoute } from './hooks/useCmsRoute'
 import { CmsRouter } from './CmsRouter'
 import { CmsSidebar } from './CmsSidebar'
 import { CmsLayout } from './CmsLayout'
+import { CmsEditProvider } from './CmsEditContext'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -77,18 +78,20 @@ function CmsInner({ logout }: { logout: () => Promise<void> }) {
 
   return (
     <div className="flex h-screen bg-[#0a0a0a] overflow-hidden">
-      <CmsSidebar
-        currentRoute={route}
-        onNavigate={navigate}
-        onLogout={() => void logout()}
-      />
-      <div className="flex-1 flex flex-col min-w-0">
-        <CmsLayout currentRoute={route} onNavigate={navigate}>
-          <Suspense fallback={<CmsLoadingFallback />}>
-            <CmsRouter route={route} />
-          </Suspense>
-        </CmsLayout>
-      </div>
+      <CmsEditProvider>
+        <CmsSidebar
+          currentRoute={route}
+          onNavigate={navigate}
+          onLogout={() => void logout()}
+        />
+        <div className="flex-1 flex flex-col min-w-0">
+          <CmsLayout currentRoute={route} onNavigate={navigate}>
+            <Suspense fallback={<CmsLoadingFallback />}>
+              <CmsRouter route={route} />
+            </Suspense>
+          </CmsLayout>
+        </div>
+      </CmsEditProvider>
     </div>
   )
 }
