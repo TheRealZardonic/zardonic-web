@@ -623,7 +623,6 @@ export interface Release {
   type?: '' | 'album' | 'ep' | 'single' | 'remix' | 'compilation'
   description?: string
   tracks?: Array<{ title: string; duration?: string }>
-  isEnriched?: boolean
   streamingLinks?: {
     spotify?: string
     soundcloud?: string

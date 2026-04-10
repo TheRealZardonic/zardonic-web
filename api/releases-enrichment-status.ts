@@ -1,10 +1,7 @@
 /**
  * GET /api/releases-enrichment-status
  *
- * Returns counts and the list of releases that still need enrichment
- * (isEnriched !== true), so the admin frontend can orchestrate
- * per-release sync calls with a live progress indicator.
- *
+ * Returns the total count of releases stored in KV.
  * Requires a valid admin session.
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node'
@@ -16,7 +13,6 @@ const BAND_DATA_KEY = 'band-data'
 interface Release {
   id: string
   title: string
-  isEnriched?: boolean
   [key: string]: unknown
 }
 
@@ -40,13 +36,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   const data = await redis.get<SiteData>(BAND_DATA_KEY)
   const releases: Release[] = data?.releases ?? []
 
-  const pending = releases
-    .filter(r => !r.isEnriched)
-    .map(r => ({ id: r.id, title: r.title as string }))
-
   res.status(200).json({
     total: releases.length,
-    pendingCount: pending.length,
-    pending,
+    pendingCount: 0,
+    pending: [],
   })
 }

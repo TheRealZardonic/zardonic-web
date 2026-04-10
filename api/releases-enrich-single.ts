@@ -14,11 +14,9 @@
  *  4. Pass the best available URL to Odesli (MusicBrainz Spotify >
  *     MusicBrainz Apple Music > existing Apple Music on release) to
  *     collect all streaming links.
- *  5. Merge metadata + links into the release, set isEnriched = true,
- *     persist back to Redis.
+ *  5. Merge metadata + links into the release, persist back to Redis.
  *  6. Return the enriched release + a detailed status message.
  *
- * Bypasses the isEnriched flag so admins can force a re-sync.
  * Requires a valid admin session.
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node'
@@ -58,7 +56,6 @@ interface Release {
   description?: string
   tracks?: Track[]
   trackCount?: number
-  isEnriched?: boolean
 }
 
 interface SiteData {
@@ -200,7 +197,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     delete (updated as any).tidal
     delete (updated as any).amazonMusic
 
-    updated.isEnriched = true
+    updated.streamingLinks = newLinks
     const updatedReleases = releases.map(r => (r.id === id ? updated : r))
     await redis.set(BAND_DATA_KEY, { ...(existing ?? {}), releases: updatedReleases })
 

@@ -3,7 +3,6 @@ import { useState, useCallback } from 'react'
 import { TabsContent } from '@/components/ui/tabs'
 import { Export, ArrowSquareIn, ArrowsClockwise, MapPin } from '@phosphor-icons/react'
 import type { SiteData } from '@/App'
-import { ReleaseEnrichProgress, type PendingRelease } from '@/components/admin/ReleaseEnrichProgress'
 
 interface DataTabProps {
   siteData: SiteData | undefined
@@ -15,25 +14,9 @@ interface DataTabProps {
   onFetchITunes?: () => Promise<void>
 }
 
-export default function DataTab({ siteData, onImportData, onRefreshSiteData, onExport, onImportClick, onFetchBandsintown, onFetchITunes }: DataTabProps) {
-  const [syncState, setSyncState] = useState<'idle' | 'loading' | 'open'>('idle')
-  const [pendingReleases, setPendingReleases] = useState<PendingRelease[]>([])
+export default function DataTab({ siteData, onRefreshSiteData, onExport, onImportClick, onFetchBandsintown, onFetchITunes }: DataTabProps) {
   const [isGigsSyncing, setIsGigsSyncing] = useState(false)
-  const [isITunesSyncing, setIsITunesSyncing] = useState(false)
-
-  const handleSyncClick = useCallback(async () => {
-    setSyncState('loading')
-    try {
-      const resp = await fetch('/api/releases-enrichment-status', { credentials: 'include' })
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
-      const data = await resp.json()
-      setPendingReleases(data.pending ?? [])
-      setSyncState('open')
-    } catch (e) {
-      console.error('[DataTab] Failed to fetch enrichment status:', e)
-      setSyncState('idle')
-    }
-  }, [])
+  const [isReleasesSyncing, setIsReleasesSyncing] = useState(false)
 
   const handleGigsSync = useCallback(async () => {
     if (!onFetchBandsintown || isGigsSyncing) return
@@ -45,15 +28,16 @@ export default function DataTab({ siteData, onImportData, onRefreshSiteData, onE
     }
   }, [onFetchBandsintown, isGigsSyncing])
 
-  const handleITunesSync = useCallback(async () => {
-    if (!onFetchITunes || isITunesSyncing) return
-    setIsITunesSyncing(true)
+  const handleReleasesSync = useCallback(async () => {
+    if (!onFetchITunes || isReleasesSyncing) return
+    setIsReleasesSyncing(true)
     try {
       await onFetchITunes()
+      onRefreshSiteData?.()
     } finally {
-      setIsITunesSyncing(false)
+      setIsReleasesSyncing(false)
     }
-  }, [onFetchITunes, isITunesSyncing])
+  }, [onFetchITunes, isReleasesSyncing, onRefreshSiteData])
 
   return (
     <TabsContent value="data" className="flex-1 overflow-y-auto p-4 space-y-4 mt-0">
@@ -83,7 +67,6 @@ export default function DataTab({ siteData, onImportData, onRefreshSiteData, onE
 
         <button
           onClick={onImportClick}
-          disabled={!onImportData}
           className="w-full flex items-center gap-4 p-4 bg-background border border-border rounded-md hover:border-primary text-left transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <ArrowSquareIn size={20} weight="bold" className="text-blue-500 shrink-0" />
@@ -97,50 +80,29 @@ export default function DataTab({ siteData, onImportData, onRefreshSiteData, onE
           </div>
         </button>
 
-        {/* ── Release Enrichment ─────────────────────────────────────────── */}
+        {/* ── Manual Sync ──────────────────────────────────────────────── */}
         <div className="border-t border-border pt-3 space-y-2">
           <h4 className="font-mono text-xs font-bold text-primary uppercase tracking-wider mb-3">
             Manual Sync
           </h4>
 
-          {/* iTunes Sync */}
+          {/* Releases Sync (iTunes → MusicBrainz → Odesli) */}
           <button
-            onClick={handleITunesSync}
-            disabled={isITunesSyncing || !onFetchITunes}
+            onClick={handleReleasesSync}
+            disabled={isReleasesSyncing || !onFetchITunes}
             className="w-full flex items-center gap-4 p-4 bg-background border border-border rounded-md hover:border-primary text-left transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ArrowsClockwise
               size={20}
               weight="bold"
-              className={`text-blue-400 shrink-0 ${isITunesSyncing ? 'animate-spin' : ''}`}
+              className={`text-primary shrink-0 ${isReleasesSyncing ? 'animate-spin' : ''}`}
             />
             <div>
               <div className="font-mono text-sm font-bold group-hover:text-primary transition-colors">
-                {isITunesSyncing ? 'Syncing iTunes…' : 'Sync Releases (iTunes)'}
+                {isReleasesSyncing ? 'Syncing Releases…' : 'Sync Releases'}
               </div>
               <div className="font-mono text-xs text-muted-foreground">
-                Fetches latest releases from iTunes — updates artwork, titles, release dates
-              </div>
-            </div>
-          </button>
-
-          {/* Release Enrichment */}
-          <button
-            onClick={handleSyncClick}
-            disabled={syncState === 'loading'}
-            className="w-full flex items-center gap-4 p-4 bg-background border border-border rounded-md hover:border-primary text-left transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ArrowsClockwise
-              size={20}
-              weight="bold"
-              className={`text-primary shrink-0 ${syncState === 'loading' ? 'animate-spin' : ''}`}
-            />
-            <div>
-              <div className="font-mono text-sm font-bold group-hover:text-primary transition-colors">
-                Enrich Releases (MusicBrainz + Odesli)
-              </div>
-              <div className="font-mono text-xs text-muted-foreground">
-                Enriches non-enriched releases one by one: type, tracklist, streaming links
+                Full sync: iTunes (fallback Spotify) → MusicBrainz metadata → Odesli streaming links. Overwrites all cached release data.
               </div>
             </div>
           </button>
@@ -167,14 +129,6 @@ export default function DataTab({ siteData, onImportData, onRefreshSiteData, onE
           </button>
         </div>
       </div>
-
-      {syncState === 'open' && (
-        <ReleaseEnrichProgress
-          releases={pendingReleases}
-          onClose={() => setSyncState('idle')}
-          onComplete={onRefreshSiteData}
-        />
-      )}
     </TabsContent>
   )
 }
