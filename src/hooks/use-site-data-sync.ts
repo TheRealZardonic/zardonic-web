@@ -17,22 +17,32 @@ const ODESLI_DELAY_MS = 2000
 /** Delay between sequential Nominatim geocoding requests (max 1 req/sec policy). */
 const NOMINATIM_DELAY_MS = 1000
 
+export interface SyncProgress {
+  current: number
+  total: number
+  currentTitle: string
+}
+
 export function useSiteDataSync(
   siteData: SiteData | undefined,
   setSiteData: React.Dispatch<React.SetStateAction<SiteData | undefined>>,
+  kvLoaded = false,
 ): {
   iTunesFetching: boolean
   bandsintownFetching: boolean
   hasAutoLoaded: boolean
+  iTunesProgress: SyncProgress | null
   handleFetchITunesReleases: (isAutoLoad?: boolean) => Promise<void>
   handleFetchBandsintownEvents: (isAutoLoad?: boolean) => Promise<void>
 } {
   const [iTunesFetching, setITunesFetching] = useState(false)
   const [bandsintownFetching, setBandsintownFetching] = useState(false)
   const [hasAutoLoaded, setHasAutoLoaded] = useState(false)
+  const [iTunesProgress, setITunesProgress] = useState<SyncProgress | null>(null)
 
   const handleFetchITunesReleases = useCallback(async (isAutoLoad = false) => {
     setITunesFetching(true)
+    setITunesProgress(null)
     try {
       const iTunesReleases = await fetchITunesReleases()
       if (iTunesReleases.length === 0) {
@@ -53,8 +63,12 @@ export function useSiteDataSync(
       let enrichedCount = 0
       let failedCount = 0
       if (!isAutoLoad) {
+        const total = iTunesReleases.filter(r => r.appleMusic).length
+        let current = 0
         for (const release of iTunesReleases) {
           if (!release.appleMusic) continue
+          current++
+          setITunesProgress({ current, total, currentTitle: release.title })
           try {
             const links = await fetchOdesliLinks(release.appleMusic)
             if (links) {
@@ -74,6 +88,7 @@ export function useSiteDataSync(
           // Respect Odesli rate limits — sequential with delay between requests
           await new Promise<void>(r => setTimeout(r, ODESLI_DELAY_MS))
         }
+        setITunesProgress(null)
       }
 
       let newCount = 0
@@ -142,6 +157,7 @@ export function useSiteDataSync(
       console.error(error)
     } finally {
       setITunesFetching(false)
+      setITunesProgress(null)
     }
   }, [setSiteData])
 
@@ -242,14 +258,12 @@ export function useSiteDataSync(
 
   // Auto-fetch iTunes releases and Bandsintown events on mount (with 24h cache)
   useEffect(() => {
-    if (!hasAutoLoaded && siteData) {
+    if (!hasAutoLoaded && siteData && kvLoaded) {
       setHasAutoLoaded(true)
       const now = Date.now()
       getSyncTimestamps().then(({ lastReleasesSync, lastGigsSync }) => {
         if (now - lastReleasesSync > CACHE_DURATION_MS || siteData.releases.length === 0) {
-          handleFetchITunesReleases(true).then(() => {
-            updateReleasesSync(Date.now())
-          })
+          handleFetchITunesReleases(true)
         }
         // Also refresh if all stored gigs are in the past (no upcoming gigs visible)
         const today = new Date()
@@ -259,13 +273,11 @@ export function useSiteDataSync(
           return parseGigDate(g.date) >= today
         })
         if (now - lastGigsSync > CACHE_DURATION_MS || siteData.gigs.length === 0 || !hasUpcomingGigs) {
-          handleFetchBandsintownEvents(true).then(() => {
-            updateGigsSync(Date.now())
-          })
+          handleFetchBandsintownEvents(true)
         }
       })
     }
-  }, [hasAutoLoaded, siteData, handleFetchITunesReleases, handleFetchBandsintownEvents])
+  }, [hasAutoLoaded, siteData, kvLoaded, handleFetchITunesReleases, handleFetchBandsintownEvents])
 
-  return { iTunesFetching, bandsintownFetching, hasAutoLoaded, handleFetchITunesReleases, handleFetchBandsintownEvents }
+  return { iTunesFetching, bandsintownFetching, hasAutoLoaded, iTunesProgress, handleFetchITunesReleases, handleFetchBandsintownEvents }
 }

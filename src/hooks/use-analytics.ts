@@ -183,6 +183,15 @@ function getOrCreateSessionId(): string {
 
 // ─── Server communication ─────────────────────────────────────────────────────
 
+/** Module-level rate-limit state for analytics POSTs — max 10 per 60s window. */
+const ANALYTICS_RATE_LIMIT = 10
+const ANALYTICS_RATE_WINDOW_MS = 60_000
+let _analyticsWindowStart = 0
+let _analyticsPostCount = 0
+
+/** Deduplicate section_view events — each section is only tracked once per session. */
+const _trackedSections = new Set<string>()
+
 /** Fire-and-forget POST of an individual analytics event to the server */
 function sendToServer(payload: {
   type: string
@@ -190,6 +199,15 @@ function sendToServer(payload: {
   meta?: Record<string, string | undefined>
   heatmap?: { x: number; y: number; page: string; elementTag: string }
 }): void {
+  // Client-side rate limiting: max ANALYTICS_RATE_LIMIT POSTs per window
+  const now = Date.now()
+  if (now - _analyticsWindowStart > ANALYTICS_RATE_WINDOW_MS) {
+    _analyticsWindowStart = now
+    _analyticsPostCount = 0
+  }
+  if (_analyticsPostCount >= ANALYTICS_RATE_LIMIT) return
+  _analyticsPostCount++
+
   try {
     const body = JSON.stringify(payload)
     if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
@@ -346,6 +364,10 @@ export function trackPageView(): void {
 
 /** Track a section becoming visible (IntersectionObserver) */
 export function trackSectionView(sectionId: string): void {
+  // Deduplicate: only track each section once per session
+  if (_trackedSections.has(sectionId)) return
+  _trackedSections.add(sectionId)
+
   const analytics = loadLocalAnalytics()
   analytics.sectionViews[sectionId] = (analytics.sectionViews[sectionId] || 0) + 1
   const dailyEntry = ensureDailyEntry(analytics)

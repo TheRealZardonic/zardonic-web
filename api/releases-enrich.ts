@@ -15,6 +15,13 @@ import { getRedisOrNull, isRedisConfigured } from './_redis.js'
 import { fetchWithRetry } from './_fetch-retry.js'
 import { validateSession } from './auth.js'
 import { timingSafeEqual } from 'node:crypto'
+import {
+  msToTime,
+  isTrustedHost,
+  mbTypeToReleaseType,
+  searchMusicBrainz,
+  fetchMusicBrainzRelease,
+} from './_musicbrainz.js'
 
 /** Constant-time string comparison to prevent timing-based CRON_SECRET enumeration. */
 function verifyCronSecret(provided: string): boolean {
@@ -146,14 +153,6 @@ function detectReleaseType(
   // 7+ tracks → album or compilation
   const isMainArtist = artistName.toLowerCase().includes(ARTIST_NAME.toLowerCase())
   return isMainArtist ? 'album' : 'compilation'
-}
-
-/** Format milliseconds to MM:SS */
-function msToTime(ms: number): string {
-  const totalSeconds = Math.round(ms / 1000)
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`
 }
 
 /** Fetch the tracklist for an iTunes collection. Returns empty array on failure. */
@@ -372,7 +371,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     let typeDetected = 0
     let tracklistsFetched = 0
     let enrichCount = 0
-    const MAX_ENRICH_PER_RUN = 3
+    const MAX_ENRICH_PER_RUN = Number(process.env.MAX_ENRICH_PER_RUN) || 10
+    /** Delay between MusicBrainz calls to respect their 1 req/sec policy. */
+    const MB_DELAY_MS = 1500
 
     const releasesArray = Array.from(existingById.values())
     for (const release of releasesArray) {
@@ -388,7 +389,54 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
         if (shouldEnrich) {
           if (enrichCount >= MAX_ENRICH_PER_RUN) continue
 
-          const { links, entityType } = await enrichWithOdesli(release, redis)
+          // ── MusicBrainz enrichment ────────────────────────────────────────
+          let mbSpotifyUrl: string | undefined
+          let mbAppleMusicUrl: string | undefined
+
+          try {
+            const mbSearch = await searchMusicBrainz(release.title, ARTIST_NAME)
+            if (mbSearch) {
+              const mbFull = await fetchMusicBrainzRelease(mbSearch.id)
+              if (mbFull) {
+                const detectedType = mbTypeToReleaseType(mbFull['primary-type'], mbFull['secondary-types'])
+                if (detectedType) updated.type = detectedType
+
+                if (mbFull.date) {
+                  updated.releaseDate = mbFull.date.length === 4 ? `${mbFull.date}-01-01` : mbFull.date
+                  updated.year = mbFull.date.slice(0, 4)
+                }
+
+                const allTracks: Array<{ title: string; duration?: string }> = []
+                for (const medium of mbFull.media ?? []) {
+                  for (const t of medium.tracks ?? []) {
+                    allTracks.push({ title: t.title, duration: t.length ? msToTime(t.length) : undefined })
+                  }
+                }
+                if (allTracks.length > 0) {
+                  updated.tracks = allTracks
+                  updated.trackCount = allTracks.length
+                }
+
+                for (const rel of mbFull.relations ?? []) {
+                  const u = rel.url?.resource ?? ''
+                  if (!mbSpotifyUrl && isTrustedHost(u, 'open.spotify.com'))  mbSpotifyUrl = u
+                  if (!mbAppleMusicUrl && isTrustedHost(u, 'music.apple.com')) mbAppleMusicUrl = u
+                }
+              }
+              // Respect MusicBrainz 1 req/sec policy before Odesli call
+              await delay(MB_DELAY_MS)
+            }
+          } catch (mbErr) {
+            console.warn(`[releases-enrich] MusicBrainz lookup failed for "${release.title}":`, mbErr)
+          }
+
+          // Use MusicBrainz Spotify URL for Odesli if available (better results)
+          const odesliLookupUrl = mbSpotifyUrl ?? mbAppleMusicUrl ?? release.appleMusic
+          const enrichTarget: Release = odesliLookupUrl
+            ? { ...release, appleMusic: odesliLookupUrl }
+            : release
+
+          const { links, entityType } = await enrichWithOdesli(enrichTarget, redis)
           odesliEntityType = entityType
 
           if (links.spotify) updated.spotify = links.spotify
@@ -409,9 +457,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
           await delay(ODESLI_DELAY_MS)
         }
 
-        // Auto-detect release type if not set
-        if (shouldDetectType) {
-          const trackCount = await fetchITunesTrackCount(release.id)
+        // Auto-detect release type if not set (and MusicBrainz didn't provide one)
+        if (shouldDetectType && !updated.type) {
+          // Only fetch track count from iTunes if MusicBrainz didn't already provide it
+          const trackCount = updated.trackCount ?? await fetchITunesTrackCount(release.id)
           updated.trackCount = trackCount
           const detectedType = detectReleaseType(
             release.title,
@@ -423,6 +472,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
             updated.type = detectedType
             typeDetected++
           }
+        } else if (shouldDetectType && updated.type) {
+          typeDetected++
         }
 
         existingById.set(release.id, updated)

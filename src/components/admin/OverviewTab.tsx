@@ -201,7 +201,10 @@ export default function OverviewTab({
                       <div>Set env: <code className="text-yellow-400">SANITY_API_TOKEN</code></div>
                       <div className="text-foreground/40">→ sanity.io</div>
                     </>)}
-                    {!['redis', 'spotify', 'bandsintown', 'itunes', 'sanity'].includes(service) && (
+                    {(service === 'musicbrainz' || service === 'odesli') && (
+                      <div className="text-foreground/40">Public API — no configuration needed</div>
+                    )}
+                    {!['redis', 'spotify', 'bandsintown', 'itunes', 'sanity', 'musicbrainz', 'odesli'].includes(service) && (
                       <div>See <code className="text-yellow-400">.env.example</code></div>
                     )}
                   </div>
