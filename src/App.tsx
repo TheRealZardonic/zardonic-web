@@ -251,7 +251,7 @@ function App() {
   }, [sectionOrder])
 
   useAppTheme(adminSettings)
-  const { iTunesFetching, bandsintownFetching, hasAutoLoaded, iTunesProgress, handleFetchBandsintownEvents, handleFetchITunesReleases } = useSiteDataSync(siteData, setSiteData, isSiteDataLoaded)
+  const { iTunesFetching, bandsintownFetching, hasAutoLoaded, iTunesProgress, handleFetchBandsintownEvents, handleFetchITunesReleases } = useSiteDataSync(siteData, handleUpdateSiteData, isSiteDataLoaded)
   useDocumentTitle(siteData?.artistName ?? '')
 
   // If the effective loader type is 'none' (either from localStorage or KV),

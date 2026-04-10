@@ -195,16 +195,10 @@ export default function OverviewTab({
                       <div>Set env: <code className="text-yellow-400">ITUNES_ARTIST_ID</code></div>
                       <div className="text-foreground/40">→ iTunes artist ID from store URL</div>
                     </>)}
-                    {service === 'sanity' && (<>
-                      <div>Set env: <code className="text-yellow-400">SANITY_PROJECT_ID</code></div>
-                      <div>Set env: <code className="text-yellow-400">SANITY_DATASET</code></div>
-                      <div>Set env: <code className="text-yellow-400">SANITY_API_TOKEN</code></div>
-                      <div className="text-foreground/40">→ sanity.io</div>
-                    </>)}
                     {(service === 'musicbrainz' || service === 'odesli') && (
                       <div className="text-foreground/40">Public API — no configuration needed</div>
                     )}
-                    {!['redis', 'spotify', 'bandsintown', 'itunes', 'sanity', 'musicbrainz', 'odesli'].includes(service) && (
+                    {!['redis', 'spotify', 'bandsintown', 'itunes', 'musicbrainz', 'odesli'].includes(service) && (
                       <div>See <code className="text-yellow-400">.env.example</code></div>
                     )}
                   </div>

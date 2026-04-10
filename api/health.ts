@@ -40,7 +40,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           itunes: process.env.ITUNES_ARTIST_ID ? 'configured' : 'unconfigured',
           musicbrainz: 'ok',
           odesli: 'ok',
-          sanity: process.env.SANITY_PROJECT_ID && process.env.SANITY_DATASET ? 'configured' : 'unconfigured',
           imageProxy: 'ok',
         },
         version: VERSION,

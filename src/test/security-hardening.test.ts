@@ -127,10 +127,6 @@ describe('vercel.json Content-Security-Policy', () => {
     expect(cspHeader.value).toContain('https://rest.bandsintown.com')
     expect(cspHeader.value).toContain('https://itunes.apple.com')
     expect(cspHeader.value).toContain('https://wsrv.nl')
-    // Sanity Content Lake (CMS)
-    expect(cspHeader.value).toContain('https://unz85dqo.api.sanity.io')
-    expect(cspHeader.value).toContain('https://unz85dqo.apicdn.sanity.io')
-    expect(cspHeader.value).toContain('https://cdn.sanity.io')
   })
 
   it('restricts default-src to self', () => {
@@ -156,6 +152,10 @@ describe('vercel.json Content-Security-Policy', () => {
     expect(cspHeader.value).toContain('frame-src https://www.youtube-nocookie.com')
   })
 
+  it('allows blob: worker-src for Spotify SDK Web Worker', () => {
+    expect(cspHeader.value).toContain("worker-src blob:")
+  })
+
   it('does not allow connect-src to arbitrary external domains (only whitelisted APIs)', () => {
     // connect-src allows 'self' and specific whitelisted APIs — no wildcards
     const connectSrc = cspHeader.value.match(/connect-src ([^;]+)/)
@@ -166,8 +166,7 @@ describe('vercel.json Content-Security-Policy', () => {
     // Verify only known trusted origins are present
     const allowed = ["'self'", 'https://api.spotify.com', 'https://open.spotify.com',
       'https://spclient.wg.spotify.com',
-      'https://api.song.link', 'https://rest.bandsintown.com', 'https://itunes.apple.com', 'https://wsrv.nl',
-      'https://unz85dqo.api.sanity.io', 'https://unz85dqo.apicdn.sanity.io', 'https://cdn.sanity.io']
+      'https://api.song.link', 'https://rest.bandsintown.com', 'https://itunes.apple.com', 'https://wsrv.nl']
     const domains = connectSrcValue.split(/\s+/)
     for (const domain of domains) {
       expect(allowed).toContain(domain)

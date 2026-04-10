@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { SiteData, Gig, Release } from '@/lib/app-types'
-import { DEFAULT_SITE_DATA } from '@/lib/app-types'
 import { fetchITunesReleases } from '@/lib/itunes'
 import { fetchOdesliLinks } from '@/lib/odesli'
 import { fetchBandsintownEvents } from '@/lib/bandsintown'
@@ -9,7 +8,6 @@ import { parseGigDate } from '@/lib/utils'
 import { geocodeLocation } from '@/lib/geocode'
 import { inferReleaseTypeFromTitle } from '@/lib/release-type'
 import { toast } from 'sonner'
-import type React from 'react'
 
 const CACHE_DURATION_MS = 24 * 60 * 60 * 1000
 /** Delay between sequential Odesli API requests to respect rate limits. */
@@ -25,7 +23,7 @@ export interface SyncProgress {
 
 export function useSiteDataSync(
   siteData: SiteData | undefined,
-  setSiteData: React.Dispatch<React.SetStateAction<SiteData | undefined>>,
+  setSiteData: (updater: SiteData | ((current: SiteData) => SiteData)) => void,
   kvLoaded = false,
 ): {
   iTunesFetching: boolean
@@ -93,8 +91,7 @@ export function useSiteDataSync(
 
       let newCount = 0
       let updatedCount = 0
-      setSiteData((data) => {
-        const currentData = data || DEFAULT_SITE_DATA
+      setSiteData((currentData) => {
         const existingIds = new Set(currentData.releases.map(r => r.id))
         const newReleases: Release[] = iTunesReleases
           .filter(r => !existingIds.has(r.id))
@@ -208,8 +205,7 @@ export function useSiteDataSync(
 
       let newCount = 0
       let updatedCount = 0
-      setSiteData((data) => {
-        const currentData = data || DEFAULT_SITE_DATA
+      setSiteData((currentData) => {
         const existingIds = new Set(currentData.gigs.map(g => g.id))
         const newGigs: Gig[] = events
           .filter(e => !existingIds.has(e.id))
@@ -263,17 +259,14 @@ export function useSiteDataSync(
       for (const { id, location } of gigsNeedingPostGeocode) {
         const coords = await geocodeLocation(location)
         if (coords) {
-          setSiteData(data => {
-            if (!data) return data
-            return {
-              ...data,
-              gigs: data.gigs.map(g =>
-                g.id === id
-                  ? { ...g, latitude: coords.latitude, longitude: coords.longitude }
-                  : g
-              ),
-            }
-          })
+          setSiteData(data => ({
+            ...data,
+            gigs: data.gigs.map(g =>
+              g.id === id
+                ? { ...g, latitude: coords.latitude, longitude: coords.longitude }
+                : g
+            ),
+          }))
           geocodedCount++
         } else {
           geocodeFailed++
@@ -298,6 +291,9 @@ export function useSiteDataSync(
     } finally {
       setBandsintownFetching(false)
     }
+  // siteData?.gigs is read once at call-time for post-merge geocoding. Adding it
+  // to deps would recreate the callback on every data change → infinite re-render.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setSiteData])
 
   // Auto-fetch iTunes releases and Bandsintown events on mount (with 24h cache)
