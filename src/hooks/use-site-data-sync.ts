@@ -114,12 +114,30 @@ export function useSiteDataSync(
         newCount = newReleases.length
 
         // Update existing releases with better artwork from iTunes
-        // and apply type inference for those that still have no type
+        // and apply type inference for those that still have no type.
+        // On manual sync (!isAutoLoad), Odesli-enriched values always win and
+        // isEnriched is reset to false to force a fresh server-side enrichment.
         const updatedReleases = currentData.releases.map(existing => {
           const match = iTunesReleases.find(s => s.id === existing.id)
           if (match) {
             updatedCount++
             const inferredType = existing.type || inferReleaseTypeFromTitle(existing.title)
+            if (!isAutoLoad) {
+              return {
+                ...existing,
+                artwork: match.artwork || existing.artwork,
+                appleMusic: match.appleMusic || existing.appleMusic,
+                spotify: match.spotify || existing.spotify,
+                soundcloud: match.soundcloud || existing.soundcloud,
+                youtube: match.youtube || existing.youtube,
+                bandcamp: match.bandcamp || existing.bandcamp,
+                deezer: match.deezer || existing.deezer,
+                tidal: match.tidal || existing.tidal,
+                amazonMusic: match.amazonMusic || existing.amazonMusic,
+                type: match.type || inferredType || existing.type,
+                isEnriched: false,
+              }
+            }
             return {
               ...existing,
               artwork: match.artwork || existing.artwork,
@@ -231,10 +249,28 @@ export function useSiteDataSync(
         // Also update existing gigs with enriched data from API.
         // Use ?? (nullish coalescing) so that a valid "0.0" string coord from
         // Bandsintown is never discarded by falsy-value fallthrough.
+        // On manual sync (!isAutoLoad), venue/location/date are also refreshed
+        // from Bandsintown (falling back to existing values if the API returns empty).
         const updatedGigs = currentData.gigs.map(existing => {
           const match = events.find(e => e.id === existing.id)
           if (match) {
             updatedCount++
+            if (!isAutoLoad) {
+              return {
+                ...existing,
+                venue: match.venue || existing.venue,
+                location: match.location || existing.location,
+                date: match.date || existing.date,
+                lineup: match.lineup || existing.lineup,
+                streetAddress: match.streetAddress || existing.streetAddress,
+                postalCode: match.postalCode || existing.postalCode,
+                latitude: match.latitude ?? existing.latitude,
+                longitude: match.longitude ?? existing.longitude,
+                soldOut: match.soldOut ?? existing.soldOut,
+                startsAt: match.startsAt || existing.startsAt,
+                ticketUrl: match.ticketUrl || existing.ticketUrl,
+              }
+            }
             return {
               ...existing,
               lineup: match.lineup || existing.lineup,
