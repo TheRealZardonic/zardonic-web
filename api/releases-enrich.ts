@@ -155,9 +155,6 @@ function detectReleaseType(
   return isMainArtist ? 'album' : 'compilation'
 }
 
-/** Format milliseconds to MM:SS — imported from _musicbrainz.ts, this alias is kept for backward compat */
-// msToTime is imported from ./_musicbrainz.js above
-
 /** Fetch the tracklist for an iTunes collection. Returns empty array on failure. */
 async function fetchITunesTracklist(collectionId: string): Promise<Array<{ title: string; duration?: string }>> {
   try {
@@ -462,8 +459,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
         // Auto-detect release type if not set (and MusicBrainz didn't provide one)
         if (shouldDetectType && !updated.type) {
-          const trackCount = await fetchITunesTrackCount(release.id)
-          updated.trackCount = updated.trackCount ?? trackCount
+          // Only fetch track count from iTunes if MusicBrainz didn't already provide it
+          const trackCount = updated.trackCount ?? await fetchITunesTrackCount(release.id)
+          updated.trackCount = trackCount
           const detectedType = detectReleaseType(
             release.title,
             trackCount,
