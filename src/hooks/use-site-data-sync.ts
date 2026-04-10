@@ -14,7 +14,6 @@ export interface SyncProgress {
 
 export function useSiteDataSync(
   siteData: SiteData | undefined,
-  _setSiteData: (updater: SiteData | ((current: SiteData) => SiteData)) => void,
   kvLoaded = false,
   refetchSiteData?: () => void,
   isOwner?: boolean,

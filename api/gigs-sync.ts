@@ -34,7 +34,7 @@ function verifyCronSecret(provided: string): boolean {
 const BANDSINTOWN_API_BASE = 'https://rest.bandsintown.com'
 const ARTIST_NAME = 'Zardonic'
 const BAND_DATA_KEY = 'band-data'
-const NOMINATIM_DELAY_MS = 1100 // Nominatim policy: max 1 req/sec
+const NOMINATIM_DELAY_MS = 1100 // 100ms safety margin above Nominatim's 1 req/sec policy
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -228,7 +228,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     }
 
     // 4. Load existing band-data from Redis
-    const redis = getRedisOrNull()!
+    const redis = getRedisOrNull()
+    if (!redis) {
+      res.status(503).json({ error: 'Redis not configured' })
+      return
+    }
     const existing = await redis.get<SiteData>(BAND_DATA_KEY)
     const existingGigs: Gig[] = existing?.gigs ?? []
     const existingById = new Map(existingGigs.map(g => [g.id, g]))
