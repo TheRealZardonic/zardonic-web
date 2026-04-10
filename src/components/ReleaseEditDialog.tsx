@@ -38,7 +38,9 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
 
   useEffect(() => {
     if (release) {
-      const links = release.streamingLinks || {}
+      const getLink = (arr: any[], plat: string) => arr?.find((l: any) => l.platform === plat)?.url || ''
+      const links = release.streamingLinks || []
+      
       setFormData({
         title: release.title,
         type: release.type || '',
@@ -46,12 +48,12 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
         releaseDate: release.releaseDate || '',
         description: release.description || '',
         featured: release.featured || false,
-        spotify: links.spotify || '',
-        soundcloud: links.soundcloud || '',
-        bandcamp: links.bandcamp || '',
-        youtube: links.youtube || '',
-        appleMusic: links.appleMusic || '',
-        beatport: links.beatport || ''
+        spotify: getLink(links, 'spotify'),
+        soundcloud: getLink(links, 'soundcloud'),
+        bandcamp: getLink(links, 'bandcamp'),
+        youtube: getLink(links, 'youtube'),
+        appleMusic: getLink(links, 'appleMusic'),
+        beatport: getLink(links, 'beatport')
       })
       setTracks(release.tracks || [])
     }
@@ -98,18 +100,18 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
         toast.error(err.error ?? 'Odesli sync failed')
         return
       }
-      const { release: enriched } = await resp.json()
-      const links: Record<string, string> = {}
-      for (const link of enriched?.streamingLinks ?? []) {
-        links[link.platform] = link.url
-      }
+      
+      const { release: enrichedRelease } = await resp.json()
+      const getLink = (arr: any[], plat: string) => arr?.find((l: any) => l.platform === plat)?.url || ''
+      
       setFormData(prev => ({
         ...prev,
-        spotify: prev.spotify || links['spotify'] || '',
-        soundcloud: prev.soundcloud || links['soundcloud'] || '',
-        youtube: prev.youtube || links['youtube'] || '',
-        bandcamp: prev.bandcamp || links['bandcamp'] || '',
-        appleMusic: prev.appleMusic || links['appleMusic'] || '',
+        spotify: getLink(enrichedRelease.streamingLinks, 'spotify') || prev.spotify,
+        soundcloud: getLink(enrichedRelease.streamingLinks, 'soundcloud') || prev.soundcloud,
+        youtube: getLink(enrichedRelease.streamingLinks, 'youtube') || prev.youtube,
+        bandcamp: getLink(enrichedRelease.streamingLinks, 'bandcamp') || prev.bandcamp,
+        appleMusic: getLink(enrichedRelease.streamingLinks, 'appleMusic') || prev.appleMusic,
+        beatport: getLink(enrichedRelease.streamingLinks, 'beatport') || prev.beatport,
       }))
       toast.success('Odesli sync complete')
     } catch {
@@ -132,13 +134,11 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
       let appleMusic = formData.appleMusic || undefined
       const beatport = formData.beatport || undefined
 
-      // Use the first available streaming link to look up the rest via Odesli
       const lookupUrl = formData.spotify || formData.appleMusic || formData.soundcloud || formData.youtube || formData.bandcamp
       if (lookupUrl) {
         try {
           const odesliResult = await fetchOdesliLinks(lookupUrl)
           if (odesliResult) {
-            // Only fill in missing values — never overwrite user entries
             spotify = spotify || odesliResult.spotify
             appleMusic = appleMusic || odesliResult.appleMusic
             soundcloud = soundcloud || odesliResult.soundcloud
@@ -148,10 +148,17 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
             toast.success('Streaming links enriched via Odesli')
           }
         } catch (error) {
-          // Odesli lookup failed — save with the data we have
-          console.error('Odesli enrichment failed, saving without enrichment', error)
+          console.error('Odesli enrichment failed', error)
         }
       }
+
+      const streamingLinksArray = []
+      if (spotify) streamingLinksArray.push({ platform: 'spotify', url: spotify })
+      if (soundcloud) streamingLinksArray.push({ platform: 'soundcloud', url: soundcloud })
+      if (bandcamp) streamingLinksArray.push({ platform: 'bandcamp', url: bandcamp })
+      if (youtube) streamingLinksArray.push({ platform: 'youtube', url: youtube })
+      if (appleMusic) streamingLinksArray.push({ platform: 'appleMusic', url: appleMusic })
+      if (beatport) streamingLinksArray.push({ platform: 'beatport', url: beatport })
 
       onSave({
         id: release?.id || Date.now().toString(),
@@ -161,7 +168,7 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
         releaseDate: formData.releaseDate || undefined,
         description: formData.description || undefined,
         featured: formData.featured || undefined,
-        streamingLinks: { spotify, soundcloud, bandcamp, youtube, appleMusic, beatport },
+        streamingLinks: streamingLinksArray,
         tracks: tracks.length > 0 ? tracks : undefined
       })
     } finally {
