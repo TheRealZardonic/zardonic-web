@@ -25,11 +25,17 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { getRedisOrNull, isRedisConfigured } from './_redis.js'
 import { fetchWithRetry } from './_fetch-retry.js'
 import { validateSession } from './auth.js'
+import {
+  msToTime,
+  isTrustedHost,
+  mbTypeToReleaseType,
+  inferTypeFromTitle,
+  searchMusicBrainz,
+  fetchMusicBrainzRelease,
+} from './_musicbrainz.js'
 
 const BAND_DATA_KEY = 'band-data'
-const ARTIST_NAME = 'Zardonic'
 const ODESLI_CACHE_TTL = 86_400
-const MB_USER_AGENT = 'ZardonicWebsite/1.0 (https://zardonic.com)'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -64,44 +70,6 @@ interface SiteData {
   [key: string]: unknown
 }
 
-interface MbSearchRelease {
-  id: string
-  title: string
-  date?: string
-  'primary-type'?: string
-  'secondary-types'?: string[]
-  score?: number
-}
-
-interface MbSearchResponse {
-  releases?: MbSearchRelease[]
-}
-
-interface MbTrack {
-  position: number
-  title: string
-  length?: number
-}
-
-interface MbMedium {
-  tracks?: MbTrack[]
-}
-
-interface MbRelation {
-  type: string
-  url?: { resource: string }
-}
-
-interface MbFullRelease {
-  id: string
-  title: string
-  date?: string
-  'primary-type'?: string
-  'secondary-types'?: string[]
-  media?: MbMedium[]
-  relations?: MbRelation[]
-}
-
 interface OdesliLink { url: string }
 
 interface OdesliResponse {
@@ -121,63 +89,8 @@ interface OdesliResponse {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function msToTime(ms: number): string {
-  const s = Math.round(ms / 1000)
-  return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`
-}
-
 function odesliCacheKey(url: string): string {
   return `odesli:links:${url.replace(/^https?:\/\//, '').replace(/[^a-zA-Z0-9._/-]/g, '_').slice(0, 200)}`
-}
-
-/**
- * Check whether a URL's hostname exactly matches `host` or is a subdomain of it.
- * Guards against URLs like "https://evil.com/open.spotify.com" or
- * "https://open.spotify.com.evil.com" that would otherwise pass a naive .includes() check.
- */
-function isTrustedHost(url: string, host: string): boolean {
-  try {
-    const h = new URL(url).hostname.toLowerCase()
-    return h === host || h.endsWith(`.${host}`)
-  } catch { return false }
-}
-
-function mbTypeToReleaseType(
-  primary?: string,
-  secondary?: string[],
-): '' | 'album' | 'ep' | 'single' | 'remix' | 'compilation' {
-  const sec = (secondary ?? []).map(s => s.toLowerCase())
-  if (sec.includes('compilation'))       return 'compilation'
-  if (sec.includes('remix'))             return 'remix'
-  if (sec.includes('mixtape/street'))    return 'compilation'
-  const p = (primary ?? '').toLowerCase()
-  if (p === 'single') return 'single'
-  if (p === 'ep')     return 'ep'
-  if (p === 'album')  return 'album'
-  return ''
-}
-
-function inferTypeFromTitle(title: string): '' | 'album' | 'ep' | 'single' | 'remix' | 'compilation' {
-  const l = title.toLowerCase()
-  if (l.includes('compilation') || l.includes('best of') || l.includes('greatest hits')) return 'compilation'
-  if (l.includes('remix') || l.includes('remixes') || l.includes('rmx') || l.includes(' mix')) return 'remix'
-  return ''
-}
-
-async function searchMusicBrainz(title: string): Promise<MbSearchRelease | null> {
-  const query = `release:"${title}" AND artist:${ARTIST_NAME}`
-  const url = `https://musicbrainz.org/ws/2/release/?query=${encodeURIComponent(query)}&fmt=json&limit=5`
-  const res = await fetchWithRetry(url, { headers: { 'User-Agent': MB_USER_AGENT } })
-  if (!res.ok) return null
-  const data: MbSearchResponse = await res.json()
-  return data.releases?.[0] ?? null
-}
-
-async function fetchMusicBrainzRelease(mbid: string): Promise<MbFullRelease | null> {
-  const url = `https://musicbrainz.org/ws/2/release/${mbid}?inc=recordings+url-rels&fmt=json`
-  const res = await fetchWithRetry(url, { headers: { 'User-Agent': MB_USER_AGENT } })
-  if (!res.ok) return null
-  return res.json() as Promise<MbFullRelease>
 }
 
 async function fetchOdesliLinks(

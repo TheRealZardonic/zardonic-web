@@ -292,9 +292,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     return
   }
 
-  // Rate limiting — blocks analytics spam / DoS (GDPR-compliant, IP is hashed)
-  const allowed = await applyRateLimit(req, res)
-  if (!allowed) return
+  // Rate limiting — only applied to non-POST methods (admin reads).
+  // Analytics POSTs are public, fire-and-forget events; rate-limiting them
+  // causes visible console errors (429) without meaningful security benefit
+  // since the payload is already validated + sanitized below.
+  if (req.method !== 'POST') {
+    const allowed = await applyRateLimit(req, res)
+    if (!allowed) return
+  }
 
   if (!isRedisConfigured()) {
     res.status(503).json({

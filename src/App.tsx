@@ -239,7 +239,7 @@ function App() {
   }, [sectionOrder])
 
   useAppTheme(adminSettings)
-  const { iTunesFetching, bandsintownFetching, hasAutoLoaded, handleFetchBandsintownEvents, handleFetchITunesReleases } = useSiteDataSync(siteData, setSiteData)
+  const { iTunesFetching, bandsintownFetching, hasAutoLoaded, iTunesProgress, handleFetchBandsintownEvents, handleFetchITunesReleases } = useSiteDataSync(siteData, setSiteData, isSiteDataLoaded)
   useDocumentTitle(siteData?.artistName ?? '')
 
   // When loading screen type is 'none', skip loading immediately
@@ -630,6 +630,7 @@ function App() {
         headingPrefix={sectionLabels.headingPrefix}
         iTunesFetching={iTunesFetching}
         hasAutoLoaded={hasAutoLoaded}
+        syncProgress={iTunesProgress}
         sectionLabels={sectionLabels}
         onLabelChange={editMode ? handleLabelChange : undefined}
         onReleaseClick={(release) => setCyberpunkOverlay({ type: 'release', data: release })}

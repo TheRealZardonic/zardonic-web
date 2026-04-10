@@ -20,6 +20,7 @@ interface AppReleasesSectionProps {
   adminSettings: AdminSettings | undefined
   iTunesFetching: boolean
   hasAutoLoaded: boolean
+  syncProgress?: { current: number; total: number; currentTitle: string } | null
   sectionLabels?: SectionLabels
   onLabelChange?: (key: keyof SectionLabels, value: string) => void
   onReleaseClick: (release: Release) => void
@@ -51,7 +52,7 @@ function toFullRelease(r: Release): FullRelease {
   }
 }
 
-export default function AppReleasesSection({ releases, sectionOrder, visible, editMode, sectionLabel, headingPrefix, adminSettings, iTunesFetching, hasAutoLoaded, sectionLabels, onLabelChange, onReleaseClick, onUpdateRelease, onDeleteRelease, onAddRelease, onRefreshReleases }: AppReleasesSectionProps) {
+export default function AppReleasesSection({ releases, sectionOrder, visible, editMode, sectionLabel, headingPrefix, adminSettings, iTunesFetching, hasAutoLoaded, syncProgress, sectionLabels, onLabelChange, onReleaseClick, onUpdateRelease, onDeleteRelease, onAddRelease, onRefreshReleases }: AppReleasesSectionProps) {
   const [showAllReleases, setShowAllReleases] = useState(false)
   const [editingRelease, setEditingRelease] = useState<FullRelease | null | 'new'>(null)
   const [activeFilter, setActiveFilter] = useState<'' | 'album' | 'ep' | 'single' | 'remix' | 'compilation'>('')
@@ -177,6 +178,25 @@ export default function AppReleasesSection({ releases, sectionOrder, visible, ed
                   </div>
                 </div>
               </Card>
+            ) : iTunesFetching && syncProgress && syncProgress.total > 0 ? (
+              <Card className="p-8 bg-card/50 border-border">
+                <div className="space-y-4 max-w-md mx-auto">
+                  <div className="flex justify-between items-center">
+                    <span className="font-mono text-xs text-muted-foreground uppercase tracking-wider">Enriching releases</span>
+                    <span className="font-mono text-xs text-primary">{syncProgress.current}/{syncProgress.total}</span>
+                  </div>
+                  <div className="h-1.5 bg-border/30 relative overflow-hidden rounded-full">
+                    <motion.div
+                      className="absolute inset-y-0 left-0 bg-primary rounded-full"
+                      animate={{ width: `${Math.round((syncProgress.current / syncProgress.total) * 100)}%` }}
+                      transition={{ duration: 0.3, ease: 'easeOut' }}
+                    />
+                  </div>
+                  <p className="font-mono text-xs text-muted-foreground truncate">
+                    ▸ {syncProgress.currentTitle}
+                  </p>
+                </div>
+              </Card>
             ) : releases.length === 0 ? (
               <Card className="p-12 text-center bg-card/50 border-border">
                 <p className="text-xl text-muted-foreground uppercase tracking-wide font-mono">
@@ -197,7 +217,9 @@ export default function AppReleasesSection({ releases, sectionOrder, visible, ed
                   const yearB = b.releaseDate ? new Date(b.releaseDate).getTime() : parseInt(b.year) || 0
                   return yearB - yearA
                 })
-                const filtered = activeFilter ? sorted.filter(r => r.type === activeFilter) : sorted
+                const filtered = activeFilter
+                  ? sorted.filter(r => r.type === activeFilter || (activeFilter === 'album' && !r.type))
+                  : sorted
                 const visibleReleases = showAllReleases ? filtered : filtered.slice(0, 8)
                 return (
                   <>
