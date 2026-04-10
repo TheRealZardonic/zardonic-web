@@ -1,19 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { SiteData, Gig, Release } from '@/lib/app-types'
-import { fetchITunesReleases } from '@/lib/itunes'
-import { fetchOdesliLinks } from '@/lib/odesli'
-import { fetchBandsintownEvents } from '@/lib/bandsintown'
+import type { SiteData } from '@/lib/app-types'
 import { getSyncTimestamps, updateReleasesSync, updateGigsSync } from '@/lib/sync'
 import { parseGigDate } from '@/lib/utils'
-import { geocodeLocation } from '@/lib/geocode'
-import { inferReleaseTypeFromTitle } from '@/lib/release-type'
 import { toast } from 'sonner'
 
 const CACHE_DURATION_MS = 24 * 60 * 60 * 1000
-/** Delay between sequential Odesli API requests to respect rate limits. */
-const ODESLI_DELAY_MS = 2000
-/** Delay between sequential Nominatim geocoding requests (max 1 req/sec policy). */
-const NOMINATIM_DELAY_MS = 1000
 
 export interface SyncProgress {
   current: number
@@ -23,8 +14,10 @@ export interface SyncProgress {
 
 export function useSiteDataSync(
   siteData: SiteData | undefined,
-  setSiteData: (updater: SiteData | ((current: SiteData) => SiteData)) => void,
+  _setSiteData: (updater: SiteData | ((current: SiteData) => SiteData)) => void,
   kvLoaded = false,
+  refetchSiteData?: () => void,
+  isOwner?: boolean,
 ): {
   iTunesFetching: boolean
   bandsintownFetching: boolean
@@ -42,302 +35,75 @@ export function useSiteDataSync(
     setITunesFetching(true)
     setITunesProgress(null)
     try {
-      const iTunesReleases = await fetchITunesReleases()
-      if (iTunesReleases.length === 0) {
-        if (!isAutoLoad) toast.info('No releases found on iTunes')
+      const response = await fetch('/api/releases-enrich', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}))
+        if (!isAutoLoad) toast.error(data?.error ?? 'Failed to sync releases from iTunes')
         return
       }
 
-      // Apply client-side type inference to every fetched release
-      for (const release of iTunesReleases) {
-        if (!release.type) {
-          const inferred = inferReleaseTypeFromTitle(release.title)
-          if (inferred) release.type = inferred
-        }
-      }
-
-      // Only enrich with Odesli on manual admin refresh (not on auto-load)
-      // to avoid exhausting the rate limit on every page load.
-      let enrichedCount = 0
-      let failedCount = 0
-      if (!isAutoLoad) {
-        const total = iTunesReleases.filter(r => r.appleMusic).length
-        let current = 0
-        for (const release of iTunesReleases) {
-          if (!release.appleMusic) continue
-          current++
-          setITunesProgress({ current, total, currentTitle: release.title })
-          try {
-            const links = await fetchOdesliLinks(release.appleMusic)
-            if (links) {
-              if (links.spotify) release.spotify = links.spotify
-              if (links.soundcloud) release.soundcloud = links.soundcloud
-              if (links.youtube) release.youtube = links.youtube
-              if (links.bandcamp) release.bandcamp = links.bandcamp
-              if (links.deezer) release.deezer = links.deezer
-              if (links.tidal) release.tidal = links.tidal
-              if (links.amazonMusic) release.amazonMusic = links.amazonMusic
-              enrichedCount++
-            }
-          } catch (e) {
-            failedCount++
-            console.error(`Odesli enrichment failed for ${release.title}:`, e)
-          }
-          // Respect Odesli rate limits — sequential with delay between requests
-          await new Promise<void>(r => setTimeout(r, ODESLI_DELAY_MS))
-        }
-        setITunesProgress(null)
-      }
-
-      let newCount = 0
-      let updatedCount = 0
-      setSiteData((currentData) => {
-        const existingIds = new Set(currentData.releases.map(r => r.id))
-        const newReleases: Release[] = iTunesReleases
-          .filter(r => !existingIds.has(r.id))
-          .map(r => ({
-            id: r.id,
-            title: r.title,
-            artwork: r.artwork,
-            year: r.releaseDate ? new Date(r.releaseDate).getFullYear().toString() : '',
-            releaseDate: r.releaseDate,
-            type: r.type,
-            spotify: r.spotify || '',
-            soundcloud: r.soundcloud || '',
-            youtube: r.youtube || '',
-            bandcamp: r.bandcamp || '',
-            appleMusic: r.appleMusic || '',
-            deezer: r.deezer || '',
-            tidal: r.tidal || '',
-            amazonMusic: r.amazonMusic || '',
-          }))
-        newCount = newReleases.length
-
-        // Update existing releases with better artwork from iTunes
-        // and apply type inference for those that still have no type.
-        // On manual sync (!isAutoLoad), Odesli-enriched values always win and
-        // isEnriched is reset to false to force a fresh server-side enrichment.
-        const updatedReleases = currentData.releases.map(existing => {
-          const match = iTunesReleases.find(s => s.id === existing.id)
-          if (match) {
-            updatedCount++
-            const inferredType = existing.type || inferReleaseTypeFromTitle(existing.title)
-            if (!isAutoLoad) {
-              return {
-                ...existing,
-                artwork: match.artwork || existing.artwork,
-                appleMusic: match.appleMusic || existing.appleMusic,
-                spotify: match.spotify || existing.spotify,
-                soundcloud: match.soundcloud || existing.soundcloud,
-                youtube: match.youtube || existing.youtube,
-                bandcamp: match.bandcamp || existing.bandcamp,
-                deezer: match.deezer || existing.deezer,
-                tidal: match.tidal || existing.tidal,
-                amazonMusic: match.amazonMusic || existing.amazonMusic,
-                type: match.type || inferredType || existing.type,
-                isEnriched: false,
-              }
-            }
-            return {
-              ...existing,
-              artwork: match.artwork || existing.artwork,
-              appleMusic: match.appleMusic || existing.appleMusic,
-              spotify: match.spotify || existing.spotify,
-              soundcloud: match.soundcloud || existing.soundcloud,
-              youtube: match.youtube || existing.youtube,
-              bandcamp: match.bandcamp || existing.bandcamp,
-              deezer: match.deezer || existing.deezer,
-              tidal: match.tidal || existing.tidal,
-              amazonMusic: match.amazonMusic || existing.amazonMusic,
-              type: match.type || inferredType || existing.type,
-            }
-          }
-          return existing
-        })
-
-        return { ...currentData, releases: [...updatedReleases, ...newReleases] }
-      })
-
-      if (!isAutoLoad) {
-        const parts: string[] = [
-          `Synced ${newCount} new, updated ${updatedCount} existing releases.`,
-          `${enrichedCount} enriched with streaming links.`,
-        ]
-        if (failedCount > 0) parts.push(`(${failedCount} failed)`)
-        toast.success(parts.join(' '))
-      }
-      // Always update the sync timestamp so the 24 h cache guard works correctly on
-      // the next page load, regardless of whether this was a manual or auto-load sync.
+      const data = await response.json()
+      refetchSiteData?.()
       updateReleasesSync(Date.now())
+
+      if (!isAutoLoad) {
+        const parts: string[] = []
+        if (typeof data.synced === 'number') parts.push(`${data.synced} releases synced from iTunes.`)
+        if (typeof data.enriched === 'number') parts.push(`${data.enriched} enriched with streaming links.`)
+        toast.success(parts.length > 0 ? parts.join(' ') : 'Releases synced successfully.')
+      }
     } catch (error) {
-      if (!isAutoLoad) toast.error('Failed to fetch releases from iTunes')
+      if (!isAutoLoad) toast.error('Failed to sync releases from iTunes')
       console.error(error)
     } finally {
       setITunesFetching(false)
       setITunesProgress(null)
     }
-  }, [setSiteData])
+  }, [refetchSiteData])
 
   const handleFetchBandsintownEvents = useCallback(async (isAutoLoad = false) => {
     setBandsintownFetching(true)
     try {
-      const events = await fetchBandsintownEvents()
-      if (events.length === 0) {
-        if (!isAutoLoad) toast.info('No upcoming events found on Bandsintown')
+      const response = await fetch('/api/gigs-sync', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}))
+        if (!isAutoLoad) toast.error(data?.error ?? 'Failed to fetch events from Bandsintown')
         return
       }
 
-      // Geocode events that are missing coordinates.
-      // Runs on both auto-load and manual sync so new gigs get coordinates
-      // persisted to KV immediately; the !latitude/!longitude guard prevents
-      // re-geocoding events that already have coordinates stored.
-      let geocodedCount = 0
-      let geocodeFailed = 0
-      for (const event of events) {
-        if (!event.latitude && !event.longitude && event.location) {
-          const coords = await geocodeLocation(event.location)
-          if (coords) {
-            event.latitude = coords.latitude
-            event.longitude = coords.longitude
-            geocodedCount++
-          } else {
-            geocodeFailed++
-          }
-          // Respect Nominatim's 1 req/sec policy
-          await new Promise<void>(r => setTimeout(r, NOMINATIM_DELAY_MS))
-        }
-      }
-
-      // Identify existing stored gigs without coords that won't be covered by
-      // the Bandsintown event merge (i.e. no matching event, or matching event
-      // also had no coords). Geocode these in a separate pass after the merge.
-      const gigsNeedingPostGeocode: { id: string; location: string }[] = (
-        siteData?.gigs ?? []
-      ).filter(g => {
-        if (g.latitude || g.longitude) return false   // already has coords
-        if (!g.location) return false                  // no location to geocode
-        const match = events.find(e => e.id === g.id)
-        if (match?.latitude || match?.longitude) return false  // match has coords
-        return true
-      }).map(g => ({ id: g.id, location: g.location }))
-
-      let newCount = 0
-      let updatedCount = 0
-      setSiteData((currentData) => {
-        const existingIds = new Set(currentData.gigs.map(g => g.id))
-        const newGigs: Gig[] = events
-          .filter(e => !existingIds.has(e.id))
-          .map(e => ({
-            id: e.id,
-            venue: e.venue,
-            location: e.location,
-            date: e.date,
-            ticketUrl: e.ticketUrl,
-            support: e.lineup?.filter(a => a.toLowerCase() !== 'zardonic').join(', ') || '',
-            lineup: e.lineup || [],
-            streetAddress: e.streetAddress,
-            postalCode: e.postalCode,
-            latitude: e.latitude,
-            longitude: e.longitude,
-            soldOut: e.soldOut,
-            startsAt: e.startsAt,
-            description: e.description,
-            title: e.title,
-          }))
-        newCount = newGigs.length
-
-        // Also update existing gigs with enriched data from API.
-        // Use ?? (nullish coalescing) so that a valid "0.0" string coord from
-        // Bandsintown is never discarded by falsy-value fallthrough.
-        // On manual sync (!isAutoLoad), venue/location/date are also refreshed
-        // from Bandsintown (falling back to existing values if the API returns empty).
-        const updatedGigs = currentData.gigs.map(existing => {
-          const match = events.find(e => e.id === existing.id)
-          if (match) {
-            updatedCount++
-            if (!isAutoLoad) {
-              return {
-                ...existing,
-                venue: match.venue || existing.venue,
-                location: match.location || existing.location,
-                date: match.date || existing.date,
-                lineup: match.lineup || existing.lineup,
-                streetAddress: match.streetAddress || existing.streetAddress,
-                postalCode: match.postalCode || existing.postalCode,
-                latitude: match.latitude ?? existing.latitude,
-                longitude: match.longitude ?? existing.longitude,
-                soldOut: match.soldOut ?? existing.soldOut,
-                startsAt: match.startsAt || existing.startsAt,
-                ticketUrl: match.ticketUrl || existing.ticketUrl,
-              }
-            }
-            return {
-              ...existing,
-              lineup: match.lineup || existing.lineup,
-              streetAddress: match.streetAddress || existing.streetAddress,
-              postalCode: match.postalCode || existing.postalCode,
-              latitude: match.latitude ?? existing.latitude,
-              longitude: match.longitude ?? existing.longitude,
-              soldOut: match.soldOut ?? existing.soldOut,
-              startsAt: match.startsAt || existing.startsAt,
-              ticketUrl: match.ticketUrl || existing.ticketUrl,
-            }
-          }
-          return existing
-        })
-
-        return { ...currentData, gigs: [...updatedGigs, ...newGigs] }
-      })
-
-      // Post-merge geocoding: geocode stored gigs that still have no coordinates
-      // (these are gigs stored before geocoding was added, or whose Bandsintown
-      // event also lacked coordinates and Nominatim geocoding was needed).
-      for (const { id, location } of gigsNeedingPostGeocode) {
-        const coords = await geocodeLocation(location)
-        if (coords) {
-          setSiteData(data => ({
-            ...data,
-            gigs: data.gigs.map(g =>
-              g.id === id
-                ? { ...g, latitude: coords.latitude, longitude: coords.longitude }
-                : g
-            ),
-          }))
-          geocodedCount++
-        } else {
-          geocodeFailed++
-        }
-        await new Promise<void>(r => setTimeout(r, NOMINATIM_DELAY_MS))
-      }
+      const data = await response.json()
+      refetchSiteData?.()
+      updateGigsSync(Date.now())
 
       if (!isAutoLoad) {
         const parts: string[] = [
-          `Synced ${newCount} new, updated ${updatedCount} existing gigs.`,
-          `${geocodedCount} geocoded.`,
+          `Synced ${data.newCount ?? 0} new, updated ${data.updatedCount ?? 0} existing gigs.`,
         ]
-        if (geocodeFailed > 0) parts.push(`(${geocodeFailed} failed)`)
+        if ((data.geocodedCount ?? 0) > 0) parts.push(`${data.geocodedCount} geocoded.`)
         toast.success(parts.join(' '))
       }
-      // Always update the sync timestamp so the 24 h cache guard works correctly on
-      // the next page load, regardless of whether this was a manual or auto-load sync.
-      updateGigsSync(Date.now())
     } catch (error) {
       if (!isAutoLoad) toast.error('Failed to fetch events from Bandsintown')
       console.error(error)
     } finally {
       setBandsintownFetching(false)
     }
-  // siteData?.gigs is read at call-time (line ~197, gigsNeedingPostGeocode).
-  // Adding siteData to deps would recreate the callback on every data change →
-  // the useEffect auto-load loop would re-trigger on every gig update → infinite
-  // re-renders. The stale-closure risk is acceptable here (we only read gigs once
-  // per sync call to identify which ones still need geocoding).
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setSiteData])
+  }, [refetchSiteData])
 
-  // Auto-fetch iTunes releases and Bandsintown events on mount (with 24h cache)
+  // Auto-fetch iTunes releases and Bandsintown events on mount (with 24h cache).
+  // Only runs for authenticated admins — public visitors read from KV directly.
   useEffect(() => {
-    if (!hasAutoLoaded && siteData && kvLoaded) {
+    if (!hasAutoLoaded && siteData && kvLoaded && isOwner) {
       setHasAutoLoaded(true)
       const now = Date.now()
       getSyncTimestamps().then(({ lastReleasesSync, lastGigsSync }) => {
@@ -356,7 +122,7 @@ export function useSiteDataSync(
         }
       })
     }
-  }, [hasAutoLoaded, siteData, kvLoaded, handleFetchITunesReleases, handleFetchBandsintownEvents])
+  }, [hasAutoLoaded, siteData, kvLoaded, isOwner, handleFetchITunesReleases, handleFetchBandsintownEvents])
 
   return { iTunesFetching, bandsintownFetching, hasAutoLoaded, iTunesProgress, handleFetchITunesReleases, handleFetchBandsintownEvents }
 }
