@@ -126,6 +126,63 @@ function getRatelimit(): Ratelimit | null {
 }
 
 /**
+ * Lazily-initialised **global** rate limiter for outbound Odesli API calls.
+ * Odesli's free tier allows ~10 requests per minute from a single server IP.
+ * This limiter caps the entire application to 5 calls per 60 seconds (a safe
+ * margin below 10) using a fixed identifier so it counts across all users.
+ * Created on first use; null when KV is not configured.
+ */
+let odesliGlobalRatelimit: Ratelimit | null = null
+
+function getOdesliGlobalRatelimit(): Ratelimit | null {
+  if (odesliGlobalRatelimit) return odesliGlobalRatelimit
+  if (!isRedisConfigured()) return null
+  odesliGlobalRatelimit = new Ratelimit({
+    redis: kv,
+    limiter: Ratelimit.slidingWindow(5, '60 s'),
+    prefix: 'nk-odesli-global',
+  })
+  return odesliGlobalRatelimit
+}
+
+/**
+ * Apply the global Odesli outbound rate limit.
+ *
+ * This limiter uses a fixed identifier ("global") so it counts every outbound
+ * Odesli API request regardless of which end-user triggered it. Returns `true`
+ * when the request is allowed. Returns `false` and sends a 429 response when
+ * the global cap (5 req / 60 s) would be exceeded. If KV is unavailable the
+ * function allows the request (dev mode / no Redis).
+ *
+ * @example
+ * const allowed = await applyOdesliGlobalRateLimit(res)
+ * if (!allowed) return   // 429 already sent
+ * // … call Odesli API
+ */
+export async function applyOdesliGlobalRateLimit(
+  res: VercelLikeResponse,
+): Promise<boolean> {
+  const rl = getOdesliGlobalRatelimit()
+  if (!rl) return true // KV not configured — allow (dev mode)
+
+  try {
+    const { success } = await rl.limit('global')
+    if (!success) {
+      res.setHeader('Retry-After', '60')
+      res.status(429).json({
+        error: 'Too Many Requests',
+        message: 'Odesli API rate limit reached. Please try again in a minute.',
+      })
+      return false
+    }
+    return true
+  } catch (err) {
+    console.error('Odesli global rate limit check failed, allowing request:', err)
+    return true // fail open for global limiter — don't block users if Redis hiccups
+  }
+}
+
+/**
  * Apply rate limiting to a serverless request.
  *
  * Returns `true` when the request is allowed.  Returns `false` and sends a

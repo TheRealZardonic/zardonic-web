@@ -43,8 +43,8 @@ export interface OdesliResult {
 }
 
 /** Minimum delay between consecutive Odesli API requests (empirically chosen to stay well
- *  under Odesli's observed rate limit of ~2 req/s while keeping enrichment reasonably fast). */
-const ODESLI_REQUEST_DELAY_MS = 400
+ *  under Odesli's observed rate limit of ~10 req/min; 6 s spacing = ≤10 req/min). */
+const ODESLI_REQUEST_DELAY_MS = 6000
 
 interface QueueEntry {
   url: string

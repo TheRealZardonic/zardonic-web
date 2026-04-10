@@ -19,7 +19,7 @@ vi.mock('@upstash/redis', () => ({
 }))
 
 // Import after mocks
-const { hashIp, getClientIp, applyRateLimit } = await import('../../api/_ratelimit.ts')
+const { hashIp, getClientIp, applyRateLimit, applyOdesliGlobalRateLimit } = await import('../../api/_ratelimit.ts')
 
 function mockRes() {
   const res: any = {
@@ -129,6 +129,49 @@ describe('applyRateLimit()', () => {
     const result = await applyRateLimit(req, res)
     expect(result).toBe(false)
     expect(res.status).toHaveBeenCalledWith(503)
+    consoleSpy.mockRestore()
+  })
+})
+
+// ---------------------------------------------------------------------------
+describe('applyOdesliGlobalRateLimit()', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    process.env.UPSTASH_REDIS_REST_URL = 'https://fake-redis.upstash.io'
+    process.env.UPSTASH_REDIS_REST_TOKEN = 'fake-token'
+    mockLimit.mockResolvedValue({ success: true })
+  })
+
+  afterEach(() => {
+    delete process.env.UPSTASH_REDIS_REST_URL
+    delete process.env.UPSTASH_REDIS_REST_TOKEN
+  })
+
+  it('returns true when global Odesli limit is not exceeded', async () => {
+    mockLimit.mockResolvedValue({ success: true })
+    const res = mockRes()
+    const result = await applyOdesliGlobalRateLimit(res)
+    expect(result).toBe(true)
+    expect(res.status).not.toHaveBeenCalled()
+  })
+
+  it('returns false and sends 429 with Retry-After: 60 when global limit is exceeded', async () => {
+    mockLimit.mockResolvedValue({ success: false })
+    const res = mockRes()
+    const result = await applyOdesliGlobalRateLimit(res)
+    expect(result).toBe(false)
+    expect(res.status).toHaveBeenCalledWith(429)
+    expect(res.setHeader).toHaveBeenCalledWith('Retry-After', '60')
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'Too Many Requests' }))
+  })
+
+  it('fails open (returns true) when Redis throws', async () => {
+    mockLimit.mockRejectedValue(new Error('Redis connection failed'))
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const res = mockRes()
+    const result = await applyOdesliGlobalRateLimit(res)
+    expect(result).toBe(true)
+    expect(res.status).not.toHaveBeenCalled()
     consoleSpy.mockRestore()
   })
 })

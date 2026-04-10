@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { applyRateLimit } from './_ratelimit.js'
+import { applyRateLimit, applyOdesliGlobalRateLimit } from './_ratelimit.js'
 import { odesliQuerySchema, validate } from './_schemas.js'
 import { fetchWithRetry } from './_fetch-retry.js'
 import { getRedisOrNull } from './_redis.js'
@@ -38,6 +38,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   }
 
   try {
+    const globalAllowed = await applyOdesliGlobalRateLimit(res)
+    if (!globalAllowed) return
+
     const response = await fetchWithRetry(
       `https://api.song.link/v1-alpha.1/links?url=${encodeURIComponent(url)}&userCountry=US`
     )
