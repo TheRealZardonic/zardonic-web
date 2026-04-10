@@ -35,7 +35,6 @@ export function fullReleaseToStored(release: FullRelease): StoredRelease {
     releaseDate: release.releaseDate,
     type: release.type,
     tracks: release.tracks,
-    isEnriched: release.isEnriched,
     streamingLinks: streamingLinks.length > 0 ? streamingLinks : undefined,
   }
 }
@@ -65,7 +64,6 @@ export function mergeFullReleaseIntoStored(
     releaseDate: stored.releaseDate,
     type: stored.type ?? existing.type,
     tracks: stored.tracks ?? existing.tracks,
-    isEnriched: stored.isEnriched ?? existing.isEnriched,
     streamingLinks: mergedLinks.length > 0 ? mergedLinks : existing.streamingLinks,
   }
 }
