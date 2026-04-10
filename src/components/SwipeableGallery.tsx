@@ -135,3 +135,5 @@ const variants = {
     }
   },
 }
+
+export default SwipeableGallery

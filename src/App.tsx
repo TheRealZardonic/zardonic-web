@@ -20,7 +20,7 @@ import { toast } from 'sonner'
 import { LoadingScreen } from '@/components/LoadingScreen'
 const MinimalBarLoader = React.lazy(() => import('@/components/MinimalBarLoader'))
 const GlitchDecodeLoader = React.lazy(() => import('@/components/GlitchDecodeLoader'))
-const SwipeableGallery = React.lazy(() => import('@/components/SwipeableGallery').then(m => ({ default: m.SwipeableGallery })))
+const SwipeableGallery = React.lazy(() => import('@/components/SwipeableGallery'))
 const CyberpunkOverlay = React.lazy(() => import('@/components/CyberpunkOverlay'))
 import AdminLoginDialog from '@/components/AdminLoginDialog'
 import EditControls from '@/components/EditControls'

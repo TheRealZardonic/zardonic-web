@@ -11,7 +11,8 @@ import type { AdminSettings, SectionLabels } from '@/lib/types'
 function spotifyUrlToUri(url: string): string | null {
   try {
     const { hostname, pathname } = new URL(url)
-    if (!hostname.includes('spotify.com')) return null
+    // Strict domain check: must be exactly open.spotify.com or a subdomain of spotify.com
+    if (hostname !== 'open.spotify.com' && !hostname.endsWith('.spotify.com')) return null
     // pathname is like /artist/7BqEidErPMNiUXCRE0dV2n or /track/...
     const parts = pathname.replace(/^\//, '').split('/')
     if (parts.length >= 2 && parts[0] && parts[1]) {
