@@ -28,6 +28,8 @@ interface EditControlsProps {
   onOpenSubscriberList?: () => void
   onUpdateSiteData?: (updater: SiteData | ((current: SiteData) => SiteData)) => void
   onLogout?: () => Promise<void>
+  onFetchBandsintown?: () => Promise<void>
+  onFetchITunes?: () => Promise<void>
 }
 
 export default function EditControls({
@@ -50,6 +52,8 @@ export default function EditControls({
   onOpenSubscriberList,
   onUpdateSiteData,
   onLogout,
+  onFetchBandsintown,
+  onFetchITunes,
 }: EditControlsProps) {
   const [adminPanelOpen, setAdminPanelOpen] = useState(false)
   const [showLoginDialog, setShowLoginDialog] = useState(false)
@@ -132,6 +136,8 @@ export default function EditControls({
           onOpenBlocklist={onOpenBlocklist}
           onOpenContactInbox={onOpenContactInbox}
           onOpenSubscriberList={onOpenSubscriberList}
+          onFetchBandsintown={onFetchBandsintown}
+          onFetchITunes={onFetchITunes}
           editMode={editMode}
           onToggleEdit={onToggleEdit}
           hasPassword={hasPassword}

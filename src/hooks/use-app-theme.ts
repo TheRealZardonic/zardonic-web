@@ -77,14 +77,20 @@ export function useAppTheme(adminSettings: AdminSettings | undefined): void {
     if (t.dataLabelFontFamily) set('--data-label-font-family', t.dataLabelFontFamily)
     if (t.modalGlowColor) set('--modal-glow-color', t.modalGlowColor)
 
-    // Compute the Spotify hue-rotate offset from the primary colour's hue so
-    // the embedded player's accent colour matches the current CI preset.
+    // Compute or apply the Spotify hue-rotate offset so the embedded
+    // player's accent colour matches the current CI preset.
+    // If the admin has set a manual override, use that; otherwise derive
+    // it automatically from the primary colour's hue.
     // Spotify's native accent is green ≈ hue 141°; we rotate from there.
-    const colorForHue = t.primaryColor ?? t.accentColor
-    if (colorForHue) {
-      const hue = parseOklchHue(colorForHue)
-      if (hue !== null) {
-        set('--spotify-hue-rotate', `${Math.round(hue - 141)}deg`)
+    if (typeof t.spotifyHueRotate === 'number') {
+      set('--spotify-hue-rotate', `${Math.round(t.spotifyHueRotate)}deg`)
+    } else {
+      const colorForHue = t.primaryColor ?? t.accentColor
+      if (colorForHue) {
+        const hue = parseOklchHue(colorForHue)
+        if (hue !== null) {
+          set('--spotify-hue-rotate', `${Math.round(hue - 141)}deg`)
+        }
       }
     }
 

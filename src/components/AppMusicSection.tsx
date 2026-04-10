@@ -95,12 +95,12 @@ export default function AppMusicSection({
                   <div className="data-label mb-2" data-theme-color="data-label">{streamLabel}</div>
                 )}
               </div>
-              <div className="spotify-player-wrapper spotify-ci-embed bg-card">
+              <div className="spotify-player-wrapper spotify-ci-embed">
                 <SpotifyEmbed
                   uri={spotifyUri}
                   width="100%"
                   height={352}
-                  theme="0"
+                  theme="1"
                 />
               </div>
               <div className="p-4 pt-2">
