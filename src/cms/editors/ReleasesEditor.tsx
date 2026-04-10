@@ -75,6 +75,7 @@ function ReleaseRow({ release, index, total, onChange, onDelete, onMoveUp, onMov
                 <option value="single">Single</option>
                 <option value="ep">EP</option>
                 <option value="remix">Remix</option>
+                <option value="compilation">Compilation</option>
               </select>
             </div>
           </div>

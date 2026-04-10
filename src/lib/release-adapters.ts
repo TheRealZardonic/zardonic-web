@@ -1,16 +1,30 @@
 /**
- * Adapters between the storage format (flat streaming fields, `app-types.ts` Release)
- * and the display/edit format (nested streamingLinks, `types.ts` Release).
+ * Adapters between the storage format (streamingLinks array, `app-types.ts` Release)
+ * and the display/edit format (streamingLinks object, `types.ts` Release).
  *
- * The split exists because SiteData is persisted to KV in the flat format while
- * ReleasesSection / ReleaseEditDialog use the richer `types.ts` Release interface.
+ * The split exists because SiteData is persisted to KV with `streamingLinks` as an
+ * array of `{ platform, url }` entries (matching the CMS schema), while
+ * ReleasesSection / ReleaseEditDialog use the richer `types.ts` Release interface
+ * which has `streamingLinks` as a named-key object.
  * Using these helpers removes the inline field-mapping blocks from App.tsx.
  */
 import type { Release as StoredRelease } from '@/lib/app-types'
 import type { Release as FullRelease } from '@/lib/types'
 
-/** Convert a `types.ts` Release (with streamingLinks) to the persisted flat format. */
+/** Convert a `types.ts` Release (streamingLinks object) to the persisted array format. */
 export function fullReleaseToStored(release: FullRelease): StoredRelease {
+  const links = release.streamingLinks ?? {}
+  const streamingLinks: Array<{ platform: string; url: string }> = []
+  if (links.spotify)      streamingLinks.push({ platform: 'spotify',      url: links.spotify })
+  if (links.soundcloud)   streamingLinks.push({ platform: 'soundcloud',   url: links.soundcloud })
+  if (links.youtube)      streamingLinks.push({ platform: 'youtube',      url: links.youtube })
+  if (links.bandcamp)     streamingLinks.push({ platform: 'bandcamp',     url: links.bandcamp })
+  if (links.appleMusic)   streamingLinks.push({ platform: 'appleMusic',   url: links.appleMusic })
+  if (links.beatport)     streamingLinks.push({ platform: 'beatport',     url: links.beatport })
+  if (links.deezer)       streamingLinks.push({ platform: 'deezer',       url: links.deezer })
+  if (links.tidal)        streamingLinks.push({ platform: 'tidal',        url: links.tidal })
+  if (links.amazonMusic)  streamingLinks.push({ platform: 'amazonMusic',  url: links.amazonMusic })
+
   return {
     id: release.id,
     title: release.title,
@@ -22,44 +36,36 @@ export function fullReleaseToStored(release: FullRelease): StoredRelease {
     type: release.type,
     tracks: release.tracks,
     isEnriched: release.isEnriched,
-    spotify: release.streamingLinks?.spotify,
-    soundcloud: release.streamingLinks?.soundcloud,
-    youtube: release.streamingLinks?.youtube,
-    bandcamp: release.streamingLinks?.bandcamp,
-    appleMusic: release.streamingLinks?.appleMusic,
-    deezer: release.streamingLinks?.deezer,
-    tidal: release.streamingLinks?.tidal,
-    amazonMusic: release.streamingLinks?.amazonMusic,
+    streamingLinks: streamingLinks.length > 0 ? streamingLinks : undefined,
   }
 }
 
 /**
  * Merge an updated `types.ts` Release back into an existing stored Release.
- * Existing flat fields are used as fallback when the updated release has no value
- * for that streaming service.
+ * Existing array entries are used as fallback for platforms not present in the
+ * updated release.
  */
 export function mergeFullReleaseIntoStored(
   updated: FullRelease,
   existing: StoredRelease,
 ): StoredRelease {
+  const stored = fullReleaseToStored(updated)
+
+  // Merge streamingLinks: updated platforms win; existing platforms fill the gaps.
+  const updatedLinks = stored.streamingLinks ?? []
+  const updatedPlatforms = new Set(updatedLinks.map(l => l.platform))
+  const existingLinks = (existing.streamingLinks ?? []).filter(l => !updatedPlatforms.has(l.platform))
+  const mergedLinks = [...updatedLinks, ...existingLinks]
+
   return {
     ...existing,
-    title: updated.title,
-    artwork: updated.artwork ?? existing.artwork,
-    year: updated.releaseDate
-      ? new Date(updated.releaseDate).getFullYear().toString()
-      : (updated.year ?? existing.year),
-    releaseDate: updated.releaseDate,
-    type: updated.type ?? existing.type,
-    tracks: updated.tracks ?? existing.tracks,
-    isEnriched: updated.isEnriched ?? existing.isEnriched,
-    spotify: updated.streamingLinks?.spotify || existing.spotify,
-    soundcloud: updated.streamingLinks?.soundcloud || existing.soundcloud,
-    youtube: updated.streamingLinks?.youtube || existing.youtube,
-    bandcamp: updated.streamingLinks?.bandcamp || existing.bandcamp,
-    appleMusic: updated.streamingLinks?.appleMusic || existing.appleMusic,
-    deezer: updated.streamingLinks?.deezer || existing.deezer,
-    tidal: updated.streamingLinks?.tidal || existing.tidal,
-    amazonMusic: updated.streamingLinks?.amazonMusic || existing.amazonMusic,
+    title: stored.title,
+    artwork: stored.artwork || existing.artwork,
+    year: stored.year || existing.year,
+    releaseDate: stored.releaseDate,
+    type: stored.type ?? existing.type,
+    tracks: stored.tracks ?? existing.tracks,
+    isEnriched: stored.isEnriched ?? existing.isEnriched,
+    streamingLinks: mergedLinks.length > 0 ? mergedLinks : existing.streamingLinks,
   }
 }

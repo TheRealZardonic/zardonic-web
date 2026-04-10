@@ -6,6 +6,8 @@ interface Release {
   title: string
   artwork: string
   year: string
+  type?: 'album' | 'ep' | 'single' | 'remix' | 'compilation'
+  streamingLinks?: Array<{ platform: string; url: string }>
 }
 
 interface ReleasesSectionProps {
@@ -100,6 +102,30 @@ export default function ReleasesSection({
                         {release.title}
                       </h3>
                       <p className="text-xs text-muted-foreground font-mono">{release.year}</p>
+                      {release.type && (
+                        <span className="inline-block mt-1 px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
+                          {release.type}
+                        </span>
+                      )}
+                      {release.streamingLinks && release.streamingLinks.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2" onClick={e => e.stopPropagation()}>
+                          {release.streamingLinks.map(link => (
+                            <a
+                              key={link.platform}
+                              href={link.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider border border-border text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors"
+                              aria-label={`Listen on ${link.platform}`}
+                            >
+                              {link.platform === 'appleMusic' ? 'Apple' :
+                               link.platform === 'amazonMusic' ? 'Amazon' :
+                               link.platform === 'soundcloud' ? 'SC' :
+                               link.platform.charAt(0).toUpperCase() + link.platform.slice(1)}
+                            </a>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </Card>
                 </motion.div>

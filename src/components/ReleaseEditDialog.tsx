@@ -98,14 +98,18 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
         toast.error(err.error ?? 'Odesli sync failed')
         return
       }
-      const { links } = await resp.json()
+      const { release: enriched } = await resp.json()
+      const links: Record<string, string> = {}
+      for (const link of enriched?.streamingLinks ?? []) {
+        links[link.platform] = link.url
+      }
       setFormData(prev => ({
         ...prev,
-        spotify: prev.spotify || links.spotify || '',
-        soundcloud: prev.soundcloud || links.soundcloud || '',
-        youtube: prev.youtube || links.youtube || '',
-        bandcamp: prev.bandcamp || links.bandcamp || '',
-        appleMusic: prev.appleMusic || links.appleMusic || '',
+        spotify: prev.spotify || links['spotify'] || '',
+        soundcloud: prev.soundcloud || links['soundcloud'] || '',
+        youtube: prev.youtube || links['youtube'] || '',
+        bandcamp: prev.bandcamp || links['bandcamp'] || '',
+        appleMusic: prev.appleMusic || links['appleMusic'] || '',
       }))
       toast.success('Odesli sync complete')
     } catch {

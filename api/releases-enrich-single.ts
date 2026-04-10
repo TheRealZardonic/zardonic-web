@@ -50,14 +50,7 @@ interface Release {
   artwork: string
   year: string
   releaseDate?: string
-  spotify?: string
-  soundcloud?: string
-  youtube?: string
-  bandcamp?: string
-  appleMusic?: string
-  deezer?: string
-  tidal?: string
-  amazonMusic?: string
+  streamingLinks?: Array<{ platform: string; url: string }>
   type?: '' | 'album' | 'ep' | 'single' | 'remix' | 'compilation'
   description?: string
   tracks?: Track[]
@@ -187,20 +180,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     }
 
     // ── Step 2: Odesli ────────────────────────────────────────────────────────
-    const odesliLookupUrl = mbSpotifyUrl ?? mbAppleMusicUrl ?? release.appleMusic
+    const existingAppleMusic = updated.streamingLinks?.find(l => l.platform === 'appleMusic')?.url
+    const odesliLookupUrl = mbSpotifyUrl ?? mbAppleMusicUrl ?? existingAppleMusic
     if (odesliLookupUrl) {
       const odesli = await fetchOdesliLinks(odesliLookupUrl, redis)
       if (odesli?.linksByPlatform) {
         const p = odesli.linksByPlatform
-        if (p.spotify?.url)    updated.spotify     = p.spotify.url
-        if (p.soundcloud?.url) updated.soundcloud  = p.soundcloud.url
-        if (p.youtube?.url)    updated.youtube     = p.youtube.url
-        if (p.bandcamp?.url)   updated.bandcamp    = p.bandcamp.url
-        if (p.deezer?.url)     updated.deezer      = p.deezer.url
-        if (p.tidal?.url)      updated.tidal       = p.tidal.url
-        if (p.amazon?.url)     updated.amazonMusic = p.amazon.url
-        if (p.appleMusic?.url) updated.appleMusic  = p.appleMusic.url
-        steps.push(`Odesli: ${Object.values(p).filter(Boolean).length} platform(s) found`)
+        const freshLinks: Array<{ platform: string; url: string }> = []
+        if (p.spotify?.url)    freshLinks.push({ platform: 'spotify',     url: p.spotify.url })
+        if (p.appleMusic?.url) freshLinks.push({ platform: 'appleMusic',  url: p.appleMusic.url })
+        if (p.soundcloud?.url) freshLinks.push({ platform: 'soundcloud',  url: p.soundcloud.url })
+        if (p.youtube?.url)    freshLinks.push({ platform: 'youtube',     url: p.youtube.url })
+        if (p.bandcamp?.url)   freshLinks.push({ platform: 'bandcamp',    url: p.bandcamp.url })
+        if (p.deezer?.url)     freshLinks.push({ platform: 'deezer',      url: p.deezer.url })
+        if (p.tidal?.url)      freshLinks.push({ platform: 'tidal',       url: p.tidal.url })
+        if (p.amazon?.url)     freshLinks.push({ platform: 'amazonMusic', url: p.amazon.url })
+        // Odesli wins on platform overlap; keep existing links not returned by Odesli.
+        const freshPlatforms = new Set(freshLinks.map(l => l.platform))
+        const keptExisting = (updated.streamingLinks ?? []).filter(l => !freshPlatforms.has(l.platform))
+        updated.streamingLinks = [...freshLinks, ...keptExisting]
+        steps.push(`Odesli: ${freshLinks.length} platform(s) found`)
       } else {
         steps.push('Odesli: no links returned')
       }
