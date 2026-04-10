@@ -221,6 +221,34 @@ export default function OverviewTab({
           <ArrowCounterClockwise size={13} className="mr-1" /> Refresh
         </Button>
       </section>
+
+      <Separator />
+
+      {/* Enrichment API Endpoints */}
+      <section className="space-y-3">
+        <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
+          Enrichment API
+        </h3>
+        <div className="space-y-1.5">
+          {[
+            { method: 'GET',  path: '/api/releases-enrichment-status', desc: 'Check pending enrichment count (admin)' },
+            { method: 'POST', path: '/api/releases-enrich-single',     desc: 'Enrich a single release: MusicBrainz + Odesli (admin)' },
+            { method: 'POST', path: '/api/releases-enrich',            desc: 'Bulk cron enrichment — all pending releases' },
+          ].map(({ method, path, desc }) => (
+            <div key={path} className="flex flex-col gap-0.5 bg-background border border-border rounded px-2 py-1.5">
+              <div className="flex items-center gap-2">
+                <span className={`font-mono text-[10px] px-1.5 py-0.5 rounded border shrink-0 ${
+                  method === 'GET'
+                    ? 'border-blue-500/40 border-dashed text-blue-400 bg-blue-500/10'
+                    : 'border-green-500/40 text-green-400 bg-green-500/10'
+                }`}>{method}</span>
+                <code className="font-mono text-[10px] text-foreground/80 truncate">{path}</code>
+              </div>
+              <p className="font-mono text-xs text-muted-foreground pl-1">{desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
     </TabsContent>
   )
 }

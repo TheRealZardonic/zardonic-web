@@ -11,6 +11,7 @@ const AdminPanel = lazy(() => import('@/components/AdminPanel'))
 interface EditControlsProps {
   setAdminSettings?: (settings: AdminSettings) => void
   onImportData?: (data: SiteData) => void
+  onRefreshSiteData?: () => void
   siteData?: SiteData
   editMode: boolean
   onToggleEdit: () => void
@@ -32,6 +33,7 @@ interface EditControlsProps {
 export default function EditControls({
   setAdminSettings,
   onImportData,
+  onRefreshSiteData,
   siteData,
   editMode,
   onToggleEdit,
@@ -121,6 +123,7 @@ export default function EditControls({
           adminSettings={adminSettings}
           setAdminSettings={setAdminSettings}
           onImportData={onImportData}
+          onRefreshSiteData={onRefreshSiteData}
           onUpdateSiteData={onUpdateSiteData}
           onOpenConfigEditor={onOpenConfigEditor}
           onOpenStats={onOpenStats}

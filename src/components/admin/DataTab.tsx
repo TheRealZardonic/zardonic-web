@@ -7,11 +7,12 @@ import { ReleaseEnrichProgress, type PendingRelease } from '@/components/admin/R
 interface DataTabProps {
   siteData: SiteData | undefined
   onImportData?: (data: SiteData) => void
+  onRefreshSiteData?: () => void
   onExport: () => void
   onImportClick: () => void
 }
 
-export default function DataTab({ siteData, onImportData, onExport, onImportClick }: DataTabProps) {
+export default function DataTab({ siteData, onImportData, onRefreshSiteData, onExport, onImportClick }: DataTabProps) {
   const [syncState, setSyncState] = useState<'idle' | 'loading' | 'open'>('idle')
   const [pendingReleases, setPendingReleases] = useState<PendingRelease[]>([])
 
@@ -102,7 +103,7 @@ export default function DataTab({ siteData, onImportData, onExport, onImportClic
         <ReleaseEnrichProgress
           releases={pendingReleases}
           onClose={() => setSyncState('idle')}
-          onComplete={() => { /* progress already shown in modal */ }}
+          onComplete={onRefreshSiteData}
         />
       )}
     </TabsContent>
