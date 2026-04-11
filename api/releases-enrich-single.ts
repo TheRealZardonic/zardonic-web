@@ -6,15 +6,22 @@
  * Workflow:
  *  1. Fetch the release from Redis by ID.
  *  2. Call Odesli immediately with the Apple Music URL that iTunes provides
- *     directly — no waiting for MusicBrainz. Collect all streaming links
- *     (Spotify, YouTube, Bandcamp, SoundCloud, Deezer, Tidal, Amazon Music).
- *  3. Search MusicBrainz for the release (title + "Zardonic") to obtain:
+ *     directly — no waiting for MusicBrainz. Collect ALL streaming links
+ *     that Odesli returns (every platform key is preserved).
+ *     - force=true: invalidate the Odesli cache before the call.
+ *     - auto-invalidation: if the cached response is missing ≥3 important
+ *       platforms (spotify, youtube, appleMusic), invalidate and re-fetch.
+ *  3. Spotify fallback: if Odesli returned no Spotify link, search the
+ *     Spotify API directly and add the first matching album link.
+ *  4. MusicBrainz Artist ID: if artistName is set but artistMbid is missing,
+ *     look up the MBID once and store it. Then refresh artist data daily.
+ *  5. Search MusicBrainz for the release (title + artistName) to obtain:
  *       - Canonical release type (Album / EP / Single / …)
  *       - Precise release date
  *       - Full tracklist with per-track durations
- *  4. Type fallback via inferTypeFromTitle if MusicBrainz has no match.
- *  5. Merge metadata + links into the release, persist back to Redis.
- *  6. Return the enriched release + a detailed status message.
+ *  6. Type fallback via inferTypeFromTitle if MusicBrainz has no match.
+ *  7. Merge metadata + links into the release, persist back to Redis.
+ *  8. Return the enriched release + a detailed status message.
  *
  * Requires a valid admin session.
  */
@@ -27,12 +34,17 @@ import {
   inferTypeFromTitle,
   searchMusicBrainz,
   fetchMusicBrainzRelease,
+  lookupArtistMbid,
+  MB_USER_AGENT,
 } from './_musicbrainz.js'
 import {
   cleanAppleMusicUrl,
   fetchOdesliLinks,
+  odesliCacheKey,
   type StreamingLink,
 } from './_odesli.js'
+import { getSpotifyAccessToken } from './_spotify-client.js'
+import { fetchWithRetry } from './_fetch-retry.js'
 
 const BAND_DATA_KEY = 'band-data'
 
@@ -41,7 +53,7 @@ interface Track {
   duration?: string
 }
 
-interface Release {
+export interface Release {
   id: string
   title: string
   artwork: string
@@ -52,11 +64,18 @@ interface Release {
   description?: string
   tracks?: Track[]
   trackCount?: number
+  artistName?: string
+  artistMbid?: string
 }
 
 interface SiteData {
   releases: Release[]
   [key: string]: unknown
+}
+
+interface SpotifySearchAlbum {
+  name: string
+  external_urls?: { spotify?: string }
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
@@ -74,7 +93,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     res.status(503).json({ error: 'Redis not configured' }); return
   }
 
-  const { id } = (req.body ?? {}) as { id?: string }
+  const { id, force } = (req.body ?? {}) as { id?: string; force?: boolean }
   if (!id || typeof id !== 'string') {
     res.status(400).json({ error: 'Missing release id' }); return
   }
@@ -105,9 +124,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     }
 
     // ── Step 1: Odesli — use Apple Music URL from iTunes immediately ──
-    // iTunes always provides a collectionViewUrl; no need to wait for MusicBrainz.
     if (cleanedAppleUrl) {
-      const { links: newLinks } = await fetchOdesliLinks(cleanedAppleUrl, redis)
+      const cacheKey = odesliCacheKey(cleanedAppleUrl)
+
+      // force=true: wipe the cache so a fresh API call is made
+      if (force) {
+        try { await redis.del(cacheKey) } catch { /* non-fatal */ }
+        steps.push('Cache invalidiert (force=true)')
+      }
+
+      let { links: newLinks, fromCache } = await fetchOdesliLinks(cleanedAppleUrl, redis)
+
+      // Auto-invalidation: if we got a stale cached response that is missing
+      // important platforms, wipe it and re-fetch immediately.
+      const IMPORTANT = ['spotify', 'youtube', 'appleMusic']
+      const importantCount = newLinks.filter(l => IMPORTANT.includes(l.platform)).length
+      if (!force && fromCache && importantCount < 3) {
+        try { await redis.del(cacheKey) } catch { /* non-fatal */ }
+        steps.push('Cache invalidiert (unvollständige Plattformen)')
+        const fresh = await fetchOdesliLinks(cleanedAppleUrl, redis)
+        newLinks = fresh.links
+        fromCache = fresh.fromCache
+      }
+
       if (newLinks.length > 0) {
         updated.streamingLinks = newLinks
         steps.push(`Odesli: ${newLinks.length} Plattformen gefunden`)
@@ -118,8 +157,86 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       steps.push('Odesli: übersprungen — keine Apple Music URL vorhanden')
     }
 
-    // ── Step 2: MusicBrainz — for type, date and tracklist only ──
-    const mbSearch = await searchMusicBrainz(release.title)
+    // ── Step 2: Spotify fallback — search API when Odesli has no Spotify link ──
+    const hasSpotify = updated.streamingLinks?.some(l => l.platform === 'spotify')
+    if (!hasSpotify) {
+      if (!process.env.SPOTIFY_CLIENT_ID || !process.env.SPOTIFY_CLIENT_SECRET) {
+        steps.push('Spotify: übersprungen (keine Credentials)')
+      } else {
+        try {
+          const token = await getSpotifyAccessToken()
+          if (!token) {
+            steps.push('Spotify: kein Treffer')
+          } else {
+            const artistForSearch = updated.artistName ?? 'Zardonic'
+            const q = encodeURIComponent(`${release.title} ${artistForSearch}`)
+            const searchUrl = `https://api.spotify.com/v1/search?q=${q}&type=album&limit=5&market=US`
+            const searchRes = await fetchWithRetry(searchUrl, {
+              headers: { 'Authorization': `Bearer ${token}` },
+            })
+            if (searchRes.ok) {
+              const searchData = await searchRes.json() as { albums?: { items?: SpotifySearchAlbum[] } }
+              const titleLower = release.title.toLowerCase()
+              const match = searchData.albums?.items?.find(item => {
+                const nameLower = item.name.toLowerCase()
+                return nameLower.includes(titleLower) || titleLower.includes(nameLower)
+              })
+              if (match?.external_urls?.spotify) {
+                updated.streamingLinks = [
+                  ...(updated.streamingLinks ?? []),
+                  { platform: 'spotify', url: match.external_urls.spotify },
+                ]
+                steps.push('Spotify: gefunden via API')
+              } else {
+                steps.push('Spotify: kein Treffer')
+              }
+            } else {
+              steps.push('Spotify: kein Treffer')
+            }
+          }
+        } catch {
+          steps.push('Spotify: kein Treffer')
+        }
+      }
+    }
+
+    // ── Step 3: MusicBrainz Artist ID — look up once if missing ──
+    if (updated.artistName && !updated.artistMbid) {
+      try {
+        const mbid = await lookupArtistMbid(updated.artistName)
+        if (mbid) {
+          updated.artistMbid = mbid
+          steps.push(`MusicBrainz Artist ID: ${mbid}`)
+        } else {
+          steps.push('MusicBrainz Artist ID: nicht gefunden')
+        }
+      } catch {
+        steps.push('MusicBrainz Artist ID: nicht gefunden')
+      }
+    }
+
+    // ── Step 4: Artist data refresh — at most once every 24 h ──
+    if (updated.artistMbid) {
+      const refreshKey = `mb:artist:refresh:${updated.artistMbid}`
+      try {
+        const alreadyFresh = await redis.get(refreshKey)
+        if (!alreadyFresh) {
+          const artistUrl = `https://musicbrainz.org/ws/2/artist/${updated.artistMbid}?inc=aliases+url-rels&fmt=json`
+          const artistRes = await fetchWithRetry(artistUrl, { headers: { 'User-Agent': MB_USER_AGENT } })
+          if (artistRes.ok) {
+            const artistData: unknown = await artistRes.json()
+            await redis.set(`mb:artist:${updated.artistMbid}`, artistData, { ex: 86400 })
+            await redis.set(refreshKey, 1, { ex: 86400 })
+            steps.push('Artist-Daten gecacht')
+          }
+        } else {
+          steps.push('Artist-Daten frisch')
+        }
+      } catch { /* non-fatal */ }
+    }
+
+    // ── Step 5: MusicBrainz — for type, date and tracklist only ──
+    const mbSearch = await searchMusicBrainz(release.title, updated.artistName)
     if (mbSearch) {
       steps.push(`MusicBrainz: found "${mbSearch.title}"`)
       const mbFull = await fetchMusicBrainzRelease(mbSearch.id)

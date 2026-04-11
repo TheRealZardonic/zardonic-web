@@ -89,6 +89,11 @@ export function msToTime(ms: number): string {
   return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`
 }
 
+/** Escape a string for use inside a Lucene quoted-string query: \ → \\, " → \" */
+function escLucene(s: string): string {
+  return s.replace(/[\\"]/g, c => `\\${c}`)
+}
+
 /**
  * Check whether a URL's hostname exactly matches `host` or is a subdomain of it.
  * Guards against URLs like "https://evil.com/open.spotify.com" that would
@@ -131,8 +136,7 @@ export async function searchMusicBrainz(title: string, artistName = 'Zardonic'):
   const cleanTitle = title
     .replace(/\s*-\s*(single|ep|album|remix|remixes|deluxe edition|special edition)\s*$/i, '')
     .trim()
-  // Escape for Lucene quoted-string syntax in a single pass: \ → \\, " → \"
-  const escLucene = (s: string) => s.replace(/[\\"]/g, c => `\\${c}`)
+  // Escape for Lucene quoted-string syntax in a single pass
   const safeTitle = escLucene(cleanTitle)
   const safeArtist = escLucene(artistName)
 
@@ -160,6 +164,25 @@ export async function fetchMusicBrainzRelease(mbid: string): Promise<MbFullRelea
   const res = await fetchWithRetry(url, { headers: { 'User-Agent': MB_USER_AGENT } })
   if (!res.ok) return null
   return res.json() as Promise<MbFullRelease>
+}
+
+/**
+ * Look up the MusicBrainz Artist ID (MBID) for a given artist name.
+ *
+ * Queries the MusicBrainz artist search endpoint and returns the `id` of the
+ * top-scoring result, or `null` when nothing is found or an error occurs.
+ */
+export async function lookupArtistMbid(artistName: string): Promise<string | null> {
+  const query = `artist:"${escLucene(artistName)}"`
+  const url = `https://musicbrainz.org/ws/2/artist/?query=${encodeURIComponent(query)}&fmt=json`
+  try {
+    const res = await fetchWithRetry(url, { headers: { 'User-Agent': MB_USER_AGENT } })
+    if (!res.ok) return null
+    const data: MbArtistSearchResponse = await res.json()
+    return data.artists?.[0]?.id ?? null
+  } catch {
+    return null
+  }
 }
 
 // ─── Bulk recording fetch + local matching ────────────────────────────────────
