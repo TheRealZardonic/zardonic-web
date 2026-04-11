@@ -32,6 +32,7 @@ import {
   fetchOdesliLinks,
   type StreamingLink,
 } from './_odesli.js'
+import { getSpotifyAccessToken } from './_spotify-client.js'
 
 function verifyCronSecret(provided: string): boolean {
   const expected = process.env.CRON_SECRET
@@ -206,25 +207,6 @@ interface SpotifyAlbum {
   total_tracks?: number
 }
 
-async function getSpotifyAccessToken(): Promise<string | null> {
-  const clientId = process.env.SPOTIFY_CLIENT_ID
-  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET
-  if (!clientId || !clientSecret) return null
-
-  const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64')
-  const res = await fetchWithRetry('https://accounts.spotify.com/api/token', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Basic ${credentials}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: 'grant_type=client_credentials',
-  })
-
-  if (!res.ok) return null
-  const data = await res.json() as { access_token: string }
-  return data.access_token
-}
 
 async function fetchSpotifyReleases(artistName: string): Promise<Release[]> {
   const token = await getSpotifyAccessToken()

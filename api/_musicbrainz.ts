@@ -162,6 +162,26 @@ export async function fetchMusicBrainzRelease(mbid: string): Promise<MbFullRelea
   return res.json() as Promise<MbFullRelease>
 }
 
+/**
+ * Look up the MusicBrainz Artist ID (MBID) for a given artist name.
+ *
+ * Queries the MusicBrainz artist search endpoint and returns the `id` of the
+ * top-scoring result, or `null` when nothing is found or an error occurs.
+ */
+export async function lookupArtistMbid(artistName: string): Promise<string | null> {
+  const escaped = artistName.replace(/[\\"]/g, c => `\\${c}`)
+  const query = `artist:"${escaped}"`
+  const url = `https://musicbrainz.org/ws/2/artist/?query=${encodeURIComponent(query)}&fmt=json`
+  try {
+    const res = await fetchWithRetry(url, { headers: { 'User-Agent': MB_USER_AGENT } })
+    if (!res.ok) return null
+    const data: MbArtistSearchResponse = await res.json()
+    return data.artists?.[0]?.id ?? null
+  } catch {
+    return null
+  }
+}
+
 // ─── Bulk recording fetch + local matching ────────────────────────────────────
 
 /**

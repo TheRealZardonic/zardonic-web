@@ -17,7 +17,13 @@
 import type { Redis } from '@upstash/redis'
 import { fetchWithRetry } from './_fetch-retry.js'
 
-const ODESLI_CACHE_TTL = 86_400 // 24 hours
+const ODESLI_CACHE_TTL = 86_400       // 24 hours
+const ODESLI_SHORT_CACHE_TTL = 7_200  // 2 hours — used when important platforms are missing
+
+/** Name normalisation applied to known Odesli platform keys before storage. */
+const PLATFORM_NAME_MAP: Record<string, string> = {
+  amazon: 'amazonMusic',
+}
 
 // ─── Shared types ────────────────────────────────────────────────────────────
 
@@ -42,16 +48,8 @@ export interface OdesliEntity {
 export interface OdesliResponse {
   entityUniqueId?: string
   entitiesByUniqueId?: Record<string, OdesliEntity>
-  linksByPlatform?: {
-    spotify?: OdesliLink
-    appleMusic?: OdesliLink
-    soundcloud?: OdesliLink
-    youtube?: OdesliLink
-    bandcamp?: OdesliLink
-    deezer?: OdesliLink
-    tidal?: OdesliLink
-    amazon?: OdesliLink
-  }
+  /** All platform links returned by Odesli — keys are platform identifiers. */
+  linksByPlatform?: Record<string, OdesliLink | undefined>
 }
 
 export interface OdesliResult {
@@ -116,14 +114,13 @@ export function extractStreamingLinksFromOdesli(
   }
 
   const links: StreamingLink[] = []
-  if (p.spotify?.url)    links.push({ platform: 'spotify',     url: p.spotify.url })
-  if (p.appleMusic?.url) links.push({ platform: 'appleMusic',  url: cleanAppleMusicUrl(p.appleMusic.url) })
-  if (p.soundcloud?.url) links.push({ platform: 'soundcloud',  url: p.soundcloud.url })
-  if (p.youtube?.url)    links.push({ platform: 'youtube',     url: p.youtube.url })
-  if (p.bandcamp?.url)   links.push({ platform: 'bandcamp',    url: p.bandcamp.url })
-  if (p.deezer?.url)     links.push({ platform: 'deezer',      url: p.deezer.url })
-  if (p.tidal?.url)      links.push({ platform: 'tidal',       url: p.tidal.url })
-  if (p.amazon?.url)     links.push({ platform: 'amazonMusic', url: p.amazon.url })
+  for (const [key, link] of Object.entries(p)) {
+    if (link?.url) {
+      const platform = PLATFORM_NAME_MAP[key] ?? key
+      const url = key === 'appleMusic' ? cleanAppleMusicUrl(link.url) : link.url
+      links.push({ platform, url })
+    }
+  }
 
   return { links, entityType }
 }
@@ -163,10 +160,14 @@ export async function fetchOdesliLinks(
 
   const data: OdesliResponse = await response.json()
 
-  // Only cache non-empty responses to avoid persisting failures for 24 h
+  // Only cache non-empty responses to avoid persisting failures for 24 h.
+  // Use a short TTL when neither Spotify nor YouTube is present — those
+  // platforms may appear later and we want to re-check sooner.
   const hasLinks = data.linksByPlatform && Object.keys(data.linksByPlatform).length > 0
   if (hasLinks) {
-    try { await redis.set(cacheKey, data, { ex: ODESLI_CACHE_TTL }) } catch { /* non-fatal */ }
+    const hasSpotifyOrYoutube = !!(data.linksByPlatform?.spotify?.url || data.linksByPlatform?.youtube?.url)
+    const cacheTtl = hasSpotifyOrYoutube ? ODESLI_CACHE_TTL : ODESLI_SHORT_CACHE_TTL
+    try { await redis.set(cacheKey, data, { ex: cacheTtl }) } catch { /* non-fatal */ }
   }
 
   const { links, entityType } = extractStreamingLinksFromOdesli(data)
