@@ -8,7 +8,7 @@
  */
 import { fetchWithRetry } from './_fetch-retry.js'
 
-export const MB_USER_AGENT = 'ZardonicWebsite/1.0 (https://zardonic.com)'
+export const MB_USER_AGENT = 'ZardonicWebsite/1.0 (https://zardonic.net)'
 
 // ─── MusicBrainz API types ────────────────────────────────────────────────────
 
