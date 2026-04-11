@@ -373,8 +373,6 @@ async function enrichRelease(
   let enriched = false
   let typeDetected = false
   let tracklistFetched = false
-  let odesliEntityType: string | undefined
-
   // ── MusicBrainz: apply locally-matched metadata (type + date) ──
   try {
     const mbData = matchITunesReleaseToMBData(release.title, mbMap)
@@ -401,8 +399,7 @@ async function enrichRelease(
   // Prefer iTunes URL; fall back to Spotify if Apple Music URL is unavailable
   const odesliLookupUrl = currentAppleUrl ?? currentSpotifyUrl ?? ''
 
-  const { links, entityType } = await enrichWithOdesli(odesliLookupUrl, redis)
-  odesliEntityType = entityType
+  const { links, entityType: odesliEntityType } = await enrichWithOdesli(odesliLookupUrl, redis)
 
   const newLinks: StreamingLink[] = [...(updated.streamingLinks ?? [])]
   const updateLink = (plat: string, url: string | undefined) => {
