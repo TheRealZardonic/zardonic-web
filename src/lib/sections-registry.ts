@@ -2,16 +2,33 @@ import type { DisclosureLevel, SectionLabels } from '@/lib/types'
 
 export type { DisclosureLevel }
 
+export interface SelectOption {
+  label: string
+  value: string
+}
+
 export interface SectionConfigField {
   /** Dot-notation path within AdminSettings or SiteData, e.g. 'labels.biography' or 'siteData.bio' */
   path: string
   label: string
-  type: 'text' | 'textarea' | 'toggle' | 'url' | 'number' | 'color'
+  type: 'text' | 'textarea' | 'toggle' | 'url' | 'number' | 'color' | 'select' | 'slider' | 'image'
   placeholder?: string
   /** Which disclosure level is needed to see this field. Default: 'basic' */
   disclosure?: DisclosureLevel
   /** When true, writes to SiteData instead of AdminSettings */
   targetSiteData?: boolean
+  /** Options for 'select' type */
+  options?: SelectOption[]
+  /** Min value for 'slider' and 'number' types */
+  min?: number
+  /** Max value for 'slider' and 'number' types */
+  max?: number
+  /** Step value for 'slider' type */
+  step?: number
+  /** Optional help text shown below the label */
+  description?: string
+  /** Default value — when current value differs, a Reset button is shown */
+  defaultValue?: unknown
 }
 
 export interface SectionRegistryEntry {
@@ -27,6 +44,14 @@ export interface SectionRegistryEntry {
   configFields: SectionConfigField[]
 }
 
+const FONT_SIZE_OPTIONS: SelectOption[] = [
+  { label: 'Small (14px)', value: 'text-sm' },
+  { label: 'Normal (16px)', value: 'text-base' },
+  { label: 'Large (18px)', value: 'text-lg' },
+  { label: 'XL (20px)', value: 'text-xl' },
+  { label: '2XL (24px)', value: 'text-2xl' },
+]
+
 export const SECTION_REGISTRY: SectionRegistryEntry[] = [
   {
     id: 'bio',
@@ -40,8 +65,23 @@ export const SECTION_REGISTRY: SectionRegistryEntry[] = [
       { path: 'labels.headingPrefix', label: 'Heading Prefix', type: 'text', placeholder: '//', disclosure: 'advanced' },
       { path: 'labels.bioReadMoreText', label: 'Read More Button Text', type: 'text', placeholder: 'Read More', disclosure: 'advanced' },
       { path: 'labels.bioShowLessText', label: 'Show Less Button Text', type: 'text', placeholder: 'Show Less', disclosure: 'advanced' },
-      { path: 'sections.styleOverrides.bio.bodyFontSize', label: 'Body Font Size', type: 'text', placeholder: 'text-lg', disclosure: 'expert' },
-      { path: 'sections.styleOverrides.bio.readMoreMaxHeight', label: 'Read More Max Height', type: 'text', placeholder: '17.5rem', disclosure: 'expert' },
+      {
+        path: 'sections.styleOverrides.bio.bodyFontSize',
+        label: 'Body Font Size',
+        type: 'select',
+        options: FONT_SIZE_OPTIONS,
+        defaultValue: 'text-lg',
+        description: 'Font size for the biography body text.',
+        disclosure: 'advanced',
+      },
+      {
+        path: 'sections.styleOverrides.bio.readMoreMaxHeight',
+        label: 'Read More Max Height',
+        type: 'text',
+        placeholder: '17.5rem',
+        description: 'CSS height at which the bio is clipped with a "Read More" button.',
+        disclosure: 'expert',
+      },
     ],
   },
   {
@@ -55,6 +95,52 @@ export const SECTION_REGISTRY: SectionRegistryEntry[] = [
       { path: 'shell.name', label: 'Member Name', type: 'text', disclosure: 'basic' },
       { path: 'shell.role', label: 'Member Role', type: 'text', disclosure: 'basic' },
       { path: 'shell.bio', label: 'Member Bio', type: 'textarea', disclosure: 'basic' },
+      {
+        path: 'shell.photo',
+        label: 'Profile Photo URL',
+        type: 'image',
+        placeholder: 'https://...',
+        description: "URL of the member's profile photo.",
+        disclosure: 'basic',
+      },
+      {
+        path: 'shell.social.instagram',
+        label: 'Instagram',
+        type: 'url',
+        placeholder: 'https://instagram.com/...',
+        disclosure: 'advanced',
+      },
+      {
+        path: 'shell.social.twitter',
+        label: 'Twitter / X',
+        type: 'url',
+        placeholder: 'https://twitter.com/...',
+        disclosure: 'advanced',
+      },
+      {
+        path: 'shell.social.youtube',
+        label: 'YouTube',
+        type: 'url',
+        disclosure: 'advanced',
+      },
+      {
+        path: 'shell.social.website',
+        label: 'Personal Website',
+        type: 'url',
+        disclosure: 'advanced',
+      },
+      {
+        path: 'sections.styleOverrides.shell.textAlign',
+        label: 'Layout Alignment',
+        type: 'select',
+        options: [
+          { label: 'Left', value: 'left' },
+          { label: 'Center', value: 'center' },
+          { label: 'Right', value: 'right' },
+        ],
+        description: 'Alignment of the member card content.',
+        disclosure: 'expert',
+      },
     ],
   },
   {
@@ -67,6 +153,8 @@ export const SECTION_REGISTRY: SectionRegistryEntry[] = [
       { path: 'labels.creditHighlights', label: 'Section Heading', type: 'text', placeholder: 'CREDITS', disclosure: 'basic' },
       { path: 'labels.creditHighlightsPrefix', label: 'Heading Prefix', type: 'text', placeholder: '//', disclosure: 'advanced' },
       { path: 'labels.creditHighlightsHeadingVisible', label: 'Show Heading', type: 'toggle', disclosure: 'advanced' },
+      { path: 'labels.collabs', label: '"Collabs" Label', type: 'text', placeholder: 'Collabs', disclosure: 'advanced' },
+      { path: 'labels.partnersAndFriends', label: '"Partners & Friends" Label', type: 'text', placeholder: 'Partners & Friends', disclosure: 'advanced' },
     ],
   },
   {
@@ -79,6 +167,32 @@ export const SECTION_REGISTRY: SectionRegistryEntry[] = [
       { path: 'labels.musicPlayer', label: 'Section Heading', type: 'text', placeholder: 'MUSIC', disclosure: 'basic' },
       { path: 'labels.musicStreamLabel', label: 'Stream Label', type: 'text', disclosure: 'advanced' },
       { path: 'labels.musicStatusLabel', label: 'Status Label', type: 'text', disclosure: 'advanced' },
+      {
+        path: 'sound.defaultMuted',
+        label: 'Start Muted',
+        type: 'toggle',
+        defaultValue: false,
+        description: 'Whether the music player starts muted.',
+        disclosure: 'advanced',
+      },
+      {
+        path: 'sound.backgroundMusicVolume',
+        label: 'Background Music Volume',
+        type: 'slider',
+        min: 0,
+        max: 1,
+        step: 0.05,
+        defaultValue: 0.5,
+        description: 'Default playback volume (0 = silent, 1 = full).',
+        disclosure: 'advanced',
+      },
+      {
+        path: 'sound.backgroundMusic',
+        label: 'Background Music URL',
+        type: 'url',
+        description: 'URL of an audio file to use as background music.',
+        disclosure: 'expert',
+      },
     ],
   },
   {
@@ -107,6 +221,9 @@ export const SECTION_REGISTRY: SectionRegistryEntry[] = [
       { path: 'labels.releaseShowYear', label: 'Show Release Year', type: 'toggle', disclosure: 'basic' },
       { path: 'labels.releaseShowDescription', label: 'Show Description', type: 'toggle', disclosure: 'basic' },
       { path: 'labels.releaseShowTracks', label: 'Show Tracklist', type: 'toggle', disclosure: 'basic' },
+      { path: 'labels.releasesShowAllText', label: '"Show All" Button Text', type: 'text', disclosure: 'advanced' },
+      { path: 'labels.releasesShowLessText', label: '"Show Less" Button Text', type: 'text', disclosure: 'advanced' },
+      { path: 'labels.releasesLoadingLabel', label: 'Loading Label', type: 'text', disclosure: 'advanced' },
       { path: 'labels.releaseStreamLabel', label: 'Stream Label', type: 'text', disclosure: 'advanced' },
       { path: 'labels.releaseInfoLabel', label: 'Info Label', type: 'text', disclosure: 'advanced' },
       { path: 'labels.releaseTracksLabel', label: 'Tracklist Label', type: 'text', disclosure: 'advanced' },
@@ -124,6 +241,58 @@ export const SECTION_REGISTRY: SectionRegistryEntry[] = [
     showInNav: true,
     configFields: [
       { path: 'labels.gallery', label: 'Section Heading', type: 'text', placeholder: 'GALLERY', disclosure: 'basic' },
+      {
+        path: 'sections.styleOverrides.gallery.columns',
+        label: 'Columns',
+        type: 'select',
+        options: [
+          { label: '2 Columns', value: '2' },
+          { label: '3 Columns', value: '3' },
+          { label: '4 Columns', value: '4' },
+        ],
+        defaultValue: '3',
+        description: 'Number of columns in the image grid.',
+        disclosure: 'advanced',
+      },
+      {
+        path: 'sections.styleOverrides.gallery.aspectRatio',
+        label: 'Image Aspect Ratio',
+        type: 'select',
+        options: [
+          { label: 'Square (1:1)', value: 'square' },
+          { label: 'Widescreen (16:9)', value: '16/9' },
+          { label: 'Auto (original)', value: 'auto' },
+        ],
+        defaultValue: 'square',
+        description: 'Aspect ratio applied to each gallery image.',
+        disclosure: 'advanced',
+      },
+      {
+        path: 'sections.styleOverrides.gallery.lightbox',
+        label: 'Enable Lightbox',
+        type: 'toggle',
+        defaultValue: true,
+        description: 'Open images in a fullscreen lightbox on click.',
+        disclosure: 'advanced',
+      },
+      {
+        path: 'sections.styleOverrides.gallery.maxVisible',
+        label: 'Max Visible Images',
+        type: 'number',
+        min: 1,
+        max: 100,
+        placeholder: '12',
+        description: 'Number of images shown before a "Show more" button appears.',
+        disclosure: 'advanced',
+      },
+      {
+        path: 'sections.styleOverrides.gallery.gap',
+        label: 'Gap Between Images',
+        type: 'text',
+        placeholder: '0.5rem',
+        description: 'CSS gap between grid cells (e.g. 0.5rem, 8px).',
+        disclosure: 'expert',
+      },
     ],
   },
   {
@@ -134,6 +303,28 @@ export const SECTION_REGISTRY: SectionRegistryEntry[] = [
     showInNav: false,
     configFields: [
       { path: 'labels.media', label: 'Section Heading', type: 'text', placeholder: 'MEDIA', disclosure: 'basic' },
+      {
+        path: 'sections.styleOverrides.media.layout',
+        label: 'Video Layout',
+        type: 'select',
+        options: [
+          { label: 'Grid', value: 'grid' },
+          { label: 'List', value: 'list' },
+        ],
+        defaultValue: 'grid',
+        description: 'How video items are arranged.',
+        disclosure: 'advanced',
+      },
+      {
+        path: 'sections.styleOverrides.media.maxVisible',
+        label: 'Max Visible Items',
+        type: 'number',
+        min: 1,
+        max: 100,
+        placeholder: '6',
+        description: 'Number of videos shown before a "Show more" button appears.',
+        disclosure: 'advanced',
+      },
     ],
   },
   {
@@ -150,12 +341,16 @@ export const SECTION_REGISTRY: SectionRegistryEntry[] = [
       { path: 'siteData.social.youtube', label: 'YouTube', type: 'url', placeholder: 'https://youtube.com/...', disclosure: 'basic', targetSiteData: true },
       { path: 'siteData.social.soundcloud', label: 'SoundCloud', type: 'url', disclosure: 'basic', targetSiteData: true },
       { path: 'siteData.social.bandcamp', label: 'Bandcamp', type: 'url', disclosure: 'basic', targetSiteData: true },
+      { path: 'siteData.website', label: 'Website / Homepage URL', type: 'url', placeholder: 'https://...', disclosure: 'basic', targetSiteData: true },
       { path: 'siteData.social.tiktok', label: 'TikTok', type: 'url', disclosure: 'advanced', targetSiteData: true },
       { path: 'siteData.social.appleMusic', label: 'Apple Music', type: 'url', disclosure: 'advanced', targetSiteData: true },
       { path: 'siteData.social.twitter', label: 'Twitter / X', type: 'url', disclosure: 'advanced', targetSiteData: true },
       { path: 'siteData.social.twitch', label: 'Twitch', type: 'url', disclosure: 'advanced', targetSiteData: true },
       { path: 'siteData.social.beatport', label: 'Beatport', type: 'url', disclosure: 'advanced', targetSiteData: true },
       { path: 'siteData.social.linktree', label: 'Linktree', type: 'url', disclosure: 'advanced', targetSiteData: true },
+      { path: 'labels.sessionStatusText', label: 'Session Status Text', type: 'text', disclosure: 'expert' },
+      { path: 'labels.profileStatusText', label: 'Profile Status Text', type: 'text', disclosure: 'expert' },
+      { path: 'labels.closeButtonText', label: 'Close Button Text', type: 'text', placeholder: 'Close', disclosure: 'expert' },
     ],
   },
   {
@@ -166,6 +361,7 @@ export const SECTION_REGISTRY: SectionRegistryEntry[] = [
     showInNav: false,
     configFields: [
       { path: 'labels.contact', label: 'Section Heading', type: 'text', placeholder: 'CONTACT', disclosure: 'basic' },
+      { path: 'contact.enabled', label: 'Enable Contact Section', type: 'toggle', defaultValue: true, disclosure: 'basic' },
       { path: 'contact.formTitle', label: 'Form Title', type: 'text', placeholder: 'GET IN TOUCH', disclosure: 'basic' },
       { path: 'contact.formButtonText', label: 'Submit Button Text', type: 'text', disclosure: 'basic' },
       { path: 'contact.successMessage', label: 'Success Message', type: 'text', disclosure: 'basic' },
@@ -174,6 +370,14 @@ export const SECTION_REGISTRY: SectionRegistryEntry[] = [
       { path: 'contact.managementEmail', label: 'Management Email', type: 'url', disclosure: 'advanced' },
       { path: 'contact.bookingEmail', label: 'Booking Email', type: 'url', disclosure: 'advanced' },
       { path: 'contact.pressEmail', label: 'Press Email', type: 'url', disclosure: 'advanced' },
+      { path: 'contact.formNameLabel', label: 'Name Field Label', type: 'text', placeholder: 'Your Name', disclosure: 'advanced' },
+      { path: 'contact.formNamePlaceholder', label: 'Name Field Placeholder', type: 'text', placeholder: 'Enter your name', disclosure: 'advanced' },
+      { path: 'contact.formEmailLabel', label: 'Email Field Label', type: 'text', placeholder: 'Your Email', disclosure: 'advanced' },
+      { path: 'contact.formEmailPlaceholder', label: 'Email Field Placeholder', type: 'text', placeholder: 'your@email.com', disclosure: 'advanced' },
+      { path: 'contact.formSubjectLabel', label: 'Subject Field Label', type: 'text', placeholder: 'Subject', disclosure: 'advanced' },
+      { path: 'contact.formSubjectPlaceholder', label: 'Subject Field Placeholder', type: 'text', placeholder: 'What is this about?', disclosure: 'advanced' },
+      { path: 'contact.formMessageLabel', label: 'Message Field Label', type: 'text', placeholder: 'Message', disclosure: 'advanced' },
+      { path: 'contact.formMessagePlaceholder', label: 'Message Field Placeholder', type: 'text', placeholder: 'Your message...', disclosure: 'advanced' },
     ],
   },
   {

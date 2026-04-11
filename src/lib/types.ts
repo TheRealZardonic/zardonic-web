@@ -416,6 +416,16 @@ export interface AdminSettings {
 
   // Custom social links (not covered by SiteData.social)
   customSocialLinks?: CustomSocialLink[]
+
+  // Sound / audio settings
+  sound?: SoundSettings
+
+  // Analytics settings
+  analytics?: {
+    enabled?: boolean
+    trackPageViews?: boolean
+    trackEvents?: boolean
+  }
 }
 
 export interface CustomColorPreset {

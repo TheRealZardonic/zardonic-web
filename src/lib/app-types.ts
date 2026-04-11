@@ -100,6 +100,7 @@ export interface SiteData {
     linktree?: string
     merch?: string
   }
+  website?: string
 }
 
 export const DEFAULT_SITE_DATA: SiteData = {

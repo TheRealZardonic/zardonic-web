@@ -16,7 +16,9 @@ import type {
   AnimationSettings,
   ProgressiveOverlayModes,
   CustomColorPreset,
+  DisclosureLevel,
 } from '@/lib/types'
+import { isFieldVisible } from '@/lib/admin-settings'
 
 const BUILTIN_PRESETS: { name: string; theme: Partial<ThemeCustomization> }[] = [
   {
@@ -118,7 +120,7 @@ interface AppearanceTabProps {
   onOpenConfigEditor?: () => void
   newPresetName: string
   setNewPresetName: (v: string) => void
-  expertMode?: boolean
+  disclosureLevel?: DisclosureLevel
 }
 
 const animItems: { key: keyof AnimationSettings; label: string }[] = [
@@ -259,8 +261,9 @@ export default function AppearanceTab({
   onOpenConfigEditor,
   newPresetName,
   setNewPresetName,
-  expertMode = false,
+  disclosureLevel = 'basic',
 }: AppearanceTabProps) {
+  const isExpert = isFieldVisible('expert', disclosureLevel)
   // Auto-contrast: sets all text foreground colors so they contrast sufficiently
   const handleAutoContrast = () => {
     const bg = theme.backgroundColor || 'oklch(0 0 0)'
@@ -793,7 +796,7 @@ export default function AppearanceTab({
       )}
 
       {/* Expert Mode: Typography Details */}
-      {expertMode && (
+      {isExpert && (
         <>
           <Separator />
           <section className="space-y-3">

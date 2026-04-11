@@ -129,6 +129,32 @@ describe('getAdminValue', () => {
     const settings: AdminSettings = {}
     expect(getAdminValue(settings, 'labels.biography')).toBeUndefined()
   })
+
+  it('handles null settings', () => {
+    expect(getAdminValue(null, 'labels.biography')).toBeUndefined()
+  })
+
+  it('retrieves triple-nested value', () => {
+    const settings: AdminSettings = {
+      design: { typography: { headingFontSize: '2rem' } },
+    }
+    expect(getAdminValue(settings, 'design.typography.headingFontSize')).toBe('2rem')
+  })
+
+  it('returns undefined when intermediate key is missing', () => {
+    const settings: AdminSettings = {}
+    expect(getAdminValue(settings, 'design.typography.headingFontSize')).toBeUndefined()
+  })
+
+  it('retrieves boolean value', () => {
+    const settings: AdminSettings = { labels: { releaseShowType: true } }
+    expect(getAdminValue(settings, 'labels.releaseShowType')).toBe(true)
+  })
+
+  it('retrieves numeric value', () => {
+    const settings: AdminSettings = { sound: { backgroundMusicVolume: 0.7 } }
+    expect(getAdminValue(settings, 'sound.backgroundMusicVolume')).toBe(0.7)
+  })
 })
 
 describe('setAdminValue', () => {
@@ -142,5 +168,35 @@ describe('setAdminValue', () => {
     const result = setAdminValue(existing, 'labels.biography', 'BIO')
     expect(result.labels?.biography).toBe('BIO')
     expect(result.labels?.releases).toBe('RELEASES')
+  })
+
+  it('sets triple-nested value', () => {
+    const result = setAdminValue(undefined, 'design.typography.headingFontSize', '3rem')
+    expect(result.design?.typography?.headingFontSize).toBe('3rem')
+  })
+
+  it('preserves siblings when setting a nested value', () => {
+    const existing: AdminSettings = {
+      design: { typography: { headingFontSize: '2rem', bodyFontSize: '1rem' } },
+    }
+    const result = setAdminValue(existing, 'design.typography.headingFontSize', '3rem')
+    expect(result.design?.typography?.headingFontSize).toBe('3rem')
+    expect(result.design?.typography?.bodyFontSize).toBe('1rem')
+  })
+
+  it('creates intermediate objects as needed', () => {
+    const result = setAdminValue(undefined, 'sound.backgroundMusicVolume', 0.5)
+    expect(result.sound?.backgroundMusicVolume).toBe(0.5)
+  })
+
+  it('sets analytics enabled flag', () => {
+    const result = setAdminValue(undefined, 'analytics.enabled', false)
+    expect(result.analytics?.enabled).toBe(false)
+  })
+
+  it('does not mutate the original settings', () => {
+    const original: AdminSettings = { labels: { biography: 'OLD' } }
+    setAdminValue(original, 'labels.biography', 'NEW')
+    expect(original.labels?.biography).toBe('OLD')
   })
 })

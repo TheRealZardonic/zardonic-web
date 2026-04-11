@@ -110,7 +110,6 @@ export default function AdminPanel({
   const translationImportRef = useRef<HTMLInputElement>(null)
 
   const disclosureLevel: DisclosureLevel = getDisclosureLevel(adminSettings)
-  const isExpert = disclosureLevel === 'expert'
 
   const [newPresetName, setNewPresetName] = useState('')
   const [apiHealth, setApiHealth] = useState<{ status: string; services: Record<string, unknown> } | null>(null)
@@ -335,7 +334,7 @@ export default function AdminPanel({
             onOpenConfigEditor={onOpenConfigEditor}
             newPresetName={newPresetName}
             setNewPresetName={setNewPresetName}
-            expertMode={isExpert}
+            disclosureLevel={disclosureLevel}
           />
         )
       }
@@ -354,7 +353,7 @@ export default function AdminPanel({
           <LayoutTab
             adminSettings={adminSettings}
             setAdminSettings={setAdminSettings}
-            expertMode={isExpert}
+            disclosureLevel={disclosureLevel}
           />
         )
       }
@@ -407,6 +406,8 @@ export default function AdminPanel({
             onOpenStats={onOpenStats}
             onOpenContactInbox={onOpenContactInbox}
             onClose={onClose}
+            adminSettings={adminSettings}
+            setAdminSettings={setAdminSettings}
           />
         )
       }

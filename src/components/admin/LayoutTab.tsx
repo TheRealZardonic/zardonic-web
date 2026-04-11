@@ -5,15 +5,17 @@ import { Separator } from '@/components/ui/separator'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 
-import type { AdminSettings } from '@/lib/types'
+import type { AdminSettings, DisclosureLevel } from '@/lib/types'
+import { isFieldVisible } from '@/lib/admin-settings'
 
 interface LayoutTabProps {
   adminSettings: AdminSettings | null | undefined
   setAdminSettings: ((s: AdminSettings) => void) | undefined
-  expertMode?: boolean
+  disclosureLevel?: DisclosureLevel
 }
 
-export default function LayoutTab({ adminSettings, setAdminSettings, expertMode = false }: LayoutTabProps) {
+export default function LayoutTab({ adminSettings, setAdminSettings, disclosureLevel = 'basic' }: LayoutTabProps) {
+  const isAdvanced = isFieldVisible('advanced', disclosureLevel)
   const layoutSpacing = adminSettings?.design?.layout ?? {}
   const navStyling = adminSettings?.design?.navigation ?? {}
   const footerStyling = adminSettings?.design?.footer ?? {}
@@ -52,7 +54,7 @@ export default function LayoutTab({ adminSettings, setAdminSettings, expertMode 
             onChange={(e) => updateLayoutSpacing({ sectionPaddingY: e.target.value || undefined })}
           />
         </div>
-        {expertMode && (
+        {isAdvanced && (
           <>
             <div className="space-y-2">
               <Label className="font-mono text-xs">Section Padding X</Label>
@@ -112,7 +114,7 @@ export default function LayoutTab({ adminSettings, setAdminSettings, expertMode 
             onCheckedChange={(v) => updateNavStyling({ backdropBlur: v })}
           />
         </div>
-        {expertMode && (
+        {isAdvanced && (
           <>
             <div className="space-y-2">
               <Label className="font-mono text-xs">Logo Height</Label>
@@ -161,7 +163,7 @@ export default function LayoutTab({ adminSettings, setAdminSettings, expertMode 
             onChange={(e) => updateFooterStyling({ paddingY: e.target.value || undefined })}
           />
         </div>
-        {expertMode && (
+        {isAdvanced && (
           <>
             <div className="space-y-2">
               <Label className="font-mono text-xs">Padding X</Label>
@@ -219,7 +221,7 @@ export default function LayoutTab({ adminSettings, setAdminSettings, expertMode 
             ))}
           </div>
         </div>
-        {expertMode && (
+        {isAdvanced && (
           <div className="space-y-2">
             <Label className="font-mono text-xs">Padding Top</Label>
             <Input
@@ -257,7 +259,7 @@ export default function LayoutTab({ adminSettings, setAdminSettings, expertMode 
             ))}
           </div>
         </div>
-        {expertMode && (
+        {isAdvanced && (
           <div className="space-y-2">
             <Label className="font-mono text-xs">Read More Max Height</Label>
             <Input
