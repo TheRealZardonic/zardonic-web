@@ -38,7 +38,7 @@ export function ContactOverlayContent({ adminSettings, decorativeTexts }: Contac
       </motion.div>
 
       <div className="space-y-6 text-foreground/90">
-        {(adminSettings?.contactInfo?.managementName || adminSettings?.contactInfo?.managementEmail) && (
+        {(adminSettings?.contact?.managementName || adminSettings?.contact?.managementEmail) && (
           <motion.div
             className="cyber-grid p-4"
             initial={{ opacity: 0, x: -10 }}
@@ -47,17 +47,17 @@ export function ContactOverlayContent({ adminSettings, decorativeTexts }: Contac
           >
             <div className="data-label mb-3">Management</div>
             <div className="space-y-2 font-mono text-sm">
-              {adminSettings?.contactInfo?.managementName && (
-                <p>{adminSettings.contactInfo.managementName}</p>
+              {adminSettings?.contact?.managementName && (
+                <p>{adminSettings.contact.managementName}</p>
               )}
-              {adminSettings?.contactInfo?.managementEmail && (
-                <p>E-Mail: <a href={`mailto:${adminSettings.contactInfo.managementEmail}`} className="text-primary hover:underline">{adminSettings.contactInfo.managementEmail}</a></p>
+              {adminSettings?.contact?.managementEmail && (
+                <p>E-Mail: <a href={`mailto:${adminSettings.contact.managementEmail}`} className="text-primary hover:underline">{adminSettings.contact.managementEmail}</a></p>
               )}
             </div>
           </motion.div>
         )}
 
-        {adminSettings?.contactInfo?.bookingEmail && (
+        {adminSettings?.contact?.bookingEmail && (
           <motion.div
             className="cyber-grid p-4"
             initial={{ opacity: 0, x: -10 }}
@@ -66,12 +66,12 @@ export function ContactOverlayContent({ adminSettings, decorativeTexts }: Contac
           >
             <div className="data-label mb-3">Booking</div>
             <div className="space-y-2 font-mono text-sm">
-              <p>E-Mail: <a href={`mailto:${adminSettings.contactInfo.bookingEmail}`} className="text-primary hover:underline">{adminSettings.contactInfo.bookingEmail}</a></p>
+              <p>E-Mail: <a href={`mailto:${adminSettings.contact.bookingEmail}`} className="text-primary hover:underline">{adminSettings.contact.bookingEmail}</a></p>
             </div>
           </motion.div>
         )}
 
-        {adminSettings?.contactInfo?.pressEmail && (
+        {adminSettings?.contact?.pressEmail && (
           <motion.div
             className="cyber-grid p-4"
             initial={{ opacity: 0, x: -10 }}
@@ -80,7 +80,7 @@ export function ContactOverlayContent({ adminSettings, decorativeTexts }: Contac
           >
             <div className="data-label mb-3">Press / Media</div>
             <div className="space-y-2 font-mono text-sm">
-              <p>E-Mail: <a href={`mailto:${adminSettings.contactInfo.pressEmail}`} className="text-primary hover:underline">{adminSettings.contactInfo.pressEmail}</a></p>
+              <p>E-Mail: <a href={`mailto:${adminSettings.contact.pressEmail}`} className="text-primary hover:underline">{adminSettings.contact.pressEmail}</a></p>
             </div>
           </motion.div>
         )}
@@ -132,25 +132,25 @@ export function ContactOverlayContent({ adminSettings, decorativeTexts }: Contac
             <input type="text" name="_hp" tabIndex={-1} autoComplete="off" aria-hidden="true" className="absolute opacity-0 h-0 w-0 overflow-hidden pointer-events-none" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label className="font-mono text-xs uppercase tracking-wide">{adminSettings?.contactInfo?.formNameLabel || 'Name'}</Label>
-                <Input name="name" required maxLength={100} placeholder={adminSettings?.contactInfo?.formNamePlaceholder || 'Your name'} className="bg-card border-border font-mono mt-1" />
+                <Label className="font-mono text-xs uppercase tracking-wide">{adminSettings?.contact?.formNameLabel || 'Name'}</Label>
+                <Input name="name" required maxLength={100} placeholder={adminSettings?.contact?.formNamePlaceholder || 'Your name'} className="bg-card border-border font-mono mt-1" />
               </div>
               <div>
-                <Label className="font-mono text-xs uppercase tracking-wide">{adminSettings?.contactInfo?.formEmailLabel || 'Email'}</Label>
-                <Input name="email" type="email" required maxLength={254} placeholder={adminSettings?.contactInfo?.formEmailPlaceholder || 'your@email.com'} className="bg-card border-border font-mono mt-1" />
+                <Label className="font-mono text-xs uppercase tracking-wide">{adminSettings?.contact?.formEmailLabel || 'Email'}</Label>
+                <Input name="email" type="email" required maxLength={254} placeholder={adminSettings?.contact?.formEmailPlaceholder || 'your@email.com'} className="bg-card border-border font-mono mt-1" />
               </div>
             </div>
             <div>
-              <Label className="font-mono text-xs uppercase tracking-wide">{adminSettings?.contactInfo?.formSubjectLabel || 'Subject'}</Label>
-              <Input name="subject" required maxLength={200} placeholder={adminSettings?.contactInfo?.formSubjectPlaceholder || 'Subject'} className="bg-card border-border font-mono mt-1" />
+              <Label className="font-mono text-xs uppercase tracking-wide">{adminSettings?.contact?.formSubjectLabel || 'Subject'}</Label>
+              <Input name="subject" required maxLength={200} placeholder={adminSettings?.contact?.formSubjectPlaceholder || 'Subject'} className="bg-card border-border font-mono mt-1" />
             </div>
             <div>
-              <Label className="font-mono text-xs uppercase tracking-wide">{adminSettings?.contactInfo?.formMessageLabel || 'Message'}</Label>
-              <Textarea name="message" required maxLength={5000} placeholder={adminSettings?.contactInfo?.formMessagePlaceholder || 'Your message...'} className="bg-card border-border font-mono mt-1 min-h-[120px]" />
+              <Label className="font-mono text-xs uppercase tracking-wide">{adminSettings?.contact?.formMessageLabel || 'Message'}</Label>
+              <Textarea name="message" required maxLength={5000} placeholder={adminSettings?.contact?.formMessagePlaceholder || 'Your message...'} className="bg-card border-border font-mono mt-1 min-h-[120px]" />
             </div>
             <Button type="submit" className="w-full uppercase font-mono hover-glitch cyber-border">
               <PaperPlaneTilt className="w-5 h-5 mr-2" />
-              <span className="hover-chromatic">{adminSettings?.contactInfo?.formButtonText || 'Send Message'}</span>
+              <span className="hover-chromatic">{adminSettings?.contact?.formButtonText || 'Send Message'}</span>
             </Button>
           </form>
         </motion.div>

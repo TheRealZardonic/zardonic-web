@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { TabsContent, Tabs } from '@/components/ui/tabs'
+import { Tabs } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -51,28 +51,28 @@ export default function SectionConfigTab({
 }: SectionConfigTabProps) {
   const [activeSection, setActiveSection] = useState('hero')
 
-  const labels: SectionLabels = adminSettings?.sectionLabels ?? {}
-  const contactInfo: ContactInfo = adminSettings?.contactInfo ?? {}
-  const contactSettings: ContactSettings = adminSettings?.contactSettings ?? {}
+  const labels: SectionLabels = adminSettings?.labels ?? {}
+  const contactInfo: ContactInfo = adminSettings?.contact ?? {}
+  const contactSettings: ContactSettings = adminSettings?.contact ?? {}
 
   const updateLabel = (key: keyof SectionLabels, value: string | boolean) => {
     setAdminSettings?.({
       ...(adminSettings ?? {}),
-      sectionLabels: { ...labels, [key]: value },
+      labels: { ...labels, [key]: value },
     })
   }
 
   const updateContactInfo = (key: keyof ContactInfo, value: string) => {
     setAdminSettings?.({
       ...(adminSettings ?? {}),
-      contactInfo: { ...contactInfo, [key]: value },
+      contact: { ...adminSettings?.contact, [key]: value },
     })
   }
 
   const updateContactSettings = (key: keyof ContactSettings, value: string | boolean) => {
     setAdminSettings?.({
       ...(adminSettings ?? {}),
-      contactSettings: { ...contactSettings, [key]: value },
+      contact: { ...adminSettings?.contact, [key]: value },
     })
   }
 
@@ -90,12 +90,12 @@ export default function SectionConfigTab({
   const updateShellMember = (key: keyof ShellMember, value: string) => {
     setAdminSettings?.({
       ...(adminSettings ?? {}),
-      shellMember: { ...(adminSettings?.shellMember ?? { name: '' }), [key]: value },
+      shell: { ...(adminSettings?.shell ?? { name: '' }), [key]: value },
     })
   }
 
   return (
-    <TabsContent value="section-config" className="flex-1 overflow-y-auto mt-0">
+    <div className="flex-1 overflow-y-auto mt-0">
       <Tabs value={activeSection} onValueChange={setActiveSection} orientation="vertical">
         <div className="flex h-full">
           {/* Inner section tab list */}
@@ -185,19 +185,19 @@ export default function SectionConfigTab({
                 />
                 <Field
                   label="Member Name"
-                  value={adminSettings?.shellMember?.name ?? ''}
+                  value={adminSettings?.shell?.name ?? ''}
                   onChange={v => updateShellMember('name', v)}
                   placeholder="Member name"
                 />
                 <Field
                   label="Member Role"
-                  value={adminSettings?.shellMember?.role ?? ''}
+                  value={adminSettings?.shell?.role ?? ''}
                   onChange={v => updateShellMember('role', v)}
                   placeholder="e.g. Producer / DJ"
                 />
                 <Field
                   label="Member Bio"
-                  value={adminSettings?.shellMember?.bio ?? ''}
+                  value={adminSettings?.shell?.bio ?? ''}
                   onChange={v => updateShellMember('bio', v)}
                   placeholder="Short member bio..."
                   multiline
@@ -444,20 +444,20 @@ export default function SectionConfigTab({
                 />
                 <Field
                   label="Impressum / Legal Notice"
-                  value={adminSettings?.legalContent?.impressumCustom ?? ''}
+                  value={adminSettings?.legal?.impressumCustom ?? ''}
                   onChange={v => setAdminSettings?.({
                     ...(adminSettings ?? {}),
-                    legalContent: { ...(adminSettings?.legalContent ?? {}), impressumCustom: v },
+                    legal: { ...(adminSettings?.legal ?? {}), impressumCustom: v },
                   })}
                   placeholder="Legal notice text..."
                   multiline
                 />
                 <Field
                   label="Privacy Policy (Datenschutz)"
-                  value={adminSettings?.legalContent?.privacyCustom ?? ''}
+                  value={adminSettings?.legal?.privacyCustom ?? ''}
                   onChange={v => setAdminSettings?.({
                     ...(adminSettings ?? {}),
-                    legalContent: { ...(adminSettings?.legalContent ?? {}), privacyCustom: v },
+                    legal: { ...(adminSettings?.legal ?? {}), privacyCustom: v },
                   })}
                   placeholder="Privacy policy text..."
                   multiline
@@ -467,6 +467,6 @@ export default function SectionConfigTab({
           </div>
         </div>
       </Tabs>
-    </TabsContent>
+    </div>
   )
 }

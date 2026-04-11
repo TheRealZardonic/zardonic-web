@@ -33,7 +33,7 @@ interface CyberpunkOverlayProps {
 export default function CyberpunkOverlay({ overlay, onClose, adminSettings, artistName = '' }: CyberpunkOverlayProps) {
   const [overlayPhase, setOverlayPhase] = useState<'loading' | 'glitch' | 'revealed'>('loading')
   const [loadingText, setLoadingText] = useState(OVERLAY_LOADING_TEXTS[0])
-  const decorativeTexts = adminSettings?.decorativeTexts
+  const decorativeTexts = adminSettings?.decorative
   const systemLabel = decorativeTexts?.overlaySystemLabel ?? `// ${artistName ? `${artistName.toUpperCase()}.NET` : 'SYSTEM.INTERFACE'} // v${typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.0'}`
 
   useEffect(() => {
@@ -173,7 +173,7 @@ export default function CyberpunkOverlay({ overlay, onClose, adminSettings, arti
                           )}
 
                           {overlay.type === 'release' && overlay.data && (
-                            <ReleaseOverlayContent data={overlay.data} sectionLabels={adminSettings?.sectionLabels} />
+                            <ReleaseOverlayContent data={overlay.data} sectionLabels={adminSettings?.labels} />
                           )}
                         </>
                       )}

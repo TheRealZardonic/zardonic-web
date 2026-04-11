@@ -87,11 +87,11 @@ export default function AppGigsSection({ gigs, sectionOrder, visible, editMode, 
                   text={sectionLabel}
                   defaultText="UPCOMING GIGS"
                   editMode={editMode && !!onLabelChange}
-                  glitchEnabled={adminSettings?.glitchTextSettings?.enabled !== false}
-                  glitchIntervalMs={adminSettings?.glitchTextSettings?.intervalMs}
-                  glitchDurationMs={adminSettings?.glitchTextSettings?.durationMs}
+                  glitchEnabled={adminSettings?.terminal?.glitchText?.enabled !== false}
+                  glitchIntervalMs={adminSettings?.terminal?.glitchText?.intervalMs}
+                  glitchDurationMs={adminSettings?.terminal?.glitchText?.durationMs}
                 />
-                {adminSettings?.animations?.blinkingCursor !== false && <span className="animate-pulse">_</span>}
+                {adminSettings?.background?.blinkingCursor !== false && <span className="animate-pulse">_</span>}
               </h2>
               {editMode && onRefresh && (
                 <Button

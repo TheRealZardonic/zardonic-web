@@ -76,11 +76,11 @@ export default function AppMusicSection({
                 text={sectionLabel}
                 defaultText="MUSIC PLAYER"
                 editMode={editMode}
-                glitchEnabled={adminSettings?.glitchTextSettings?.enabled !== false}
-                glitchIntervalMs={adminSettings?.glitchTextSettings?.intervalMs}
-                glitchDurationMs={adminSettings?.glitchTextSettings?.durationMs}
+                glitchEnabled={adminSettings?.terminal?.glitchText?.enabled !== false}
+                glitchIntervalMs={adminSettings?.terminal?.glitchText?.intervalMs}
+                glitchDurationMs={adminSettings?.terminal?.glitchText?.durationMs}
               />
-              {adminSettings?.animations?.blinkingCursor !== false && <span className="animate-pulse">_</span>}
+              {adminSettings?.background?.blinkingCursor !== false && <span className="animate-pulse">_</span>}
             </h2>
 
             <Card className="p-0 bg-card border-border relative cyber-card hover-noise overflow-hidden rounded-none" data-theme-color="card border">

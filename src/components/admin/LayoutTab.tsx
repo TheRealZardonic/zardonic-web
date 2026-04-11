@@ -4,7 +4,7 @@ import { Slider } from '@/components/ui/slider'
 import { Separator } from '@/components/ui/separator'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
-import { TabsContent } from '@/components/ui/tabs'
+
 import type { AdminSettings } from '@/lib/types'
 
 interface LayoutTabProps {
@@ -14,30 +14,30 @@ interface LayoutTabProps {
 }
 
 export default function LayoutTab({ adminSettings, setAdminSettings, expertMode = false }: LayoutTabProps) {
-  const layoutSpacing = adminSettings?.layoutSpacing ?? {}
-  const navStyling = adminSettings?.navigationStyling ?? {}
-  const footerStyling = adminSettings?.footerStyling ?? {}
-  const heroSection = adminSettings?.heroSection ?? {}
-  const bioSection = adminSettings?.bioSection ?? {}
+  const layoutSpacing = adminSettings?.design?.layout ?? {}
+  const navStyling = adminSettings?.design?.navigation ?? {}
+  const footerStyling = adminSettings?.design?.footer ?? {}
+  const heroSection = adminSettings?.sections?.styleOverrides?.hero ?? {}
+  const bioSection = adminSettings?.sections?.styleOverrides?.bio ?? {}
 
   const updateLayoutSpacing = (patch: Record<string, string | undefined>) => {
-    setAdminSettings?.({ ...(adminSettings ?? {}), layoutSpacing: { ...layoutSpacing, ...patch } })
+    setAdminSettings?.({ ...(adminSettings ?? {}), design: { ...(adminSettings?.design ?? {}), layout: { ...layoutSpacing, ...patch } } })
   }
   const updateNavStyling = (patch: Record<string, string | number | boolean | undefined>) => {
-    setAdminSettings?.({ ...(adminSettings ?? {}), navigationStyling: { ...navStyling, ...patch } })
+    setAdminSettings?.({ ...(adminSettings ?? {}), design: { ...(adminSettings?.design ?? {}), navigation: { ...navStyling, ...patch } } })
   }
   const updateFooterStyling = (patch: Record<string, string | undefined>) => {
-    setAdminSettings?.({ ...(adminSettings ?? {}), footerStyling: { ...footerStyling, ...patch } })
+    setAdminSettings?.({ ...(adminSettings ?? {}), design: { ...(adminSettings?.design ?? {}), footer: { ...footerStyling, ...patch } } })
   }
   const updateHeroSection = (patch: Record<string, string | undefined>) => {
-    setAdminSettings?.({ ...(adminSettings ?? {}), heroSection: { ...heroSection, ...patch } })
+    setAdminSettings?.({ ...(adminSettings ?? {}), sections: { ...(adminSettings?.sections ?? {}), styleOverrides: { ...(adminSettings?.sections?.styleOverrides ?? {}), hero: { ...heroSection, ...patch } } } })
   }
   const updateBioSection = (patch: Record<string, string | undefined>) => {
-    setAdminSettings?.({ ...(adminSettings ?? {}), bioSection: { ...bioSection, ...patch } })
+    setAdminSettings?.({ ...(adminSettings ?? {}), sections: { ...(adminSettings?.sections ?? {}), styleOverrides: { ...(adminSettings?.sections?.styleOverrides ?? {}), bio: { ...bioSection, ...patch } } } })
   }
 
   return (
-    <TabsContent value="layout" className="flex-1 overflow-y-auto p-4 space-y-4 mt-0">
+    <div className="flex-1 overflow-y-auto p-4 space-y-4 mt-0">
       {/* Layout & Spacing */}
       <section className="space-y-3">
         <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
@@ -269,6 +269,6 @@ export default function LayoutTab({ adminSettings, setAdminSettings, expertMode 
           </div>
         )}
       </section>
-    </TabsContent>
+    </div>
   )
 }

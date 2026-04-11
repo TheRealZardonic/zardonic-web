@@ -6,7 +6,6 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Slider } from '@/components/ui/slider'
 import { Separator } from '@/components/ui/separator'
-import { TabsContent } from '@/components/ui/tabs'
 import { toast } from 'sonner'
 import { getContrastRatio } from '@/lib/contrast'
 import { oklchToHex } from '@/lib/color-utils'
@@ -300,7 +299,7 @@ export default function AppearanceTab({
   }
 
   return (
-    <TabsContent value="appearance" className="flex-1 overflow-y-auto p-4 space-y-6 mt-0">
+    <div className="flex-1 overflow-y-auto p-4 space-y-6 mt-0">
       {/* Built-in Color Presets */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
@@ -352,7 +351,7 @@ export default function AppearanceTab({
               }
               setAdminSettings?.({
                 ...(adminSettings ?? {}),
-                colorPresets: [...(adminSettings?.colorPresets ?? []), preset],
+                design: { ...(adminSettings?.design ?? {}), colorPresets: [...(adminSettings?.design?.colorPresets ?? []), preset] },
               })
               setNewPresetName('')
               toast.success('Preset saved')
@@ -361,9 +360,9 @@ export default function AppearanceTab({
             <FloppyDisk size={13} className="mr-1" /> Save
           </Button>
         </div>
-        {(adminSettings?.colorPresets ?? []).length > 0 && (
+        {(adminSettings?.design?.colorPresets ?? []).length > 0 && (
           <div className="space-y-1.5">
-            {(adminSettings?.colorPresets ?? []).map(preset => (
+            {(adminSettings?.design?.colorPresets ?? []).map(preset => (
               <div key={preset.id} className="flex items-center gap-2">
                 <button
                   className="flex-1 text-left px-2 py-1.5 border border-border rounded font-mono text-xs hover:border-primary hover:text-primary transition-colors truncate"
@@ -376,7 +375,7 @@ export default function AppearanceTab({
                   aria-label={`Delete preset ${preset.name}`}
                   onClick={() => setAdminSettings?.({
                     ...(adminSettings ?? {}),
-                    colorPresets: (adminSettings?.colorPresets ?? []).filter(p => p.id !== preset.id),
+                    design: { ...(adminSettings?.design ?? {}), colorPresets: (adminSettings?.design?.colorPresets ?? []).filter(p => p.id !== preset.id) },
                   })}
                 >
                   <X size={13} />
@@ -501,9 +500,9 @@ export default function AppearanceTab({
         <div className="space-y-1">
           <Label className="font-mono text-[11px] text-muted-foreground">Favicon URL</Label>
           <Input
-            value={adminSettings?.faviconUrl || ''}
+            value={adminSettings?.design?.faviconUrl || ''}
             onChange={(e) =>
-              setAdminSettings?.({ ...(adminSettings ?? {}), faviconUrl: e.target.value })
+              setAdminSettings?.({ ...(adminSettings ?? {}), design: { ...(adminSettings?.design ?? {}), faviconUrl: e.target.value } })
             }
             placeholder="https://example.com/favicon.ico"
             className="bg-background border-border font-mono text-xs"
@@ -696,14 +695,14 @@ export default function AppearanceTab({
         <div className="flex items-center justify-between">
           <Label className="font-mono text-sm">Glitch Effect</Label>
           <Switch
-            checked={adminSettings?.glitchTextSettings?.enabled !== false}
+            checked={adminSettings?.terminal?.glitchText?.enabled !== false}
             onCheckedChange={(checked) =>
               setAdminSettings?.({
                 ...(adminSettings ?? {}),
-                glitchTextSettings: {
-                  ...(adminSettings?.glitchTextSettings || {}),
+                terminal: { ...(adminSettings?.terminal ?? {}), glitchText: {
+                  ...(adminSettings?.terminal?.glitchText || {}),
                   enabled: checked,
-                },
+                } },
               })
             }
           />
@@ -712,21 +711,21 @@ export default function AppearanceTab({
           <div className="flex items-center justify-between">
             <Label className="font-mono text-xs">Glitch Interval</Label>
             <span className="font-mono text-xs text-muted-foreground">
-              {adminSettings?.glitchTextSettings?.intervalMs || 8000}ms
+              {adminSettings?.terminal?.glitchText?.intervalMs || 8000}ms
             </span>
           </div>
           <Slider
-            value={[adminSettings?.glitchTextSettings?.intervalMs || 8000]}
+            value={[adminSettings?.terminal?.glitchText?.intervalMs || 8000]}
             min={1000}
             max={30000}
             step={500}
             onValueChange={([v]) =>
               setAdminSettings?.({
                 ...(adminSettings ?? {}),
-                glitchTextSettings: {
-                  ...(adminSettings?.glitchTextSettings || {}),
+                terminal: { ...(adminSettings?.terminal ?? {}), glitchText: {
+                  ...(adminSettings?.terminal?.glitchText || {}),
                   intervalMs: v,
-                },
+                } },
               })
             }
           />
@@ -735,21 +734,21 @@ export default function AppearanceTab({
           <div className="flex items-center justify-between">
             <Label className="font-mono text-xs">Glitch Duration</Label>
             <span className="font-mono text-xs text-muted-foreground">
-              {adminSettings?.glitchTextSettings?.durationMs || 120}ms
+              {adminSettings?.terminal?.glitchText?.durationMs || 120}ms
             </span>
           </div>
           <Slider
-            value={[adminSettings?.glitchTextSettings?.durationMs || 120]}
+            value={[adminSettings?.terminal?.glitchText?.durationMs || 120]}
             min={50}
             max={1000}
             step={10}
             onValueChange={([v]) =>
               setAdminSettings?.({
                 ...(adminSettings ?? {}),
-                glitchTextSettings: {
-                  ...(adminSettings?.glitchTextSettings || {}),
+                terminal: { ...(adminSettings?.terminal ?? {}), glitchText: {
+                  ...(adminSettings?.terminal?.glitchText || {}),
                   durationMs: v,
-                },
+                } },
               })
             }
           />
@@ -806,10 +805,10 @@ export default function AppearanceTab({
               <Input
                 className="font-mono text-xs h-8"
                 placeholder="e.g. 3rem"
-                value={adminSettings?.typographyDetails?.headingFontSize ?? ''}
+                value={adminSettings?.design?.typography?.headingFontSize ?? ''}
                 onChange={(e) => setAdminSettings?.({
                   ...(adminSettings ?? {}),
-                  typographyDetails: { ...(adminSettings?.typographyDetails ?? {}), headingFontSize: e.target.value || undefined },
+                  design: { ...(adminSettings?.design ?? {}), typography: { ...(adminSettings?.design?.typography ?? {}), headingFontSize: e.target.value || undefined } },
                 })}
               />
             </div>
@@ -818,10 +817,10 @@ export default function AppearanceTab({
               <Input
                 className="font-mono text-xs h-8"
                 placeholder="e.g. 700"
-                value={adminSettings?.typographyDetails?.headingFontWeight ?? ''}
+                value={adminSettings?.design?.typography?.headingFontWeight ?? ''}
                 onChange={(e) => setAdminSettings?.({
                   ...(adminSettings ?? {}),
-                  typographyDetails: { ...(adminSettings?.typographyDetails ?? {}), headingFontWeight: e.target.value || undefined },
+                  design: { ...(adminSettings?.design ?? {}), typography: { ...(adminSettings?.design?.typography ?? {}), headingFontWeight: e.target.value || undefined } },
                 })}
               />
             </div>
@@ -830,10 +829,10 @@ export default function AppearanceTab({
               <Input
                 className="font-mono text-xs h-8"
                 placeholder="e.g. 1rem"
-                value={adminSettings?.typographyDetails?.bodyFontSize ?? ''}
+                value={adminSettings?.design?.typography?.bodyFontSize ?? ''}
                 onChange={(e) => setAdminSettings?.({
                   ...(adminSettings ?? {}),
-                  typographyDetails: { ...(adminSettings?.typographyDetails ?? {}), bodyFontSize: e.target.value || undefined },
+                  design: { ...(adminSettings?.design ?? {}), typography: { ...(adminSettings?.design?.typography ?? {}), bodyFontSize: e.target.value || undefined } },
                 })}
               />
             </div>
@@ -842,20 +841,20 @@ export default function AppearanceTab({
               <Input
                 className="font-mono text-xs h-8"
                 placeholder="e.g. 1.6"
-                value={adminSettings?.typographyDetails?.bodyLineHeight ?? ''}
+                value={adminSettings?.design?.typography?.bodyLineHeight ?? ''}
                 onChange={(e) => setAdminSettings?.({
                   ...(adminSettings ?? {}),
-                  typographyDetails: { ...(adminSettings?.typographyDetails ?? {}), bodyLineHeight: e.target.value || undefined },
+                  design: { ...(adminSettings?.design ?? {}), typography: { ...(adminSettings?.design?.typography ?? {}), bodyLineHeight: e.target.value || undefined } },
                 })}
               />
             </div>
             <div className="flex items-center justify-between">
               <Label className="font-mono text-xs">Heading Text Shadow</Label>
               <Switch
-                checked={adminSettings?.typographyDetails?.headingTextShadow !== false}
+                checked={adminSettings?.design?.typography?.headingTextShadow !== false}
                 onCheckedChange={(v) => setAdminSettings?.({
                   ...(adminSettings ?? {}),
-                  typographyDetails: { ...(adminSettings?.typographyDetails ?? {}), headingTextShadow: v },
+                  design: { ...(adminSettings?.design ?? {}), typography: { ...(adminSettings?.design?.typography ?? {}), headingTextShadow: v } },
                 })}
               />
             </div>
@@ -872,10 +871,10 @@ export default function AppearanceTab({
               <Input
                 className="font-mono text-xs h-8"
                 placeholder="rgba(255,0,100,0.5)"
-                value={adminSettings?.effectColors?.chromaticColorLeft ?? ''}
+                value={adminSettings?.design?.effects?.chromaticColorLeft ?? ''}
                 onChange={(e) => setAdminSettings?.({
                   ...(adminSettings ?? {}),
-                  effectColors: { ...(adminSettings?.effectColors ?? {}), chromaticColorLeft: e.target.value || undefined },
+                  design: { ...(adminSettings?.design ?? {}), effects: { ...(adminSettings?.design?.effects ?? {}), chromaticColorLeft: e.target.value || undefined } },
                 })}
               />
             </div>
@@ -884,10 +883,10 @@ export default function AppearanceTab({
               <Input
                 className="font-mono text-xs h-8"
                 placeholder="rgba(0,255,255,0.5)"
-                value={adminSettings?.effectColors?.chromaticColorRight ?? ''}
+                value={adminSettings?.design?.effects?.chromaticColorRight ?? ''}
                 onChange={(e) => setAdminSettings?.({
                   ...(adminSettings ?? {}),
-                  effectColors: { ...(adminSettings?.effectColors ?? {}), chromaticColorRight: e.target.value || undefined },
+                  design: { ...(adminSettings?.design ?? {}), effects: { ...(adminSettings?.design?.effects ?? {}), chromaticColorRight: e.target.value || undefined } },
                 })}
               />
             </div>
@@ -895,17 +894,17 @@ export default function AppearanceTab({
               <div className="flex justify-between">
                 <Label className="font-mono text-xs">Scanline Opacity</Label>
                 <span className="font-mono text-xs text-muted-foreground">
-                  {Math.round((adminSettings?.effectColors?.scanlineOpacity ?? 0.03) * 100)}%
+                  {Math.round((adminSettings?.design?.effects?.scanlineOpacity ?? 0.03) * 100)}%
                 </span>
               </div>
               <Slider
-                value={[(adminSettings?.effectColors?.scanlineOpacity ?? 0.03) * 100]}
+                value={[(adminSettings?.design?.effects?.scanlineOpacity ?? 0.03) * 100]}
                 min={0}
                 max={20}
                 step={1}
                 onValueChange={([v]) => setAdminSettings?.({
                   ...(adminSettings ?? {}),
-                  effectColors: { ...(adminSettings?.effectColors ?? {}), scanlineOpacity: v / 100 },
+                  design: { ...(adminSettings?.design ?? {}), effects: { ...(adminSettings?.design?.effects ?? {}), scanlineOpacity: v / 100 } },
                 })}
               />
             </div>
@@ -921,17 +920,17 @@ export default function AppearanceTab({
               <div className="flex justify-between">
                 <Label className="font-mono text-xs">Fade-In Duration</Label>
                 <span className="font-mono text-xs text-muted-foreground">
-                  {adminSettings?.animationTimings?.fadeInDuration ?? 0.8}s
+                  {adminSettings?.design?.timings?.fadeInDuration ?? 0.8}s
                 </span>
               </div>
               <Slider
-                value={[(adminSettings?.animationTimings?.fadeInDuration ?? 0.8) * 10]}
+                value={[(adminSettings?.design?.timings?.fadeInDuration ?? 0.8) * 10]}
                 min={1}
                 max={30}
                 step={1}
                 onValueChange={([v]) => setAdminSettings?.({
                   ...(adminSettings ?? {}),
-                  animationTimings: { ...(adminSettings?.animationTimings ?? {}), fadeInDuration: v / 10 },
+                  design: { ...(adminSettings?.design ?? {}), timings: { ...(adminSettings?.design?.timings ?? {}), fadeInDuration: v / 10 } },
                 })}
               />
             </div>
@@ -939,17 +938,17 @@ export default function AppearanceTab({
               <div className="flex justify-between">
                 <Label className="font-mono text-xs">Scanline Duration</Label>
                 <span className="font-mono text-xs text-muted-foreground">
-                  {adminSettings?.animationTimings?.scanlineDuration ?? 8}s
+                  {adminSettings?.design?.timings?.scanlineDuration ?? 8}s
                 </span>
               </div>
               <Slider
-                value={[adminSettings?.animationTimings?.scanlineDuration ?? 8]}
+                value={[adminSettings?.design?.timings?.scanlineDuration ?? 8]}
                 min={2}
                 max={30}
                 step={1}
                 onValueChange={([v]) => setAdminSettings?.({
                   ...(adminSettings ?? {}),
-                  animationTimings: { ...(adminSettings?.animationTimings ?? {}), scanlineDuration: v },
+                  design: { ...(adminSettings?.design ?? {}), timings: { ...(adminSettings?.design?.timings ?? {}), scanlineDuration: v } },
                 })}
               />
             </div>
@@ -957,17 +956,17 @@ export default function AppearanceTab({
               <div className="flex justify-between">
                 <Label className="font-mono text-xs">CRT Flicker Duration</Label>
                 <span className="font-mono text-xs text-muted-foreground">
-                  {adminSettings?.animationTimings?.crtFlickerDuration ?? 4}s
+                  {adminSettings?.design?.timings?.crtFlickerDuration ?? 4}s
                 </span>
               </div>
               <Slider
-                value={[adminSettings?.animationTimings?.crtFlickerDuration ?? 4]}
+                value={[adminSettings?.design?.timings?.crtFlickerDuration ?? 4]}
                 min={1}
                 max={20}
                 step={1}
                 onValueChange={([v]) => setAdminSettings?.({
                   ...(adminSettings ?? {}),
-                  animationTimings: { ...(adminSettings?.animationTimings ?? {}), crtFlickerDuration: v },
+                  design: { ...(adminSettings?.design ?? {}), timings: { ...(adminSettings?.design?.timings ?? {}), crtFlickerDuration: v } },
                 })}
               />
             </div>
@@ -975,17 +974,17 @@ export default function AppearanceTab({
               <div className="flex justify-between">
                 <Label className="font-mono text-xs">Glitch Duration</Label>
                 <span className="font-mono text-xs text-muted-foreground">
-                  {adminSettings?.animationTimings?.glitchDuration ?? 0.2}s
+                  {adminSettings?.design?.timings?.glitchDuration ?? 0.2}s
                 </span>
               </div>
               <Slider
-                value={[(adminSettings?.animationTimings?.glitchDuration ?? 0.2) * 100]}
+                value={[(adminSettings?.design?.timings?.glitchDuration ?? 0.2) * 100]}
                 min={5}
                 max={100}
                 step={5}
                 onValueChange={([v]) => setAdminSettings?.({
                   ...(adminSettings ?? {}),
-                  animationTimings: { ...(adminSettings?.animationTimings ?? {}), glitchDuration: v / 100 },
+                  design: { ...(adminSettings?.design ?? {}), timings: { ...(adminSettings?.design?.timings ?? {}), glitchDuration: v / 100 } },
                 })}
               />
             </div>
@@ -1001,17 +1000,17 @@ export default function AppearanceTab({
               <div className="flex justify-between">
                 <Label className="font-mono text-xs">Vignette Opacity</Label>
                 <span className="font-mono text-xs text-muted-foreground">
-                  {Math.round((adminSettings?.crtIntensity?.vignetteOpacity ?? 0.6) * 100)}%
+                  {Math.round((adminSettings?.design?.crt?.vignetteOpacity ?? 0.6) * 100)}%
                 </span>
               </div>
               <Slider
-                value={[(adminSettings?.crtIntensity?.vignetteOpacity ?? 0.6) * 100]}
+                value={[(adminSettings?.design?.crt?.vignetteOpacity ?? 0.6) * 100]}
                 min={0}
                 max={100}
                 step={5}
                 onValueChange={([v]) => setAdminSettings?.({
                   ...(adminSettings ?? {}),
-                  crtIntensity: { ...(adminSettings?.crtIntensity ?? {}), vignetteOpacity: v / 100 },
+                  design: { ...(adminSettings?.design ?? {}), crt: { ...(adminSettings?.design?.crt ?? {}), vignetteOpacity: v / 100 } },
                 })}
               />
             </div>
@@ -1019,17 +1018,17 @@ export default function AppearanceTab({
               <div className="flex justify-between">
                 <Label className="font-mono text-xs">Noise Frequency</Label>
                 <span className="font-mono text-xs text-muted-foreground">
-                  {adminSettings?.crtIntensity?.noiseFrequency ?? 2.5}
+                  {adminSettings?.design?.crt?.noiseFrequency ?? 2.5}
                 </span>
               </div>
               <Slider
-                value={[(adminSettings?.crtIntensity?.noiseFrequency ?? 2.5) * 10]}
+                value={[(adminSettings?.design?.crt?.noiseFrequency ?? 2.5) * 10]}
                 min={5}
                 max={100}
                 step={5}
                 onValueChange={([v]) => setAdminSettings?.({
                   ...(adminSettings ?? {}),
-                  crtIntensity: { ...(adminSettings?.crtIntensity ?? {}), noiseFrequency: v / 10 },
+                  design: { ...(adminSettings?.design ?? {}), crt: { ...(adminSettings?.design?.crt ?? {}), noiseFrequency: v / 10 } },
                 })}
               />
             </div>
@@ -1041,10 +1040,10 @@ export default function AppearanceTab({
                     key={v}
                     onClick={() => setAdminSettings?.({
                       ...(adminSettings ?? {}),
-                      crtIntensity: { ...(adminSettings?.crtIntensity ?? {}), scanlineHeight: v },
+                      design: { ...(adminSettings?.design ?? {}), crt: { ...(adminSettings?.design?.crt ?? {}), scanlineHeight: v } },
                     })}
                     className={`px-3 py-2 border rounded font-mono text-xs transition-colors ${
-                      (adminSettings?.crtIntensity?.scanlineHeight ?? 1) === v
+                      (adminSettings?.design?.crt?.scanlineHeight ?? 1) === v
                         ? 'border-primary bg-primary/10 text-primary'
                         : 'border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'
                     }`}
@@ -1065,10 +1064,10 @@ export default function AppearanceTab({
             <div className="flex items-center justify-between">
               <Label className="font-mono text-xs">Glitch Enabled</Label>
               <Switch
-                checked={adminSettings?.glitchParams?.enabled !== false}
+                checked={adminSettings?.design?.glitch?.enabled !== false}
                 onCheckedChange={(v) => setAdminSettings?.({
                   ...(adminSettings ?? {}),
-                  glitchParams: { ...(adminSettings?.glitchParams ?? {}), enabled: v },
+                  design: { ...(adminSettings?.design ?? {}), glitch: { ...(adminSettings?.design?.glitch ?? {}), enabled: v } },
                 })}
               />
             </div>
@@ -1076,17 +1075,17 @@ export default function AppearanceTab({
               <div className="flex justify-between">
                 <Label className="font-mono text-xs">Probability</Label>
                 <span className="font-mono text-xs text-muted-foreground">
-                  {Math.round((adminSettings?.glitchParams?.probability ?? 0.05) * 100)}%
+                  {Math.round((adminSettings?.design?.glitch?.probability ?? 0.05) * 100)}%
                 </span>
               </div>
               <Slider
-                value={[(adminSettings?.glitchParams?.probability ?? 0.05) * 100]}
+                value={[(adminSettings?.design?.glitch?.probability ?? 0.05) * 100]}
                 min={0}
                 max={100}
                 step={1}
                 onValueChange={([v]) => setAdminSettings?.({
                   ...(adminSettings ?? {}),
-                  glitchParams: { ...(adminSettings?.glitchParams ?? {}), probability: v / 100 },
+                  design: { ...(adminSettings?.design ?? {}), glitch: { ...(adminSettings?.design?.glitch ?? {}), probability: v / 100 } },
                 })}
               />
             </div>
@@ -1094,17 +1093,17 @@ export default function AppearanceTab({
               <div className="flex justify-between">
                 <Label className="font-mono text-xs">Interval (ms)</Label>
                 <span className="font-mono text-xs text-muted-foreground">
-                  {adminSettings?.glitchParams?.intervalMs ?? 3000}ms
+                  {adminSettings?.design?.glitch?.intervalMs ?? 3000}ms
                 </span>
               </div>
               <Slider
-                value={[adminSettings?.glitchParams?.intervalMs ?? 3000]}
+                value={[adminSettings?.design?.glitch?.intervalMs ?? 3000]}
                 min={500}
                 max={10000}
                 step={500}
                 onValueChange={([v]) => setAdminSettings?.({
                   ...(adminSettings ?? {}),
-                  glitchParams: { ...(adminSettings?.glitchParams ?? {}), intervalMs: v },
+                  design: { ...(adminSettings?.design ?? {}), glitch: { ...(adminSettings?.design?.glitch ?? {}), intervalMs: v } },
                 })}
               />
             </div>
@@ -1112,23 +1111,23 @@ export default function AppearanceTab({
               <div className="flex justify-between">
                 <Label className="font-mono text-xs">Duration (ms)</Label>
                 <span className="font-mono text-xs text-muted-foreground">
-                  {adminSettings?.glitchParams?.durationMs ?? 200}ms
+                  {adminSettings?.design?.glitch?.durationMs ?? 200}ms
                 </span>
               </div>
               <Slider
-                value={[adminSettings?.glitchParams?.durationMs ?? 200]}
+                value={[adminSettings?.design?.glitch?.durationMs ?? 200]}
                 min={50}
                 max={2000}
                 step={50}
                 onValueChange={([v]) => setAdminSettings?.({
                   ...(adminSettings ?? {}),
-                  glitchParams: { ...(adminSettings?.glitchParams ?? {}), durationMs: v },
+                  design: { ...(adminSettings?.design ?? {}), glitch: { ...(adminSettings?.design?.glitch ?? {}), durationMs: v } },
                 })}
               />
             </div>
           </section>
         </>
       )}
-    </TabsContent>
+    </div>
   )
 }

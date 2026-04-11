@@ -1,6 +1,6 @@
 // @deprecated — replaced by functional CMS dashboards (e.g. ReleasesEditor, InboxEditor). Do not extend.
 import { useState, useCallback } from 'react'
-import { TabsContent } from '@/components/ui/tabs'
+
 import { Export, ArrowSquareIn, ArrowsClockwise, MapPin, Trash } from '@phosphor-icons/react'
 import type { SiteData } from '@/App'
 
@@ -66,7 +66,7 @@ export default function DataTab({ siteData, onRefreshSiteData, onExport, onImpor
   }, [onResetGigs, isGigsResetting, onRefreshSiteData])
 
   return (
-    <TabsContent value="data" className="flex-1 overflow-y-auto p-4 space-y-4 mt-0">
+    <div className="flex-1 overflow-y-auto p-4 space-y-4 mt-0">
       <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
         Data Management
       </h3>
@@ -204,6 +204,6 @@ export default function DataTab({ siteData, onRefreshSiteData, onExport, onImpor
           </button>
         </div>
       </div>
-    </TabsContent>
+    </div>
   )
 }

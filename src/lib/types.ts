@@ -1,24 +1,5 @@
-export interface SectionVisibility {
-  bio?: boolean
-  music?: boolean
-  gigs?: boolean
-  releases?: boolean
-  gallery?: boolean
-  connect?: boolean
-  creditHighlights?: boolean
-  sponsoring?: boolean
-  shell?: boolean
-  contact?: boolean
-  news?: boolean
-  biography?: boolean
-  media?: boolean
-  social?: boolean
-  partnersAndFriends?: boolean
-  hudBackground?: boolean
-  audioVisualizer?: boolean
-  scanline?: boolean
-  systemMonitor?: boolean
-}
+/** @deprecated Use Record<string, boolean> directly. Kept as alias for backward compat with legacy code. */
+export type SectionVisibility = Record<string, boolean>
 
 export interface ThemeCustomization {
   // Base colors
@@ -337,44 +318,104 @@ export interface BioSectionSettings {
   textSize?: string
 }
 
+/** Controls which fields are visible in the admin panel via Progressive Disclosure. */
+export type DisclosureLevel = 'basic' | 'advanced' | 'expert'
+
+/** Per-section style overrides, used under sections.styleOverrides.<sectionId>. */
+export interface SectionStyleOverride {
+  headingFontSize?: string
+  headingFontWeight?: string
+  headingFontFamily?: string
+  bodyFontSize?: string
+  bodyLineHeight?: string
+  textAlign?: 'left' | 'center' | 'right'
+  primaryColor?: string
+  backgroundColor?: string
+  cardColor?: string
+  borderColor?: string
+  paddingY?: string
+  paddingX?: string
+  maxWidth?: string
+  glitchEnabled?: boolean
+  headingTextShadow?: boolean
+  // Section-specific extended fields
+  minHeight?: string
+  paddingTop?: string
+  readMoreMaxHeight?: string
+  textSize?: string
+}
+
 export interface AdminSettings {
-  sectionVisibility?: SectionVisibility
-  theme?: ThemeCustomization
-  animations?: AnimationSettings
-  progressiveOverlayModes?: ProgressiveOverlayModes
-  configOverrides?: Record<string, unknown>
-  faviconUrl?: string
-  sectionLabels?: SectionLabels
-  terminalCommands?: TerminalCommand[]
-  sectionOrder?: string[]
-  contactInfo?: ContactInfo
-  contactSettings?: ContactSettings
-  legalContent?: LegalContent
-  shellMember?: ShellMember
-  shellMembers?: ShellMember[]
-  customSocialLinks?: CustomSocialLink[]
-  glitchTextSettings?: {
-    enabled?: boolean
-    intervalMs?: number
-    durationMs?: number
+  // UI preferences
+  ui?: {
+    disclosureLevel?: DisclosureLevel
   }
-  loaderTexts?: LoaderTexts
-  hudTexts?: HudTexts
-  decorativeTexts?: DecorativeTexts
-  colorPresets?: CustomColorPreset[]
+
+  // Section management
+  sections?: {
+    /** section id → visibility (default: true) */
+    visibility?: Record<string, boolean>
+    /** Custom section display order */
+    order?: string[]
+    /** Per-section style overrides */
+    styleOverrides?: Record<string, SectionStyleOverride>
+  }
+
+  // Design system
+  design?: {
+    theme?: ThemeCustomization
+    typography?: TypographyDetailSettings
+    effects?: EffectColorSettings
+    timings?: AnimationTimingSettings
+    glitch?: GlitchParamSettings
+    crt?: CRTIntensitySettings
+    layout?: LayoutSpacingSettings
+    navigation?: NavigationStylingSettings
+    footer?: FooterStylingSettings
+    colorPresets?: CustomColorPreset[]
+    faviconUrl?: string
+  }
+
+  // Background & animation
+  background?: AnimationSettings
+
+  // Progressive overlay modes
+  progressiveOverlayModes?: ProgressiveOverlayModes
+
+  // Content labels
+  labels?: SectionLabels
+
+  // Contact & legal
+  contact?: ContactInfo & ContactSettings
+  legal?: LegalContent
+
+  // Shell / member
+  shell?: ShellMember
+
+  // Terminal
+  terminal?: {
+    commands?: TerminalCommand[]
+    glitchText?: {
+      enabled?: boolean
+      intervalMs?: number
+      durationMs?: number
+    }
+  }
+
+  // HUD / decorative
+  hud?: HudTexts
+  decorative?: DecorativeTexts
+  loader?: LoaderTexts
+
+  // i18n
   locale?: string
   customTranslations?: Record<string, Record<string, string>>
-  layoutSpacing?: LayoutSpacingSettings
-  navigationStyling?: NavigationStylingSettings
-  footerStyling?: FooterStylingSettings
-  typographyDetails?: TypographyDetailSettings
-  effectColors?: EffectColorSettings
-  animationTimings?: AnimationTimingSettings
-  glitchParams?: GlitchParamSettings
-  crtIntensity?: CRTIntensitySettings
-  heroSection?: HeroSectionSettings
-  bioSection?: BioSectionSettings
-  expertMode?: boolean
+
+  // Advanced config overrides
+  configOverrides?: Record<string, unknown>
+
+  // Custom social links (not covered by SiteData.social)
+  customSocialLinks?: CustomSocialLink[]
 }
 
 export interface CustomColorPreset {

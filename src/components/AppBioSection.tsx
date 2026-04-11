@@ -66,11 +66,11 @@ export default function AppBioSection({ bio, sectionOrder, visible, editMode, se
                   text={sectionLabel}
                   defaultText="BIOGRAPHY"
                   editMode={editMode}
-                  glitchEnabled={adminSettings?.glitchTextSettings?.enabled !== false}
-                  glitchIntervalMs={adminSettings?.glitchTextSettings?.intervalMs}
-                  glitchDurationMs={adminSettings?.glitchTextSettings?.durationMs}
+                  glitchEnabled={adminSettings?.terminal?.glitchText?.enabled !== false}
+                  glitchIntervalMs={adminSettings?.terminal?.glitchText?.intervalMs}
+                  glitchDurationMs={adminSettings?.terminal?.glitchText?.durationMs}
                 />
-                {adminSettings?.animations?.blinkingCursor !== false && <span className="animate-pulse">_</span>}
+                {adminSettings?.background?.blinkingCursor !== false && <span className="animate-pulse">_</span>}
               </h2>
               {editMode && !editing && (
                 <Button

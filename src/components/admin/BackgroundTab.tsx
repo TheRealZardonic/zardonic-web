@@ -3,7 +3,7 @@ import { Slider } from '@/components/ui/slider'
 import { Separator } from '@/components/ui/separator'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
-import { TabsContent } from '@/components/ui/tabs'
+
 import type { AdminSettings, AnimationSettings, BackgroundType, HudTexts, LoadingScreenType, LoadingScreenMode } from '@/lib/types'
 
 interface BackgroundTabProps {
@@ -24,12 +24,12 @@ export default function BackgroundTab({
   const updateAnim = (patch: Partial<AnimationSettings>) => {
     setAdminSettings?.({
       ...(adminSettings ?? {}),
-      animations: { ...anim, ...patch },
+      background: { ...anim, ...patch },
     })
   }
 
   return (
-    <TabsContent value="background" className="flex-1 overflow-y-auto p-4 space-y-4 mt-0">
+    <div className="flex-1 overflow-y-auto p-4 space-y-4 mt-0">
       {/* Background type selector */}
       <section className="space-y-3">
         <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
@@ -307,8 +307,8 @@ export default function BackgroundTab({
             <div key={key} className="space-y-1">
               <Label className="font-mono text-xs text-muted-foreground">{label}</Label>
               <Input
-                value={adminSettings?.hudTexts?.[key] ?? ''}
-                onChange={e => setAdminSettings?.({ ...(adminSettings ?? {}), hudTexts: { ...adminSettings?.hudTexts, [key]: e.target.value || undefined } })}
+                value={adminSettings?.hud?.[key] ?? ''}
+                onChange={e => setAdminSettings?.({ ...(adminSettings ?? {}), hud: { ...adminSettings?.hud, [key]: e.target.value || undefined } })}
                 className="font-mono text-xs"
                 placeholder={placeholder}
               />
@@ -518,6 +518,6 @@ export default function BackgroundTab({
           </>
         )}
       </section>
-    </TabsContent>
+    </div>
   )
 }

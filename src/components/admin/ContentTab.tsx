@@ -1,7 +1,7 @@
 // @deprecated — functionality superseded by src/cms/editors/. Do not extend; use the CMS editors instead.
 import { useState } from 'react'
 import { Separator } from '@/components/ui/separator'
-import { TabsContent } from '@/components/ui/tabs'
+
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -97,7 +97,7 @@ export default function ContentTab({
   setLocalContactInfo,
 }: ContentTabProps) {
   return (
-    <TabsContent value="content" className="flex-1 overflow-y-auto p-4 space-y-6 mt-0">
+    <div className="flex-1 overflow-y-auto p-4 space-y-6 mt-0">
       {/* Artist Name */}
       <section className="space-y-3">
         <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
@@ -249,7 +249,7 @@ export default function ContentTab({
           size="sm"
           className="font-mono text-xs"
           onClick={() => {
-            setAdminSettings?.({ ...(adminSettings ?? {}), sectionLabels: localSectionLabels })
+            setAdminSettings?.({ ...(adminSettings ?? {}), labels: localSectionLabels })
             toast.success('Section labels saved')
           }}
           disabled={!setAdminSettings}
@@ -284,7 +284,7 @@ export default function ContentTab({
           size="sm"
           className="font-mono text-xs"
           onClick={() => {
-            setAdminSettings?.({ ...adminSettings, contactInfo: localContactInfo })
+            setAdminSettings?.({ ...adminSettings, contact: localContactInfo })
             toast.success('Contact info saved')
           }}
           disabled={!setAdminSettings}
@@ -312,12 +312,12 @@ export default function ContentTab({
           <div key={field} className="space-y-1">
             <Label className="font-mono text-xs text-muted-foreground">{label}</Label>
             <Input
-              value={(adminSettings?.loaderTexts?.[field] ?? '') as string}
+              value={(adminSettings?.loader?.[field] ?? '') as string}
               onChange={e => {
                 const val = e.target.value
                 setAdminSettings?.({
                   ...adminSettings,
-                  loaderTexts: { ...adminSettings?.loaderTexts, [field]: val || undefined },
+                  loader: { ...adminSettings?.loader, [field]: val || undefined },
                 })
               }}
               className="font-mono text-xs"
@@ -331,12 +331,12 @@ export default function ContentTab({
             rows={5}
             className="w-full bg-transparent border border-primary/30 text-foreground font-mono text-xs p-2 resize-y focus:outline-none focus:border-primary/60"
             placeholder={'INITIALIZING NEURAL INTERFACE\nLOADING CORE SYSTEMS\nSYNCHRONIZING WETWARE\nESTABLISHING CONNECTION\nSYSTEM READY'}
-            value={(adminSettings?.loaderTexts?.stageMessages ?? []).join('\n')}
+            value={(adminSettings?.loader?.stageMessages ?? []).join('\n')}
             onChange={e => {
               const lines = e.target.value.split('\n').slice(0, 5)
               setAdminSettings?.({
                 ...adminSettings,
-                loaderTexts: { ...adminSettings?.loaderTexts, stageMessages: lines.length ? lines : undefined },
+                loader: { ...adminSettings?.loader, stageMessages: lines.length ? lines : undefined },
               })
             }}
           />
@@ -351,16 +351,16 @@ export default function ContentTab({
           <div key={`systemCheck-${index}`} className="space-y-1">
             <Label className="font-mono text-xs text-muted-foreground">{label}</Label>
             <Input
-              value={adminSettings?.loaderTexts?.systemChecks?.[index] ?? ''}
+              value={adminSettings?.loader?.systemChecks?.[index] ?? ''}
               onChange={e => {
                 const val = e.target.value
-                const cur = adminSettings?.loaderTexts?.systemChecks ?? ['', '', '']
+                const cur = adminSettings?.loader?.systemChecks ?? ['', '', '']
                 const next: [string, string, string] = index === 0
                   ? [val, cur[1], cur[2]]
                   : index === 1
                   ? [cur[0], val, cur[2]]
                   : [cur[0], cur[1], val]
-                setAdminSettings?.({ ...adminSettings, loaderTexts: { ...adminSettings?.loaderTexts, systemChecks: next } })
+                setAdminSettings?.({ ...adminSettings, loader: { ...adminSettings?.loader, systemChecks: next } })
               }}
               className="font-mono text-xs"
               placeholder={placeholder}
@@ -377,10 +377,10 @@ export default function ContentTab({
         <div className="space-y-1">
           <Label className="font-mono text-xs text-muted-foreground">Boot label</Label>
           <Input
-            value={adminSettings?.loaderTexts?.bootLabel ?? ''}
+            value={adminSettings?.loader?.bootLabel ?? ''}
             onChange={e => {
               const val = e.target.value
-              setAdminSettings?.({ ...adminSettings, loaderTexts: { ...adminSettings?.loaderTexts, bootLabel: val || undefined } })
+              setAdminSettings?.({ ...adminSettings, loader: { ...adminSettings?.loader, bootLabel: val || undefined } })
             }}
             className="font-mono text-xs"
             placeholder="NK-SYS [v2.0] // BOOT SEQUENCE"
@@ -392,10 +392,10 @@ export default function ContentTab({
             rows={8}
             className="w-full bg-transparent border border-primary/30 text-foreground font-mono text-xs p-2 resize-y focus:outline-none focus:border-primary/60"
             placeholder={'BYPASSING SECURITY...\nACCESSING MAINFRAME...\nDECRYPTING NEURAL PATHWAYS...'}
-            value={(adminSettings?.loaderTexts?.hackingTexts ?? []).join('\n')}
+            value={(adminSettings?.loader?.hackingTexts ?? []).join('\n')}
             onChange={e => {
               const lines = e.target.value.split('\n').filter(l => l.trim())
-              setAdminSettings?.({ ...adminSettings, loaderTexts: { ...adminSettings?.loaderTexts, hackingTexts: lines.length ? lines : undefined } })
+              setAdminSettings?.({ ...adminSettings, loader: { ...adminSettings?.loader, hackingTexts: lines.length ? lines : undefined } })
             }}
           />
         </div>
@@ -405,10 +405,10 @@ export default function ContentTab({
             rows={6}
             className="w-full bg-transparent border border-primary/30 text-foreground font-mono text-xs p-2 resize-y focus:outline-none focus:border-primary/60"
             placeholder={'0x7F3A\nNULL\nvoid(*ptr)()'}
-            value={(adminSettings?.loaderTexts?.codeFragments ?? []).join('\n')}
+            value={(adminSettings?.loader?.codeFragments ?? []).join('\n')}
             onChange={e => {
               const lines = e.target.value.split('\n').filter(l => l.trim())
-              setAdminSettings?.({ ...adminSettings, loaderTexts: { ...adminSettings?.loaderTexts, codeFragments: lines.length ? lines : undefined } })
+              setAdminSettings?.({ ...adminSettings, loader: { ...adminSettings?.loader, codeFragments: lines.length ? lines : undefined } })
             }}
           />
         </div>
@@ -420,7 +420,7 @@ export default function ContentTab({
         adminSettings={adminSettings}
         setAdminSettings={setAdminSettings}
       />
-    </TabsContent>
+    </div>
   )
 }
 
@@ -503,13 +503,13 @@ function DecorativeTextsSection({
 }) {
   const [isOpen, setIsOpen] = useState(false)
 
-  const decorativeTexts = adminSettings?.decorativeTexts ?? {}
+  const decorativeTexts = adminSettings?.decorative ?? {}
 
   const updateText = (key: keyof DecorativeTexts, value: string) => {
     if (!setAdminSettings) return
     setAdminSettings({
       ...adminSettings,
-      decorativeTexts: { ...decorativeTexts, [key]: value || undefined },
+      decorative: { ...decorativeTexts, [key]: value || undefined },
     })
   }
 

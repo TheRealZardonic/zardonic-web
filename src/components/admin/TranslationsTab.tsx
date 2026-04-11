@@ -1,6 +1,6 @@
 import { type ChangeEvent } from 'react'
 import { Export, ArrowSquareIn, ArrowCounterClockwise } from '@phosphor-icons/react'
-import { TabsContent } from '@/components/ui/tabs'
+
 import type { AdminSettings } from '@/lib/types'
 import { getTranslations, LOCALES } from '@/lib/i18n'
 import { toast } from 'sonner'
@@ -65,7 +65,7 @@ export default function TranslationsTab({ adminSettings, setAdminSettings, trans
   }
 
   return (
-    <TabsContent value="translations" className="flex-1 overflow-y-auto p-4 space-y-4 mt-0">
+    <div className="flex-1 overflow-y-auto p-4 space-y-4 mt-0">
       <div className="space-y-1">
         <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">Translation Manager</h3>
         <p className="font-mono text-xs text-muted-foreground">
@@ -129,6 +129,6 @@ export default function TranslationsTab({ adminSettings, setAdminSettings, trans
         onChange={handleImportChange}
         aria-hidden="true"
       />
-    </TabsContent>
+    </div>
   )
 }

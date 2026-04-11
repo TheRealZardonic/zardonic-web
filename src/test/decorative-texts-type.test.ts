@@ -43,17 +43,17 @@ describe('DecorativeTexts type', () => {
 
   it('is optional on AdminSettings', () => {
     const settings: AdminSettings = {}
-    expect(settings.decorativeTexts).toBeUndefined()
+    expect(settings.decorative).toBeUndefined()
   })
 
   it('can be set on AdminSettings', () => {
     const settings: AdminSettings = {
-      decorativeTexts: {
+      decorative: {
         overlaySystemLabel: '// TEST',
         hudTimeLabel: 'CLOCK:',
       },
     }
-    expect(settings.decorativeTexts?.overlaySystemLabel).toBe('// TEST')
-    expect(settings.decorativeTexts?.hudTimeLabel).toBe('CLOCK:')
+    expect(settings.decorative?.overlaySystemLabel).toBe('// TEST')
+    expect(settings.decorative?.hudTimeLabel).toBe('CLOCK:')
   })
 })

@@ -25,6 +25,13 @@ export default function ShellSection({ setAdminSettings,
   visible,
   sectionLabel,
 }: ShellSectionProps) {
+  const member = adminSettings?.shell
+
+  const updateMember = (patch: Partial<typeof member>) => {
+    if (!setAdminSettings) return
+    setAdminSettings({ ...(adminSettings ?? {}), shell: { ...(member ?? {}), ...patch } })
+  }
+
   return (
     <div style={{ order: sectionOrder }}>
     {visible && (
@@ -44,16 +51,16 @@ export default function ShellSection({ setAdminSettings,
                 text={sectionLabel || ''}
                 defaultText="SHELL"
                 editMode={editMode}
-                glitchEnabled={adminSettings?.glitchTextSettings?.enabled !== false}
-                glitchIntervalMs={adminSettings?.glitchTextSettings?.intervalMs}
-                glitchDurationMs={adminSettings?.glitchTextSettings?.durationMs}
+                glitchEnabled={adminSettings?.terminal?.glitchText?.enabled !== false}
+                glitchIntervalMs={adminSettings?.terminal?.glitchText?.intervalMs}
+                glitchDurationMs={adminSettings?.terminal?.glitchText?.durationMs}
               />
             </h2>
           </div>
 
           <div className="space-y-12">
-            {(adminSettings?.shellMembers || (adminSettings?.shellMember ? [adminSettings.shellMember] : [])).map((member, memberIndex) => (
-              <div key={memberIndex} className="grid md:grid-cols-[280px_1fr] gap-8 items-start">
+            {member && (
+              <div className="grid md:grid-cols-[280px_1fr] gap-8 items-start">
                 <motion.div
                   className="relative aspect-square bg-muted border border-primary/30 overflow-hidden cyber-card"
                   initial={{ opacity: 0, scale: 0.9 }}
@@ -87,19 +94,13 @@ export default function ShellSection({ setAdminSettings,
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: 0.2 }}
                 >
-                  <div className="data-label mb-2">// PROFILE.DATA.STREAM [{String(memberIndex).padStart(2, '0')}]</div>
+                  <div className="data-label mb-2">// PROFILE.DATA.STREAM</div>
                   <div className="cyber-grid p-4">
                     <div className="data-label mb-2">Subject</div>
                     {editMode ? (
                       <Input
                         value={member?.name || ''}
-                        onChange={(e) => {
-                          if (!setAdminSettings) return
-                          const prev = adminSettings ?? ({} as AdminSettings)
-                          const members = [...(prev.shellMembers || (prev.shellMember ? [prev.shellMember] : []))]
-                          members[memberIndex] = { ...members[memberIndex], name: e.target.value }
-                          setAdminSettings?.({ ...prev, shellMembers: members })
-                        }}
+                        onChange={(e) => updateMember({ name: e.target.value })}
                         className="bg-card border-border font-mono text-xl"
                         placeholder="Member name"
                       />
@@ -113,13 +114,7 @@ export default function ShellSection({ setAdminSettings,
                     {editMode ? (
                       <Input
                         value={member?.role || ''}
-                        onChange={(e) => {
-                          if (!setAdminSettings) return
-                          const prev = adminSettings ?? ({} as AdminSettings)
-                          const members = [...(prev.shellMembers || (prev.shellMember ? [prev.shellMember] : []))]
-                          members[memberIndex] = { ...members[memberIndex], role: e.target.value }
-                          setAdminSettings?.({ ...prev, shellMembers: members })
-                        }}
+                        onChange={(e) => updateMember({ role: e.target.value })}
                         className="bg-card border-border font-mono"
                         placeholder="Member role"
                       />
@@ -133,13 +128,7 @@ export default function ShellSection({ setAdminSettings,
                     {editMode ? (
                       <Textarea
                         value={member?.bio || ''}
-                        onChange={(e) => {
-                          if (!setAdminSettings) return
-                          const prev = adminSettings ?? ({} as AdminSettings)
-                          const members = [...(prev.shellMembers || (prev.shellMember ? [prev.shellMember] : []))]
-                          members[memberIndex] = { ...members[memberIndex], bio: e.target.value }
-                          setAdminSettings?.({ ...prev, shellMembers: members })
-                        }}
+                        onChange={(e) => updateMember({ bio: e.target.value })}
                         className="bg-card border-border font-mono min-h-[100px]"
                         placeholder="Member bio"
                       />
@@ -157,16 +146,7 @@ export default function ShellSection({ setAdminSettings,
                             <Label className="font-mono text-xs w-24">{platform}</Label>
                             <Input
                               value={member?.social?.[platform] || ''}
-                              onChange={(e) => {
-                                if (!setAdminSettings) return
-                                const prev = adminSettings ?? ({} as AdminSettings)
-                                const members = [...(prev.shellMembers || (prev.shellMember ? [prev.shellMember] : []))]
-                                members[memberIndex] = {
-                                  ...members[memberIndex],
-                                  social: { ...(members[memberIndex]?.social || {}), [platform]: e.target.value },
-                                }
-                                setAdminSettings?.({ ...prev, shellMembers: members })
-                              }}
+                              onChange={(e) => updateMember({ social: { ...(member?.social || {}), [platform]: e.target.value } })}
                               className="bg-card border-border font-mono text-xs flex-1"
                               placeholder={`https://${platform}.com/...`}
                             />
@@ -197,13 +177,7 @@ export default function ShellSection({ setAdminSettings,
                       variant="destructive"
                       size="sm"
                       className="mt-2"
-                      onClick={() => {
-                        if (!setAdminSettings) return
-                          const prev = adminSettings ?? ({} as AdminSettings)
-                        const members = [...(prev.shellMembers || (prev.shellMember ? [prev.shellMember] : []))]
-                        members.splice(memberIndex, 1)
-                        setAdminSettings?.({ ...prev, shellMembers: members })
-                      }}
+                      onClick={() => setAdminSettings?.({ ...(adminSettings ?? {}), shell: undefined })}
                     >
                       <Trash className="w-4 h-4 mr-1" />
                       Remove Member
@@ -216,9 +190,9 @@ export default function ShellSection({ setAdminSettings,
                   </div>
                 </motion.div>
               </div>
-            ))}
+            )}
 
-            {(adminSettings?.shellMembers || (adminSettings?.shellMember ? [adminSettings.shellMember] : [])).length === 0 && !editMode && (
+            {!member && !editMode && (
               <div className="text-center py-8">
                 <p className="text-muted-foreground font-mono">No members configured</p>
               </div>
