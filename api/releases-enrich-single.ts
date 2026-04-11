@@ -197,7 +197,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     delete (updated as any).tidal
     delete (updated as any).amazonMusic
 
-    updated.streamingLinks = newLinks
     const updatedReleases = releases.map(r => (r.id === id ? updated : r))
     await redis.set(BAND_DATA_KEY, { ...(existing ?? {}), releases: updatedReleases })
 
