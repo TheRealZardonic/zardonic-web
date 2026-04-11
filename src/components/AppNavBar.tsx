@@ -4,6 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { List, X } from '@phosphor-icons/react'
 import type { SectionLabels, SectionVisibility } from '@/lib/types'
 import { useLocale } from '@/contexts/LocaleContext'
+import { SECTION_REGISTRY } from '@/lib/sections-registry'
+import { isSectionVisible } from '@/lib/admin-settings'
+import type { AdminSettings } from '@/lib/types'
 
 interface AppNavBarProps {
   artistName: string
@@ -16,7 +19,9 @@ interface AppNavBarProps {
   setMobileMenuOpen: (v: boolean) => void
   scrollToSection: (id: string) => void
   sectionLabels?: SectionLabels
+  /** @deprecated Use adminSettings instead */
   sectionVisibility?: SectionVisibility
+  adminSettings?: AdminSettings | null
 }
 
 export default function AppNavBar({
@@ -30,23 +35,20 @@ export default function AppNavBar({
   setMobileMenuOpen,
   scrollToSection,
   sectionLabels,
-  sectionVisibility,
+  sectionVisibility: _sectionVisibility,
+  adminSettings,
 }: AppNavBarProps) {
   const { t } = useLocale()
-  const allNavItems: { id: string; label: string }[] = [
-    { id: 'bio', label: sectionLabels?.biography || t('nav.biography') },
-    { id: 'music', label: sectionLabels?.musicPlayer || t('nav.music') },
-    { id: 'gigs', label: sectionLabels?.upcomingGigs || t('nav.gigs') },
-    { id: 'releases', label: sectionLabels?.releases || t('nav.releases') },
-    { id: 'gallery', label: sectionLabels?.gallery || t('nav.gallery') },
-    { id: 'connect', label: sectionLabels?.connect || t('nav.connect') },
-  ]
-  // Hide nav items whose sections are explicitly disabled
-  const navItems = allNavItems.filter(({ id }) => {
-    if (!sectionVisibility) return true
-    const key = id as keyof SectionVisibility
-    return sectionVisibility[key] !== false
-  })
+
+  // Build nav items from SECTION_REGISTRY (auto-extensible)
+  const navItems = SECTION_REGISTRY
+    .filter((s) => s.showInNav)
+    .map((s) => ({
+      id: s.id,
+      label: sectionLabels?.[s.labelKey] || t(`nav.${s.id}`),
+    }))
+    .filter(({ id }) => isSectionVisible(adminSettings, id))
+
   return (
     <motion.nav
       initial={{ opacity: 0 }}

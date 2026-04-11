@@ -201,14 +201,14 @@ function App() {
 
   const handleLabelChange = useCallback((key: keyof SectionLabels, value: string | boolean) => {
     setAdminSettings(prev => {
-      const next = { ...(prev ?? {}), sectionLabels: { ...(prev?.sectionLabels ?? {}), [key]: value } }
+      const next = { ...(prev ?? {}), labels: { ...(prev?.labels ?? {}), [key]: value } }
       setKvAdminSettings(next)
       return next
     })
   }, [setKvAdminSettings])
 
   const handleSaveTerminalCommands = useCallback((commands: TerminalCommand[]) => {
-    handleUpdateAdminSettings({ ...(adminSettings ?? {}), terminalCommands: commands })
+    handleUpdateAdminSettings({ ...(adminSettings ?? {}), terminal: { ...(adminSettings?.terminal ?? {}), commands } })
   }, [adminSettings, handleUpdateAdminSettings])
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -228,10 +228,10 @@ function App() {
   const [showContactInbox, setShowContactInbox] = useState(false)
   const [showSubscriberList, setShowSubscriberList] = useState(false)
 
-  const vis = adminSettings?.sectionVisibility ?? {}
-  const anim = adminSettings?.animations ?? {}
-  const sectionLabels = adminSettings?.sectionLabels ?? {}
-  const terminalCommands = adminSettings?.terminalCommands ?? []
+  const vis = adminSettings?.sections?.visibility ?? {}
+  const anim = adminSettings?.background ?? {}
+  const sectionLabels = adminSettings?.labels ?? {}
+  const terminalCommands = adminSettings?.terminal?.commands ?? []
 
   // When KV settings arrive, persist the type so the next load is instant.
   useEffect(() => {
@@ -251,7 +251,7 @@ function App() {
   // (handled by the useEffect below which sets loading = false directly).
   const [activeLoaderType] = useState(initialLoaderType)
 
-  const sectionOrder = adminSettings?.sectionOrder ?? DEFAULT_SECTION_ORDER
+  const sectionOrder = adminSettings?.sections?.order ?? DEFAULT_SECTION_ORDER
   const getSectionOrder = useCallback((section: string) => {
     const idx = sectionOrder.indexOf(section as SectionKey)
     return idx >= 0 ? idx : DEFAULT_SECTION_ORDER.indexOf(section as SectionKey)
@@ -367,7 +367,7 @@ function App() {
             backgroundImageOverlay={anim.backgroundImageOverlay === true}
             backgroundType={anim.backgroundType}
             circuitBackgroundEnabled={anim.circuitBackgroundEnabled !== false}
-            hudTexts={adminSettings?.hudTexts}
+            hudTexts={adminSettings?.hud}
             animSettings={anim}
           />
         }
@@ -383,7 +383,7 @@ function App() {
             setMobileMenuOpen={setMobileMenuOpen}
             scrollToSection={scrollToSection}
             sectionLabels={sectionLabels}
-            sectionVisibility={vis}
+            adminSettings={adminSettings}
           />
         }
         footer={
@@ -550,7 +550,7 @@ function App() {
                         precacheUrls={precacheUrls}
                         mode={anim.loadingScreenMode ?? 'real'}
                         duration={anim.loadingScreenDuration ?? 3}
-                        loaderTexts={adminSettings?.loaderTexts}
+                        loaderTexts={adminSettings?.loader}
                       />
                     </Suspense>
                   )
@@ -563,7 +563,7 @@ function App() {
                         precacheUrls={precacheUrls}
                         mode={anim.loadingScreenMode ?? 'real'}
                         duration={anim.loadingScreenDuration ?? 3}
-                        loaderTexts={adminSettings?.loaderTexts}
+                        loaderTexts={adminSettings?.loader}
                       />
                     </Suspense>
                   )
@@ -574,7 +574,7 @@ function App() {
                     key="cyberpunk"
                     onLoadComplete={() => setLoading(false)}
                     precacheUrls={precacheUrls}
-                    loaderTexts={adminSettings?.loaderTexts}
+                    loaderTexts={adminSettings?.loader}
                     mode={anim.loadingScreenMode ?? 'real'}
                     duration={anim.loadingScreenDuration ?? 3}
                   />
@@ -587,7 +587,7 @@ function App() {
             />
             <Toaster />
             <SystemMonitorHUD
-              decorativeTexts={adminSettings?.decorativeTexts}
+              decorativeTexts={adminSettings?.decorative}
               dataCounts={siteData ? {
                 releases: siteData.releases?.length ?? 0,
                 gigs: siteData.gigs?.length ?? 0,

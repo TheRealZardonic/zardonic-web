@@ -23,7 +23,7 @@ function parseOklchComponents(oklchStr: string): { l: number; c: number; h: numb
 export function useAppTheme(adminSettings: AdminSettings | undefined): void {
   // Effect 1: Apply theme CSS variables
   useEffect(() => {
-    const t = adminSettings?.theme
+    const t = adminSettings?.design?.theme
     if (!t) return
     const root = document.documentElement
 
@@ -145,11 +145,11 @@ export function useAppTheme(adminSettings: AdminSettings | undefined): void {
       root.style.removeProperty('--spotify-saturate')
       root.style.removeProperty('--spotify-brightness')
     }
-  }, [adminSettings?.theme])
+  }, [adminSettings?.design?.theme])
 
   // Effect 2: CRT opacity
   useEffect(() => {
-    const a = adminSettings?.animations
+    const a = adminSettings?.background
     const root = document.documentElement
     if (typeof a?.crtOverlayOpacity === 'number') {
       root.style.setProperty('--crt-overlay-opacity', String(a.crtOverlayOpacity))
@@ -161,7 +161,7 @@ export function useAppTheme(adminSettings: AdminSettings | undefined): void {
       root.style.removeProperty('--crt-overlay-opacity')
       root.style.removeProperty('--crt-vignette-opacity')
     }
-  }, [adminSettings?.animations])
+  }, [adminSettings?.background])
 
   // Effect 3: Config overrides
   useEffect(() => {
@@ -172,7 +172,7 @@ export function useAppTheme(adminSettings: AdminSettings | undefined): void {
 
   // Effect 4: Favicon
   useEffect(() => {
-    const faviconUrl = adminSettings?.faviconUrl
+    const faviconUrl = adminSettings?.design?.faviconUrl
     if (!faviconUrl) return
     let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement | null
     if (!link) {
@@ -181,13 +181,13 @@ export function useAppTheme(adminSettings: AdminSettings | undefined): void {
       document.head.appendChild(link)
     }
     link.href = faviconUrl
-  }, [adminSettings?.faviconUrl])
+  }, [adminSettings?.design?.faviconUrl])
 
   // Effect 5: Apply effect colors, animation timings, and CRT intensity settings
   useEffect(() => {
-    const ec = adminSettings?.effectColors
-    const at = adminSettings?.animationTimings
-    const ci = adminSettings?.crtIntensity
+    const ec = adminSettings?.design?.effects
+    const at = adminSettings?.design?.timings
+    const ci = adminSettings?.design?.crt
     const root = document.documentElement
 
     if (ec?.chromaticColorLeft) root.style.setProperty('--chromatic-color-left', ec.chromaticColorLeft)
@@ -223,5 +223,5 @@ export function useAppTheme(adminSettings: AdminSettings | undefined): void {
       root.style.removeProperty('--scanline-height')
       root.style.removeProperty('--noise-frequency')
     }
-  }, [adminSettings?.effectColors, adminSettings?.animationTimings, adminSettings?.crtIntensity])
+  }, [adminSettings?.design?.effects, adminSettings?.design?.timings, adminSettings?.design?.crt])
 }

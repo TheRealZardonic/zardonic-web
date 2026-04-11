@@ -3,64 +3,58 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
-import { TabsContent } from '@/components/ui/tabs'
 import { DEFAULT_SECTION_ORDER } from '@/lib/config'
-import type { AdminSettings, SectionVisibility } from '@/lib/types'
+import type { AdminSettings } from '@/lib/types'
+import { SECTION_REGISTRY } from '@/lib/sections-registry'
+import { isSectionVisible } from '@/lib/admin-settings'
 
 interface SectionsTabProps {
   adminSettings?: AdminSettings | null
   setAdminSettings?: (s: AdminSettings) => void
-  vis: SectionVisibility
-  updateVisibility: (key: keyof SectionVisibility, value: boolean) => void
   currentOrder: string[]
-  sectionDisplayNames: Record<string, string>
   moveSectionUp: (index: number) => void
   moveSectionDown: (index: number) => void
 }
 
-const sectionItems: { key: keyof SectionVisibility; label: string }[] = [
-  { key: 'bio', label: 'Biography' },
-  { key: 'shell', label: 'Shell (Member)' },
-  { key: 'music', label: 'Music Player' },
-  { key: 'gigs', label: 'Upcoming Gigs' },
-  { key: 'releases', label: 'Releases' },
-  { key: 'gallery', label: 'Gallery' },
-  { key: 'media', label: 'Media' },
-  { key: 'connect', label: 'Connect / Social' },
-  { key: 'creditHighlights', label: 'Credit Highlights' },
-  { key: 'sponsoring', label: 'Sponsoring' },
-  { key: 'contact', label: 'Contact Form' },
-]
-
 export default function SectionsTab({
   adminSettings,
   setAdminSettings,
-  vis,
-  updateVisibility,
   currentOrder,
-  sectionDisplayNames,
   moveSectionUp,
   moveSectionDown,
 }: SectionsTabProps) {
+  const updateVisibility = (id: string, value: boolean) => {
+    if (!setAdminSettings) return
+    setAdminSettings({
+      ...(adminSettings ?? {}),
+      sections: {
+        ...(adminSettings?.sections ?? {}),
+        visibility: { ...(adminSettings?.sections?.visibility ?? {}), [id]: value },
+      },
+    })
+  }
+
+  const sectionDisplayNames: Record<string, string> = Object.fromEntries(
+    SECTION_REGISTRY.map((e) => [e.id, e.label]),
+  )
+
+  const anyHidden = SECTION_REGISTRY.some((e) => !isSectionVisible(adminSettings, e.id))
+
   return (
-    <TabsContent value="sections" className="flex-1 overflow-y-auto p-4 space-y-6 mt-0">
+    <div className="flex-1 overflow-y-auto p-4 space-y-6 mt-0">
       {/* Visibility */}
       <section className="space-y-3">
         <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-2">
-          {Object.values(vis).some((v) => v === false) ? (
-            <EyeSlash size={14} />
-          ) : (
-            <Eye size={14} />
-          )}
+          {anyHidden ? <EyeSlash size={14} /> : <Eye size={14} />}
           Section Visibility
         </h3>
         <div className="space-y-3">
-          {sectionItems.map(({ key, label }) => (
-            <div key={key} className="flex items-center justify-between">
+          {SECTION_REGISTRY.map(({ id, label }) => (
+            <div key={id} className="flex items-center justify-between">
               <Label className="font-mono text-sm">{label}</Label>
               <Switch
-                checked={vis[key] !== false}
-                onCheckedChange={(checked) => updateVisibility(key, checked)}
+                checked={isSectionVisible(adminSettings, id)}
+                onCheckedChange={(checked) => updateVisibility(id, checked)}
               />
             </div>
           ))}
@@ -106,7 +100,10 @@ export default function SectionsTab({
         </div>
         <Button
           onClick={() =>
-            setAdminSettings?.({ ...(adminSettings ?? {}), sectionOrder: [...DEFAULT_SECTION_ORDER] })
+            setAdminSettings?.({
+              ...(adminSettings ?? {}),
+              sections: { ...(adminSettings?.sections ?? {}), order: [...DEFAULT_SECTION_ORDER] },
+            })
           }
           variant="outline"
           size="sm"
@@ -117,6 +114,6 @@ export default function SectionsTab({
           Reset to Default Order
         </Button>
       </section>
-    </TabsContent>
+    </div>
   )
 }

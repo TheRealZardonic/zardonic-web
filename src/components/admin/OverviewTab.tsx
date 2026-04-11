@@ -16,7 +16,7 @@ import {
 } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { TabsContent } from '@/components/ui/tabs'
+
 import type { SiteData } from '@/App'
 
 interface OverviewTabProps {
@@ -48,7 +48,7 @@ export default function OverviewTab({
   fetchApiHealth,
 }: OverviewTabProps) {
   return (
-    <TabsContent value="overview" className="flex-1 overflow-y-auto p-4 space-y-4 mt-0">
+    <div className="flex-1 overflow-y-auto p-4 space-y-4 mt-0">
       {/* Status bar */}
       <div className="bg-background border border-border rounded-md p-3 space-y-2">
         <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
@@ -246,6 +246,6 @@ export default function OverviewTab({
           ))}
         </div>
       </section>
-    </TabsContent>
+    </div>
   )
 }

@@ -1,5 +1,5 @@
 import { ChartLine, Envelope } from '@phosphor-icons/react'
-import { TabsContent } from '@/components/ui/tabs'
+
 
 interface AnalyticsTabProps {
   onOpenStats?: () => void
@@ -24,7 +24,7 @@ export default function AnalyticsTab({ onOpenStats, onOpenContactInbox, onClose 
   ]
 
   return (
-    <TabsContent value="analytics" className="flex-1 overflow-y-auto p-4 space-y-3 mt-0">
+    <div className="flex-1 overflow-y-auto p-4 space-y-3 mt-0">
       <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider mb-4">
         Analytics &amp; Inbox
       </h3>
@@ -48,6 +48,6 @@ export default function AnalyticsTab({ onOpenStats, onOpenContactInbox, onClose 
           </button>
         ) : null,
       )}
-    </TabsContent>
+    </div>
   )
 }

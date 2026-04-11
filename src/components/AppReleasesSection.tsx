@@ -137,11 +137,11 @@ export default function AppReleasesSection({ releases, sectionOrder, visible, ed
                   text={sectionLabel}
                   defaultText="RELEASES"
                   editMode={editMode && !!onLabelChange}
-                  glitchEnabled={adminSettings?.glitchTextSettings?.enabled !== false}
-                  glitchIntervalMs={adminSettings?.glitchTextSettings?.intervalMs}
-                  glitchDurationMs={adminSettings?.glitchTextSettings?.durationMs}
+                  glitchEnabled={adminSettings?.terminal?.glitchText?.enabled !== false}
+                  glitchIntervalMs={adminSettings?.terminal?.glitchText?.intervalMs}
+                  glitchDurationMs={adminSettings?.terminal?.glitchText?.durationMs}
                 />
-                {adminSettings?.animations?.blinkingCursor !== false && <span className="animate-pulse">_</span>}
+                {adminSettings?.background?.blinkingCursor !== false && <span className="animate-pulse">_</span>}
               </h2>
               {editMode && (
                 <div className="flex items-center gap-2 flex-wrap">

@@ -49,7 +49,7 @@ export default function ContactSection({
   const sectionRef = useRef(null)
   const isInView = useInView(sectionRef, { once: true, amount: 0.2 })
   const titleText = sectionLabels?.contact || t('contact.defaultTitle')
-  const showCursor = adminSettings?.animations?.blinkingCursor !== false
+  const showCursor = adminSettings?.background?.blinkingCursor !== false
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -117,9 +117,9 @@ export default function ContactSection({
                 text={titleText}
                 defaultText="CONTACT"
                 editMode={editMode ?? false}
-                glitchEnabled={adminSettings?.glitchTextSettings?.enabled !== false}
-                glitchIntervalMs={adminSettings?.glitchTextSettings?.intervalMs}
-                glitchDurationMs={adminSettings?.glitchTextSettings?.durationMs}
+                glitchEnabled={adminSettings?.terminal?.glitchText?.enabled !== false}
+                glitchIntervalMs={adminSettings?.terminal?.glitchText?.intervalMs}
+                glitchDurationMs={adminSettings?.terminal?.glitchText?.durationMs}
               />
               {showCursor && <span className="animate-pulse">_</span>}
             </h2>

@@ -13,7 +13,7 @@ export function PrivacyOverlayContent({ adminSettings, artistName, decorativeTex
   const { locale: language, setLocale: setLanguage } = useLocale()
   const streamLabel = decorativeTexts?.privacyStreamLabel ?? '// PRIVACY.POLICY'
 
-  const dataController = adminSettings?.contactInfo?.managementName || artistName || ''
+  const dataController = adminSettings?.contact?.managementName || artistName || ''
 
   return (
     <motion.div
@@ -56,10 +56,10 @@ export function PrivacyOverlayContent({ adminSettings, artistName, decorativeTex
         </div>
       </motion.div>
 
-      {adminSettings?.legalContent?.privacyCustom ? (
+      {adminSettings?.legal?.privacyCustom ? (
         <div className="cyber-grid p-4">
           <div className="font-mono text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">
-            {adminSettings.legalContent.privacyCustom}
+            {adminSettings.legal.privacyCustom}
           </div>
         </div>
       ) : (

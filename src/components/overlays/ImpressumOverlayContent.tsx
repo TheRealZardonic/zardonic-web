@@ -30,10 +30,10 @@ export function ImpressumOverlayContent({ adminSettings, onClose, decorativeText
         </h2>
       </motion.div>
 
-      {adminSettings?.legalContent?.impressumCustom ? (
+      {adminSettings?.legal?.impressumCustom ? (
         <div className="cyber-grid p-4">
           <div className="font-mono text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">
-            {adminSettings.legalContent.impressumCustom}
+            {adminSettings.legal.impressumCustom}
           </div>
         </div>
       ) : (
@@ -46,8 +46,8 @@ export function ImpressumOverlayContent({ adminSettings, onClose, decorativeText
           >
             <div className="data-label mb-2">Angaben gemäß § 5 DDG</div>
             <div className="space-y-2 font-mono text-sm">
-              {adminSettings?.contactInfo?.managementName && (
-                <p>{adminSettings.contactInfo.managementName}</p>
+              {adminSettings?.contact?.managementName && (
+                <p>{adminSettings.contact.managementName}</p>
               )}
             </div>
           </motion.div>
@@ -60,8 +60,8 @@ export function ImpressumOverlayContent({ adminSettings, onClose, decorativeText
           >
             <div className="data-label mb-2">Kontakt / Contact</div>
             <div className="space-y-2 font-mono text-sm">
-              {adminSettings?.contactInfo?.managementEmail && (
-                <p>E-Mail: {adminSettings.contactInfo.managementEmail}</p>
+              {adminSettings?.contact?.managementEmail && (
+                <p>E-Mail: {adminSettings.contact.managementEmail}</p>
               )}
             </div>
           </motion.div>
@@ -74,8 +74,8 @@ export function ImpressumOverlayContent({ adminSettings, onClose, decorativeText
           >
             <div className="data-label mb-2">Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</div>
             <div className="space-y-2 font-mono text-sm">
-              {adminSettings?.contactInfo?.managementName && (
-                <p>{adminSettings.contactInfo.managementName}</p>
+              {adminSettings?.contact?.managementName && (
+                <p>{adminSettings.contact.managementName}</p>
               )}
             </div>
           </motion.div>

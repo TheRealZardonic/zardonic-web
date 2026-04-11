@@ -1,46 +1,38 @@
+import React from 'react'
 import {
   X,
-  House,
-  FileText,
   Palette,
   Eye,
   GearSix,
-  Shield,
-  ChartBar,
-  Database,
-  Monitor,
   SignOut,
-  Translate,
-  Columns,
+  FileText,
 } from '@phosphor-icons/react'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRef, useState, useCallback, useEffect, useMemo, type ChangeEvent } from 'react'
 import AdminLoginDialog from '@/components/AdminLoginDialog'
 import { AdminSearch } from '@/components/admin/AdminSearch'
 import type {
   AdminSettings,
-  SectionVisibility,
   ThemeCustomization,
   AnimationSettings,
   ProgressiveOverlayModes,
-  SectionLabels,
-  ContactInfo,
+  DisclosureLevel,
 } from '@/lib/types'
 import type { SiteData } from '@/App'
 import { toast } from 'sonner'
-import { DEFAULT_SECTION_ORDER } from '@/lib/config'
-import AppearanceTab from '@/components/admin/AppearanceTab'
 import BackgroundTab from '@/components/admin/BackgroundTab'
 import LayoutTab from '@/components/admin/LayoutTab'
-import ContentTab from '@/components/admin/ContentTab'
 import SectionsTab from '@/components/admin/SectionsTab'
-import SectionConfigTab from '@/components/admin/SectionConfigTab'
+import SectionPanel from '@/components/admin/SectionPanel'
 import OverviewTab from '@/components/admin/OverviewTab'
 import SecurityTab from '@/components/admin/SecurityTab'
 import AnalyticsTab from '@/components/admin/AnalyticsTab'
 import DataTab from '@/components/admin/DataTab'
 import TranslationsTab from '@/components/admin/TranslationsTab'
+import { SECTION_REGISTRY } from '@/lib/sections-registry'
+import { getDisclosureLevel, getSectionOrder } from '@/lib/admin-settings'
+
+type AdminCategory = 'content' | 'design' | 'sections' | 'system'
 
 interface AdminPanelProps {
   open: boolean
@@ -97,61 +89,31 @@ export default function AdminPanel({
   onSetPassword,
   onLogout,
 }: AdminPanelProps) {
-  const [activeTab, setActiveTab] = useState('overview')
+  const [category, setCategory] = useState<AdminCategory>('content')
+  const [page, setPage] = useState<string>(SECTION_REGISTRY[0]?.id ?? 'bio')
   const [showPasswordDialog, setShowPasswordDialog] = useState(false)
   const importInputRef = useRef<HTMLInputElement>(null)
   const translationImportRef = useRef<HTMLInputElement>(null)
-  const expertMode = adminSettings?.expertMode ?? false
 
-  // Local content state for optimistic edits
-  const [localArtistName, setLocalArtistName] = useState(siteData?.artistName ?? '')
-  const [localBio, setLocalBio] = useState(siteData?.bio ?? '')
-  const [localHeroImage, setLocalHeroImage] = useState(siteData?.heroImage ?? '')
-  const [localSocial, setLocalSocial] = useState<SiteData['social']>(siteData?.social ?? {})
-  const [localSectionLabels, setLocalSectionLabels] = useState<SectionLabels>(adminSettings?.sectionLabels ?? {})
-  const [localContactInfo, setLocalContactInfo] = useState<ContactInfo>(adminSettings?.contactInfo ?? {})
+  const disclosureLevel: DisclosureLevel = getDisclosureLevel(adminSettings)
+  const isExpert = disclosureLevel === 'expert'
 
   const [newPresetName, setNewPresetName] = useState('')
   const [apiHealth, setApiHealth] = useState<{ status: string; services: Record<string, unknown> } | null>(null)
 
-  useEffect(() => {
-    if (open) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setLocalArtistName(siteData?.artistName ?? '')
-      setLocalBio(siteData?.bio ?? '')
-      setLocalHeroImage(siteData?.heroImage ?? '')
-      setLocalSocial(siteData?.social ?? {})
-      setLocalSectionLabels(adminSettings?.sectionLabels ?? {})
-      setLocalContactInfo(adminSettings?.contactInfo ?? {})
-    }
-  }, [open, siteData, adminSettings])
-
   // Section order helpers
   const currentOrder: string[] = useMemo(
-    () => adminSettings?.sectionOrder ?? [...DEFAULT_SECTION_ORDER],
-    [adminSettings?.sectionOrder],
+    () => getSectionOrder(adminSettings),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [adminSettings?.sections?.order],
   )
-
-  const sectionDisplayNames: Record<string, string> = {
-    bio: 'Biography',
-    shell: 'Shell (Member)',
-    creditHighlights: 'Credit Highlights',
-    music: 'Music Player',
-    gigs: 'Upcoming Gigs',
-    releases: 'Releases',
-    gallery: 'Gallery',
-    media: 'Media',
-    connect: 'Connect / Social',
-    contact: 'Contact Form',
-    sponsoring: 'Sponsoring',
-  }
 
   const moveSectionUp = useCallback(
     (index: number) => {
       if (index <= 0 || !setAdminSettings) return
       const newOrder = [...currentOrder]
       ;[newOrder[index - 1], newOrder[index]] = [newOrder[index], newOrder[index - 1]]
-      setAdminSettings({ ...adminSettings, sectionOrder: newOrder })
+      setAdminSettings({ ...adminSettings, sections: { ...(adminSettings?.sections ?? {}), order: newOrder } })
     },
     [currentOrder, adminSettings, setAdminSettings],
   )
@@ -161,38 +123,26 @@ export default function AdminPanel({
       if (index >= currentOrder.length - 1 || !setAdminSettings) return
       const newOrder = [...currentOrder]
       ;[newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]]
-      setAdminSettings({ ...adminSettings, sectionOrder: newOrder })
+      setAdminSettings({ ...adminSettings, sections: { ...(adminSettings?.sections ?? {}), order: newOrder } })
     },
     [currentOrder, adminSettings, setAdminSettings],
-  )
-
-  const updateVisibility = useCallback(
-    (key: keyof SectionVisibility, value: boolean) => {
-      if (!setAdminSettings) return
-      setAdminSettings({
-        ...adminSettings,
-        sectionVisibility: { ...adminSettings?.sectionVisibility, [key]: value },
-      })
-    },
-    [adminSettings, setAdminSettings],
   )
 
   const updateTheme = useCallback(
     (key: keyof ThemeCustomization, value: string) => {
       if (!setAdminSettings) return
-      // These keys are stored as numbers; empty string means "remove override"
       const numericKeys: (keyof ThemeCustomization)[] = ['spotifyHueRotate', 'spotifySaturate', 'spotifyBrightness']
       if (numericKeys.includes(key)) {
         const parsed = value === '' ? undefined : parseFloat(value)
-        const newTheme = { ...adminSettings?.theme }
+        const newTheme = { ...adminSettings?.design?.theme }
         if (parsed === undefined) {
           delete newTheme[key]
         } else if (!isNaN(parsed)) {
           (newTheme as Record<string, unknown>)[key] = parsed
         }
-        setAdminSettings({ ...adminSettings, theme: newTheme })
+        setAdminSettings({ ...adminSettings, design: { ...(adminSettings?.design ?? {}), theme: newTheme } })
       } else {
-        setAdminSettings({ ...adminSettings, theme: { ...adminSettings?.theme, [key]: value } })
+        setAdminSettings({ ...adminSettings, design: { ...(adminSettings?.design ?? {}), theme: { ...adminSettings?.design?.theme, [key]: value } } })
       }
     },
     [adminSettings, setAdminSettings],
@@ -201,7 +151,7 @@ export default function AdminPanel({
   const applyPreset = useCallback(
     (themeUpdate: Partial<ThemeCustomization>) => {
       if (!setAdminSettings) return
-      setAdminSettings({ ...adminSettings, theme: { ...adminSettings?.theme, ...themeUpdate } })
+      setAdminSettings({ ...adminSettings, design: { ...(adminSettings?.design ?? {}), theme: { ...adminSettings?.design?.theme, ...themeUpdate } } })
     },
     [adminSettings, setAdminSettings],
   )
@@ -209,7 +159,7 @@ export default function AdminPanel({
   const updateAnimation = useCallback(
     (key: keyof AnimationSettings, value: boolean) => {
       if (!setAdminSettings) return
-      setAdminSettings({ ...adminSettings, animations: { ...adminSettings?.animations, [key]: value } })
+      setAdminSettings({ ...adminSettings, background: { ...adminSettings?.background, [key]: value } })
     },
     [adminSettings, setAdminSettings],
   )
@@ -217,7 +167,7 @@ export default function AdminPanel({
   const updateAnimationNumber = useCallback(
     (key: keyof AnimationSettings, value: number) => {
       if (!setAdminSettings) return
-      setAdminSettings({ ...adminSettings, animations: { ...adminSettings?.animations, [key]: value } })
+      setAdminSettings({ ...adminSettings, background: { ...adminSettings?.background, [key]: value } })
     },
     [adminSettings, setAdminSettings],
   )
@@ -245,7 +195,6 @@ export default function AdminPanel({
 
   useEffect(() => {
     if (!open) return
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchApiHealth()
   }, [open, fetchApiHealth])
 
@@ -287,9 +236,8 @@ export default function AdminPanel({
     e.target.value = ''
   }
 
-  const vis = adminSettings?.sectionVisibility ?? {}
-  const theme = adminSettings?.theme ?? {}
-  const anim = adminSettings?.animations ?? {}
+  const theme = adminSettings?.design?.theme ?? {}
+  const anim = adminSettings?.background ?? {}
   const progModes = adminSettings?.progressiveOverlayModes ?? {}
 
   const [isDesktop, setIsDesktop] = useState(
@@ -302,6 +250,171 @@ export default function AdminPanel({
     mql.addEventListener('change', handler)
     return () => mql.removeEventListener('change', handler)
   }, [])
+
+  // Sidebar navigation definition
+  const sidebarItems: { category: AdminCategory; label: string; icon: React.ReactNode; pages: { id: string; label: string }[] }[] = [
+    {
+      category: 'content',
+      label: 'Content',
+      icon: <FileText size={14} />,
+      pages: SECTION_REGISTRY.map((e) => ({ id: e.id, label: e.label })),
+    },
+    {
+      category: 'design',
+      label: 'Design',
+      icon: <Palette size={14} />,
+      pages: [
+        { id: 'colors', label: 'Colors' },
+        { id: 'background', label: 'Background' },
+        { id: 'layout', label: 'Layout' },
+      ],
+    },
+    {
+      category: 'sections',
+      label: 'Sections',
+      icon: <Eye size={14} />,
+      pages: [{ id: 'visibility', label: 'Visibility & Order' }],
+    },
+    {
+      category: 'system',
+      label: 'System',
+      icon: <GearSix size={14} />,
+      pages: [
+        { id: 'overview', label: 'Overview' },
+        { id: 'security', label: 'Security' },
+        { id: 'analytics', label: 'Analytics' },
+        { id: 'data', label: 'Data' },
+        { id: 'translations', label: 'Translations' },
+      ],
+    },
+  ]
+
+  const renderContent = () => {
+    if (category === 'content') {
+      return (
+        <SectionPanel
+          sectionId={page}
+          adminSettings={adminSettings}
+          setAdminSettings={setAdminSettings}
+          siteData={siteData}
+          onUpdateSiteData={onUpdateSiteData}
+          disclosureLevel={disclosureLevel}
+        />
+      )
+    }
+    if (category === 'design') {
+      if (page === 'colors') {
+        return (
+          <AppearanceTab
+            adminSettings={adminSettings}
+            setAdminSettings={setAdminSettings}
+            theme={theme}
+            updateTheme={updateTheme}
+            applyPreset={applyPreset}
+            anim={anim}
+            updateAnimation={updateAnimation}
+            updateAnimationNumber={updateAnimationNumber}
+            progModes={progModes}
+            updateProgressiveMode={updateProgressiveMode}
+            onClose={onClose}
+            onOpenConfigEditor={onOpenConfigEditor}
+            newPresetName={newPresetName}
+            setNewPresetName={setNewPresetName}
+            expertMode={isExpert}
+          />
+        )
+      }
+      if (page === 'background') {
+        return (
+          <BackgroundTab
+            adminSettings={adminSettings}
+            setAdminSettings={setAdminSettings}
+            anim={anim}
+            updateAnimationNumber={updateAnimationNumber}
+          />
+        )
+      }
+      if (page === 'layout') {
+        return (
+          <LayoutTab
+            adminSettings={adminSettings}
+            setAdminSettings={setAdminSettings}
+            expertMode={isExpert}
+          />
+        )
+      }
+    }
+    if (category === 'sections') {
+      return (
+        <SectionsTab
+          adminSettings={adminSettings}
+          setAdminSettings={setAdminSettings}
+          currentOrder={currentOrder}
+          moveSectionUp={moveSectionUp}
+          moveSectionDown={moveSectionDown}
+        />
+      )
+    }
+    if (category === 'system') {
+      if (page === 'overview') {
+        return (
+          <OverviewTab
+            siteData={siteData}
+            editMode={editMode}
+            hasPassword={hasPassword}
+            apiHealth={apiHealth}
+            setActiveTab={(p) => setPage(p)}
+            onToggleEdit={onToggleEdit}
+            onExport={handleExport}
+            onImportClick={() => importInputRef.current?.click()}
+            onImportData={onImportData}
+            onOpenPasswordDialog={() => setShowPasswordDialog(true)}
+            fetchApiHealth={fetchApiHealth}
+          />
+        )
+      }
+      if (page === 'security') {
+        return (
+          <SecurityTab
+            hasPassword={hasPassword}
+            onOpenSecurityIncidents={onOpenSecurityIncidents}
+            onOpenSecuritySettings={onOpenSecuritySettings}
+            onOpenBlocklist={onOpenBlocklist}
+            onOpenContactInbox={onOpenContactInbox}
+            onOpenSubscriberList={onOpenSubscriberList}
+            onOpenStats={onOpenStats}
+          />
+        )
+      }
+      if (page === 'analytics') {
+        return <AnalyticsTab />
+      }
+      if (page === 'data') {
+        return (
+          <DataTab
+            siteData={siteData}
+            onFetchBandsintown={onFetchBandsintown}
+            onFetchITunes={onFetchITunes}
+            onResetReleases={onResetReleases}
+            onResetGigs={onResetGigs}
+            onRefreshSiteData={onRefreshSiteData}
+            onExport={handleExport}
+            onImportClick={() => importInputRef.current?.click()}
+          />
+        )
+      }
+      if (page === 'translations') {
+        return (
+          <TranslationsTab
+            adminSettings={adminSettings}
+            setAdminSettings={setAdminSettings}
+            importRef={translationImportRef}
+          />
+        )
+      }
+    }
+    return null
+  }
 
   return (
     <AnimatePresence>
@@ -324,7 +437,7 @@ export default function AdminPanel({
             aria-label="Admin Panel"
             className="fixed z-[9998] bg-card border-border flex flex-col
               bottom-0 left-0 right-0 h-[92dvh] border-t
-              md:top-0 md:bottom-0 md:left-auto md:right-0 md:w-[600px] md:h-full md:border-t-0 md:border-l"
+              md:top-0 md:bottom-0 md:left-auto md:right-0 md:w-[720px] md:h-full md:border-t-0 md:border-l"
             initial={isDesktop ? { x: '100%' } : { y: '100%' }}
             animate={isDesktop ? { x: 0 } : { y: 0 }}
             exit={isDesktop ? { x: '100%' } : { y: '100%' }}
@@ -346,20 +459,50 @@ export default function AdminPanel({
                 </span>
               </div>
               <div className="flex items-center gap-1">
-                <AdminSearch onNavigate={setActiveTab} />
-                <button
-                  onClick={() => setAdminSettings?.({ ...(adminSettings ?? {}), expertMode: !expertMode })}
-                  className={`flex items-center gap-1 font-mono text-[10px] uppercase tracking-wide px-2 py-1 rounded border transition-colors ${
-                    expertMode
-                      ? 'bg-primary/20 border-primary text-primary'
-                      : 'border-border text-muted-foreground hover:border-primary/40'
-                  }`}
-                  title="Toggle Expert Mode"
-                  aria-label="Toggle Expert Mode"
-                >
-                  <GearSix size={12} weight={expertMode ? 'bold' : 'regular'} />
-                  <span className="hidden sm:inline">Expert</span>
-                </button>
+                <AdminSearch onNavigate={(tab) => {
+                  // Map old tab names to new category/page
+                  const tabMap: Record<string, { cat: AdminCategory; pg: string }> = {
+                    overview: { cat: 'system', pg: 'overview' },
+                    security: { cat: 'system', pg: 'security' },
+                    analytics: { cat: 'system', pg: 'analytics' },
+                    data: { cat: 'system', pg: 'data' },
+                    translations: { cat: 'system', pg: 'translations' },
+                    appearance: { cat: 'design', pg: 'colors' },
+                    background: { cat: 'design', pg: 'background' },
+                    layout: { cat: 'design', pg: 'layout' },
+                    sections: { cat: 'sections', pg: 'visibility' },
+                  }
+                  const mapped = tabMap[tab]
+                  if (mapped) { setCategory(mapped.cat); setPage(mapped.pg) }
+                  else {
+                    const reg = SECTION_REGISTRY.find((e) => e.id === tab)
+                    if (reg) { setCategory('content'); setPage(tab) }
+                  }
+                }} />
+
+                {/* Disclosure level 3-segment button */}
+                <div className="flex border border-border rounded overflow-hidden text-[10px] font-mono">
+                  {(['basic', 'advanced', 'expert'] as DisclosureLevel[]).map((level) => (
+                    <button
+                      key={level}
+                      onClick={() => setAdminSettings?.({
+                        ...(adminSettings ?? {}),
+                        ui: { ...(adminSettings?.ui ?? {}), disclosureLevel: level },
+                      })}
+                      className={`px-2 py-1 uppercase tracking-wide transition-colors ${
+                        disclosureLevel === level
+                          ? 'bg-primary/20 text-primary border-r border-border last:border-r-0'
+                          : 'text-muted-foreground hover:text-foreground border-r border-border last:border-r-0'
+                      }`}
+                      title={`${level.charAt(0).toUpperCase() + level.slice(1)} mode`}
+                      aria-label={`Set ${level} disclosure level`}
+                      aria-pressed={disclosureLevel === level}
+                    >
+                      {level === 'basic' ? 'Basic' : level === 'advanced' ? 'Adv' : 'Exp'}
+                    </button>
+                  ))}
+                </div>
+
                 {onLogout && (
                   <button
                     onClick={async () => { await onLogout(); onClose() }}
@@ -380,173 +523,84 @@ export default function AdminPanel({
               </div>
             </div>
 
-            {/* Tabs */}
-            <Tabs
-              value={activeTab}
-              onValueChange={setActiveTab}
-              className="flex flex-col flex-1 min-h-0"
-            >
-              <TabsList className="shrink-0 w-full justify-start gap-0 overflow-x-auto rounded-none border-b border-border bg-transparent h-auto px-2 py-1">
-                {[
-                  { value: 'overview', label: 'Overview', icon: <House size={13} /> },
-                  { value: 'content', label: 'Content', icon: <FileText size={13} /> },
-                  { value: 'appearance', label: 'Appearance', icon: <Palette size={13} /> },
-                  { value: 'background', label: 'Background', icon: <Monitor size={13} /> },
-                  { value: 'layout', label: 'Layout', icon: <Columns size={13} /> },
-                  { value: 'sections', label: 'Sections', icon: <Eye size={13} /> },
-                  { value: 'section-config', label: 'Section Config', icon: <GearSix size={13} /> },
-                  { value: 'security', label: 'Security', icon: <Shield size={13} /> },
-                  { value: 'analytics', label: 'Analytics', icon: <ChartBar size={13} /> },
-                  { value: 'data', label: 'Data', icon: <Database size={13} /> },
-                  { value: 'translations', label: 'Translations', icon: <Translate size={13} /> },
-                ].map(({ value, label, icon }) => (
-                  <TabsTrigger
-                    key={value}
-                    value={value}
-                    className="shrink-0 flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wide px-3 py-1.5 rounded-sm data-[state=active]:bg-primary/20 data-[state=active]:text-primary"
-                  >
-                    {icon}
-                    <span className="hidden sm:inline">{label}</span>
-                  </TabsTrigger>
+            {/* Body: sidebar + content */}
+            <div className="flex flex-1 min-h-0">
+              {/* Sidebar */}
+              <nav className="w-[160px] shrink-0 border-r border-border overflow-y-auto py-2">
+                {sidebarItems.map(({ category: cat, label, icon, pages }) => (
+                  <div key={cat} className="mb-1">
+                    {/* Category header */}
+                    <button
+                      onClick={() => {
+                        setCategory(cat)
+                        setPage(pages[0].id)
+                      }}
+                      className={`w-full flex items-center gap-2 px-3 py-2 text-left font-mono text-[11px] uppercase tracking-wider transition-colors ${
+                        category === cat
+                          ? 'text-primary font-bold'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {icon}
+                      {label}
+                    </button>
+                    {/* Sub-pages when category active */}
+                    {category === cat && (
+                      <div className="pl-2 pb-1 space-y-0.5">
+                        {pages.map(({ id, label: pageLabel }) => (
+                          <button
+                            key={id}
+                            onClick={() => setPage(id)}
+                            className={`w-full text-left px-3 py-1.5 font-mono text-[11px] rounded-sm transition-colors truncate ${
+                              page === id
+                                ? 'bg-primary/15 text-primary'
+                                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                            }`}
+                          >
+                            {pageLabel}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 ))}
-              </TabsList>
+              </nav>
 
-              <OverviewTab
-                siteData={siteData}
-                editMode={editMode}
-                hasPassword={hasPassword}
-                apiHealth={apiHealth}
-                setActiveTab={setActiveTab}
-                onToggleEdit={onToggleEdit}
-                onExport={handleExport}
-                onImportClick={() => importInputRef.current?.click()}
-                onImportData={onImportData}
-                onOpenPasswordDialog={() => setShowPasswordDialog(true)}
-                fetchApiHealth={fetchApiHealth}
-              />
+              {/* Content area */}
+              <div className="flex-1 overflow-y-auto">
+                {renderContent()}
+              </div>
+            </div>
 
-              <ContentTab
-                adminSettings={adminSettings}
-                setAdminSettings={setAdminSettings}
-                onUpdateSiteData={onUpdateSiteData}
-                localArtistName={localArtistName}
-                setLocalArtistName={setLocalArtistName}
-                localBio={localBio}
-                setLocalBio={setLocalBio}
-                localHeroImage={localHeroImage}
-                setLocalHeroImage={setLocalHeroImage}
-                localSocial={localSocial}
-                setLocalSocial={setLocalSocial}
-                localSectionLabels={localSectionLabels}
-                setLocalSectionLabels={setLocalSectionLabels}
-                localContactInfo={localContactInfo}
-                setLocalContactInfo={setLocalContactInfo}
-              />
-
-              <AppearanceTab
-                adminSettings={adminSettings}
-                setAdminSettings={setAdminSettings}
-                theme={theme}
-                updateTheme={updateTheme}
-                applyPreset={applyPreset}
-                anim={anim}
-                updateAnimation={updateAnimation}
-                updateAnimationNumber={updateAnimationNumber}
-                progModes={progModes}
-                updateProgressiveMode={updateProgressiveMode}
-                onClose={onClose}
-                onOpenConfigEditor={onOpenConfigEditor}
-                newPresetName={newPresetName}
-                setNewPresetName={setNewPresetName}
-                expertMode={expertMode}
-              />
-
-              <BackgroundTab
-                adminSettings={adminSettings}
-                setAdminSettings={setAdminSettings}
-                anim={anim}
-                updateAnimationNumber={updateAnimationNumber}
-              />
-
-              <LayoutTab
-                adminSettings={adminSettings}
-                setAdminSettings={setAdminSettings}
-                expertMode={expertMode}
-              />
-
-              <SectionsTab
-                adminSettings={adminSettings}
-                setAdminSettings={setAdminSettings}
-                vis={vis}
-                updateVisibility={updateVisibility}
-                currentOrder={currentOrder}
-                sectionDisplayNames={sectionDisplayNames}
-                moveSectionUp={moveSectionUp}
-                moveSectionDown={moveSectionDown}
-              />
-
-              <SectionConfigTab
-                adminSettings={adminSettings}
-                setAdminSettings={setAdminSettings}
-                siteData={siteData}
-                onUpdateSiteData={onUpdateSiteData}
-              />
-
-              <SecurityTab
-                hasPassword={hasPassword}
-                onOpenSecurityIncidents={onOpenSecurityIncidents}
-                onOpenSecuritySettings={onOpenSecuritySettings}
-                onOpenBlocklist={onOpenBlocklist}
-                onOpenSubscriberList={onOpenSubscriberList}
-                onClose={onClose}
-                onOpenPasswordDialog={() => setShowPasswordDialog(true)}
-              />
-
-              <AnalyticsTab
-                onOpenStats={onOpenStats}
-                onOpenContactInbox={onOpenContactInbox}
-                onClose={onClose}
-              />
-
-              <DataTab
-                siteData={siteData}
-                onImportData={onImportData}
-                onRefreshSiteData={onRefreshSiteData}
-                onExport={handleExport}
-                onImportClick={() => importInputRef.current?.click()}
-                onFetchBandsintown={onFetchBandsintown}
-                onFetchITunes={onFetchITunes}
-                onResetReleases={onResetReleases}
-                onResetGigs={onResetGigs}
-              />
-
-              <TranslationsTab
-                adminSettings={adminSettings}
-                setAdminSettings={setAdminSettings}
-                translationImportRef={translationImportRef}
-              />
-            </Tabs>
-
-            {/* Hidden file input for data import */}
+            {/* Hidden import input */}
             <input
               ref={importInputRef}
               type="file"
-              accept=".json,application/json"
+              accept=".json"
               className="hidden"
               onChange={handleImportFile}
               aria-hidden="true"
             />
+            <input
+              ref={translationImportRef}
+              type="file"
+              accept=".json"
+              className="hidden"
+              aria-hidden="true"
+            />
           </motion.div>
-        </>
-      )}
 
-      {showPasswordDialog && (
-        <AdminLoginDialog
-          open={showPasswordDialog}
-          onOpenChange={setShowPasswordDialog}
-          mode="setup"
-          onSetPassword={hasPassword ? onChangePassword : onSetPassword}
-        />
+          {/* Password Change Dialog */}
+          {showPasswordDialog && (
+            <AdminLoginDialog
+              open={showPasswordDialog}
+              onOpenChange={setShowPasswordDialog}
+              mode="change"
+              onSetPassword={onSetPassword}
+              onChangePassword={onChangePassword}
+            />
+          )}
+        </>
       )}
     </AnimatePresence>
   )
