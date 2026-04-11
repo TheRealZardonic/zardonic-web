@@ -57,6 +57,8 @@ export function fullReleaseToStored(release: FullRelease): StoredRelease {
     type: release.type,
     tracks: release.tracks,
     streamingLinks: streamingLinks.length > 0 ? streamingLinks : undefined,
+    customLinks: release.customLinks,
+    manuallyEdited: release.manuallyEdited,
   }
 }
 
@@ -86,5 +88,7 @@ export function mergeFullReleaseIntoStored(
     type: stored.type ?? existing.type,
     tracks: stored.tracks ?? existing.tracks,
     streamingLinks: mergedLinks.length > 0 ? mergedLinks : existing.streamingLinks,
+    customLinks: stored.customLinks ?? existing.customLinks,
+    manuallyEdited: stored.manuallyEdited ?? existing.manuallyEdited,
   }
 }

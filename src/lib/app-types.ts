@@ -33,7 +33,14 @@ export interface Release {
   streamingLinks?: Array<{ platform: string; url: string }>
   type?: '' | 'album' | 'ep' | 'single' | 'remix' | 'compilation'
   description?: string
-  tracks?: Array<{ title: string; duration?: string }>
+  tracks?: Array<{
+    title: string
+    duration?: string
+    artist?: string
+    featuredArtists?: string[]
+  }>
+  manuallyEdited?: boolean
+  customLinks?: Array<{ label: string; url: string }>
 }
 
 export interface Member {

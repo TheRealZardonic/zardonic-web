@@ -47,6 +47,9 @@ function toFullRelease(r: Release): FullRelease {
     year: r.year,
     releaseDate: r.releaseDate,
     type: r.type,
+    tracks: r.tracks,
+    customLinks: r.customLinks,
+    manuallyEdited: r.manuallyEdited,
     streamingLinks: streamingLinks as FullRelease['streamingLinks'],
   }
 }
@@ -292,7 +295,7 @@ export default function AppReleasesSection({ releases, sectionOrder, visible, ed
                               : 'border-border text-muted-foreground hover:border-primary/40'
                           }`}
                         >
-                          {f === '' ? 'All' : f}
+                          {f === '' ? 'All' : f === 'compilation' ? 'Appears On' : f}
                         </button>
                       ))}
                     </div>

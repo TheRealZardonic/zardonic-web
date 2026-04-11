@@ -8,7 +8,6 @@ import { UploadSimple, Plus, X, ArrowsClockwise } from '@phosphor-icons/react'
 import type { Release } from '@/lib/types'
 import { fetchOdesliLinks } from '@/lib/odesli'
 import { toast } from 'sonner'
-
 interface ReleaseEditDialogProps {
   release: Release | null
   onSave: (release: Release) => void
@@ -32,6 +31,8 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
   })
   const [tracks, setTracks] = useState<Array<{ title: string; duration?: string }>>([])
   const [newTrack, setNewTrack] = useState({ title: '', duration: '' })
+  const [customLinks, setCustomLinks] = useState<Array<{ label: string; url: string }>>([])
+  const [newCustomLink, setNewCustomLink] = useState({ label: '', url: '' })
   const [isSaving, setIsSaving] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
   const artworkInputRef = useRef<HTMLInputElement>(null)
@@ -54,6 +55,7 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
         beatport: links.beatport || ''
       })
       setTracks(release.tracks || [])
+      setCustomLinks(release.customLinks || [])
     }
   }, [release])
 
@@ -66,6 +68,17 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
 
   const removeTrack = (index: number) => {
     setTracks(tracks.filter((_, i) => i !== index))
+  }
+
+  const addCustomLink = () => {
+    if (newCustomLink.label.trim() && newCustomLink.url.trim()) {
+      setCustomLinks([...customLinks, { label: newCustomLink.label.trim(), url: newCustomLink.url.trim() }])
+      setNewCustomLink({ label: '', url: '' })
+    }
+  }
+
+  const removeCustomLink = (index: number) => {
+    setCustomLinks(customLinks.filter((_, i) => i !== index))
   }
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, field: 'artwork') => {
@@ -99,8 +112,9 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
         return
       }
       
-      const { release: enrichedRelease } = await resp.json()
-      const getLink = (arr: any[], plat: string) => arr?.find((l: any) => l.platform === plat)?.url || ''
+      const { release: enrichedRelease } = await resp.json() as { release: { streamingLinks?: Array<{ platform: string; url: string }> } }
+      const getLink = (arr: Array<{ platform: string; url: string }> | undefined, plat: string) =>
+        arr?.find(l => l.platform === plat)?.url || ''
       
       setFormData(prev => ({
         ...prev,
@@ -167,7 +181,9 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
         description: formData.description || undefined,
         featured: formData.featured || undefined,
         streamingLinks: Object.keys(streamingLinks).length > 0 ? streamingLinks : undefined,
-        tracks: tracks.length > 0 ? tracks : undefined
+        tracks: tracks.length > 0 ? tracks : undefined,
+        customLinks: customLinks.length > 0 ? customLinks : undefined,
+        manuallyEdited: true,
       })
     } finally {
       setIsSaving(false)
@@ -402,6 +418,42 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
                   onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTrack() } }}
                 />
                 <Button type="button" onClick={addTrack} size="icon" className="flex-shrink-0">
+                  <Plus size={16} />
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-border pt-4">
+            <h4 className="font-semibold mb-3">Custom Links — CD / Vinyl / Merch (optional)</h4>
+            <p className="text-xs text-muted-foreground mb-3 font-mono">
+              Add links to physical releases, merch stores, or any other custom destination.
+            </p>
+            <div className="space-y-2">
+              {customLinks.map((link, index) => (
+                <div key={index} className="flex gap-2 items-center">
+                  <Input value={link.label} disabled className="w-32 bg-secondary border-input text-sm" />
+                  <Input value={link.url} disabled className="flex-1 bg-secondary border-input text-sm truncate" />
+                  <Button type="button" variant="ghost" size="icon" onClick={() => removeCustomLink(index)}>
+                    <X size={16} />
+                  </Button>
+                </div>
+              ))}
+              <div className="flex gap-2">
+                <Input
+                  value={newCustomLink.label}
+                  onChange={(e) => setNewCustomLink({ ...newCustomLink, label: e.target.value })}
+                  placeholder="CD / Vinyl / Merch..."
+                  className="w-32 bg-secondary border-input"
+                />
+                <Input
+                  value={newCustomLink.url}
+                  onChange={(e) => setNewCustomLink({ ...newCustomLink, url: e.target.value })}
+                  placeholder="https://..."
+                  className="flex-1 bg-secondary border-input"
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustomLink() } }}
+                />
+                <Button type="button" onClick={addCustomLink} size="icon" className="flex-shrink-0">
                   <Plus size={16} />
                 </Button>
               </div>

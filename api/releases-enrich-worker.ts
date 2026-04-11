@@ -32,6 +32,7 @@ import {
   type SiteData,
 } from './releases-enrich.js'
 import { type MbReleaseData } from './_musicbrainz.js'
+import { mergeWithExistingReleases } from './_release-merge.js'
 
 const RESULTS_KEY = 'releases-enrich-results'
 const QUEUE_KEY = 'releases-enrich-queue'
@@ -152,18 +153,20 @@ async function finalizeEnrichment(
   try {
     const enrichedReleases = await redis.get<Release[]>(RESULTS_KEY) ?? []
     const existing = await redis.get<SiteData>(BAND_DATA_KEY)
+    const existingReleases = existing?.releases ?? []
+    const mergedReleases = mergeWithExistingReleases(enrichedReleases, existingReleases)
     const updatedSiteData: SiteData = {
       ...(existing ?? {}),
-      releases: enrichedReleases,
+      releases: mergedReleases,
     }
     await redis.set(BAND_DATA_KEY, updatedSiteData)
-    console.log(`[releases-enrich-worker] Finalized: wrote ${enrichedReleases.length}/${expectedTotal} releases to band-data`)
+    console.log(`[releases-enrich-worker] Finalized: wrote ${mergedReleases.length}/${expectedTotal} releases to band-data`)
 
     // Clean up temporary keys
     try { await redis.del(QUEUE_KEY) } catch { /* non-fatal */ }
     try { await redis.del(RESULTS_KEY) } catch { /* non-fatal */ }
 
-    return enrichedReleases.length
+    return mergedReleases.length
   } catch (err) {
     console.error('[releases-enrich-worker] Finalization failed:', err)
     return 0

@@ -674,8 +674,8 @@ describe('Release sync data-flow', () => {
 
       // Title renders
       expect(screen.getByText('Antihero')).toBeInTheDocument()
-      // Year renders
-      expect(screen.getByText('2023')).toBeInTheDocument()
+      // Year renders (formatted as full date when releaseDate is available)
+      expect(screen.getByText('15 Mar 2023')).toBeInTheDocument()
       // Type badge
       expect(screen.getByText('album')).toBeInTheDocument()
 

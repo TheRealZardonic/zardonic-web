@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { SpotifyLogo, YoutubeLogo, ApplePodcastsLogo } from '@phosphor-icons/react'
 import type { Release } from '@/lib/app-types'
 import type { SectionLabels } from '@/lib/types'
+import { formatReleaseDate } from '@/lib/format-release-date'
 
 interface ReleaseOverlayContentProps {
   data: Release
@@ -58,7 +59,9 @@ export function ReleaseOverlayContent({ data, sectionLabels }: ReleaseOverlayCon
               {data.title}
             </h2>
             {showYear && (
-              <p className="text-xl text-muted-foreground font-mono">{data.year}</p>
+              <p className="text-xl text-muted-foreground font-mono">
+                {formatReleaseDate(data.releaseDate, data.year)}
+              </p>
             )}
             {showType && data.type && (
               <span className="inline-block mt-1 px-2 py-0.5 text-xs font-mono uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
@@ -148,6 +151,26 @@ export function ReleaseOverlayContent({ data, sectionLabels }: ReleaseOverlayCon
             </div>
           </motion.div>
 
+          {data.customLinks && data.customLinks.length > 0 && (
+            <motion.div
+              className="cyber-grid p-4"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.33 }}
+            >
+              <div className="data-label mb-3">// BUY.PHYSICAL</div>
+              <div className="flex flex-wrap gap-4">
+                {data.customLinks.map((link, i) => (
+                  <Button key={i} asChild variant="outline" className="font-mono">
+                    <a href={link.url} target="_blank" rel="noopener noreferrer">
+                      <span className="hover-chromatic">{link.label}</span>
+                    </a>
+                  </Button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
           {showTracks && data.tracks && data.tracks.length > 0 && (
             <motion.div
               className="cyber-grid p-4"
@@ -158,11 +181,25 @@ export function ReleaseOverlayContent({ data, sectionLabels }: ReleaseOverlayCon
               <div className="data-label mb-3">{tracksLabel}</div>
               <ol className="space-y-1">
                 {data.tracks.map((track, i) => (
-                  <li key={i} className="flex items-center gap-3 text-sm font-mono text-foreground/80">
-                    <span className="text-primary/50 w-5 text-right shrink-0">{i + 1}.</span>
-                    <span className="flex-1">{track.title}</span>
+                  <li key={i} className="flex items-start gap-3 text-sm font-mono text-foreground/80">
+                    <span className="text-primary/50 w-5 text-right shrink-0 mt-0.5">{i + 1}.</span>
+                    <div className="flex-1 min-w-0">
+                      <span className="block">{track.title}</span>
+                      {data.type === 'compilation' && track.artist && (
+                        <span className="block text-xs text-muted-foreground mt-0.5">
+                          {track.featuredArtists && track.featuredArtists.length > 0
+                            ? `${track.artist} ft. ${track.featuredArtists.join(', ')}`
+                            : track.artist}
+                        </span>
+                      )}
+                      {data.type !== 'compilation' && track.featuredArtists && track.featuredArtists.length > 0 && (
+                        <span className="block text-xs text-muted-foreground mt-0.5">
+                          ft. {track.featuredArtists.join(', ')}
+                        </span>
+                      )}
+                    </div>
                     {track.duration && (
-                      <span className="text-muted-foreground text-xs">{track.duration}</span>
+                      <span className="text-muted-foreground text-xs shrink-0 mt-0.5">{track.duration}</span>
                     )}
                   </li>
                 ))}

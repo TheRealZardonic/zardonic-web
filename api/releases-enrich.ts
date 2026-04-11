@@ -33,6 +33,8 @@ import {
   type StreamingLink,
 } from './_odesli.js'
 import { getSpotifyAccessToken } from './_spotify-client.js'
+import { inferReleaseDescription, parseTrackArtists } from './_featured-artists.js'
+import { mergeWithExistingReleases } from './_release-merge.js'
 
 function verifyCronSecret(provided: string): boolean {
   const expected = process.env.CRON_SECRET
@@ -60,8 +62,10 @@ interface Release {
   streamingLinks?: StreamingLink[]
   type?: '' | 'album' | 'ep' | 'single' | 'remix' | 'compilation'
   description?: string
-  tracks?: Array<{ title: string; duration?: string }>
+  tracks?: Array<{ title: string; duration?: string; artist?: string; featuredArtists?: string[] }>
   trackCount?: number
+  manuallyEdited?: boolean
+  customLinks?: Array<{ label: string; url: string }>
 }
 
 interface SiteData {
@@ -116,7 +120,7 @@ function detectReleaseType(
   return isMainArtist ? 'album' : 'compilation'
 }
 
-async function fetchITunesTracklist(collectionId: string): Promise<Array<{ title: string; duration?: string }>> {
+async function fetchITunesTracklist(collectionId: string, mainArtist: string): Promise<Array<{ title: string; duration?: string; artist?: string; featuredArtists?: string[] }>> {
   try {
     const id = collectionId.replace(/^itunes-/, '')
     const res = await fetchWithRetry(
@@ -128,10 +132,20 @@ async function fetchITunesTracklist(collectionId: string): Promise<Array<{ title
     return results
       .filter(t => t.wrapperType === 'track' && t.trackName)
       .sort((a, b) => (a.trackNumber ?? 0) - (b.trackNumber ?? 0))
-      .map(t => ({
-        title: t.trackName ?? '',
-        duration: t.trackTimeMillis ? msToTime(t.trackTimeMillis) : undefined,
-      }))
+      .map(t => {
+        const iTunesArtistName = t.artistName ?? ''
+        const { artist, featuredArtists } = parseTrackArtists(iTunesArtistName, mainArtist)
+        // Only include artist on track if it differs from mainArtist (e.g. compilations)
+        const trackArtist = artist.trim().toLowerCase() !== mainArtist.trim().toLowerCase()
+          ? artist
+          : undefined
+        return {
+          title: t.trackName ?? '',
+          duration: t.trackTimeMillis ? msToTime(t.trackTimeMillis) : undefined,
+          artist: trackArtist,
+          featuredArtists: featuredArtists.length > 0 ? featuredArtists : undefined,
+        }
+      })
   } catch {
     return []
   }
@@ -187,7 +201,7 @@ async function fetchITunesReleases(artistName: string): Promise<Release[]> {
         ? new Date(track.releaseDate).toISOString().split('T')[0]
         : undefined,
       streamingLinks,
-      description: mainArtist !== artistName ? `ft. ${mainArtist}` : undefined,
+      description: inferReleaseDescription(mainArtist, artistName),
     })
   }
 
@@ -327,9 +341,9 @@ async function enrichRelease(
   Object.assign(updated, withMB)
 
   // ── Tracklist + type detection fallback: fetch iTunes tracklist ONCE and reuse ──
-  let tracks: Array<{ title: string; duration?: string }> = updated.tracks ?? []
+  let tracks: Array<{ title: string; duration?: string; artist?: string; featuredArtists?: string[] }> = updated.tracks ?? []
   if (!tracks.length && release.id.startsWith('itunes-')) {
-    tracks = await fetchITunesTracklist(release.id)
+    tracks = await fetchITunesTracklist(release.id, artistName)
     if (tracks.length > 0) {
       updated.tracks = tracks
       updated.trackCount = tracks.length
@@ -430,7 +444,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     const releasesWithMB = releases.map(r => applyMBMetadata(r, mbMap))
 
     try {
-      await redis.set(BAND_DATA_KEY, { ...(existingBandData ?? {}), releases: releasesWithMB })
+      const existingReleases = existingBandData?.releases ?? []
+      const mergedReleasesWithMB = mergeWithExistingReleases(releasesWithMB, existingReleases)
+      await redis.set(BAND_DATA_KEY, { ...(existingBandData ?? {}), releases: mergedReleasesWithMB })
     } catch (writeErr) {
       console.error('[releases-enrich] Failed to write releases to band-data:', writeErr)
     }

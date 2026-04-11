@@ -51,6 +51,8 @@ const BAND_DATA_KEY = 'band-data'
 interface Track {
   title: string
   duration?: string
+  artist?: string
+  featuredArtists?: string[]
 }
 
 export interface Release {
@@ -66,6 +68,8 @@ export interface Release {
   trackCount?: number
   artistName?: string
   artistMbid?: string
+  manuallyEdited?: boolean
+  customLinks?: Array<{ label: string; url: string }>
 }
 
 interface SiteData {

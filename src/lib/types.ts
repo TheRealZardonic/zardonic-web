@@ -682,7 +682,12 @@ export interface Release {
   featured?: boolean
   type?: '' | 'album' | 'ep' | 'single' | 'remix' | 'compilation'
   description?: string
-  tracks?: Array<{ title: string; duration?: string }>
+  tracks?: Array<{
+    title: string
+    duration?: string
+    artist?: string
+    featuredArtists?: string[]
+  }>
   streamingLinks?: {
     spotify?: string
     soundcloud?: string
@@ -694,6 +699,8 @@ export interface Release {
     tidal?: string
     amazonMusic?: string
   }
+  customLinks?: Array<{ label: string; url: string }>
+  manuallyEdited?: boolean
 }
 
 export interface Friend {
