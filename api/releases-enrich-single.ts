@@ -35,6 +35,19 @@ import {
 const BAND_DATA_KEY = 'band-data'
 const ODESLI_CACHE_TTL = 86_400
 
+/**
+ * Strip all query parameters from an Apple Music / iTunes URL.
+ * iTunes returns affiliate-decorated URLs like `?uo=4&at=...&ct=...` that
+ * Odesli cannot reliably resolve. We only keep origin + pathname.
+ */
+function cleanAppleMusicUrl(url: string): string {
+  if (!url) return url
+  try {
+    const u = new URL(url)
+    return `${u.origin}${u.pathname}`
+  } catch { return url }
+}
+
 interface Track {
   title: string
   duration?: string
@@ -73,21 +86,30 @@ function odesliCacheKey(url: string): string {
   return `odesli:links:${url.replace(/^https?:\/\//, '').replace(/[^a-zA-Z0-9._/-]/g, '_').slice(0, 200)}`
 }
 
+interface FetchOdesliResult {
+  data: OdesliResponse | null
+  fromCache: boolean
+}
+
 async function fetchOdesliLinks(
   lookupUrl: string,
   redis: NonNullable<ReturnType<typeof getRedisOrNull>>,
-): Promise<OdesliResponse | null> {
+): Promise<FetchOdesliResult> {
   const cacheKey = odesliCacheKey(lookupUrl)
   try {
     const cached = await redis.get<OdesliResponse>(cacheKey)
-    if (cached) return cached
+    if (cached) return { data: cached, fromCache: true }
   } catch { /* redis cache miss is non-fatal */ }
   const apiUrl = `https://api.song.link/v1-alpha.1/links?url=${encodeURIComponent(lookupUrl)}&userCountry=US`
   const res = await fetchWithRetry(apiUrl)
-  if (!res.ok) return null
+  if (!res.ok) return { data: null, fromCache: false }
   const data: OdesliResponse = await res.json()
-  try { await redis.set(cacheKey, data, { ex: ODESLI_CACHE_TTL }) } catch { /* cache write failure is non-fatal */ }
-  return data
+  // Only cache non-empty responses to avoid persisting failures for 24h
+  const hasLinks = data.linksByPlatform && Object.keys(data.linksByPlatform).length > 0
+  if (hasLinks) {
+    try { await redis.set(cacheKey, data, { ex: ODESLI_CACHE_TTL }) } catch { /* cache write failure is non-fatal */ }
+  }
+  return { data, fromCache: false }
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
@@ -121,6 +143,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     let mbAppleMusicUrl: string | undefined
     
     const existingAppleUrl = release.streamingLinks?.find(l => l.platform === 'appleMusic')?.url
+    // Clean any affiliate query params from the Apple Music URL before passing to Odesli
+    const cleanedAppleUrl = existingAppleUrl ? cleanAppleMusicUrl(existingAppleUrl) : undefined
 
     const mbSearch = await searchMusicBrainz(release.title)
     if (mbSearch) {
@@ -163,9 +187,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       if (fromTitle && !updated.type) updated.type = fromTitle
     }
 
-    const odesliLookupUrl = existingAppleUrl ?? mbSpotifyUrl ?? mbAppleMusicUrl
+    const odesliLookupUrl = cleanedAppleUrl ?? mbSpotifyUrl ?? mbAppleMusicUrl
     if (odesliLookupUrl) {
-      const odesli = await fetchOdesliLinks(odesliLookupUrl, redis)
+      const { data: odesli } = await fetchOdesliLinks(odesliLookupUrl, redis)
       if (odesli?.linksByPlatform) {
         const p = odesli.linksByPlatform
         const newLinks: StreamingLink[] = []
