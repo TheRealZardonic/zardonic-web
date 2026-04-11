@@ -65,11 +65,10 @@ export function getAdminValue(
 ): unknown {
   if (!settings) return undefined
   const parts = path.split('.')
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let current: any = settings
+  let current: Record<string, unknown> = settings as Record<string, unknown>
   for (const part of parts) {
     if (current === undefined || current === null) return undefined
-    current = current[part]
+    current = current[part] as Record<string, unknown>
   }
   return current
 }
@@ -89,14 +88,12 @@ export function setAdminValue(
     return { ...base, [parts[0]]: value } as AdminSettings
   }
   // Deep set using reduce to build a new object
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const result: any = { ...base }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let current: any = result
+  const result: Record<string, unknown> = { ...base }
+  let current: Record<string, unknown> = result
   for (let i = 0; i < parts.length - 1; i++) {
     const key = parts[i]
-    current[key] = current[key] ? { ...current[key] } : {}
-    current = current[key]
+    current[key] = current[key] ? { ...(current[key] as Record<string, unknown>) } : {}
+    current = current[key] as Record<string, unknown>
   }
   current[parts[parts.length - 1]] = value
   return result as AdminSettings

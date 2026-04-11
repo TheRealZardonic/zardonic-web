@@ -59,30 +59,53 @@ export function useSiteDataSync(
         return
       }
 
-      // Phase 2: Browser loops the worker until all Odesli enrichment is done
-      let processed = 0
-      while (true) {
-        const workerRes = await fetch('/api/releases-enrich-worker', {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: { 'Content-Type': 'application/json' },
-        })
-        if (!workerRes.ok) break  // non-fatal: worker may time out, cron will finish
+      // Phase 2: Subscribe to SSE stream — server pushes one event per enriched
+      // release so the browser makes a single persistent connection instead of
+      // calling /api/releases-enrich-worker every 200 ms.
+      await new Promise<void>((resolve) => {
+        const stream = new EventSource('/api/releases-enrich-stream', { withCredentials: true })
 
-        const workerData = await workerRes.json()
-        processed = workerData.processed ?? (workerData.done ? total : processed)
-
-        setITunesProgress({ current: processed, total, currentTitle: workerData.currentTitle ?? '' })
-
-        if (workerData.done) {
-          // Final band-data write happened — refetch to get fully enriched releases
-          refetchSiteData?.()
-          break
+        stream.onmessage = (e: MessageEvent<string>) => {
+          try {
+            const event = JSON.parse(e.data) as {
+              type: string
+              processed?: number
+              total?: number
+              currentTitle?: string
+            }
+            if (event.type === 'progress') {
+              setITunesProgress({
+                current: event.processed ?? 0,
+                total: event.total ?? total,
+                currentTitle: event.currentTitle ?? '',
+              })
+            } else if (event.type === 'done') {
+              stream.close()
+              refetchSiteData?.()
+              resolve()
+            } else if (event.type === 'error') {
+              stream.close()
+              // Non-fatal: cron will finish enrichment in background
+              resolve()
+            }
+          } catch {
+            // Malformed event — ignore
+          }
         }
 
-        // Small breathing room between worker calls
-        await new Promise(r => setTimeout(r, 200))
-      }
+        stream.onerror = () => {
+          // EventSource automatically reconnects.  If the server closed the
+          // connection cleanly (end of budget), it will resume from where it
+          // left off on the next reconnect.  We treat a hard error (state =
+          // CLOSED without a 'done' event) as non-fatal so the cron job can
+          // finish enrichment in the background.
+          if (stream.readyState === EventSource.CLOSED) {
+            // Server closed cleanly — may still be in progress via cron
+            refetchSiteData?.()
+            resolve()
+          }
+        }
+      })
 
       if (!isAutoLoad) {
         toast.success(`${total} releases synced and enriched.`)

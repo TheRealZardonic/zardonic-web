@@ -25,11 +25,10 @@ function getSiteDataValue(siteData: SiteData | undefined, path: string): unknown
   // path starts with 'siteData.' — strip that prefix
   const localPath = path.replace(/^siteData\./, '')
   const parts = localPath.split('.')
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let current: any = siteData
+  let current: Record<string, unknown> = siteData as unknown as Record<string, unknown>
   for (const part of parts) {
     if (current === undefined || current === null) return undefined
-    current = current[part]
+    current = current[part] as Record<string, unknown>
   }
   return current
 }
@@ -46,17 +45,15 @@ function setSiteDataValue(
   const parts = localPath.split('.')
 
   onUpdateSiteData((current: SiteData) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result: any = { ...current }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let node: any = result
+    const result: Record<string, unknown> = { ...current }
+    let node: Record<string, unknown> = result
     for (let i = 0; i < parts.length - 1; i++) {
       const key = parts[i]
-      node[key] = node[key] ? { ...node[key] } : {}
-      node = node[key]
+      node[key] = node[key] ? { ...(node[key] as Record<string, unknown>) } : {}
+      node = node[key] as Record<string, unknown>
     }
     node[parts[parts.length - 1]] = value
-    return result as SiteData
+    return result as unknown as SiteData
   })
 }
 

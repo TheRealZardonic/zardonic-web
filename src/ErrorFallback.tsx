@@ -5,12 +5,11 @@ import { AlertTriangleIcon, RefreshCwIcon } from "lucide-react";
 import type { FallbackProps } from "react-error-boundary";
 
 export const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => {
-  // When encountering an error in the development mode, rethrow it and don't display the boundary.
-  // The parent UI will take care of showing a more helpful dialog.
+  // In development, rethrow so the React dev overlay shows the full stack trace.
   if (import.meta.env.DEV) throw error;
 
-  const errorMessage = error instanceof Error ? error.message : String(error);
-
+  // In production never expose internal error details — they may contain stack
+  // traces, module paths, or other implementation details.
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -18,16 +17,9 @@ export const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => {
           <AlertTriangleIcon />
           <AlertTitle>An error has occurred</AlertTitle>
           <AlertDescription>
-            Something unexpected happened while running the application. The error details are shown below.
+            Something unexpected happened. Please try again or reload the page.
           </AlertDescription>
         </Alert>
-        
-        <div className="bg-card border rounded-lg p-4 mb-6">
-          <h3 className="font-semibold text-sm text-muted-foreground mb-2">Error Details:</h3>
-          <pre className="text-xs text-destructive bg-muted/50 p-3 rounded border overflow-auto max-h-32">
-            {errorMessage}
-          </pre>
-        </div>
         
         <Button 
           onClick={resetErrorBoundary} 
