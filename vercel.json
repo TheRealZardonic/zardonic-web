@@ -51,6 +51,10 @@
     {
       "path": "/api/releases-enrich",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/releases-enrich-worker",
+      "schedule": "*/2 * * * *"
     }
   ]
 }

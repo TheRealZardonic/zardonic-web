@@ -22,7 +22,7 @@ import { timingSafeEqual } from 'node:crypto'
 import {
   msToTime,
   mbTypeToReleaseType,
-  fetchAllMBRecordingsByArtist,
+  fetchAllMBReleasesByArtist,
   buildMBReleaseTitleMap,
   matchITunesReleaseToMBData,
   type MbReleaseData,
@@ -42,7 +42,7 @@ function verifyCronSecret(provided: string): boolean {
 }
 
 const ARTIST_NAME = 'Zardonic'
-const BAND_DATA_KEY = 'band-data'
+export const BAND_DATA_KEY = 'band-data'
 const ODESLI_DELAY_MS = 3000
 const ODESLI_CACHE_TTL = 86400
 const SPOTIFY_ARTIST_ID = '2VjGthYSFI6xGKJqbR7IXm'
@@ -119,6 +119,19 @@ interface OdesliResponse {
 
 function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+/**
+ * Strip all query parameters from an Apple Music / iTunes URL.
+ * iTunes returns affiliate-decorated URLs like `?uo=4&at=...&ct=...` that
+ * Odesli cannot reliably resolve. We only keep origin + pathname.
+ */
+function cleanAppleMusicUrl(url: string): string {
+  if (!url) return url
+  try {
+    const u = new URL(url)
+    return `${u.origin}${u.pathname}`
+  } catch { return url }
 }
 
 function odesliCacheKey(url: string): string {
@@ -202,7 +215,7 @@ async function fetchITunesReleases(): Promise<Release[]> {
     if (map.has(id)) continue
 
     const mainArtist = track.collectionArtistName || track.artistName || ARTIST_NAME
-    const appleUrl = track.collectionViewUrl || track.trackViewUrl || ''
+    const appleUrl = cleanAppleMusicUrl(track.collectionViewUrl || track.trackViewUrl || '')
     const streamingLinks: StreamingLink[] = appleUrl ? [{ platform: 'appleMusic', url: appleUrl }] : []
 
     map.set(id, {
@@ -301,36 +314,41 @@ function sortReleases(releases: Release[]): Release[] {
 interface OdesliEnrichedLinks {
   links: Record<string, string | undefined>
   entityType?: string
+  fromCache: boolean
 }
 
 async function enrichWithOdesli(
   url: string,
   redis: NonNullable<ReturnType<typeof getRedisOrNull>>,
 ): Promise<OdesliEnrichedLinks> {
-  if (!url) return { links: {} }
+  if (!url) return { links: {}, fromCache: false }
 
   const cacheKey = odesliCacheKey(url)
 
   try {
     const cached = await redis.get<OdesliResponse>(cacheKey)
-    if (cached) return extractLinks(cached)
+    if (cached) return { ...extractLinks(cached), fromCache: true }
   } catch { /* cache miss */ }
 
   const response = await fetchWithRetry(
     `https://api.song.link/v1-alpha.1/links?url=${encodeURIComponent(url)}&userCountry=US`,
   )
   if (!response.ok) {
-    return { links: {} }
+    return { links: {}, fromCache: false }
   }
 
   const data: OdesliResponse = await response.json()
 
-  try { await redis.set(cacheKey, data, { ex: ODESLI_CACHE_TTL }) } catch { /* non-fatal */ }
+  // Only cache non-empty responses to avoid persisting failures for 24h
+  const hasLinks = data.linksByPlatform && Object.keys(data.linksByPlatform).length > 0
+  if (hasLinks) {
+    try { await redis.set(cacheKey, data, { ex: ODESLI_CACHE_TTL }) } catch { /* non-fatal */ }
+  }
 
-  return extractLinks(data)
+  return { ...extractLinks(data), fromCache: false }
 }
 
-function extractLinks(data: OdesliResponse): OdesliEnrichedLinks {
+function extractLinks(data: OdesliResponse): Omit<OdesliEnrichedLinks, 'fromCache'> {
   const p = data.linksByPlatform
   if (!p) return { links: {} }
 
@@ -399,7 +417,7 @@ async function enrichRelease(
   // Prefer iTunes URL; fall back to Spotify if Apple Music URL is unavailable
   const odesliLookupUrl = currentAppleUrl ?? currentSpotifyUrl ?? ''
 
-  const { links, entityType: odesliEntityType } = await enrichWithOdesli(odesliLookupUrl, redis)
+  const { links, entityType: odesliEntityType, fromCache } = await enrichWithOdesli(odesliLookupUrl, redis)
 
   const newLinks: StreamingLink[] = [...(updated.streamingLinks ?? [])]
   const updateLink = (plat: string, url: string | undefined) => {
@@ -421,24 +439,13 @@ async function enrichRelease(
   updated.streamingLinks = newLinks
   enriched = Object.values(links).some(Boolean)
 
-  await delay(ODESLI_DELAY_MS)
+  // Only delay when we actually hit the Odesli API (not a Redis cache hit)
+  if (!fromCache) await delay(ODESLI_DELAY_MS)
 
-  // ── Type detection fallback ──
-  if (!updated.type) {
-    const trackCount = updated.trackCount ?? (release.id.startsWith('itunes-')
-      ? (await fetchITunesTracklist(release.id)).length
-      : 0)
-    updated.trackCount = trackCount || updated.trackCount
-    const detectedType = detectReleaseType(release.title, trackCount, odesliEntityType, ARTIST_NAME)
-    if (detectedType) {
-      updated.type = detectedType
-      typeDetected = true
-    }
-  }
-
-  // ── Tracklist fallback (iTunes only) ──
-  if (!updated.tracks?.length && release.id.startsWith('itunes-')) {
-    const tracks = await fetchITunesTracklist(release.id)
+  // ── Tracklist + type detection fallback: fetch iTunes tracklist ONCE and reuse ──
+  let tracks: Array<{ title: string; duration?: string }> = updated.tracks ?? []
+  if (!tracks.length && release.id.startsWith('itunes-')) {
+    tracks = await fetchITunesTracklist(release.id)
     if (tracks.length > 0) {
       updated.tracks = tracks
       updated.trackCount = tracks.length
@@ -447,8 +454,29 @@ async function enrichRelease(
     await delay(500)
   }
 
+  if (!updated.type) {
+    const trackCount = updated.trackCount ?? tracks.length
+    const detectedType = detectReleaseType(release.title, trackCount, odesliEntityType, ARTIST_NAME)
+    if (detectedType) {
+      updated.type = detectedType
+      typeDetected = true
+    }
+  }
+
   return { release: updated, enriched, typeDetected, tracklistFetched }
 }
+
+// ─── Queue types (shared with worker) ────────────────────────────────────────
+
+export interface EnrichQueuePayload {
+  releases: Release[]
+  mbMap: Record<string, MbReleaseData>
+  startedAt: string
+  processedCount: number
+}
+
+export { verifyCronSecret, enrichRelease }
+export type { Release, SiteData }
 
 // ─── Handler ─────────────────────────────────────────────────────────────────
 
@@ -482,56 +510,44 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     }
 
     if (releases.length === 0) {
-      res.status(200).json({ ok: true, message: 'No releases found from iTunes or Spotify', synced: 0, enriched: 0 })
+      res.status(200).json({ ok: true, message: 'No releases found from iTunes or Spotify', queued: 0 })
       return
     }
 
-    // 2. Fetch ALL MusicBrainz recordings by artist in a SINGLE query, then
+    // 2. Fetch ALL MusicBrainz release-groups by artist in a two-step query, then
     //    build a lookup map for local title-based matching (no per-release API calls).
     let mbMap: Map<string, MbReleaseData> = new Map()
     try {
-      const mbRecordings = await fetchAllMBRecordingsByArtist(ARTIST_NAME)
-      mbMap = buildMBReleaseTitleMap(mbRecordings)
-      console.log(`[releases-enrich] MusicBrainz: fetched ${mbRecordings.length} recordings, built map with ${mbMap.size} distinct releases`)
+      const mbReleaseGroups = await fetchAllMBReleasesByArtist(ARTIST_NAME)
+      mbMap = buildMBReleaseTitleMap(mbReleaseGroups)
+      console.log(`[releases-enrich] MusicBrainz: fetched ${mbReleaseGroups.length} release-groups, built map with ${mbMap.size} distinct releases`)
     } catch (mbErr) {
       console.warn('[releases-enrich] MusicBrainz bulk fetch failed — continuing without MB metadata:', mbErr)
     }
 
-    // 3. Enrich EVERY release with MusicBrainz (local match) + Odesli (no caching of enrichment state)
-    let enrichedCount = 0
-    let typeDetectedCount = 0
-    let tracklistsFetchedCount = 0
-
-    const enrichedReleases: Release[] = []
-    for (const release of releases) {
-      try {
-        const result = await enrichRelease(release, redis, mbMap)
-        enrichedReleases.push(result.release)
-        if (result.enriched) enrichedCount++
-        if (result.typeDetected) typeDetectedCount++
-        if (result.tracklistFetched) tracklistsFetchedCount++
-      } catch {
-        // Keep the un-enriched release rather than dropping it
-        enrichedReleases.push(release)
-      }
+    // 3. Store releases + MB map into the queue for the worker to drain
+    const queuePayload: EnrichQueuePayload = {
+      releases,
+      mbMap: Object.fromEntries(mbMap),
+      startedAt: new Date().toISOString(),
+      processedCount: 0,
+    }
+    try {
+      await redis.set('releases-enrich-queue', queuePayload, { ex: 3600 })
+      // Clear any leftover results from a previous run
+      await redis.del('releases-enrich-results')
+    } catch (queueErr) {
+      console.error('[releases-enrich] Failed to write queue to Redis:', queueErr)
+      res.status(500).json({ error: 'Failed to queue enrichment' })
+      return
     }
 
-    // 4. Complete overwrite of releases in KV — preserve other band-data fields
-    const existing = await redis.get<SiteData>(BAND_DATA_KEY)
-    const updatedSiteData: SiteData = {
-      ...(existing ?? {}),
-      releases: enrichedReleases,
-    }
-    await redis.set(BAND_DATA_KEY, updatedSiteData)
-
+    console.log(`[releases-enrich] Queued ${releases.length} releases for enrichment (source: ${source})`)
     res.status(200).json({
       ok: true,
       source,
-      synced: releases.length,
-      total: enrichedReleases.length,
-      enriched: enrichedCount,
-      typeDetected: typeDetectedCount,
-      tracklistsFetched: tracklistsFetchedCount,
+      queued: releases.length,
+      message: 'Enrichment queued. Call /api/releases-enrich-worker to process.',
     })
   } catch (error) {
     console.error('[releases-enrich] Unexpected error:', error)

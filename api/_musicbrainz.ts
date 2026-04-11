@@ -50,29 +50,22 @@ export interface MbFullRelease {
   relations?: MbRelation[]
 }
 
-// ─── Recording-based bulk fetch types ────────────────────────────────────────
+// ─── Release-group bulk fetch types ──────────────────────────────────────────
 
-interface MbReleaseRef {
-  id: string
-  title: string
-  date?: string
-  'release-group'?: {
-    id: string
-    'primary-type'?: string
-    'secondary-types'?: string[]
-  }
+interface MbArtistSearchResponse {
+  artists?: Array<{ id: string; name: string; score?: number }>
 }
 
-interface MbRecording {
+interface MbReleaseGroup {
   id: string
   title: string
-  length?: number
   'first-release-date'?: string
-  releases?: MbReleaseRef[]
+  'primary-type'?: string
+  'secondary-types'?: string[]
 }
 
-interface MbRecordingSearchResponse {
-  recordings?: MbRecording[]
+interface MbReleaseGroupSearchResponse {
+  'release-groups'?: MbReleaseGroup[]
   count?: number
   offset?: number
 }
@@ -168,41 +161,48 @@ function normalizeTitle(title: string): string {
 }
 
 /**
- * Fetch all recordings by artist from MusicBrainz in a single request
- * (up to `limit` results, default 100).
+ * Fetch all release-groups for an artist from MusicBrainz using a two-step approach:
+ * 1. Find the artist MBID via the artist search endpoint.
+ * 2. Fetch all release-groups for that artist via the release-group browse endpoint.
  *
- * Uses the /ws/2/recording endpoint with `inc=releases+release-groups` so each
- * recording carries its parent release info (type, date).
+ * This is the correct approach because `inc=` parameters are silently ignored on
+ * search endpoints — they only work on direct lookup endpoints.
  */
-export async function fetchAllMBRecordingsByArtist(
+export async function fetchAllMBReleasesByArtist(
   artistName: string,
   limit = 100,
-): Promise<MbRecording[]> {
-  const query = `artist:"${artistName}"`
-  const url = `https://musicbrainz.org/ws/2/recording?query=${encodeURIComponent(query)}&fmt=json&limit=${limit}&inc=releases+release-groups`
-  const res = await fetchWithRetry(url, { headers: { 'User-Agent': MB_USER_AGENT } })
-  if (!res.ok) return []
-  const data: MbRecordingSearchResponse = await res.json()
-  return data.recordings ?? []
+): Promise<MbReleaseGroup[]> {
+  // Step 1: Find artist MBID
+  const artistUrl = `https://musicbrainz.org/ws/2/artist?query=artist:${encodeURIComponent(`"${artistName}"`)}&fmt=json&limit=1`
+  const artistRes = await fetchWithRetry(artistUrl, { headers: { 'User-Agent': MB_USER_AGENT } })
+  if (!artistRes.ok) return []
+  const artistData: MbArtistSearchResponse = await artistRes.json()
+  const mbid = artistData.artists?.[0]?.id
+  if (!mbid) return []
+
+  // Step 2: Fetch all release-groups for the artist MBID
+  const rgUrl = `https://musicbrainz.org/ws/2/release-group?artist=${encodeURIComponent(mbid)}&fmt=json&limit=${limit}`
+  const rgRes = await fetchWithRetry(rgUrl, { headers: { 'User-Agent': MB_USER_AGENT } })
+  if (!rgRes.ok) return []
+  const rgData: MbReleaseGroupSearchResponse = await rgRes.json()
+  return rgData['release-groups'] ?? []
 }
 
 /**
  * Build a lookup map from normalised release title → MB release metadata.
- * Iterates all recordings and extracts the distinct parent releases.
+ * Sources data from release-group objects returned by the browse endpoint.
  */
-export function buildMBReleaseTitleMap(recordings: MbRecording[]): Map<string, MbReleaseData> {
+export function buildMBReleaseTitleMap(releaseGroups: MbReleaseGroup[]): Map<string, MbReleaseData> {
   const map = new Map<string, MbReleaseData>()
-  for (const rec of recordings) {
-    for (const rel of rec.releases ?? []) {
-      const key = normalizeTitle(rel.title)
-      if (!map.has(key)) {
-        map.set(key, {
-          title: rel.title,
-          date: rel.date,
-          primaryType: rel['release-group']?.['primary-type'],
-          secondaryTypes: rel['release-group']?.['secondary-types'],
-        })
-      }
+  for (const rg of releaseGroups) {
+    const key = normalizeTitle(rg.title)
+    if (!map.has(key)) {
+      map.set(key, {
+        title: rg.title,
+        date: rg['first-release-date'],
+        primaryType: rg['primary-type'],
+        secondaryTypes: rg['secondary-types'],
+      })
     }
   }
   return map
