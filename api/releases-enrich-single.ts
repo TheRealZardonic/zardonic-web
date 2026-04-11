@@ -147,8 +147,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     const steps: string[] = []
 
     const existingAppleUrl = release.streamingLinks?.find(l => l.platform === 'appleMusic')?.url
-    // Clean any affiliate query params from the Apple Music URL before passing to Odesli
+    // Clean any affiliate query params and geo redirect domains (geo.music.apple.com → music.apple.com)
+    // from the Apple Music URL before passing to Odesli AND before writing back to Redis, so that
+    // dirty URLs stored in older Redis entries are always fixed on the next single-enrich call.
     const cleanedAppleUrl = existingAppleUrl ? cleanAppleMusicUrl(existingAppleUrl) : undefined
+
+    // Immediately write the cleaned Apple Music URL back into updated.streamingLinks so that
+    // even if Odesli returns no results the stored release no longer contains the dirty URL.
+    if (cleanedAppleUrl && cleanedAppleUrl !== existingAppleUrl) {
+      updated.streamingLinks = (updated.streamingLinks ?? []).map(l =>
+        l.platform === 'appleMusic' ? { ...l, url: cleanedAppleUrl } : l
+      )
+    }
 
     // ── Step 1: Odesli — use Apple Music URL from iTunes immediately ──
     // iTunes always provides a collectionViewUrl; no need to wait for MusicBrainz.
