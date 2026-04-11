@@ -5,9 +5,10 @@
  *
  * 1. Fetch ALL releases from iTunes (primary), fall back to Spotify if iTunes
  *    returns nothing.
- * 2. Enrich EVERY release with MusicBrainz metadata (type, date, tracklist).
- * 3. Enrich EVERY release with Odesli platform links (Spotify, Apple Music,
- *    YouTube, SoundCloud, Bandcamp, Deezer, Tidal, Amazon Music).
+ * 2. Enrich EVERY release with Odesli platform links (Spotify, Apple Music,
+ *    YouTube, SoundCloud, Bandcamp, Deezer, Tidal, Amazon Music) using the
+ *    Apple Music URL that iTunes provides directly.
+ * 3. Apply MusicBrainz metadata (type, date) from the pre-fetched bulk map.
  * 4. Completely OVERWRITE the releases array in KV — no merge with old data,
  *    no isEnriched flag.  Each run is a fresh, authoritative snapshot.
  *
@@ -373,14 +374,16 @@ function extractLinks(data: OdesliResponse): Omit<OdesliEnrichedLinks, 'fromCach
 }
 
 /**
- * Enrich a single release with MusicBrainz metadata (from pre-fetched map) +
- * Odesli platform links.
+ * Enrich a single release with Odesli platform links first, then apply
+ * MusicBrainz metadata (type + date) from the pre-fetched map.
  *
- * MusicBrainz data is matched locally from the `mbMap` built once before the
- * loop — no per-release API call to MusicBrainz.
- *
- * Odesli receives the iTunes Apple Music URL as the primary search term, which
- * is the most reliable identifier for a release.
+ * Order:
+ *  1. Odesli — uses the iTunes Apple Music URL as primary lookup (always
+ *     available). Falls back to the existing Spotify link if no Apple URL.
+ *  2. MusicBrainz — applies type and date from the locally-matched `mbMap`
+ *     entry (no per-release API call).
+ *  3. iTunes tracklist — fetched only when no tracks are present yet.
+ *  4. Type fallback — inferred from track count / title if MB had no match.
  */
 async function enrichRelease(
   release: Release,
@@ -391,30 +394,13 @@ async function enrichRelease(
   let enriched = false
   let typeDetected = false
   let tracklistFetched = false
-  // ── MusicBrainz: apply locally-matched metadata (type + date) ──
-  try {
-    const mbData = matchITunesReleaseToMBData(release.title, mbMap)
-    if (mbData) {
-      const detectedType = mbTypeToReleaseType(mbData.primaryType, mbData.secondaryTypes)
-      if (detectedType) {
-        updated.type = detectedType
-        typeDetected = true
-      }
-      if (mbData.date) {
-        updated.releaseDate = mbData.date.length === 4 ? `${mbData.date}-01-01` : mbData.date
-        updated.year = mbData.date.slice(0, 4)
-      }
-    }
-  } catch {
-    // MB matching failed — continue with what we have
-  }
 
-  // ── Odesli: use iTunes Apple Music URL as primary search term ──
-  // The complete iTunes collection URL is the most reliable identifier for
-  // Odesli to resolve all streaming platform links for a release.
+  // ── Step 1: Odesli — use iTunes Apple Music URL as primary search term ──
+  // iTunes always returns a collectionViewUrl which is the most reliable
+  // identifier for Odesli to resolve all streaming platform links.
   const currentAppleUrl = (release.streamingLinks ?? []).find(l => l.platform === 'appleMusic')?.url
   const currentSpotifyUrl = (release.streamingLinks ?? []).find(l => l.platform === 'spotify')?.url
-  // Prefer iTunes URL; fall back to Spotify if Apple Music URL is unavailable
+  // Prefer Apple Music URL; fall back to Spotify if unavailable
   const odesliLookupUrl = currentAppleUrl ?? currentSpotifyUrl ?? ''
 
   const { links, entityType: odesliEntityType, fromCache } = await enrichWithOdesli(odesliLookupUrl, redis)
@@ -441,6 +427,24 @@ async function enrichRelease(
 
   // Only delay when we actually hit the Odesli API (not a Redis cache hit)
   if (!fromCache) await delay(ODESLI_DELAY_MS)
+
+  // ── Step 2: MusicBrainz — apply locally-matched metadata (type + date) ──
+  try {
+    const mbData = matchITunesReleaseToMBData(release.title, mbMap)
+    if (mbData) {
+      const detectedType = mbTypeToReleaseType(mbData.primaryType, mbData.secondaryTypes)
+      if (detectedType) {
+        updated.type = detectedType
+        typeDetected = true
+      }
+      if (mbData.date) {
+        updated.releaseDate = mbData.date.length === 4 ? `${mbData.date}-01-01` : mbData.date
+        updated.year = mbData.date.slice(0, 4)
+      }
+    }
+  } catch {
+    // MB matching failed — continue with what we have
+  }
 
   // ── Tracklist + type detection fallback: fetch iTunes tracklist ONCE and reuse ──
   let tracks: Array<{ title: string; duration?: string }> = updated.tracks ?? []
@@ -481,6 +485,10 @@ export type { Release, SiteData }
 // ─── Handler ─────────────────────────────────────────────────────────────────
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
+  res.setHeader('Access-Control-Allow-Origin', 'https://zardonic.com')
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+
   if (req.method === 'OPTIONS') { res.status(200).end(); return }
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return }
 

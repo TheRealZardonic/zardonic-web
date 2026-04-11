@@ -1,19 +1,18 @@
 /**
  * POST /api/releases-enrich-single
  *
- * Hybrid MusicBrainz + Odesli enrichment for a single release.
+ * Odesli-first enrichment for a single release.
  *
  * Workflow:
  *  1. Fetch the release from Redis by ID.
- *  2. Search MusicBrainz for the release (title + "Zardonic").
- *  3. Load the full MusicBrainz release (recordings + url-rels) to get:
+ *  2. Call Odesli immediately with the Apple Music URL that iTunes provides
+ *     directly — no waiting for MusicBrainz. Collect all streaming links
+ *     (Spotify, YouTube, Bandcamp, SoundCloud, Deezer, Tidal, Amazon Music).
+ *  3. Search MusicBrainz for the release (title + "Zardonic") to obtain:
  *       - Canonical release type (Album / EP / Single / …)
  *       - Precise release date
  *       - Full tracklist with per-track durations
- *       - Any existing Spotify / Apple Music URL from MusicBrainz relations
- *  4. Pass the best available URL to Odesli (MusicBrainz Spotify >
- *     MusicBrainz Apple Music > existing Apple Music on release) to
- *     collect all streaming links.
+ *  4. Type fallback via inferTypeFromTitle if MusicBrainz has no match.
  *  5. Merge metadata + links into the release, persist back to Redis.
  *  6. Return the enriched release + a detailed status message.
  *
@@ -25,7 +24,6 @@ import { fetchWithRetry } from './_fetch-retry.js'
 import { validateSession } from './auth.js'
 import {
   msToTime,
-  isTrustedHost,
   mbTypeToReleaseType,
   inferTypeFromTitle,
   searchMusicBrainz,
@@ -113,6 +111,10 @@ async function fetchOdesliLinks(
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
+  res.setHeader('Access-Control-Allow-Origin', 'https://zardonic.com')
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+
   if (req.method === 'OPTIONS') { res.status(200).end(); return }
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return }
 
@@ -139,13 +141,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     const updated: Release = { ...release }
     const steps: string[] = []
 
-    let mbSpotifyUrl: string | undefined
-    let mbAppleMusicUrl: string | undefined
-    
     const existingAppleUrl = release.streamingLinks?.find(l => l.platform === 'appleMusic')?.url
     // Clean any affiliate query params from the Apple Music URL before passing to Odesli
     const cleanedAppleUrl = existingAppleUrl ? cleanAppleMusicUrl(existingAppleUrl) : undefined
 
+    // ── Step 1: Odesli — use Apple Music URL from iTunes immediately ──
+    // iTunes always provides a collectionViewUrl; no need to wait for MusicBrainz.
+    if (cleanedAppleUrl) {
+      const { data: odesli } = await fetchOdesliLinks(cleanedAppleUrl, redis)
+      if (odesli?.linksByPlatform) {
+        const p = odesli.linksByPlatform
+        const newLinks: StreamingLink[] = []
+
+        if (p.spotify?.url) newLinks.push({ platform: 'spotify', url: p.spotify.url })
+        if (p.appleMusic?.url) newLinks.push({ platform: 'appleMusic', url: p.appleMusic.url })
+        if (p.soundcloud?.url) newLinks.push({ platform: 'soundcloud', url: p.soundcloud.url })
+        if (p.youtube?.url) newLinks.push({ platform: 'youtube', url: p.youtube.url })
+        if (p.bandcamp?.url) newLinks.push({ platform: 'bandcamp', url: p.bandcamp.url })
+        if (p.deezer?.url) newLinks.push({ platform: 'deezer', url: p.deezer.url })
+        if (p.tidal?.url) newLinks.push({ platform: 'tidal', url: p.tidal.url })
+        if (p.amazon?.url) newLinks.push({ platform: 'amazonMusic', url: p.amazon.url })
+
+        updated.streamingLinks = newLinks
+        steps.push(`Odesli: ${newLinks.length} Plattformen gefunden`)
+      } else {
+        steps.push('Odesli: keine Links erhalten')
+      }
+    } else {
+      steps.push('Odesli: übersprungen — keine Apple Music URL vorhanden')
+    }
+
+    // ── Step 2: MusicBrainz — for type, date and tracklist only ──
     const mbSearch = await searchMusicBrainz(release.title)
     if (mbSearch) {
       steps.push(`MusicBrainz: found "${mbSearch.title}"`)
@@ -175,41 +201,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
           updated.trackCount = allTracks.length
           steps.push(`Tracks: ${allTracks.length}`)
         }
-        for (const rel of mbFull.relations ?? []) {
-          const u = rel.url?.resource ?? ''
-          if (!mbSpotifyUrl && isTrustedHost(u, 'open.spotify.com'))  mbSpotifyUrl = u
-          if (!mbAppleMusicUrl && isTrustedHost(u, 'music.apple.com')) mbAppleMusicUrl = u
-        }
       }
     } else {
       steps.push('MusicBrainz: keine Treffer gefunden')
       const fromTitle = inferTypeFromTitle(release.title)
-      if (fromTitle && !updated.type) updated.type = fromTitle
-    }
-
-    const odesliLookupUrl = cleanedAppleUrl ?? mbSpotifyUrl ?? mbAppleMusicUrl
-    if (odesliLookupUrl) {
-      const { data: odesli } = await fetchOdesliLinks(odesliLookupUrl, redis)
-      if (odesli?.linksByPlatform) {
-        const p = odesli.linksByPlatform
-        const newLinks: StreamingLink[] = []
-        
-        if (p.spotify?.url) newLinks.push({ platform: 'spotify', url: p.spotify.url })
-        if (p.appleMusic?.url) newLinks.push({ platform: 'appleMusic', url: p.appleMusic.url })
-        if (p.soundcloud?.url) newLinks.push({ platform: 'soundcloud', url: p.soundcloud.url })
-        if (p.youtube?.url) newLinks.push({ platform: 'youtube', url: p.youtube.url })
-        if (p.bandcamp?.url) newLinks.push({ platform: 'bandcamp', url: p.bandcamp.url })
-        if (p.deezer?.url) newLinks.push({ platform: 'deezer', url: p.deezer.url })
-        if (p.tidal?.url) newLinks.push({ platform: 'tidal', url: p.tidal.url })
-        if (p.amazon?.url) newLinks.push({ platform: 'amazonMusic', url: p.amazon.url })
-        
-        updated.streamingLinks = newLinks
-        steps.push(`Odesli: ${newLinks.length} Plattformen gefunden`)
-      } else {
-        steps.push('Odesli: keine Links erhalten')
+      if (fromTitle && !updated.type) {
+        updated.type = fromTitle
+        steps.push(`Type (title heuristic): ${fromTitle}`)
       }
-    } else {
-      steps.push('Odesli: übersprungen wegen fehlender Quell-URL')
     }
 
     delete (updated as any).spotify

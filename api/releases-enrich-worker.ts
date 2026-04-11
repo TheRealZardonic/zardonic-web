@@ -11,7 +11,8 @@
  *  1. Read `releases-enrich-queue` from Redis.
  *  2. If queue is empty/missing → return { ok: true, done: true }.
  *  3. Take the next unprocessed release (tracked by processedCount).
- *  4. Enrich it with MusicBrainz + Odesli (same logic as enrichRelease()).
+ *  4. Enrich it with Odesli first (Apple Music URL), then MusicBrainz metadata
+ *     (type + date from pre-fetched map). Same logic as enrichRelease().
  *  5. Append the enriched release to `releases-enrich-results`.
  *  6. Increment processedCount in the queue and save it back.
  *  7. If all releases are processed: merge results into band-data, clean up keys.
@@ -37,6 +38,10 @@ const QUEUE_KEY = 'releases-enrich-queue'
 const QUEUE_TTL = 3600 // 1 hour self-cleanup TTL
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
+  res.setHeader('Access-Control-Allow-Origin', 'https://zardonic.com')
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+
   if (req.method === 'OPTIONS') { res.status(200).end(); return }
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return }
 
