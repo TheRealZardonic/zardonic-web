@@ -162,7 +162,7 @@ function normalizeTitle(title: string): string {
     .replace(/\s*-\s*(ep|single|remixes?|deluxe edition|special edition)\s*$/i, '')
     .replace(/\s*\(feat\.[^)]*\)/gi, '')
     .replace(/\s*\[[^\]]*\]/g, '')
-    .replace(/[''`]/g, "'")
+    .replace(/[\u2018\u2019`]/g, "'")
     .replace(/\s+/g, ' ')
     .trim()
 }
@@ -217,7 +217,8 @@ export function matchITunesReleaseToMBData(
   map: Map<string, MbReleaseData>,
 ): MbReleaseData | null {
   const key = normalizeTitle(itunesTitle)
-  if (map.has(key)) return map.get(key)!
+  const exact = map.get(key)
+  if (exact) return exact
 
   // Partial match: check whether any MB title starts with the normalized iTunes title
   // (handles cases like "Villain - EP" matching iTunes "Villain")

@@ -40,7 +40,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     const updated: SiteData = { ...(existing ?? {}), [target]: [] }
     await redis.set('band-data', updated)
 
-    res.status(200).json({ ok: true, target, cleared: (existing?.[target] as unknown[] | undefined)?.length ?? 0 })
+    res.status(200).json({ ok: true, target, cleared: existing?.[target]?.length ?? 0 })
   } catch (error) {
     console.error('[data-reset] Unexpected error:', error)
     res.status(500).json({ error: 'Failed to reset data' })
