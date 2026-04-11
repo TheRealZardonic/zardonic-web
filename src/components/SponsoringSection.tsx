@@ -75,7 +75,7 @@ export default function SponsoringSection({
     }))
   }
 
-  const updateLogo = (idx: number, field: 'src' | 'alt', value: string) => {
+  const updateLogo = (idx: number, field: 'src' | 'alt' | 'caption' | 'url', value: string) => {
     onUpdateSiteData?.((prev) => ({
       ...prev,
       sponsoring: (prev.sponsoring ?? []).map((c, i) => i === idx ? { ...c, [field]: value } : c),
@@ -171,18 +171,45 @@ export default function SponsoringSection({
 
           <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12 opacity-60 hover:opacity-90 transition-opacity duration-500">
             {logos.filter(logo => logo.src).map((logo, index) => (
-              <div key={`sponsor-${index}`} className="relative group">
-                <motion.img
-                  src={toDirectImageUrl(logo.src) || logo.src}
-                  alt={logo.alt}
-                  className="h-10 md:h-14 w-auto object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity duration-300 hover-chromatic-image"
-                  initial={{ opacity: 0, y: 10 }}
-                  whileInView={{ opacity: 0.7, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  whileHover={{ opacity: 1 }}
-                  loading="lazy"
-                />
+              <div key={`sponsor-${index}`} className="relative group flex flex-col items-center gap-1">
+                {logo.url ? (
+                  <a
+                    href={logo.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={logo.alt || logo.caption || 'Sponsor'}
+                    className="block"
+                  >
+                    <motion.img
+                      src={toDirectImageUrl(logo.src) || logo.src}
+                      alt={logo.alt}
+                      className="h-10 md:h-14 w-auto object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity duration-300 hover-chromatic-image cursor-pointer"
+                      initial={{ opacity: 0, y: 10 }}
+                      whileInView={{ opacity: 0.7, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.5, delay: index * 0.1 }}
+                      whileHover={{ opacity: 1 }}
+                      loading="lazy"
+                    />
+                  </a>
+                ) : (
+                  <motion.img
+                    src={toDirectImageUrl(logo.src) || logo.src}
+                    alt={logo.alt}
+                    className="h-10 md:h-14 w-auto object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity duration-300 hover-chromatic-image"
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 0.7, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                    whileHover={{ opacity: 1 }}
+                    loading="lazy"
+                  />
+                )}
+                {logo.caption && (
+                  <span className="font-mono text-[10px] text-muted-foreground/70 text-center leading-tight max-w-[120px]">
+                    {logo.caption}
+                  </span>
+                )}
                 {editMode && (
                   <button
                     onClick={() => removeLogo(index)}
@@ -198,28 +225,48 @@ export default function SponsoringSection({
 
           {/* Edit mode: show all entries (including those without src) */}
           {editMode && onUpdateSiteData && (
-            <div className="mt-6 space-y-2 max-w-2xl mx-auto text-left">
+            <div className="mt-6 space-y-3 max-w-2xl mx-auto text-left">
               {logos.map((logo, idx) => (
-                <div key={idx} className="flex gap-2 items-center">
-                  <input
-                    type="text"
-                    value={logo.src}
-                    onChange={(e) => updateLogo(idx, 'src', e.target.value)}
-                    placeholder="Image URL"
-                    className="flex-1 bg-transparent border border-primary/20 px-2 py-1 text-xs font-mono text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/50"
-                    aria-label={`Sponsor ${idx + 1} image URL`}
-                  />
-                  <input
-                    type="text"
-                    value={logo.alt}
-                    onChange={(e) => updateLogo(idx, 'alt', e.target.value)}
-                    placeholder="Alt text"
-                    className="w-32 bg-transparent border border-primary/20 px-2 py-1 text-xs font-mono text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/50"
-                    aria-label={`Sponsor ${idx + 1} alt text`}
-                  />
-                  <button onClick={() => removeLogo(idx)} className="text-destructive/70 hover:text-destructive" aria-label="Remove">
-                    <Trash size={14} />
-                  </button>
+                <div key={idx} className="space-y-1 border border-primary/10 p-2 rounded">
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="text"
+                      value={logo.src}
+                      onChange={(e) => updateLogo(idx, 'src', e.target.value)}
+                      placeholder="Image URL"
+                      className="flex-1 bg-transparent border border-primary/20 px-2 py-1 text-xs font-mono text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/50"
+                      aria-label={`Sponsor ${idx + 1} image URL`}
+                    />
+                    <input
+                      type="text"
+                      value={logo.alt}
+                      onChange={(e) => updateLogo(idx, 'alt', e.target.value)}
+                      placeholder="Alt text"
+                      className="w-28 bg-transparent border border-primary/20 px-2 py-1 text-xs font-mono text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/50"
+                      aria-label={`Sponsor ${idx + 1} alt text`}
+                    />
+                    <button onClick={() => removeLogo(idx)} className="text-destructive/70 hover:text-destructive" aria-label="Remove">
+                      <Trash size={14} />
+                    </button>
+                  </div>
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="text"
+                      value={logo.caption ?? ''}
+                      onChange={(e) => updateLogo(idx, 'caption', e.target.value)}
+                      placeholder="Caption (optional)"
+                      className="flex-1 bg-transparent border border-primary/10 px-2 py-1 text-xs font-mono text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/50"
+                      aria-label={`Sponsor ${idx + 1} caption`}
+                    />
+                    <input
+                      type="url"
+                      value={logo.url ?? ''}
+                      onChange={(e) => updateLogo(idx, 'url', e.target.value)}
+                      placeholder="Link URL (optional)"
+                      className="flex-1 bg-transparent border border-primary/10 px-2 py-1 text-xs font-mono text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-primary/50"
+                      aria-label={`Sponsor ${idx + 1} link URL`}
+                    />
+                  </div>
                 </div>
               ))}
               <button

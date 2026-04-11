@@ -180,14 +180,15 @@ export default function AdminPanel({
   const updateTheme = useCallback(
     (key: keyof ThemeCustomization, value: string) => {
       if (!setAdminSettings) return
-      // spotifyHueRotate is stored as a number; empty string means "remove override"
-      if (key === 'spotifyHueRotate') {
-        const parsed = value === '' ? undefined : parseInt(value, 10)
+      // These keys are stored as numbers; empty string means "remove override"
+      const numericKeys: (keyof ThemeCustomization)[] = ['spotifyHueRotate', 'spotifySaturate', 'spotifyBrightness']
+      if (numericKeys.includes(key)) {
+        const parsed = value === '' ? undefined : parseFloat(value)
         const newTheme = { ...adminSettings?.theme }
         if (parsed === undefined) {
-          delete newTheme.spotifyHueRotate
+          delete newTheme[key]
         } else if (!isNaN(parsed)) {
-          newTheme.spotifyHueRotate = parsed
+          (newTheme as Record<string, unknown>)[key] = parsed
         }
         setAdminSettings({ ...adminSettings, theme: newTheme })
       } else {
