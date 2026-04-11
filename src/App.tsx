@@ -1,19 +1,16 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import React, { Suspense } from 'react'
 import { AnimatePresence } from 'framer-motion'
-import { useKV } from '@/hooks/use-kv'
 import { useKonami } from '@/hooks/use-konami'
-import { trackPageView, trackHeatmapClick } from '@/hooks/use-analytics'
-import { useAnalyticsConsent, CookieConsent } from '@/components/CookieConsent'
-import { useAdminAuth } from '@/hooks/use-admin-auth'
-import type { AdminSettings, SectionLabels, Release as FullRelease, TerminalCommand } from '@/lib/types'
-import { fullReleaseToStored, mergeFullReleaseIntoStored, normalizeStoredRelease } from '@/lib/release-adapters'
+import { CookieConsent } from '@/components/CookieConsent'
+import type { Release as FullRelease } from '@/lib/types'
+import { fullReleaseToStored, mergeFullReleaseIntoStored } from '@/lib/release-adapters'
 import { useAppTheme } from '@/hooks/use-app-theme'
 import { useSiteDataSync } from '@/hooks/use-site-data-sync'
+import { useAppState } from '@/hooks/use-app-state'
 import { LocaleProvider } from '@/contexts/LocaleContext'
 import type { SiteData, CyberpunkOverlayState } from '@/lib/app-types'
 import { DEFAULT_SITE_DATA } from '@/lib/app-types'
-import { DEFAULT_SECTION_ORDER, type SectionKey } from '@/lib/config'
 export type { SiteData } from '@/lib/app-types'
 import { Toaster } from '@/components/ui/sonner'
 import { toast } from 'sonner'
@@ -22,14 +19,8 @@ const MinimalBarLoader = React.lazy(() => import('@/components/MinimalBarLoader'
 const GlitchDecodeLoader = React.lazy(() => import('@/components/GlitchDecodeLoader'))
 const SwipeableGallery = React.lazy(() => import('@/components/SwipeableGallery'))
 const CyberpunkOverlay = React.lazy(() => import('@/components/CyberpunkOverlay'))
-import AdminLoginDialog from '@/components/AdminLoginDialog'
-import EditControls from '@/components/EditControls'
-const ConfigEditorDialog = React.lazy(() => import('@/components/ConfigEditorDialog'))
 import AppMediaSection from '@/components/AppMediaSection'
 import { SystemMonitorHUD } from '@/components/SystemMonitorHUD'
-
-const ContactInboxDialog = React.lazy(() => import('@/components/ContactInboxDialog'))
-const SubscriberListDialog = React.lazy(() => import('@/components/SubscriberListDialog'))
 import AppNavBar from '@/components/AppNavBar'
 import AppHeroSection from '@/components/AppHeroSection'
 import ShellSection from '@/components/ShellSection'
@@ -48,60 +39,60 @@ import { useDocumentTitle } from '@/hooks/use-document-title'
 import { PageLayout } from '@/layouts/PageLayout'
 import { BackgroundStack } from '@/components/BackgroundStack'
 import { GlobalEffects } from '@/components/GlobalEffects'
-
+import { AdminDialogManager } from '@/components/AdminDialogManager'
 
 // Code splitting for heavy components
 const Terminal = React.lazy(() => import('@/components/Terminal').then(m => ({ default: m.Terminal })))
-const StatsDashboard = React.lazy(() => import('@/components/StatsDashboard'))
-const SecurityIncidentsDashboard = React.lazy(() => import('@/components/SecurityIncidentsDashboard'))
-const SecuritySettingsDialog = React.lazy(() => import('@/components/SecuritySettingsDialog'))
-const BlocklistManagerDialog = React.lazy(() => import('@/components/BlocklistManagerDialog'))
-const AttackerProfileDialog = React.lazy(() => import('@/components/AttackerProfileDialog'))
-
-// Module-level constant so it can be used in the lazy useState initialiser
-// before the rest of the App function body runs.
-const LOADER_TYPE_KEY = 'nk-loader-type'
 
 
 
 function App() {
   const konamiActivated = useKonami()
   const [terminalOpen, setTerminalOpen] = useState(false)
+  const [galleryIndex, setGalleryIndex] = useState<number | null>(null)
+  const [cyberpunkOverlay, setCyberpunkOverlay] = useState<CyberpunkOverlayState | null>(null)
 
-  // Read the persisted loader type synchronously so we can initialise `loading`
-  // with the correct value on the very first render — preventing a FOUC where
-  // the loading screen briefly flashes when loaderType === 'none'.
-  const [initialLoaderType] = useState<string>(() => {
-    try { return localStorage.getItem(LOADER_TYPE_KEY) ?? 'minimal-bar' } catch { return 'minimal-bar' }
-  })
-
-  // If the stored loader type is 'none', skip the loading screen from frame 0.
-  const [loading, setLoading] = useState(() => initialLoaderType !== 'none')
-  const [contentLoaded, setContentLoaded] = useState(false)
-
-  // Admin authentication via cookie-based session (no KV read on page load)
   const {
+    siteData,
+    handleUpdateSiteData,
+    isSiteDataLoaded,
+    refetchSiteData,
+    adminSettings,
+    handleUpdateAdminSettings,
+    handleLabelChange,
+    handleSaveTerminalCommands,
+    refetchAdminSettings,
     isOwner,
     needsSetup,
-    handleAdminLogin: _handleAdminLogin,
-    handleAdminLogout,
+    handleAdminLogin,
+    handleSetAdminPassword,
     handleSetupAdminPassword,
-    handleChangeAdminPassword,
-  } = useAdminAuth()
-  const [showLoginDialog, setShowLoginDialog] = useState(false)
-  const [showSetupDialog, setShowSetupDialog] = useState(false)
+    handleLogout,
+    showLoginDialog,
+    setShowLoginDialog,
+    showSetupDialog,
+    setShowSetupDialog,
+    editMode,
+    setEditMode,
+    mobileMenuOpen,
+    setMobileMenuOpen,
+    loading,
+    setLoading,
+    contentLoaded,
+    activeLoaderType,
+    precacheUrls,
+    anim,
+    vis,
+    sectionLabels,
+    terminalCommands,
+    getSectionOrder,
+    handleResetReleases,
+    handleResetGigs,
+  } = useAppState()
 
-  // Check for ?admin-setup URL parameter once at mount (read from URL before first render)
-  const [wantsSetup] = useState(() => {
-    const params = new URLSearchParams(window.location.search)
-    if (params.has('admin-setup')) {
-      const url = new URL(window.location.href)
-      url.searchParams.delete('admin-setup')
-      window.history.replaceState({}, '', url.toString())
-      return true
-    }
-    return false
-  })
+  useAppTheme(adminSettings)
+  const { iTunesFetching, bandsintownFetching, hasAutoLoaded, iTunesProgress, handleFetchBandsintownEvents, handleFetchITunesReleases } = useSiteDataSync(siteData, isSiteDataLoaded, refetchSiteData, isOwner)
+  useDocumentTitle(siteData?.artistName ?? '')
 
   useEffect(() => {
     if (konamiActivated) {
@@ -111,237 +102,8 @@ function App() {
     }
   }, [konamiActivated])
 
-  // Open setup dialog when auth check confirms no password exists and user requested setup
-  useEffect(() => {
-    if (wantsSetup && needsSetup) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setShowSetupDialog(true)
-    }
-  }, [wantsSetup, needsSetup])
-
-  useEffect(() => {
-    if (!loading) {
-      setTimeout(() => setContentLoaded(true), 100)
-    }
-  }, [loading])
-
-  // Track page view on mount — only if analytics consent was given
-  const analyticsConsent = useAnalyticsConsent()
-  useEffect(() => {
-    if (analyticsConsent) {
-      trackPageView()
-    }
-  // Only run once on mount; analyticsConsent may become true later (after banner)
-  }, [analyticsConsent])
-
-  // Track heatmap clicks globally — guard with consent
-  useEffect(() => {
-    if (!analyticsConsent) return
-    const handleClick = (e: MouseEvent) => {
-      const x = e.clientX / window.innerWidth
-      const y = (e.clientY + window.scrollY) / document.documentElement.scrollHeight
-      const target = e.target as HTMLElement
-      // Find the closest interactive element for meaningful names
-      const interactive = target.closest('button, a, [role="button"]') as HTMLElement | null
-      let el: string
-      if (interactive) {
-        const text = interactive.textContent?.trim().slice(0, 30) || ''
-        const tag = interactive.tagName.toLowerCase()
-        const ariaLabel = interactive.getAttribute('aria-label') || interactive.getAttribute('title') || ''
-        el = ariaLabel || text || `${tag}`
-      } else {
-        el = target.textContent?.trim().slice(0, 30) || target.tagName.toLowerCase()
-      }
-      trackHeatmapClick(x, y, el)
-    }
-    document.addEventListener('click', handleClick)
-    return () => document.removeEventListener('click', handleClick)
-  }, [analyticsConsent])
-
-  const [siteData, setSiteData] = useState<SiteData | undefined>(undefined)
-  const [adminSettings, setAdminSettings] = useState<AdminSettings | undefined>(undefined)
-
-  const [kvSiteData, setKvSiteData, isSiteDataLoaded, refetchSiteData] = useKV<SiteData>('band-data', DEFAULT_SITE_DATA)
-  const [kvAdminSettings, setKvAdminSettings, isAdminSettingsLoaded, refetchAdminSettings] = useKV<AdminSettings | undefined>('admin:settings', undefined)
-
-  useEffect(() => {
-    if (isSiteDataLoaded) {
-      // Normalize releases loaded from KV: legacy entries may have streamingLinks
-      // stored as a plain object instead of the current array format, which causes
-      // a runtime TypeError when .find() is called on the object.
-      const normalized = kvSiteData
-        ? { ...kvSiteData, releases: (kvSiteData.releases ?? []).map(normalizeStoredRelease) }
-        : kvSiteData
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSiteData(normalized)
-    }
-  }, [kvSiteData, isSiteDataLoaded])
-
-  useEffect(() => {
-    if (isAdminSettingsLoaded && kvAdminSettings) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setAdminSettings(kvAdminSettings)
-    }
-  }, [kvAdminSettings, isAdminSettingsLoaded])
-
-  /** Update siteData both in local React state and in KV (persists to server). */
-  const handleUpdateSiteData = useCallback((updater: SiteData | ((current: SiteData) => SiteData)) => {
-    setSiteData(prev => {
-      const next = typeof updater === 'function' ? updater(prev ?? DEFAULT_SITE_DATA) : updater
-      setKvSiteData(next)
-      return next
-    })
-  }, [setKvSiteData])
-
-  /** Update adminSettings both in local React state and in KV. */
-  const handleUpdateAdminSettings = useCallback((settings: AdminSettings) => {
-    setAdminSettings(settings)
-    setKvAdminSettings(settings)
-  }, [setKvAdminSettings])
-
-  const handleLabelChange = useCallback((key: keyof SectionLabels, value: string | boolean) => {
-    setAdminSettings(prev => {
-      const next = { ...(prev ?? {}), labels: { ...(prev?.labels ?? {}), [key]: value } }
-      setKvAdminSettings(next)
-      return next
-    })
-  }, [setKvAdminSettings])
-
-  const handleSaveTerminalCommands = useCallback((commands: TerminalCommand[]) => {
-    handleUpdateAdminSettings({ ...(adminSettings ?? {}), terminal: { ...(adminSettings?.terminal ?? {}), commands } })
-  }, [adminSettings, handleUpdateAdminSettings])
-
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [editMode, setEditMode] = useState(false)
-
-  // Toggle text-selection lock based on edit mode
-  useEffect(() => {
-    document.body.classList.toggle('no-select', !editMode)
-  }, [editMode])
-  const [showConfigEditor, setShowConfigEditor] = useState(false)
-  const [showStats, setShowStats] = useState(false)
-  const [showSecurityIncidents, setShowSecurityIncidents] = useState(false)
-  const [showSecuritySettings, setShowSecuritySettings] = useState(false)
-  const [showBlocklist, setShowBlocklist] = useState(false)
-  const [showAttackerProfile, setShowAttackerProfile] = useState(false)
-  const [selectedAttackerIp, setSelectedAttackerIp] = useState<string>('')
-  const [showContactInbox, setShowContactInbox] = useState(false)
-  const [showSubscriberList, setShowSubscriberList] = useState(false)
-
-  const vis = adminSettings?.sections?.visibility ?? {}
-  const anim = adminSettings?.background ?? {}
-  const sectionLabels = adminSettings?.labels ?? {}
-  const terminalCommands = adminSettings?.terminal?.commands ?? []
-
-  // When KV settings arrive, persist the type so the next load is instant.
-  useEffect(() => {
-    if (anim.loadingScreenType) {
-      try { localStorage.setItem(LOADER_TYPE_KEY, anim.loadingScreenType) } catch { /* quota */ }
-    }
-  }, [anim.loadingScreenType])
-
-  // Effective loader type: KV value takes precedence once loaded; localStorage used before that.
-  const effectiveLoaderType = anim.loadingScreenType ?? initialLoaderType
-
-  // Lock the visible loading screen type to what was active on mount.
-  // Without this, when KV arrives with a DIFFERENT type than localStorage,
-  // the component key changes → React unmounts the old loader and mounts the
-  // new one → visible flash between two loading screen components (FOUC).
-  // We only allow the locked type to change if it transitions to 'none'
-  // (handled by the useEffect below which sets loading = false directly).
-  const [activeLoaderType] = useState(initialLoaderType)
-
-  const sectionOrder = adminSettings?.sections?.order ?? DEFAULT_SECTION_ORDER
-  const getSectionOrder = useCallback((section: string) => {
-    const idx = sectionOrder.indexOf(section as SectionKey)
-    return idx >= 0 ? idx : DEFAULT_SECTION_ORDER.indexOf(section as SectionKey)
-  }, [sectionOrder])
-
-  useAppTheme(adminSettings)
-  const { iTunesFetching, bandsintownFetching, hasAutoLoaded, iTunesProgress, handleFetchBandsintownEvents, handleFetchITunesReleases } = useSiteDataSync(siteData, isSiteDataLoaded, refetchSiteData, isOwner)
-  useDocumentTitle(siteData?.artistName ?? '')
-
-  const handleResetReleases = useCallback(async () => {
-    const resp = await fetch('/api/data-reset', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ target: 'releases' }),
-    })
-    if (resp.ok) {
-      handleUpdateSiteData(prev => ({ ...prev, releases: [] }))
-      refetchSiteData()
-    } else {
-      const err = await resp.json().catch(() => ({}))
-      throw new Error((err as { error?: string }).error ?? `HTTP ${resp.status}`)
-    }
-  }, [handleUpdateSiteData, refetchSiteData])
-
-  const handleResetGigs = useCallback(async () => {
-    const resp = await fetch('/api/data-reset', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ target: 'gigs' }),
-    })
-    if (resp.ok) {
-      handleUpdateSiteData(prev => ({ ...prev, gigs: [] }))
-      refetchSiteData()
-    } else {
-      const err = await resp.json().catch(() => ({}))
-      throw new Error((err as { error?: string }).error ?? `HTTP ${resp.status}`)
-    }
-  }, [handleUpdateSiteData, refetchSiteData])
-
-  // If the effective loader type is 'none' (either from localStorage or KV),
-  // skip loading immediately — covers both first-render and late KV arrival.
-  useEffect(() => {
-    if (effectiveLoaderType === 'none') {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setLoading(false)
-    }
-  }, [effectiveLoaderType])
-
-  // Collect image URLs for precaching during loading screen
-  const precacheUrls = useMemo(() => {
-    if (!siteData) return []
-    const urls: string[] = []
-    siteData.gallery?.forEach(url => { if (url) urls.push(url) })
-    siteData.releases?.forEach(r => { if (r.artwork) urls.push(r.artwork) })
-    siteData.creditHighlights?.forEach(c => { if (c.src) urls.push(c.src) })
-    return urls
-  }, [siteData])
-  const [galleryIndex, setGalleryIndex] = useState<number | null>(null)
-  const [cyberpunkOverlay, setCyberpunkOverlay] = useState<CyberpunkOverlayState | null>(null)
-
-  // Admin authentication handlers
-  const handleAdminLogin = useCallback(async (password: string, totpCode?: string): Promise<{ success: boolean; totpRequired?: boolean }> => {
-    const result = await _handleAdminLogin(password, totpCode)
-    if (result === true) {
-      // Re-fetch admin settings now that we're authenticated — the initial
-      // unauthenticated load strips sensitive fields (terminalCommands,
-      // configOverrides, contactInfo.emailForwardTo). Refetching gives the
-      // admin the full, unredacted settings for the current session.
-      refetchAdminSettings()
-      return { success: true }
-    }
-    if (result === 'totp-required') return { success: false, totpRequired: true }
-    return { success: false }
-  }, [_handleAdminLogin, refetchAdminSettings])
-
-  const handleSetAdminPassword = useCallback(async (password: string): Promise<void> => {
-    await handleChangeAdminPassword(password)
-  }, [handleChangeAdminPassword])
-
-  // Wrap logout to also exit edit mode automatically
-  const handleLogout = useCallback(async () => {
-    setEditMode(false)
-    await handleAdminLogout()
-  }, [handleAdminLogout])
-
   const scrollToSection = (id: string) => {
     setMobileMenuOpen(false)
-    // Small delay to let mobile menu close before scrolling
     setTimeout(() => {
       const element = document.getElementById(id)
       if (element) {
@@ -429,10 +191,6 @@ function App() {
             </Suspense>
 
             <Suspense fallback={null}>
-              <StatsDashboard open={showStats} onClose={() => setShowStats(false)} />
-            </Suspense>
-
-            <Suspense fallback={null}>
               <CyberpunkOverlay
                 overlay={cyberpunkOverlay}
                 onClose={() => setCyberpunkOverlay(null)}
@@ -441,92 +199,31 @@ function App() {
               />
             </Suspense>
 
-            {isOwner && (
-              <EditControls
-                editMode={editMode}
-                onToggleEdit={() => setEditMode(!editMode)}
-                hasPassword={!needsSetup}
-                onChangePassword={handleSetAdminPassword}
-                onSetPassword={handleSetAdminPassword}
-                adminSettings={adminSettings}
-                setAdminSettings={handleUpdateAdminSettings}
-                siteData={siteData}
-                onImportData={(data) => handleUpdateSiteData(data as SiteData)}
-                onRefreshSiteData={refetchSiteData}
-                onOpenConfigEditor={() => setShowConfigEditor(true)}
-                onOpenStats={() => setShowStats(true)}
-                onOpenSecurityIncidents={() => setShowSecurityIncidents(true)}
-                onOpenSecuritySettings={() => setShowSecuritySettings(true)}
-                onOpenBlocklist={() => setShowBlocklist(true)}
-                onOpenContactInbox={() => setShowContactInbox(true)}
-                onOpenSubscriberList={() => setShowSubscriberList(true)}
-                onUpdateSiteData={handleUpdateSiteData}
-                onLogout={handleLogout}
-                onFetchBandsintown={handleFetchBandsintownEvents}
-                onFetchITunes={handleFetchITunesReleases}
-                onResetReleases={handleResetReleases}
-                onResetGigs={handleResetGigs}
-              />
-            )}
-
-            <Suspense fallback={null}>
-              <ConfigEditorDialog
-                open={showConfigEditor}
-                onClose={() => setShowConfigEditor(false)}
-                overrides={adminSettings?.configOverrides || {}}
-                onSave={(configOverrides) => handleUpdateAdminSettings({ ...(adminSettings || {}), configOverrides })}
-              />
-            </Suspense>
-
-            {/* Security admin dialogs — only rendered when admin is logged in */}
-            {isOwner && (
-              <Suspense fallback={null}>
-                <SecurityIncidentsDashboard
-                  open={showSecurityIncidents}
-                  onClose={() => setShowSecurityIncidents(false)}
-                  onViewProfile={(hashedIp) => {
-                    setSelectedAttackerIp(hashedIp)
-                    setShowAttackerProfile(true)
-                  }}
-                />
-                <SecuritySettingsDialog
-                  open={showSecuritySettings}
-                  onClose={() => setShowSecuritySettings(false)}
-                />
-                <BlocklistManagerDialog
-                  open={showBlocklist}
-                  onClose={() => setShowBlocklist(false)}
-                />
-                <AttackerProfileDialog
-                  open={showAttackerProfile}
-                  onClose={() => setShowAttackerProfile(false)}
-                  hashedIp={selectedAttackerIp}
-                />
-                <ContactInboxDialog
-                  open={showContactInbox}
-                  onClose={() => setShowContactInbox(false)}
-                />
-                <SubscriberListDialog
-                  open={showSubscriberList}
-                  onClose={() => setShowSubscriberList(false)}
-                />
-              </Suspense>
-            )}
-
-            {/* Admin Login Dialogs */}
-            <AdminLoginDialog
-              open={showLoginDialog}
-              onOpenChange={setShowLoginDialog}
-              mode="login"
-              onLogin={handleAdminLogin}
+            <AdminDialogManager
+              isOwner={isOwner}
+              needsSetup={needsSetup}
+              editMode={editMode}
+              onToggleEdit={() => setEditMode(!editMode)}
+              adminSettings={adminSettings}
+              setAdminSettings={handleUpdateAdminSettings}
+              siteData={siteData}
+              onImportData={(data) => handleUpdateSiteData(data as SiteData)}
+              onRefreshSiteData={refetchSiteData}
+              onUpdateSiteData={handleUpdateSiteData}
+              onLogout={handleLogout}
+              onFetchBandsintown={handleFetchBandsintownEvents}
+              onFetchITunes={handleFetchITunesReleases}
+              onResetReleases={handleResetReleases}
+              onResetGigs={handleResetGigs}
+              onChangePassword={handleSetAdminPassword}
               onSetPassword={handleSetAdminPassword}
-            />
-
-            <AdminLoginDialog
-              open={showSetupDialog}
-              onOpenChange={setShowSetupDialog}
-              mode="setup"
-              onSetPassword={handleSetupAdminPassword}
+              onAdminLogin={handleAdminLogin}
+              onSetupAdminPassword={handleSetupAdminPassword}
+              showLoginDialog={showLoginDialog}
+              setShowLoginDialog={setShowLoginDialog}
+              showSetupDialog={showSetupDialog}
+              setShowSetupDialog={setShowSetupDialog}
+              terminalCommands={terminalCommands}
             />
           </>
         }
@@ -534,14 +231,8 @@ function App() {
           <>
             <AnimatePresence>
               {(!siteData || loading) && (() => {
-                // Use activeLoaderType (locked on mount) — NOT effectiveLoaderType —
-                // so the active loading screen never switches mid-load when KV
-                // arrives with a different type (which would cause a FOUC flash).
-                // effectiveLoaderType is still used for the 'none' skip-logic above.
                 const lsType = activeLoaderType
-                if (lsType === 'none') {
-                  return null
-                }
+                if (lsType === 'none') return null
                 if (lsType === 'minimal-bar') {
                   return (
                     <Suspense key="minimal-bar" fallback={null}>
@@ -568,7 +259,6 @@ function App() {
                     </Suspense>
                   )
                 }
-                // default: 'cyberpunk'
                 return (
                   <LoadingScreen
                     key="cyberpunk"
@@ -581,7 +271,6 @@ function App() {
                 )
               })()}
             </AnimatePresence>
-            {/* GDPR Cookie Consent Banner */}
             <CookieConsent
               onOpenPrivacyPolicy={() => setCyberpunkOverlay({ type: 'privacy' })}
             />
@@ -598,7 +287,6 @@ function App() {
           </>
         }
       >
-        {/* Main content — inside <main className="flex-1 flex flex-col"> */}
         {siteData?.tracks && siteData.tracks.length > 0 && siteData.tracks[0]?.url && (
           <audio src={siteData.tracks[0].url} aria-label="Background music player" />
         )}
@@ -815,7 +503,7 @@ function App() {
       </SectionErrorBoundary>
 
       </>)}
-        </div>{/* end flex-1 sections container */}
+        </div>
       </PageLayout>
     </>
     </LocaleProvider>

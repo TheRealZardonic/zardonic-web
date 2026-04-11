@@ -1,7 +1,7 @@
 import { Pencil, X, GearSix } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useState, lazy, Suspense } from 'react'
+import React, { useState, lazy, Suspense } from 'react'
 import AdminLoginDialog from '@/components/AdminLoginDialog'
 import type { AdminSettings } from '@/lib/types'
 import type { SiteData } from '@/App'
@@ -65,7 +65,8 @@ export default function EditControls({
   return (
     <>
       <motion.div
-        className="fixed bottom-6 right-6 z-[9990] flex items-center gap-2"
+        className="fixed bottom-6 right-6 flex items-center gap-2"
+        style={{ zIndex: 'var(--z-overlay)' } as React.CSSProperties}
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 260, damping: 20 }}

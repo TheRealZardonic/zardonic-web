@@ -12,6 +12,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
+import type { CSSProperties } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { X, Shield } from '@phosphor-icons/react'
@@ -126,7 +127,8 @@ export function CookieConsent({ onPreferencesChange, onOpenPrivacyPolicy }: Cook
           role="dialog"
           aria-modal="true"
           aria-labelledby="cookie-banner-title"
-          className="fixed bottom-0 left-0 right-0 z-[9999] bg-background/98 backdrop-blur-lg border-t-2 border-primary/30 p-4 md:p-6 shadow-2xl"
+          className="fixed bottom-0 left-0 right-0 bg-background/98 backdrop-blur-lg border-t-2 border-primary/30 p-4 md:p-6 shadow-2xl"
+          style={{ zIndex: 'var(--z-system)' } as CSSProperties}
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}
