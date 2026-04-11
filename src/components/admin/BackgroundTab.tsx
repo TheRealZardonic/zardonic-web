@@ -308,7 +308,7 @@ export default function BackgroundTab({
               <Label className="font-mono text-xs text-muted-foreground">{label}</Label>
               <Input
                 value={adminSettings?.hud?.[key] ?? ''}
-                onChange={e => setAdminSettings?.({ ...(adminSettings ?? {}), hudTexts: { ...adminSettings?.hud, [key]: e.target.value || undefined } })}
+                onChange={e => setAdminSettings?.({ ...(adminSettings ?? {}), hud: { ...adminSettings?.hud, [key]: e.target.value || undefined } })}
                 className="font-mono text-xs"
                 placeholder={placeholder}
               />

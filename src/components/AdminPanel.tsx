@@ -20,6 +20,7 @@ import type {
 } from '@/lib/types'
 import type { SiteData } from '@/App'
 import { toast } from 'sonner'
+import AppearanceTab from '@/components/admin/AppearanceTab'
 import BackgroundTab from '@/components/admin/BackgroundTab'
 import LayoutTab from '@/components/admin/LayoutTab'
 import SectionsTab from '@/components/admin/SectionsTab'
@@ -33,6 +34,19 @@ import { SECTION_REGISTRY } from '@/lib/sections-registry'
 import { getDisclosureLevel, getSectionOrder } from '@/lib/admin-settings'
 
 type AdminCategory = 'content' | 'design' | 'sections' | 'system'
+
+/** Maps legacy search tab names to the new sidebar category/page */
+const TAB_NAVIGATION_MAP: Record<string, { cat: AdminCategory; pg: string }> = {
+  overview: { cat: 'system', pg: 'overview' },
+  security: { cat: 'system', pg: 'security' },
+  analytics: { cat: 'system', pg: 'analytics' },
+  data: { cat: 'system', pg: 'data' },
+  translations: { cat: 'system', pg: 'translations' },
+  appearance: { cat: 'design', pg: 'colors' },
+  background: { cat: 'design', pg: 'background' },
+  layout: { cat: 'design', pg: 'layout' },
+  sections: { cat: 'sections', pg: 'visibility' },
+}
 
 interface AdminPanelProps {
   open: boolean
@@ -251,32 +265,32 @@ export default function AdminPanel({
     return () => mql.removeEventListener('change', handler)
   }, [])
 
-  // Sidebar navigation definition
-  const sidebarItems: { category: AdminCategory; label: string; icon: React.ReactNode; pages: { id: string; label: string }[] }[] = [
+  // Sidebar navigation definition (memoized since registry and icons are static)
+  const sidebarItems = useMemo(() => [
     {
-      category: 'content',
+      category: 'content' as AdminCategory,
       label: 'Content',
       icon: <FileText size={14} />,
       pages: SECTION_REGISTRY.map((e) => ({ id: e.id, label: e.label })),
     },
     {
-      category: 'design',
+      category: 'design' as AdminCategory,
       label: 'Design',
       icon: <Palette size={14} />,
       pages: [
-        { id: 'colors', label: 'Colors' },
+        { id: 'colors', label: 'Appearance' },
         { id: 'background', label: 'Background' },
         { id: 'layout', label: 'Layout' },
       ],
     },
     {
-      category: 'sections',
+      category: 'sections' as AdminCategory,
       label: 'Sections',
       icon: <Eye size={14} />,
       pages: [{ id: 'visibility', label: 'Visibility & Order' }],
     },
     {
-      category: 'system',
+      category: 'system' as AdminCategory,
       label: 'System',
       icon: <GearSix size={14} />,
       pages: [
@@ -287,7 +301,8 @@ export default function AdminPanel({
         { id: 'translations', label: 'Translations' },
       ],
     },
-  ]
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  ], [SECTION_REGISTRY])
 
   const renderContent = () => {
     if (category === 'content') {
@@ -460,19 +475,7 @@ export default function AdminPanel({
               </div>
               <div className="flex items-center gap-1">
                 <AdminSearch onNavigate={(tab) => {
-                  // Map old tab names to new category/page
-                  const tabMap: Record<string, { cat: AdminCategory; pg: string }> = {
-                    overview: { cat: 'system', pg: 'overview' },
-                    security: { cat: 'system', pg: 'security' },
-                    analytics: { cat: 'system', pg: 'analytics' },
-                    data: { cat: 'system', pg: 'data' },
-                    translations: { cat: 'system', pg: 'translations' },
-                    appearance: { cat: 'design', pg: 'colors' },
-                    background: { cat: 'design', pg: 'background' },
-                    layout: { cat: 'design', pg: 'layout' },
-                    sections: { cat: 'sections', pg: 'visibility' },
-                  }
-                  const mapped = tabMap[tab]
+                  const mapped = TAB_NAVIGATION_MAP[tab]
                   if (mapped) { setCategory(mapped.cat); setPage(mapped.pg) }
                   else {
                     const reg = SECTION_REGISTRY.find((e) => e.id === tab)
