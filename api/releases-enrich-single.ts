@@ -20,7 +20,6 @@
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { getRedisOrNull, isRedisConfigured } from './_redis.js'
-import { fetchWithRetry } from './_fetch-retry.js'
 import { validateSession } from './auth.js'
 import {
   msToTime,
@@ -29,36 +28,17 @@ import {
   searchMusicBrainz,
   fetchMusicBrainzRelease,
 } from './_musicbrainz.js'
+import {
+  cleanAppleMusicUrl,
+  fetchOdesliLinks,
+  type StreamingLink,
+} from './_odesli.js'
 
 const BAND_DATA_KEY = 'band-data'
-const ODESLI_CACHE_TTL = 86_400
-
-/**
- * Strip all query parameters from an Apple Music / iTunes URL.
- * iTunes returns affiliate-decorated URLs like `?uo=4&at=...&ct=...` that
- * Odesli cannot reliably resolve. We only keep origin + pathname.
- */
-function cleanAppleMusicUrl(url: string): string {
-  if (!url) return url
-  try {
-    const u = new URL(url)
-    // Normalize geo redirect domains to music.apple.com
-    if (u.hostname === 'geo.music.apple.com' || u.hostname.endsWith('.music.apple.com')) {
-      u.hostname = 'music.apple.com'
-    }
-    // Strip all query params (affiliate noise: uo=4, at=..., ct=..., etc.)
-    return `${u.origin}${u.pathname}`
-  } catch { return url }
-}
 
 interface Track {
   title: string
   duration?: string
-}
-
-interface StreamingLink {
-  platform: string
-  url: string
 }
 
 interface Release {
@@ -77,42 +57,6 @@ interface Release {
 interface SiteData {
   releases: Release[]
   [key: string]: unknown
-}
-
-interface OdesliLink { url: string }
-
-interface OdesliResponse {
-  linksByPlatform?: Record<string, OdesliLink>
-}
-
-function odesliCacheKey(url: string): string {
-  return `odesli:links:${url.replace(/^https?:\/\//, '').replace(/[^a-zA-Z0-9._/-]/g, '_').slice(0, 200)}`
-}
-
-interface FetchOdesliResult {
-  data: OdesliResponse | null
-  fromCache: boolean
-}
-
-async function fetchOdesliLinks(
-  lookupUrl: string,
-  redis: NonNullable<ReturnType<typeof getRedisOrNull>>,
-): Promise<FetchOdesliResult> {
-  const cacheKey = odesliCacheKey(lookupUrl)
-  try {
-    const cached = await redis.get<OdesliResponse>(cacheKey)
-    if (cached) return { data: cached, fromCache: true }
-  } catch { /* redis cache miss is non-fatal */ }
-  const apiUrl = `https://api.song.link/v1-alpha.1/links?url=${encodeURIComponent(lookupUrl)}&userCountry=US`
-  const res = await fetchWithRetry(apiUrl)
-  if (!res.ok) return { data: null, fromCache: false }
-  const data: OdesliResponse = await res.json()
-  // Only cache non-empty responses to avoid persisting failures for 24h
-  const hasLinks = data.linksByPlatform && Object.keys(data.linksByPlatform).length > 0
-  if (hasLinks) {
-    try { await redis.set(cacheKey, data, { ex: ODESLI_CACHE_TTL }) } catch { /* cache write failure is non-fatal */ }
-  }
-  return { data, fromCache: false }
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
@@ -163,20 +107,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     // ── Step 1: Odesli — use Apple Music URL from iTunes immediately ──
     // iTunes always provides a collectionViewUrl; no need to wait for MusicBrainz.
     if (cleanedAppleUrl) {
-      const { data: odesli } = await fetchOdesliLinks(cleanedAppleUrl, redis)
-      if (odesli?.linksByPlatform) {
-        const p = odesli.linksByPlatform
-        const newLinks: StreamingLink[] = []
-
-        if (p.spotify?.url) newLinks.push({ platform: 'spotify', url: p.spotify.url })
-        if (p.appleMusic?.url) newLinks.push({ platform: 'appleMusic', url: p.appleMusic.url })
-        if (p.soundcloud?.url) newLinks.push({ platform: 'soundcloud', url: p.soundcloud.url })
-        if (p.youtube?.url) newLinks.push({ platform: 'youtube', url: p.youtube.url })
-        if (p.bandcamp?.url) newLinks.push({ platform: 'bandcamp', url: p.bandcamp.url })
-        if (p.deezer?.url) newLinks.push({ platform: 'deezer', url: p.deezer.url })
-        if (p.tidal?.url) newLinks.push({ platform: 'tidal', url: p.tidal.url })
-        if (p.amazon?.url) newLinks.push({ platform: 'amazonMusic', url: p.amazon.url })
-
+      const { links: newLinks } = await fetchOdesliLinks(cleanedAppleUrl, redis)
+      if (newLinks.length > 0) {
         updated.streamingLinks = newLinks
         steps.push(`Odesli: ${newLinks.length} Plattformen gefunden`)
       } else {
@@ -226,14 +158,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       }
     }
 
-    delete (updated as any).spotify
-    delete (updated as any).soundcloud
-    delete (updated as any).youtube
-    delete (updated as any).bandcamp
-    delete (updated as any).appleMusic
-    delete (updated as any).deezer
-    delete (updated as any).tidal
-    delete (updated as any).amazonMusic
+    const legacyFlat = updated as unknown as Record<string, unknown>
+    delete legacyFlat.spotify
+    delete legacyFlat.soundcloud
+    delete legacyFlat.youtube
+    delete legacyFlat.bandcamp
+    delete legacyFlat.appleMusic
+    delete legacyFlat.deezer
+    delete legacyFlat.tidal
+    delete legacyFlat.amazonMusic
 
     const updatedReleases = releases.map(r => (r.id === id ? updated : r))
     await redis.set(BAND_DATA_KEY, { ...(existing ?? {}), releases: updatedReleases })

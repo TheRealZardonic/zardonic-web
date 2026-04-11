@@ -27,6 +27,11 @@ import {
   matchITunesReleaseToMBData,
   type MbReleaseData,
 } from './_musicbrainz.js'
+import {
+  cleanAppleMusicUrl,
+  fetchOdesliLinks,
+  type StreamingLink,
+} from './_odesli.js'
 
 function verifyCronSecret(provided: string): boolean {
   const expected = process.env.CRON_SECRET
@@ -43,13 +48,7 @@ function verifyCronSecret(provided: string): boolean {
 
 export const BAND_DATA_KEY = 'band-data'
 const ODESLI_DELAY_MS = 3000
-const ODESLI_CACHE_TTL = 86400
 const SPOTIFY_ARTIST_ID = '2VjGthYSFI6xGKJqbR7IXm'
-
-interface StreamingLink {
-  platform: string
-  url: string
-}
 
 interface Release {
   id: string
@@ -88,62 +87,8 @@ interface ITunesTrack {
   trackExplicitness?: string
 }
 
-interface OdesliLink {
-  url: string
-}
-
-interface OdesliEntity {
-  id: string
-  type: string
-  title?: string
-  artistName?: string
-  thumbnailUrl?: string
-  apiProvider?: string
-}
-
-interface OdesliResponse {
-  entityUniqueId?: string
-  entitiesByUniqueId?: Record<string, OdesliEntity>
-  linksByPlatform?: {
-    spotify?: OdesliLink
-    appleMusic?: OdesliLink
-    soundcloud?: OdesliLink
-    youtube?: OdesliLink
-    bandcamp?: OdesliLink
-    deezer?: OdesliLink
-    tidal?: OdesliLink
-    amazon?: OdesliLink
-  }
-}
-
 function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
-}
-
-/**
- * Strip all query parameters from an Apple Music / iTunes URL AND normalise
- * geo redirect domains (geo.music.apple.com → music.apple.com).
- *
- * MUST be called on EVERY Apple Music URL before it is stored — whether the
- * URL comes from iTunes directly or from an Odesli response.  Odesli itself
- * returns geo.music.apple.com URLs in its linksByPlatform.appleMusic field,
- * so cleaning at storage time is the only reliable guarantee.
- */
-function cleanAppleMusicUrl(url: string): string {
-  if (!url) return url
-  try {
-    const u = new URL(url)
-    // Normalize geo redirect domains to music.apple.com
-    if (u.hostname === 'geo.music.apple.com' || u.hostname.endsWith('.music.apple.com')) {
-      u.hostname = 'music.apple.com'
-    }
-    // Strip all query params (affiliate noise: uo=4, at=..., ct=..., etc.)
-    return `${u.origin}${u.pathname}`
-  } catch { return url }
-}
-
-function odesliCacheKey(url: string): string {
-  return `odesli:links:${url.replace(/^https?:\/\//, '').replace(/[^a-zA-Z0-9._/-]/g, '_').slice(0, 200)}`
 }
 
 function inferTypeFromTitle(title: string): '' | 'album' | 'ep' | 'single' | 'remix' | 'compilation' {
@@ -323,72 +268,6 @@ function sortReleases(releases: Release[]): Release[] {
   })
 }
 
-// ─── Step 2 + 3: Enrich with MusicBrainz metadata + Odesli links ────────────
-
-interface OdesliEnrichedLinks {
-  links: Record<string, string | undefined>
-  entityType?: string
-  fromCache: boolean
-}
-
-async function enrichWithOdesli(
-  url: string,
-  redis: NonNullable<ReturnType<typeof getRedisOrNull>>, 
-): Promise<OdesliEnrichedLinks> {
-  if (!url) return { links: {}, fromCache: false }
-
-  const cacheKey = odesliCacheKey(url)
-
-  try {
-    const cached = await redis.get<OdesliResponse>(cacheKey)
-    if (cached) return { ...extractLinks(cached), fromCache: true }
-  } catch { /* cache miss */ }
-
-  const response = await fetchWithRetry(
-    `https://api.song.link/v1-alpha.1/links?url=${encodeURIComponent(url)}&userCountry=US`,
-  )
-  if (!response.ok) {
-    return { links: {}, fromCache: false }
-  }
-
-  const data: OdesliResponse = await response.json()
-
-  // Only cache non-empty responses to avoid persisting failures for 24h
-  const hasLinks = data.linksByPlatform && Object.keys(data.linksByPlatform).length > 0
-  if (hasLinks) {
-    try { await redis.set(cacheKey, data, { ex: ODESLI_CACHE_TTL }) } catch { /* non-fatal */ }
-  }
-
-  return { ...extractLinks(data), fromCache: false }
-}
-
-function extractLinks(data: OdesliResponse): Omit<OdesliEnrichedLinks, 'fromCache'> {
-  const p = data.linksByPlatform
-  if (!p) return { links: {} }
-
-  let entityType: string | undefined
-  if (data.entityUniqueId && data.entitiesByUniqueId) {
-    entityType = data.entitiesByUniqueId[data.entityUniqueId]?.type
-  }
-
-  return {
-    links: {
-      spotify: p.spotify?.url,
-      // IMPORTANT: clean the appleMusic URL from Odesli — Odesli itself returns
-      // geo.music.apple.com URLs in linksByPlatform.appleMusic. We must clean here
-      // so the stored URL is always a canonical music.apple.com URL.
-      appleMusic: p.appleMusic?.url ? cleanAppleMusicUrl(p.appleMusic.url) : undefined,
-      soundcloud: p.soundcloud?.url,
-      youtube: p.youtube?.url,
-      bandcamp: p.bandcamp?.url,
-      deezer: p.deezer?.url,
-      tidal: p.tidal?.url,
-      amazonMusic: p.amazon?.url,
-    },
-    entityType,
-  }
-}
-
 /**
  * Apply MusicBrainz metadata (type + date) from the pre-fetched map to a release.
  * Pure data transformation — no API calls.
@@ -434,38 +313,28 @@ async function enrichRelease(
   let tracklistFetched = false
 
   // ── Step 1: Odesli — use iTunes Apple Music URL as primary search term ──
-  // cleanAppleMusicUrl is called here as a safety net in case any dirty URL
+  // cleanAppleMusicUrl is applied defensively here in case any dirty URL
   // survived from a previous Redis write (e.g. pre-fix data). At this point
   // the URL should already be clean (set by fetchITunesReleases), but we
-  // apply it again defensively.
+  // apply it again as a safety net.
   const rawAppleUrl = (release.streamingLinks ?? []).find(l => l.platform === 'appleMusic')?.url
   const currentAppleUrl = rawAppleUrl ? cleanAppleMusicUrl(rawAppleUrl) : undefined
   const currentSpotifyUrl = (release.streamingLinks ?? []).find(l => l.platform === 'spotify')?.url
   // Prefer Apple Music URL; fall back to Spotify if unavailable
   const odesliLookupUrl = currentAppleUrl ?? currentSpotifyUrl ?? ''
 
-  const { links, entityType: odesliEntityType, fromCache } = await enrichWithOdesli(odesliLookupUrl, redis)
+  const { links: odesliLinks, entityType: odesliEntityType, fromCache } = await fetchOdesliLinks(odesliLookupUrl, redis)
 
-  const newLinks: StreamingLink[] = [...(updated.streamingLinks ?? [])]
-  const updateLink = (plat: string, url: string | undefined) => {
-    if (!url) return
-    const idx = newLinks.findIndex(l => l.platform === plat)
-    if (idx >= 0) newLinks[idx].url = url
-    else newLinks.push({ platform: plat, url })
+  // Merge Odesli links into the existing streamingLinks — update if the
+  // platform is already present, otherwise append.
+  const mergedLinks: StreamingLink[] = [...(updated.streamingLinks ?? [])]
+  for (const oLink of odesliLinks) {
+    const idx = mergedLinks.findIndex(l => l.platform === oLink.platform)
+    if (idx >= 0) mergedLinks[idx].url = oLink.url
+    else mergedLinks.push(oLink)
   }
-
-  updateLink('spotify', links.spotify)
-  updateLink('soundcloud', links.soundcloud)
-  updateLink('youtube', links.youtube)
-  updateLink('bandcamp', links.bandcamp)
-  updateLink('deezer', links.deezer)
-  updateLink('tidal', links.tidal)
-  updateLink('amazonMusic', links.amazonMusic)
-  // appleMusic URL is already cleaned inside extractLinks() — safe to store directly
-  updateLink('appleMusic', links.appleMusic ? cleanAppleMusicUrl(links.appleMusic) : undefined)
-
-  updated.streamingLinks = newLinks
-  enriched = Object.values(links).some(Boolean)
+  updated.streamingLinks = mergedLinks
+  enriched = odesliLinks.length > 0
 
   // Only delay when we actually hit the Odesli API (not a Redis cache hit)
   if (!fromCache) await delay(ODESLI_DELAY_MS)
@@ -537,7 +406,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   }
 
   if (!isRedisConfigured()) {
-    res.status(503).json({ error: 'Redis not configured' }); return }
+    res.status(503).json({ error: 'Redis not configured' }); return
   }
 
   const redis = getRedisOrNull()!
