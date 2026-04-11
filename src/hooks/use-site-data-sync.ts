@@ -34,6 +34,7 @@ export function useSiteDataSync(
     setITunesFetching(true)
     setITunesProgress(null)
     try {
+      // Phase 1: iTunes + MusicBrainz → immediate band-data write + queue
       const response = await fetch('/api/releases-enrich', {
         method: 'POST',
         credentials: 'same-origin',
@@ -47,14 +48,44 @@ export function useSiteDataSync(
       }
 
       const data = await response.json()
+      const total: number = data.queued ?? 0
+
+      // Releases are now in band-data (iTunes + MB, without streaming links) — show them immediately
       refetchSiteData?.()
       updateReleasesSync(Date.now())
 
+      if (total === 0) {
+        if (!isAutoLoad) toast.success('No releases found.')
+        return
+      }
+
+      // Phase 2: Browser loops the worker until all Odesli enrichment is done
+      let processed = 0
+      while (true) {
+        const workerRes = await fetch('/api/releases-enrich-worker', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+        })
+        if (!workerRes.ok) break  // non-fatal: worker may time out, cron will finish
+
+        const workerData = await workerRes.json()
+        processed = workerData.processed ?? (workerData.done ? total : processed)
+
+        setITunesProgress({ current: processed, total, currentTitle: workerData.currentTitle ?? '' })
+
+        if (workerData.done) {
+          // Final band-data write happened — refetch to get fully enriched releases
+          refetchSiteData?.()
+          break
+        }
+
+        // Small breathing room between worker calls
+        await new Promise(r => setTimeout(r, 200))
+      }
+
       if (!isAutoLoad) {
-        const parts: string[] = []
-        if (typeof data.synced === 'number') parts.push(`${data.synced} releases synced from iTunes.`)
-        if (typeof data.enriched === 'number') parts.push(`${data.enriched} enriched with streaming links.`)
-        toast.success(parts.length > 0 ? parts.join(' ') : 'Releases synced successfully.')
+        toast.success(`${total} releases synced and enriched.`)
       }
     } catch (error) {
       if (!isAutoLoad) toast.error('Failed to sync releases from iTunes')

@@ -68,7 +68,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       return
     }
 
-    const { releases, mbMap: mbMapRecord, processedCount } = queue
+    const { releases, mbMap: mbMapRecord, processedCount, artistName } = queue
     const total = releases.length
 
     // 2. Check if already done
@@ -88,7 +88,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     const release = releases[processedCount]
     let enrichedRelease: Release = release
     try {
-      const result = await enrichRelease(release, redis, mbMap)
+      const result = await enrichRelease(release, redis, mbMap, artistName ?? 'Zardonic')
       enrichedRelease = result.release
     } catch (enrichErr) {
       console.warn(`[releases-enrich-worker] Failed to enrich release "${release.title}", keeping original:`, enrichErr)
@@ -133,6 +133,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       done: false,
       processed: newProcessedCount,
       remaining: total - newProcessedCount,
+      currentTitle: releases[newProcessedCount]?.title ?? '',
     })
   } catch (error) {
     console.error('[releases-enrich-worker] Unexpected error:', error)
