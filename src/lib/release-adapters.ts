@@ -11,6 +11,27 @@
 import type { Release as StoredRelease } from '@/lib/app-types'
 import type { Release as FullRelease } from '@/lib/types'
 
+/**
+ * Normalize a release loaded from KV into the canonical StoredRelease format.
+ *
+ * Older releases persisted to KV may have `streamingLinks` stored as a plain
+ * object (`{ spotify: "url", youtube: "url" }`) instead of the current array
+ * format (`[{ platform: "spotify", url: "url" }]`).  Calling `.find()` on an
+ * object throws a TypeError at runtime, which crashes the Releases section.
+ * This function converts the legacy object shape to the array shape so all
+ * downstream code can safely call `Array.prototype.find` / `.map` etc.
+ */
+export function normalizeStoredRelease(r: StoredRelease): StoredRelease {
+  const links = r.streamingLinks
+  if (!links || Array.isArray(links)) return r
+  // Legacy object format → convert to array
+  const arr: Array<{ platform: string; url: string }> = []
+  for (const [platform, url] of Object.entries(links as Record<string, unknown>)) {
+    if (typeof url === 'string' && url) arr.push({ platform, url })
+  }
+  return { ...r, streamingLinks: arr }
+}
+
 /** Convert a `types.ts` Release (streamingLinks object) to the persisted array format. */
 export function fullReleaseToStored(release: FullRelease): StoredRelease {
   const links = release.streamingLinks ?? {}

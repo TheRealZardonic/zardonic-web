@@ -21,10 +21,11 @@ import { validateSession } from './auth.js'
 import { timingSafeEqual } from 'node:crypto'
 import {
   msToTime,
-  isTrustedHost,
   mbTypeToReleaseType,
-  searchMusicBrainz,
-  fetchMusicBrainzRelease,
+  fetchAllMBRecordingsByArtist,
+  buildMBReleaseTitleMap,
+  matchITunesReleaseToMBData,
+  type MbReleaseData,
 } from './_musicbrainz.js'
 
 function verifyCronSecret(provided: string): boolean {
@@ -44,7 +45,6 @@ const ARTIST_NAME = 'Zardonic'
 const BAND_DATA_KEY = 'band-data'
 const ODESLI_DELAY_MS = 3000
 const ODESLI_CACHE_TTL = 86400
-const MB_DELAY_MS = 1500
 const SPOTIFY_ARTIST_ID = '2VjGthYSFI6xGKJqbR7IXm'
 
 interface StreamingLink {
@@ -354,75 +354,54 @@ function extractLinks(data: OdesliResponse): OdesliEnrichedLinks {
   }
 }
 
-/** Enrich a single release with MusicBrainz metadata + Odesli platform links. */
+/**
+ * Enrich a single release with MusicBrainz metadata (from pre-fetched map) +
+ * Odesli platform links.
+ *
+ * MusicBrainz data is matched locally from the `mbMap` built once before the
+ * loop — no per-release API call to MusicBrainz.
+ *
+ * Odesli receives the iTunes Apple Music URL as the primary search term, which
+ * is the most reliable identifier for a release.
+ */
 async function enrichRelease(
   release: Release,
   redis: NonNullable<ReturnType<typeof getRedisOrNull>>,
+  mbMap: Map<string, MbReleaseData>,
 ): Promise<{ release: Release; enriched: boolean; typeDetected: boolean; tracklistFetched: boolean }> {
   const updated: Release = { ...release }
   let enriched = false
   let typeDetected = false
   let tracklistFetched = false
-
-  let mbSpotifyUrl: string | undefined
-  let mbAppleMusicUrl: string | undefined
-  let odesliEntityType: string | undefined
-
-  // ── MusicBrainz: metadata, type, tracklist, streaming URLs ──
+  // ── MusicBrainz: apply locally-matched metadata (type + date) ──
   try {
-    const cleanedTitle = release.title
-      .replace(/\s*-\s*(EP|Single|Remixes|Remix|Deluxe Edition|Special Edition)\s*$/i, '')
-      .replace(/\s*\(feat\.[^)]*\)/gi, '')
-      .trim()
-
-    const mbSearch = await searchMusicBrainz(cleanedTitle, ARTIST_NAME)
-    if (mbSearch) {
-      const mbFull = await fetchMusicBrainzRelease(mbSearch.id)
-      if (mbFull) {
-        const detectedType = mbTypeToReleaseType(mbFull['primary-type'], mbFull['secondary-types'])
-        if (detectedType) {
-          updated.type = detectedType
-          typeDetected = true
-        }
-
-        if (mbFull.date) {
-          updated.releaseDate = mbFull.date.length === 4 ? `${mbFull.date}-01-01` : mbFull.date
-          updated.year = mbFull.date.slice(0, 4)
-        }
-
-        const allTracks: Array<{ title: string; duration?: string }> = []
-        for (const medium of mbFull.media ?? []) {
-          for (const t of medium.tracks ?? []) {
-            allTracks.push({ title: t.title, duration: t.length ? msToTime(t.length) : undefined })
-          }
-        }
-        if (allTracks.length > 0) {
-          updated.tracks = allTracks
-          updated.trackCount = allTracks.length
-          tracklistFetched = true
-        }
-
-        for (const rel of mbFull.relations ?? []) {
-          const u = rel.url?.resource ?? ''
-          if (!mbSpotifyUrl && isTrustedHost(u, 'open.spotify.com'))  mbSpotifyUrl = u
-          if (!mbAppleMusicUrl && isTrustedHost(u, 'music.apple.com')) mbAppleMusicUrl = u
-        }
+    const mbData = matchITunesReleaseToMBData(release.title, mbMap)
+    if (mbData) {
+      const detectedType = mbTypeToReleaseType(mbData.primaryType, mbData.secondaryTypes)
+      if (detectedType) {
+        updated.type = detectedType
+        typeDetected = true
+      }
+      if (mbData.date) {
+        updated.releaseDate = mbData.date.length === 4 ? `${mbData.date}-01-01` : mbData.date
+        updated.year = mbData.date.slice(0, 4)
       }
     }
   } catch {
-    // MusicBrainz lookup failed — continue with what we have
+    // MB matching failed — continue with what we have
   }
-  await delay(MB_DELAY_MS)
 
-  // ── Odesli: cross-platform streaming links ──
-  const currentAppleUrl = release.streamingLinks?.find(l => l.platform === 'appleMusic')?.url
-  const currentSpotifyUrl = release.streamingLinks?.find(l => l.platform === 'spotify')?.url
-  const odesliLookupUrl = mbSpotifyUrl ?? mbAppleMusicUrl ?? currentSpotifyUrl ?? currentAppleUrl ?? ''
+  // ── Odesli: use iTunes Apple Music URL as primary search term ──
+  // The complete iTunes collection URL is the most reliable identifier for
+  // Odesli to resolve all streaming platform links for a release.
+  const currentAppleUrl = (release.streamingLinks ?? []).find(l => l.platform === 'appleMusic')?.url
+  const currentSpotifyUrl = (release.streamingLinks ?? []).find(l => l.platform === 'spotify')?.url
+  // Prefer iTunes URL; fall back to Spotify if Apple Music URL is unavailable
+  const odesliLookupUrl = currentAppleUrl ?? currentSpotifyUrl ?? ''
 
-  const { links, entityType } = await enrichWithOdesli(odesliLookupUrl, redis)
-  odesliEntityType = entityType
+  const { links, entityType: odesliEntityType } = await enrichWithOdesli(odesliLookupUrl, redis)
 
-  const newLinks: StreamingLink[] = [...(updated.streamingLinks || [])]
+  const newLinks: StreamingLink[] = [...(updated.streamingLinks ?? [])]
   const updateLink = (plat: string, url: string | undefined) => {
     if (!url) return
     const idx = newLinks.findIndex(l => l.platform === plat)
@@ -507,7 +486,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       return
     }
 
-    // 2 + 3. Enrich EVERY release with MusicBrainz + Odesli (fresh data, no caching of enrichment state)
+    // 2. Fetch ALL MusicBrainz recordings by artist in a SINGLE query, then
+    //    build a lookup map for local title-based matching (no per-release API calls).
+    let mbMap: Map<string, MbReleaseData> = new Map()
+    try {
+      const mbRecordings = await fetchAllMBRecordingsByArtist(ARTIST_NAME)
+      mbMap = buildMBReleaseTitleMap(mbRecordings)
+      console.log(`[releases-enrich] MusicBrainz: fetched ${mbRecordings.length} recordings, built map with ${mbMap.size} distinct releases`)
+    } catch (mbErr) {
+      console.warn('[releases-enrich] MusicBrainz bulk fetch failed — continuing without MB metadata:', mbErr)
+    }
+
+    // 3. Enrich EVERY release with MusicBrainz (local match) + Odesli (no caching of enrichment state)
     let enrichedCount = 0
     let typeDetectedCount = 0
     let tracklistsFetchedCount = 0
@@ -515,7 +505,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     const enrichedReleases: Release[] = []
     for (const release of releases) {
       try {
-        const result = await enrichRelease(release, redis)
+        const result = await enrichRelease(release, redis, mbMap)
         enrichedReleases.push(result.release)
         if (result.enriched) enrichedCount++
         if (result.typeDetected) typeDetectedCount++

@@ -56,6 +56,10 @@ export interface MediaFile {
 export interface CreditHighlight {
   src: string
   alt: string
+  /** Optional caption displayed below the image */
+  caption?: string
+  /** Optional URL opened when the image is clicked */
+  url?: string
 }
 
 export interface HeroLink {

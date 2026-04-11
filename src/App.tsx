@@ -7,7 +7,7 @@ import { trackPageView, trackHeatmapClick } from '@/hooks/use-analytics'
 import { useAnalyticsConsent, CookieConsent } from '@/components/CookieConsent'
 import { useAdminAuth } from '@/hooks/use-admin-auth'
 import type { AdminSettings, SectionLabels, Release as FullRelease, TerminalCommand } from '@/lib/types'
-import { fullReleaseToStored, mergeFullReleaseIntoStored } from '@/lib/release-adapters'
+import { fullReleaseToStored, mergeFullReleaseIntoStored, normalizeStoredRelease } from '@/lib/release-adapters'
 import { useAppTheme } from '@/hooks/use-app-theme'
 import { useSiteDataSync } from '@/hooks/use-site-data-sync'
 import { LocaleProvider } from '@/contexts/LocaleContext'
@@ -166,8 +166,14 @@ function App() {
 
   useEffect(() => {
     if (isSiteDataLoaded) {
+      // Normalize releases loaded from KV: legacy entries may have streamingLinks
+      // stored as a plain object instead of the current array format, which causes
+      // a runtime TypeError when .find() is called on the object.
+      const normalized = kvSiteData
+        ? { ...kvSiteData, releases: (kvSiteData.releases ?? []).map(normalizeStoredRelease) }
+        : kvSiteData
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSiteData(kvSiteData)
+      setSiteData(normalized)
     }
   }, [kvSiteData, isSiteDataLoaded])
 
@@ -254,6 +260,38 @@ function App() {
   useAppTheme(adminSettings)
   const { iTunesFetching, bandsintownFetching, hasAutoLoaded, iTunesProgress, handleFetchBandsintownEvents, handleFetchITunesReleases } = useSiteDataSync(siteData, isSiteDataLoaded, refetchSiteData, isOwner)
   useDocumentTitle(siteData?.artistName ?? '')
+
+  const handleResetReleases = useCallback(async () => {
+    const resp = await fetch('/api/data-reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ target: 'releases' }),
+    })
+    if (resp.ok) {
+      handleUpdateSiteData(prev => ({ ...prev, releases: [] }))
+      refetchSiteData()
+    } else {
+      const err = await resp.json().catch(() => ({}))
+      throw new Error((err as { error?: string }).error ?? `HTTP ${resp.status}`)
+    }
+  }, [handleUpdateSiteData, refetchSiteData])
+
+  const handleResetGigs = useCallback(async () => {
+    const resp = await fetch('/api/data-reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ target: 'gigs' }),
+    })
+    if (resp.ok) {
+      handleUpdateSiteData(prev => ({ ...prev, gigs: [] }))
+      refetchSiteData()
+    } else {
+      const err = await resp.json().catch(() => ({}))
+      throw new Error((err as { error?: string }).error ?? `HTTP ${resp.status}`)
+    }
+  }, [handleUpdateSiteData, refetchSiteData])
 
   // If the effective loader type is 'none' (either from localStorage or KV),
   // skip loading immediately — covers both first-render and late KV arrival.
@@ -426,6 +464,8 @@ function App() {
                 onLogout={handleLogout}
                 onFetchBandsintown={handleFetchBandsintownEvents}
                 onFetchITunes={handleFetchITunesReleases}
+                onResetReleases={handleResetReleases}
+                onResetGigs={handleResetGigs}
               />
             )}
 

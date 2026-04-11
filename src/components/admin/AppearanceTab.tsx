@@ -537,9 +537,10 @@ export default function AppearanceTab({
           Spotify Player Color
         </h3>
         <p className="font-mono text-[11px] text-muted-foreground">
-          Shifts the Spotify embed's accent color via CSS hue-rotate. The auto value is derived
-          from the primary color hue (primaryHue − 141°). Use the override to fine-tune.
+          Fine-tune the Spotify embed's color via CSS filters. Hue auto-derives from the primary color (primaryHue − 141°). Saturation and brightness let you boost or reduce color intensity and lightness.
         </p>
+
+        {/* Hue Rotation */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label className="font-mono text-xs">Hue Rotation Override</Label>
@@ -573,6 +574,77 @@ export default function AppearanceTab({
             <span>+180°</span>
           </div>
         </div>
+
+        {/* Saturation */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="font-mono text-xs">Saturation Override</Label>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-xs text-muted-foreground tabular-nums w-16 text-right">
+                {typeof theme.spotifySaturate === 'number'
+                  ? `${theme.spotifySaturate.toFixed(2)}×`
+                  : 'auto (1.20×)'}
+              </span>
+              {typeof theme.spotifySaturate === 'number' && (
+                <button
+                  onClick={() => updateTheme('spotifySaturate', '')}
+                  className="font-mono text-[10px] text-muted-foreground hover:text-primary transition-colors border border-border hover:border-primary px-1.5 py-0.5 rounded"
+                  title="Reset to default (1.2)"
+                >
+                  reset
+                </button>
+              )}
+            </div>
+          </div>
+          <Slider
+            value={[typeof theme.spotifySaturate === 'number' ? theme.spotifySaturate : 1.2]}
+            min={0}
+            max={3}
+            step={0.05}
+            onValueChange={([v]) => updateTheme('spotifySaturate', String(v))}
+          />
+          <div className="flex justify-between font-mono text-[10px] text-muted-foreground">
+            <span>0× (grey)</span>
+            <span>1×</span>
+            <span>3× (vivid)</span>
+          </div>
+        </div>
+
+        {/* Brightness */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="font-mono text-xs">Brightness Override</Label>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-xs text-muted-foreground tabular-nums w-16 text-right">
+                {typeof theme.spotifyBrightness === 'number'
+                  ? `${theme.spotifyBrightness.toFixed(2)}×`
+                  : 'auto (1.00×)'}
+              </span>
+              {typeof theme.spotifyBrightness === 'number' && (
+                <button
+                  onClick={() => updateTheme('spotifyBrightness', '')}
+                  className="font-mono text-[10px] text-muted-foreground hover:text-primary transition-colors border border-border hover:border-primary px-1.5 py-0.5 rounded"
+                  title="Reset to default (1.0)"
+                >
+                  reset
+                </button>
+              )}
+            </div>
+          </div>
+          <Slider
+            value={[typeof theme.spotifyBrightness === 'number' ? theme.spotifyBrightness : 1]}
+            min={0}
+            max={2}
+            step={0.05}
+            onValueChange={([v]) => updateTheme('spotifyBrightness', String(v))}
+          />
+          <div className="flex justify-between font-mono text-[10px] text-muted-foreground">
+            <span>0× (dark)</span>
+            <span>1×</span>
+            <span>2× (bright)</span>
+          </div>
+        </div>
+
         {/* Live preview swatch */}
         <div className="flex items-center gap-2 text-[11px] font-mono text-muted-foreground">
           <div
@@ -584,10 +656,10 @@ export default function AppearanceTab({
           <div
             className="w-5 h-5 rounded-sm border border-border shrink-0"
             style={{
-              filter: `hue-rotate(var(--spotify-hue-rotate, -116deg)) saturate(1.2)`,
+              filter: `hue-rotate(var(--spotify-hue-rotate, -116deg)) saturate(var(--spotify-saturate, 1.2)) brightness(var(--spotify-brightness, 1))`,
               backgroundColor: 'oklch(0.65 0.29 141)',
             }}
-            title="After hue-rotate"
+            title="After filter"
           />
           <span className="opacity-70">Preview: Spotify green → CI color</span>
         </div>

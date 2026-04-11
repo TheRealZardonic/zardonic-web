@@ -81,12 +81,12 @@ async function fetchOdesliLinks(
   try {
     const cached = await redis.get<OdesliResponse>(cacheKey)
     if (cached) return cached
-  } catch { }
+  } catch { /* redis cache miss is non-fatal */ }
   const apiUrl = `https://api.song.link/v1-alpha.1/links?url=${encodeURIComponent(lookupUrl)}&userCountry=US`
   const res = await fetchWithRetry(apiUrl)
   if (!res.ok) return null
   const data: OdesliResponse = await res.json()
-  try { await redis.set(cacheKey, data, { ex: ODESLI_CACHE_TTL }) } catch { }
+  try { await redis.set(cacheKey, data, { ex: ODESLI_CACHE_TTL }) } catch { /* cache write failure is non-fatal */ }
   return data
 }
 
@@ -163,7 +163,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       if (fromTitle && !updated.type) updated.type = fromTitle
     }
 
-    const odesliLookupUrl = mbSpotifyUrl ?? mbAppleMusicUrl ?? existingAppleUrl
+    const odesliLookupUrl = existingAppleUrl ?? mbSpotifyUrl ?? mbAppleMusicUrl
     if (odesliLookupUrl) {
       const odesli = await fetchOdesliLinks(odesliLookupUrl, redis)
       if (odesli?.linksByPlatform) {

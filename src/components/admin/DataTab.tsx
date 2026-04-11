@@ -1,7 +1,7 @@
 // @deprecated — replaced by functional CMS dashboards (e.g. ReleasesEditor, InboxEditor). Do not extend.
 import { useState, useCallback } from 'react'
 import { TabsContent } from '@/components/ui/tabs'
-import { Export, ArrowSquareIn, ArrowsClockwise, MapPin } from '@phosphor-icons/react'
+import { Export, ArrowSquareIn, ArrowsClockwise, MapPin, Trash } from '@phosphor-icons/react'
 import type { SiteData } from '@/App'
 
 interface DataTabProps {
@@ -12,11 +12,15 @@ interface DataTabProps {
   onImportClick: () => void
   onFetchBandsintown?: () => Promise<void>
   onFetchITunes?: () => Promise<void>
+  onResetReleases?: () => Promise<void>
+  onResetGigs?: () => Promise<void>
 }
 
-export default function DataTab({ siteData, onRefreshSiteData, onExport, onImportClick, onFetchBandsintown, onFetchITunes }: DataTabProps) {
+export default function DataTab({ siteData, onRefreshSiteData, onExport, onImportClick, onFetchBandsintown, onFetchITunes, onResetReleases, onResetGigs }: DataTabProps) {
   const [isGigsSyncing, setIsGigsSyncing] = useState(false)
   const [isReleasesSyncing, setIsReleasesSyncing] = useState(false)
+  const [isReleasesResetting, setIsReleasesResetting] = useState(false)
+  const [isGigsResetting, setIsGigsResetting] = useState(false)
 
   const handleGigsSync = useCallback(async () => {
     if (!onFetchBandsintown || isGigsSyncing) return
@@ -38,6 +42,28 @@ export default function DataTab({ siteData, onRefreshSiteData, onExport, onImpor
       setIsReleasesSyncing(false)
     }
   }, [onFetchITunes, isReleasesSyncing, onRefreshSiteData])
+
+  const handleResetReleases = useCallback(async () => {
+    if (!onResetReleases || isReleasesResetting) return
+    setIsReleasesResetting(true)
+    try {
+      await onResetReleases()
+      onRefreshSiteData?.()
+    } finally {
+      setIsReleasesResetting(false)
+    }
+  }, [onResetReleases, isReleasesResetting, onRefreshSiteData])
+
+  const handleResetGigs = useCallback(async () => {
+    if (!onResetGigs || isGigsResetting) return
+    setIsGigsResetting(true)
+    try {
+      await onResetGigs()
+      onRefreshSiteData?.()
+    } finally {
+      setIsGigsResetting(false)
+    }
+  }, [onResetGigs, isGigsResetting, onRefreshSiteData])
 
   return (
     <TabsContent value="data" className="flex-1 overflow-y-auto p-4 space-y-4 mt-0">
@@ -124,6 +150,55 @@ export default function DataTab({ siteData, onRefreshSiteData, onExport, onImpor
               </div>
               <div className="font-mono text-xs text-muted-foreground">
                 Fetches upcoming shows from Bandsintown, geocodes missing lat/lon via OpenStreetMap
+              </div>
+            </div>
+          </button>
+        </div>
+
+        {/* ── Danger Zone ──────────────────────────────────────────────── */}
+        <div className="border-t border-red-800/40 pt-3 space-y-2">
+          <h4 className="font-mono text-xs font-bold text-red-500 uppercase tracking-wider mb-3">
+            Danger Zone
+          </h4>
+
+          {/* Delete All Releases */}
+          <button
+            onClick={handleResetReleases}
+            disabled={isReleasesResetting || !onResetReleases}
+            className="w-full flex items-center gap-4 p-4 bg-background border border-red-800/40 rounded-md hover:border-red-500 text-left transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Trash
+              size={20}
+              weight="bold"
+              className={`text-red-500 shrink-0 ${isReleasesResetting ? 'animate-pulse' : ''}`}
+            />
+            <div>
+              <div className="font-mono text-sm font-bold text-red-400 group-hover:text-red-300 transition-colors">
+                {isReleasesResetting ? 'Clearing Releases…' : 'Delete All Releases'}
+              </div>
+              <div className="font-mono text-xs text-muted-foreground">
+                Permanently removes all release data from the server. Use before a fresh import.
+              </div>
+            </div>
+          </button>
+
+          {/* Delete All Gigs */}
+          <button
+            onClick={handleResetGigs}
+            disabled={isGigsResetting || !onResetGigs}
+            className="w-full flex items-center gap-4 p-4 bg-background border border-red-800/40 rounded-md hover:border-red-500 text-left transition-colors group disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Trash
+              size={20}
+              weight="bold"
+              className={`text-red-500 shrink-0 ${isGigsResetting ? 'animate-pulse' : ''}`}
+            />
+            <div>
+              <div className="font-mono text-sm font-bold text-red-400 group-hover:text-red-300 transition-colors">
+                {isGigsResetting ? 'Clearing Gigs…' : 'Delete All Gigs'}
+              </div>
+              <div className="font-mono text-xs text-muted-foreground">
+                Permanently removes all gig data from the server. Use before a fresh import.
               </div>
             </div>
           </button>

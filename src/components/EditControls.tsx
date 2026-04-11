@@ -30,6 +30,8 @@ interface EditControlsProps {
   onLogout?: () => Promise<void>
   onFetchBandsintown?: () => Promise<void>
   onFetchITunes?: () => Promise<void>
+  onResetReleases?: () => Promise<void>
+  onResetGigs?: () => Promise<void>
 }
 
 export default function EditControls({
@@ -54,6 +56,8 @@ export default function EditControls({
   onLogout,
   onFetchBandsintown,
   onFetchITunes,
+  onResetReleases,
+  onResetGigs,
 }: EditControlsProps) {
   const [adminPanelOpen, setAdminPanelOpen] = useState(false)
   const [showLoginDialog, setShowLoginDialog] = useState(false)
@@ -138,6 +142,8 @@ export default function EditControls({
           onOpenSubscriberList={onOpenSubscriberList}
           onFetchBandsintown={onFetchBandsintown}
           onFetchITunes={onFetchITunes}
+          onResetReleases={onResetReleases}
+          onResetGigs={onResetGigs}
           editMode={editMode}
           onToggleEdit={onToggleEdit}
           hasPassword={hasPassword}

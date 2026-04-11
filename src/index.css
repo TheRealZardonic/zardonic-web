@@ -2123,7 +2123,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .spotify-ci-embed iframe {
-  filter: hue-rotate(var(--spotify-hue-rotate, -116deg)) saturate(1.2);
+  filter: hue-rotate(var(--spotify-hue-rotate, -116deg)) saturate(var(--spotify-saturate, 1.2)) brightness(var(--spotify-brightness, 1));
   border-radius: 0 !important;
   /* Scale up slightly so Spotify's internal border-radius is clipped by the
      overflow:hidden container above, making corners visually square. */

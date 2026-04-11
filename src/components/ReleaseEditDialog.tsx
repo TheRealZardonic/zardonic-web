@@ -38,9 +38,7 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
 
   useEffect(() => {
     if (release) {
-      const getLink = (arr: any[], plat: string) => arr?.find((l: any) => l.platform === plat)?.url || ''
-      const links = release.streamingLinks || []
-      
+      const links = release.streamingLinks ?? {}
       setFormData({
         title: release.title,
         type: release.type || '',
@@ -48,12 +46,12 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
         releaseDate: release.releaseDate || '',
         description: release.description || '',
         featured: release.featured || false,
-        spotify: getLink(links, 'spotify'),
-        soundcloud: getLink(links, 'soundcloud'),
-        bandcamp: getLink(links, 'bandcamp'),
-        youtube: getLink(links, 'youtube'),
-        appleMusic: getLink(links, 'appleMusic'),
-        beatport: getLink(links, 'beatport')
+        spotify: links.spotify || '',
+        soundcloud: links.soundcloud || '',
+        bandcamp: links.bandcamp || '',
+        youtube: links.youtube || '',
+        appleMusic: links.appleMusic || '',
+        beatport: links.beatport || ''
       })
       setTracks(release.tracks || [])
     }
@@ -152,13 +150,13 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
         }
       }
 
-      const streamingLinksArray = []
-      if (spotify) streamingLinksArray.push({ platform: 'spotify', url: spotify })
-      if (soundcloud) streamingLinksArray.push({ platform: 'soundcloud', url: soundcloud })
-      if (bandcamp) streamingLinksArray.push({ platform: 'bandcamp', url: bandcamp })
-      if (youtube) streamingLinksArray.push({ platform: 'youtube', url: youtube })
-      if (appleMusic) streamingLinksArray.push({ platform: 'appleMusic', url: appleMusic })
-      if (beatport) streamingLinksArray.push({ platform: 'beatport', url: beatport })
+      const streamingLinks: Release['streamingLinks'] = {}
+      if (spotify) streamingLinks.spotify = spotify
+      if (soundcloud) streamingLinks.soundcloud = soundcloud
+      if (bandcamp) streamingLinks.bandcamp = bandcamp
+      if (youtube) streamingLinks.youtube = youtube
+      if (appleMusic) streamingLinks.appleMusic = appleMusic
+      if (beatport) streamingLinks.beatport = beatport
 
       onSave({
         id: release?.id || Date.now().toString(),
@@ -168,7 +166,7 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
         releaseDate: formData.releaseDate || undefined,
         description: formData.description || undefined,
         featured: formData.featured || undefined,
-        streamingLinks: streamingLinksArray,
+        streamingLinks: Object.keys(streamingLinks).length > 0 ? streamingLinks : undefined,
         tracks: tracks.length > 0 ? tracks : undefined
       })
     } finally {

@@ -50,6 +50,44 @@ export interface MbFullRelease {
   relations?: MbRelation[]
 }
 
+// ─── Recording-based bulk fetch types ────────────────────────────────────────
+
+interface MbReleaseRef {
+  id: string
+  title: string
+  date?: string
+  'release-group'?: {
+    id: string
+    'primary-type'?: string
+    'secondary-types'?: string[]
+  }
+}
+
+interface MbRecording {
+  id: string
+  title: string
+  length?: number
+  'first-release-date'?: string
+  releases?: MbReleaseRef[]
+}
+
+interface MbRecordingSearchResponse {
+  recordings?: MbRecording[]
+  count?: number
+  offset?: number
+}
+
+/**
+ * A condensed map entry derived from MB recordings for matching against
+ * iTunes release titles.
+ */
+export interface MbReleaseData {
+  title: string
+  date?: string
+  primaryType?: string
+  secondaryTypes?: string[]
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /** Format milliseconds to M:SS */
@@ -110,4 +148,83 @@ export async function fetchMusicBrainzRelease(mbid: string): Promise<MbFullRelea
   const res = await fetchWithRetry(url, { headers: { 'User-Agent': MB_USER_AGENT } })
   if (!res.ok) return null
   return res.json() as Promise<MbFullRelease>
+}
+
+// ─── Bulk recording fetch + local matching ────────────────────────────────────
+
+/**
+ * Normalize a release/recording title for fuzzy comparison:
+ * lowercase, strip common suffixes like " - EP", "(feat. …)", and extra spaces.
+ */
+function normalizeTitle(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/\s*-\s*(ep|single|remixes?|deluxe edition|special edition)\s*$/i, '')
+    .replace(/\s*\(feat\.[^)]*\)/gi, '')
+    .replace(/\s*\[[^\]]*\]/g, '')
+    .replace(/[\u2018\u2019`]/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/**
+ * Fetch all recordings by artist from MusicBrainz in a single request
+ * (up to `limit` results, default 100).
+ *
+ * Uses the /ws/2/recording endpoint with `inc=releases+release-groups` so each
+ * recording carries its parent release info (type, date).
+ */
+export async function fetchAllMBRecordingsByArtist(
+  artistName: string,
+  limit = 100,
+): Promise<MbRecording[]> {
+  const query = `artist:"${artistName}"`
+  const url = `https://musicbrainz.org/ws/2/recording?query=${encodeURIComponent(query)}&fmt=json&limit=${limit}&inc=releases+release-groups`
+  const res = await fetchWithRetry(url, { headers: { 'User-Agent': MB_USER_AGENT } })
+  if (!res.ok) return []
+  const data: MbRecordingSearchResponse = await res.json()
+  return data.recordings ?? []
+}
+
+/**
+ * Build a lookup map from normalised release title → MB release metadata.
+ * Iterates all recordings and extracts the distinct parent releases.
+ */
+export function buildMBReleaseTitleMap(recordings: MbRecording[]): Map<string, MbReleaseData> {
+  const map = new Map<string, MbReleaseData>()
+  for (const rec of recordings) {
+    for (const rel of rec.releases ?? []) {
+      const key = normalizeTitle(rel.title)
+      if (!map.has(key)) {
+        map.set(key, {
+          title: rel.title,
+          date: rel.date,
+          primaryType: rel['release-group']?.['primary-type'],
+          secondaryTypes: rel['release-group']?.['secondary-types'],
+        })
+      }
+    }
+  }
+  return map
+}
+
+/**
+ * Try to find MusicBrainz release data for an iTunes release title using the
+ * pre-built title map.  Returns `null` when no match is found.
+ */
+export function matchITunesReleaseToMBData(
+  itunesTitle: string,
+  map: Map<string, MbReleaseData>,
+): MbReleaseData | null {
+  const key = normalizeTitle(itunesTitle)
+  const exact = map.get(key)
+  if (exact) return exact
+
+  // Partial match: check whether any MB title starts with the normalized iTunes title
+  // (handles cases like "Villain - EP" matching iTunes "Villain")
+  for (const [mbKey, data] of map) {
+    if (mbKey.startsWith(key) || key.startsWith(mbKey)) return data
+  }
+
+  return null
 }

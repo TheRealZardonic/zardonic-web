@@ -81,6 +81,10 @@ export interface ThemeCustomization {
   // admin can fine-tune the embedded player's accent colour manually.
   // Range: -180 … 180 (or any integer; CSS hue-rotate wraps automatically).
   spotifyHueRotate?: number
+  /** Saturation multiplier for the Spotify embed filter. Default 1.2. Range 0–3. */
+  spotifySaturate?: number
+  /** Brightness multiplier for the Spotify embed filter. Default 1. Range 0–2. */
+  spotifyBrightness?: number
 }
 
 export type BackgroundType = 'circuit' | 'cyberpunk-hud' | 'matrix' | 'stars' | 'minimal' | 'cloud-chamber' | 'glitch-grid'

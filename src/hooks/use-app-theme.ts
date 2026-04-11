@@ -94,6 +94,13 @@ export function useAppTheme(adminSettings: AdminSettings | undefined): void {
       }
     }
 
+    if (typeof t.spotifySaturate === 'number') {
+      set('--spotify-saturate', String(t.spotifySaturate))
+    }
+    if (typeof t.spotifyBrightness === 'number') {
+      set('--spotify-brightness', String(t.spotifyBrightness))
+    }
+
     // Persist to localStorage so the inline script in index.html can restore
     // these values synchronously on the very next page load, preventing the
     // default-colour flash during the loading screen.
@@ -135,6 +142,8 @@ export function useAppTheme(adminSettings: AdminSettings | undefined): void {
       root.style.removeProperty('--accent-c')
       root.style.removeProperty('--accent-h')
       root.style.removeProperty('--spotify-hue-rotate')
+      root.style.removeProperty('--spotify-saturate')
+      root.style.removeProperty('--spotify-brightness')
     }
   }, [adminSettings?.theme])
 
