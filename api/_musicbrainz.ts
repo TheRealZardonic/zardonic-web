@@ -132,6 +132,9 @@ export async function searchMusicBrainz(title: string, artistName = 'Zardonic'):
     .replace(/\s*-\s*(single|ep|album|remix|remixes|deluxe edition|special edition)\s*$/i, '')
     .trim()
     .replace(/\\/g, '\\\\')
+    .replace(/\\/g, '\\\\')
+  const safeArtist = artistName
+    .replace(/\\/g, '\\\\')
     .replace(/"/g, '\\"')
   const safeArtist = artistName
     .replace(/\\/g, '\\\\')
