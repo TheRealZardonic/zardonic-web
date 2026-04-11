@@ -187,7 +187,9 @@ export function ReleaseOverlayContent({ data, sectionLabels }: ReleaseOverlayCon
                       <span className="block">{track.title}</span>
                       {data.type === 'compilation' && track.artist && (
                         <span className="block text-xs text-muted-foreground mt-0.5">
-                          {[track.artist, ...(track.featuredArtists ?? [])].join(', ')}
+                          {track.featuredArtists && track.featuredArtists.length > 0
+                            ? `${track.artist} ft. ${track.featuredArtists.join(', ')}`
+                            : track.artist}
                         </span>
                       )}
                       {data.type !== 'compilation' && track.featuredArtists && track.featuredArtists.length > 0 && (
