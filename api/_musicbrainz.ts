@@ -131,14 +131,13 @@ export async function searchMusicBrainz(title: string, artistName = 'Zardonic'):
   const cleanTitle = title
     .replace(/\s*-\s*(single|ep|album|remix|remixes|deluxe edition|special edition)\s*$/i, '')
     .trim()
-    .replace(/\\/g, '\\\\')
-    .replace(/"/g, '\\"')
-  const safeArtist = artistName
-    .replace(/\\/g, '\\\\')
-    .replace(/"/g, '\\"')
+  // Escape for Lucene quoted-string syntax in a single pass: \ → \\, " → \"
+  const escLucene = (s: string) => s.replace(/[\\"]/g, c => `\\${c}`)
+  const safeTitle = escLucene(cleanTitle)
+  const safeArtist = escLucene(artistName)
 
   // Try with artist filter first
-  const query1 = `release:"${cleanTitle}" AND artist:${safeArtist}`
+  const query1 = `release:"${safeTitle}" AND artist:${safeArtist}`
   const url1 = `https://musicbrainz.org/ws/2/release/?query=${encodeURIComponent(query1)}&fmt=json&limit=5`
   const res1 = await fetchWithRetry(url1, { headers: { 'User-Agent': MB_USER_AGENT } })
   if (res1.ok) {
@@ -147,7 +146,7 @@ export async function searchMusicBrainz(title: string, artistName = 'Zardonic'):
   }
 
   // Fallback: search by title only (no artist filter) — catches featured/collab releases
-  const query2 = `release:"${cleanTitle}"`
+  const query2 = `release:"${safeTitle}"`
   const url2 = `https://musicbrainz.org/ws/2/release/?query=${encodeURIComponent(query2)}&fmt=json&limit=5`
   const res2 = await fetchWithRetry(url2, { headers: { 'User-Agent': MB_USER_AGENT } })
   if (!res2.ok) return null
