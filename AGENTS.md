@@ -99,14 +99,17 @@ All admin and CMS form fields MUST be defined in schema registries — never har
 | Registry | File | Purpose |
 |---|---|---|
 | `FIELD_REGISTRY` | `src/cms/schemas.ts` | CMS fields keyed by `"schema.field"` (e.g. `"hero.headline"`) |
-| `SECTION_REGISTRY` | `src/lib/sections-registry.ts` | Admin panel section fields with `SectionConfigField[]` |
+| `SECTION_REGISTRY` | `src/lib/sections-registry.ts` | Admin panel *section* fields with `SectionConfigField[]` |
+| `DESIGN_REGISTRY` | `src/lib/sections-registry.ts` | Admin panel *global design* fields (layout, navigation, footer) |
 
 ### Rules
 
 *   **New CMS field** → add a `FieldMeta` entry to `FIELD_REGISTRY` in `src/cms/schemas.ts`. Never render a CMS field without an entry here.
 *   **New admin section field** → add a `SectionConfigField` to the appropriate entry in `SECTION_REGISTRY`. The `SectionFieldRenderer` and `SectionPanel` consume this automatically.
+*   **New global design/layout field** (e.g. a nav or footer setting) → add a `SectionConfigField` to the appropriate entry in `DESIGN_REGISTRY`. The `DesignPanel` component renders it automatically. Do **NOT** add manual Input/Slider/Switch JSX to `LayoutTab.tsx`.
+*   **Hero section settings** are in `SECTION_REGISTRY` under id `'hero'` (artistName, heroImage, heroImageOpacity, minHeight, heroImageBlur, paddingTop). Do NOT add hero style controls to `LayoutTab.tsx` — use `SECTION_REGISTRY` instead.
 *   **Generic CMS form rendering** → use `<SchemaFormRenderer fields={getFieldsForSchema('hero')} values={...} onChange={...} />` from `src/cms/components/SchemaFormRenderer.tsx`. This is the canonical way to render CMS fields in the sidebar.
-*   **Progressive disclosure**: set `advanced: true` on `FieldMeta` (CMS) or `disclosure: 'advanced' | 'expert'` on `SectionConfigField` (admin panel). Never build custom show/hide logic for field visibility.
+*   **Progressive disclosure**: set `advanced: true` on `FieldMeta` (CMS) or `disclosure: 'advanced' | 'expert'` on `SectionConfigField` / `DesignRegistryEntry` configField. Never build custom show/hide logic for field visibility.
 
 ## 11. Inversion of Control (IoC)
 

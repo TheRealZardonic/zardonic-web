@@ -100,7 +100,7 @@ export default function AdminPanel({
   editMode,
   onToggleEdit,
   hasPassword,
-  onChangePassword,
+  onChangePassword: _onChangePassword,
   onSetPassword,
   onLogout,
 }: AdminPanelProps) {

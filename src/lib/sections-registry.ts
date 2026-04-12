@@ -54,6 +54,77 @@ const FONT_SIZE_OPTIONS: SelectOption[] = [
 
 export const SECTION_REGISTRY: SectionRegistryEntry[] = [
   {
+    id: 'hero',
+    label: 'Hero',
+    labelKey: 'hero',
+    icon: 'House',
+    showInNav: false,
+    configFields: [
+      {
+        path: 'siteData.artistName',
+        label: 'Artist Name',
+        type: 'text',
+        placeholder: 'ZARDONIC',
+        description: 'The artist or band name displayed in the hero section.',
+        disclosure: 'basic',
+        targetSiteData: true,
+      },
+      {
+        path: 'siteData.heroImage',
+        label: 'Background Image',
+        type: 'image',
+        placeholder: 'https://...',
+        description: 'Full-bleed background image for the hero section (min. 1920×1080 recommended).',
+        disclosure: 'basic',
+        targetSiteData: true,
+      },
+      {
+        path: 'sections.styleOverrides.hero.heroImageOpacity',
+        label: 'Image Opacity',
+        type: 'slider',
+        min: 0,
+        max: 1,
+        step: 0.05,
+        defaultValue: 0.5,
+        description: 'Opacity of the hero background image (0 = transparent, 1 = fully visible).',
+        disclosure: 'basic',
+      },
+      {
+        path: 'sections.styleOverrides.hero.minHeight',
+        label: 'Minimum Height',
+        type: 'select',
+        options: [
+          { label: 'Full screen (100vh)', value: 'min-h-screen' },
+          { label: '80% viewport', value: 'min-h-[80vh]' },
+          { label: '60% viewport', value: 'min-h-[60vh]' },
+          { label: '50% viewport', value: 'min-h-[50vh]' },
+        ],
+        defaultValue: 'min-h-screen',
+        description: 'Minimum height of the hero section.',
+        disclosure: 'advanced',
+      },
+      {
+        path: 'sections.styleOverrides.hero.heroImageBlur',
+        label: 'Image Blur',
+        type: 'slider',
+        min: 0,
+        max: 20,
+        step: 1,
+        defaultValue: 0,
+        description: 'Blur radius applied to the hero background image (px).',
+        disclosure: 'advanced',
+      },
+      {
+        path: 'sections.styleOverrides.hero.paddingTop',
+        label: 'Padding Top',
+        type: 'text',
+        placeholder: '5rem',
+        description: 'CSS padding-top applied to the hero content area.',
+        disclosure: 'expert',
+      },
+    ],
+  },
+  {
     id: 'bio',
     label: 'Biography',
     labelKey: 'biography',
@@ -448,6 +519,157 @@ export const SECTION_REGISTRY: SectionRegistryEntry[] = [
       { path: 'labels.sponsoring', label: 'Section Heading', type: 'text', placeholder: 'SPONSORING', disclosure: 'basic' },
       { path: 'labels.sponsoringPrefix', label: 'Heading Prefix', type: 'text', disclosure: 'advanced' },
       { path: 'labels.sponsoringHeadingVisible', label: 'Show Heading', type: 'toggle', disclosure: 'advanced' },
+    ],
+  },
+]
+
+/**
+ * Registry entry for a global design/layout setting group (not a page section).
+ * Used by DesignPanel to render schema-driven form groups in the Layout tab.
+ */
+export interface DesignRegistryEntry {
+  /** Unique identifier used to look up this group, e.g. 'layout', 'navigation', 'footer' */
+  id: string
+  /** Human-readable group heading shown in the admin panel */
+  label: string
+  /** Icon name from @phosphor-icons/react */
+  icon: string
+  /** Config fields for this design group */
+  configFields: SectionConfigField[]
+}
+
+/**
+ * Single source of truth for global design/layout settings that are NOT tied to a specific
+ * page section. All fields use dot-notation paths inside AdminSettings (e.g. 'design.layout.*').
+ * DesignPanel iterates this registry to render the Layout tab without manual JSX.
+ */
+export const DESIGN_REGISTRY: DesignRegistryEntry[] = [
+  {
+    id: 'layout',
+    label: 'Layout & Spacing',
+    icon: 'Ruler',
+    configFields: [
+      {
+        path: 'design.layout.sectionPaddingY',
+        label: 'Section Padding Y',
+        type: 'text',
+        placeholder: '6rem',
+        description: 'Vertical padding applied to every page section (CSS value, e.g. 6rem).',
+        disclosure: 'basic',
+      },
+      {
+        path: 'design.layout.sectionPaddingX',
+        label: 'Section Padding X',
+        type: 'text',
+        placeholder: '1rem',
+        description: 'Horizontal padding applied to every page section.',
+        disclosure: 'advanced',
+      },
+      {
+        path: 'design.layout.containerMaxWidth',
+        label: 'Container Max Width',
+        type: 'text',
+        placeholder: '56rem',
+        description: 'Maximum width of the standard content container.',
+        disclosure: 'advanced',
+      },
+      {
+        path: 'design.layout.containerMaxWidthWide',
+        label: 'Container Max Width (Wide)',
+        type: 'text',
+        placeholder: '72rem',
+        description: 'Maximum width of the wide content container.',
+        disclosure: 'advanced',
+      },
+    ],
+  },
+  {
+    id: 'navigation',
+    label: 'Navigation Styling',
+    icon: 'NavigationArrow',
+    configFields: [
+      {
+        path: 'design.navigation.backgroundOpacity',
+        label: 'Background Opacity',
+        type: 'slider',
+        min: 0,
+        max: 100,
+        step: 1,
+        defaultValue: 98,
+        description: 'Opacity of the navigation bar background (0 = transparent, 100 = fully opaque).',
+        disclosure: 'basic',
+      },
+      {
+        path: 'design.navigation.backdropBlur',
+        label: 'Backdrop Blur',
+        type: 'toggle',
+        defaultValue: true,
+        description: 'Enable CSS backdrop-filter blur on the navigation bar.',
+        disclosure: 'basic',
+      },
+      {
+        path: 'design.navigation.logoHeight',
+        label: 'Logo Height',
+        type: 'text',
+        placeholder: '2.5rem',
+        description: 'Height of the logo in the navigation bar.',
+        disclosure: 'advanced',
+      },
+      {
+        path: 'design.navigation.itemGap',
+        label: 'Item Gap',
+        type: 'text',
+        placeholder: '1.5rem',
+        description: 'Gap between navigation items.',
+        disclosure: 'advanced',
+      },
+      {
+        path: 'design.navigation.height',
+        label: 'Nav Height',
+        type: 'text',
+        placeholder: '4rem',
+        description: 'Height of the navigation bar.',
+        disclosure: 'advanced',
+      },
+    ],
+  },
+  {
+    id: 'footer',
+    label: 'Footer Styling',
+    icon: 'AlignBottom',
+    configFields: [
+      {
+        path: 'design.footer.paddingY',
+        label: 'Padding Y',
+        type: 'text',
+        placeholder: '3rem',
+        description: 'Vertical padding of the footer.',
+        disclosure: 'basic',
+      },
+      {
+        path: 'design.footer.paddingX',
+        label: 'Padding X',
+        type: 'text',
+        placeholder: '1rem',
+        description: 'Horizontal padding of the footer.',
+        disclosure: 'advanced',
+      },
+      {
+        path: 'design.footer.textColor',
+        label: 'Text Color',
+        type: 'color',
+        placeholder: 'oklch(0.55 0 0)',
+        description: 'Default text color for footer content.',
+        disclosure: 'advanced',
+      },
+      {
+        path: 'design.footer.linkColor',
+        label: 'Link Color',
+        type: 'color',
+        placeholder: 'oklch(0.50 0.22 25)',
+        description: 'Color for links in the footer.',
+        disclosure: 'advanced',
+      },
     ],
   },
 ]

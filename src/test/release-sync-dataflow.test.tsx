@@ -757,14 +757,14 @@ describe('Release sync data-flow', () => {
         ],
       }
 
-      let getCallCount = 0
+      let _getCallCount = 0
       vi.spyOn(globalThis, 'fetch').mockImplementation(async (url, init) => {
         const u = typeof url === 'string' ? url : url.toString()
         const method = (init as RequestInit)?.method?.toUpperCase() ?? 'GET'
 
         // KV GET — returns current store
         if (u.includes('/api/kv?') && method === 'GET') {
-          getCallCount++
+          _getCallCount++
           return new Response(JSON.stringify({ value: kvStore }), { status: 200 })
         }
 

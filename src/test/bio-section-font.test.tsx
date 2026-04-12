@@ -30,7 +30,6 @@ vi.mock('framer-motion', async () => {
       {},
       {
         get: (_target, tag: string) =>
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           React.forwardRef(({ children, ...props }: any, ref: any) =>
             React.createElement(tag, { ...props, ref }, children)
           ),

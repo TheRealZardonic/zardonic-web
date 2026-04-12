@@ -135,6 +135,7 @@ export interface ProgressiveOverlayModes {
 }
 
 export interface SectionLabels {
+  hero?: string
   biography?: string
   musicPlayer?: string
   upcomingGigs?: string

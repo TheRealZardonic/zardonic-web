@@ -134,4 +134,65 @@ describe('SECTION_REGISTRY', () => {
     expect(paths).toContain('labels.profileStatusText')
     expect(paths).toContain('labels.closeButtonText')
   })
+
+  it('hero section exists and is the first entry', () => {
+    expect(SECTION_REGISTRY[0].id).toBe('hero')
+  })
+
+  it('hero section has showInNav: false', () => {
+    const hero = SECTION_REGISTRY.find((e) => e.id === 'hero')
+    expect(hero?.showInNav).toBe(false)
+  })
+
+  it('hero section has artistName and heroImage as basic siteData fields', () => {
+    const hero = SECTION_REGISTRY.find((e) => e.id === 'hero')
+    expect(hero).toBeDefined()
+    const artistName = hero?.configFields.find((f) => f.path === 'siteData.artistName')
+    const heroImage = hero?.configFields.find((f) => f.path === 'siteData.heroImage')
+    expect(artistName).toBeDefined()
+    expect(artistName?.targetSiteData).toBe(true)
+    expect(artistName?.disclosure ?? 'basic').toBe('basic')
+    expect(heroImage).toBeDefined()
+    expect(heroImage?.targetSiteData).toBe(true)
+    expect(heroImage?.type).toBe('image')
+    expect(heroImage?.disclosure ?? 'basic').toBe('basic')
+  })
+
+  it('hero section has heroImageOpacity slider with correct range', () => {
+    const hero = SECTION_REGISTRY.find((e) => e.id === 'hero')
+    const opacity = hero?.configFields.find((f) => f.path === 'sections.styleOverrides.hero.heroImageOpacity')
+    expect(opacity).toBeDefined()
+    expect(opacity?.type).toBe('slider')
+    expect(opacity?.min).toBe(0)
+    expect(opacity?.max).toBe(1)
+    expect(opacity?.defaultValue).toBe(0.5)
+  })
+
+  it('hero section has minHeight select at advanced disclosure', () => {
+    const hero = SECTION_REGISTRY.find((e) => e.id === 'hero')
+    const minHeight = hero?.configFields.find((f) => f.path === 'sections.styleOverrides.hero.minHeight')
+    expect(minHeight).toBeDefined()
+    expect(minHeight?.type).toBe('select')
+    expect(minHeight?.disclosure).toBe('advanced')
+    expect((minHeight?.options ?? []).length).toBeGreaterThan(0)
+    expect(minHeight?.options?.some((o) => o.value === 'min-h-screen')).toBe(true)
+  })
+
+  it('hero section has heroImageBlur slider at advanced disclosure', () => {
+    const hero = SECTION_REGISTRY.find((e) => e.id === 'hero')
+    const blur = hero?.configFields.find((f) => f.path === 'sections.styleOverrides.hero.heroImageBlur')
+    expect(blur).toBeDefined()
+    expect(blur?.type).toBe('slider')
+    expect(blur?.disclosure).toBe('advanced')
+    expect(blur?.min).toBe(0)
+    expect(blur?.max).toBe(20)
+  })
+
+  it('hero section has paddingTop text field at expert disclosure', () => {
+    const hero = SECTION_REGISTRY.find((e) => e.id === 'hero')
+    const paddingTop = hero?.configFields.find((f) => f.path === 'sections.styleOverrides.hero.paddingTop')
+    expect(paddingTop).toBeDefined()
+    expect(paddingTop?.type).toBe('text')
+    expect(paddingTop?.disclosure).toBe('expert')
+  })
 })
