@@ -303,7 +303,7 @@ function normTitle(t: string): string {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     // Strip [Explicit] / (Explicit)
-    .replace(/\s*[\[(]explicit[\])]/gi, '')
+    .replace(/\s*[[(]explicit[\])]/gi, '')
     // Strip (Remastered …) / [Remastered …] — any variant inside the brackets
     .replace(/\s*\([^)]*remaster(?:ed)?\b[^)]*\)/gi, '')
     .replace(/\s*\[[^\]]*remaster(?:ed)?\b[^\]]*\]/gi, '')
