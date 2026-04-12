@@ -33,6 +33,9 @@
     '--destructive-foreground':  'oklch(0.82 0.03 210)',
     // Spotify embed accent (primary hue 220° → 220 - 141 = 79deg)
     '--spotify-hue-rotate':      '79deg',
+    '--font-heading':            "'Orbitron', sans-serif",
+    '--font-body':               "'Share Tech Mono', monospace",
+    '--font-mono':               "'Share Tech Mono', monospace",
   };
   var _dk = Object.keys(_defaults);
   for (var _di = 0; _di < _dk.length; _di++) {

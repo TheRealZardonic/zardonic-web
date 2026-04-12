@@ -25,7 +25,10 @@ export default function BiographySection({
         transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
         className="relative"
       >
-        <h2 className="text-4xl md:text-6xl font-bold mb-12 uppercase tracking-tighter text-foreground zardonic-theme-hover-chromatic zardonic-theme-hover-glitch">
+        <h2
+          className="text-4xl md:text-6xl font-bold mb-12 uppercase tracking-tighter text-foreground zardonic-theme-hover-chromatic zardonic-theme-hover-glitch"
+          style={{ fontFamily: 'var(--font-heading)' }}
+        >
           {title}
         </h2>
         
@@ -59,7 +62,10 @@ export default function BiographySection({
           >
             <div className="zardonic-theme-data-label mb-4">// ARTIST.PROFILE.DATA</div>
             <Card variant="cyber" animate={false} className="p-6">
-              <p className="text-lg leading-relaxed text-muted-foreground font-light whitespace-pre-wrap">
+              <p
+                className="text-lg leading-relaxed text-muted-foreground font-light whitespace-pre-wrap"
+                style={{ fontFamily: 'var(--font-body)' }}
+              >
                 {bioText}
               </p>
             </Card>

@@ -32,6 +32,9 @@ const BUILTIN_PRESETS: { name: string; theme: Partial<ThemeCustomization> }[] = 
       mutedForegroundColor: 'oklch(0.55 0 0)',
       borderColor: 'oklch(0.15 0 0)',
       secondaryColor: 'oklch(0.10 0 0)',
+      fontHeading: "'Orbitron', sans-serif",
+      fontBody: "'Share Tech Mono', monospace",
+      fontMono: "'Share Tech Mono', monospace",
     },
   },
   {
@@ -45,6 +48,9 @@ const BUILTIN_PRESETS: { name: string; theme: Partial<ThemeCustomization> }[] = 
       mutedForegroundColor: 'oklch(0.55 0.05 250)',
       borderColor: 'oklch(0.15 0.03 250)',
       secondaryColor: 'oklch(0.10 0.02 260)',
+      fontHeading: "'Orbitron', sans-serif",
+      fontBody: "'Share Tech Mono', monospace",
+      fontMono: "'Share Tech Mono', monospace",
     },
   },
   {
@@ -58,6 +64,9 @@ const BUILTIN_PRESETS: { name: string; theme: Partial<ThemeCustomization> }[] = 
       mutedForegroundColor: 'oklch(0.50 0.08 145)',
       borderColor: 'oklch(0.12 0.04 145)',
       secondaryColor: 'oklch(0.08 0.02 145)',
+      fontHeading: "'Orbitron', sans-serif",
+      fontBody: "'Share Tech Mono', monospace",
+      fontMono: "'Share Tech Mono', monospace",
     },
   },
   {
@@ -71,6 +80,9 @@ const BUILTIN_PRESETS: { name: string; theme: Partial<ThemeCustomization> }[] = 
       mutedForegroundColor: 'oklch(0.55 0.06 300)',
       borderColor: 'oklch(0.15 0.05 300)',
       secondaryColor: 'oklch(0.10 0.04 300)',
+      fontHeading: "'Orbitron', sans-serif",
+      fontBody: "'Share Tech Mono', monospace",
+      fontMono: "'Share Tech Mono', monospace",
     },
   },
   {
@@ -84,6 +96,9 @@ const BUILTIN_PRESETS: { name: string; theme: Partial<ThemeCustomization> }[] = 
       mutedForegroundColor: 'oklch(0.55 0.04 60)',
       borderColor: 'oklch(0.18 0.06 80)',
       secondaryColor: 'oklch(0.10 0.03 60)',
+      fontHeading: "'Orbitron', sans-serif",
+      fontBody: "'Share Tech Mono', monospace",
+      fontMono: "'Share Tech Mono', monospace",
     },
   },
   {
@@ -101,6 +116,9 @@ const BUILTIN_PRESETS: { name: string; theme: Partial<ThemeCustomization> }[] = 
       hoverColor: 'oklch(0.65 0.06 215)',
       destructiveColor: 'oklch(0.45 0.18 20)',
       modalGlowColor: 'oklch(0.60 0.05 220 / 0.25)',
+      fontHeading: "'Orbitron', sans-serif",
+      fontBody: "'Share Tech Mono', monospace",
+      fontMono: "'Share Tech Mono', monospace",
     },
   },
 ]
