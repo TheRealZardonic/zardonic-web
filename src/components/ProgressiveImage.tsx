@@ -38,10 +38,6 @@ export default function ProgressiveImage({ src, alt, className, style, draggable
     return () => { img.src = '' }
   }, [src])
 
-  const handleError = () => {
-    // wsrv.nl proxies all external URLs — no further fallback is needed
-  }
-
   return (
     <div className="relative w-full h-full">
       {!loaded && (
@@ -64,7 +60,6 @@ export default function ProgressiveImage({ src, alt, className, style, draggable
         draggable={draggable}
         loading={loading}
         onLoad={() => setLoaded(true)}
-        onError={handleError}
       />
     </div>
   )

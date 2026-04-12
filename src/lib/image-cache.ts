@@ -90,7 +90,7 @@ export function toDirectImageUrl(url: string | null | undefined): string {
   if (url.startsWith('data:') || url.startsWith('/') || url.startsWith('.')) return url
 
   // Already proxied through wsrv.nl — avoid double-wrapping
-  if (url.includes('wsrv.nl')) return url
+  if (url.startsWith('https://wsrv.nl/')) return url
 
   // Google Drive: /file/d/{fileId}/view  →  wsrv.nl proxy via lh3
   const driveFileMatch = url.match(/drive\.google\.com\/file\/d\/([^/?#]+)/)
