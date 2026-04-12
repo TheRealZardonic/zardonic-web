@@ -11,26 +11,23 @@ interface ProgressiveImageProps {
 }
 
 function resolveInitialSrc(src: string): string {
-  // Convert Google Drive URLs to wsrv.nl format and use directly (no double proxying)
+  // Proxy all external URLs through wsrv.nl to bypass CORS restrictions
   return toDirectImageUrl(src)
 }
 
 /**
  * Image component with a progress bar shown while loading.
- * Automatically transforms Google Drive share links into wsrv.nl-proxied URLs
- * for direct loading. Falls back to the server-side image proxy only on error.
+ * Automatically proxies all external URLs through wsrv.nl to bypass CORS.
  */
 export default function ProgressiveImage({ src, alt, className, style, draggable, loading }: ProgressiveImageProps) {
   const [loaded, setLoaded] = useState(false)
   const [effectiveSrc, setEffectiveSrc] = useState(() => resolveInitialSrc(src))
-  const [proxyAttempted, setProxyAttempted] = useState(false)
 
   useEffect(() => {
     const newSrc = resolveInitialSrc(src)
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setEffectiveSrc(newSrc)
     setLoaded(false)
-    setProxyAttempted(false)
 
     // Check if image is already cached by the browser
     const img = new Image()
@@ -40,15 +37,6 @@ export default function ProgressiveImage({ src, alt, className, style, draggable
     }
     return () => { img.src = '' }
   }, [src])
-
-  const handleError = () => {
-    // If direct loading fails, only then try the server-side proxy as fallback
-    if (!proxyAttempted) {
-      setProxyAttempted(true)
-      const directUrl = toDirectImageUrl(src)
-      setEffectiveSrc(`/api/image-proxy?url=${encodeURIComponent(directUrl)}`)
-    }
-  }
 
   return (
     <div className="relative w-full h-full">
@@ -72,7 +60,6 @@ export default function ProgressiveImage({ src, alt, className, style, draggable
         draggable={draggable}
         loading={loading}
         onLoad={() => setLoaded(true)}
-        onError={handleError}
       />
     </div>
   )

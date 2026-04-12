@@ -51,9 +51,25 @@ describe('toDirectImageUrl', () => {
     )
   })
 
-  it('passes through regular image URLs unchanged', () => {
+  it('wraps regular external http/https URLs through wsrv.nl', () => {
     const url = 'https://example.com/images/photo.jpg'
-    expect(toDirectImageUrl(url)).toBe(url)
+    expect(toDirectImageUrl(url)).toBe(
+      `https://wsrv.nl/?url=${encodeURIComponent(url)}`
+    )
+  })
+
+  it('wraps http URLs through wsrv.nl', () => {
+    const url = 'http://example.com/images/photo.jpg'
+    expect(toDirectImageUrl(url)).toBe(
+      `https://wsrv.nl/?url=${encodeURIComponent(url)}`
+    )
+  })
+
+  it('wraps CORS-blocked CDN URLs through wsrv.nl', () => {
+    const url = 'https://cdn2.steamgriddb.com/logo/7fdd8d8997a41afbdd8381c287d9a984.png'
+    expect(toDirectImageUrl(url)).toBe(
+      `https://wsrv.nl/?url=${encodeURIComponent(url)}`
+    )
   })
 
   it('passes through data URLs unchanged', () => {
@@ -63,6 +79,11 @@ describe('toDirectImageUrl', () => {
 
   it('passes through relative URLs unchanged', () => {
     const url = '/assets/images/photo.png'
+    expect(toDirectImageUrl(url)).toBe(url)
+  })
+
+  it('does not double-wrap already-wsrv.nl URLs', () => {
+    const url = 'https://wsrv.nl/?url=https%3A%2F%2Fexample.com%2Fphoto.jpg'
     expect(toDirectImageUrl(url)).toBe(url)
   })
 })

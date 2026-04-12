@@ -67,19 +67,32 @@ function compressImage(img: HTMLImageElement): string {
 }
 
 /**
- * Transform known provider URLs into wsrv.nl-proxied image URLs.
- * Supports Google Drive share links and lh3 CDN URLs:
+ * Transform any image URL into a wsrv.nl-proxied URL to bypass CORS restrictions
+ * and provide CDN caching.
+ *
+ * Special handling for Google Drive share links and lh3 CDN URLs:
  *   - /file/d/{id}/view        → wsrv.nl/?url=lh3.../{id}
  *   - /open?id={id}            → wsrv.nl/?url=lh3.../{id}
  *   - /uc?export=view&id={id}  → wsrv.nl/?url=lh3.../{id}
  *   - lh3.googleusercontent.com/d/{id} → wsrv.nl/?url=lh3.../{id}
+ *
+ * All other external http/https URLs are wrapped as:
+ *   - https://wsrv.nl/?url=<encoded-url>
+ *
+ * Data URLs, relative paths and already-proxied URLs are returned as-is.
  * Returns empty string for null/undefined/empty input.
  */
 export function toDirectImageUrl(url: string | null | undefined): string {
   // Handle null, undefined, or empty string
   if (!url) return ''
-  
-  // Google Drive: /file/d/{fileId}/view  →  wsrv.nl proxy
+
+  // Data URLs and relative paths — return as-is
+  if (url.startsWith('data:') || url.startsWith('/') || url.startsWith('.')) return url
+
+  // Already proxied through wsrv.nl — avoid double-wrapping
+  if (url.startsWith('https://wsrv.nl/')) return url
+
+  // Google Drive: /file/d/{fileId}/view  →  wsrv.nl proxy via lh3
   const driveFileMatch = url.match(/drive\.google\.com\/file\/d\/([^/?#]+)/)
   if (driveFileMatch) {
     return `https://wsrv.nl/?url=https://lh3.googleusercontent.com/d/${driveFileMatch[1]}`
@@ -94,19 +107,24 @@ export function toDirectImageUrl(url: string | null | undefined): string {
   if (driveUcMatch) {
     return `https://wsrv.nl/?url=https://lh3.googleusercontent.com/d/${driveUcMatch[1]}`
   }
-  // Already an lh3 URL — wrap through wsrv.nl (skip if already wrapped)
-  if (!url.includes('wsrv.nl')) {
-    const lh3Match = url.match(/lh3\.googleusercontent\.com\/d\/([^/?#]+)/)
-    if (lh3Match) {
-      return `https://wsrv.nl/?url=https://lh3.googleusercontent.com/d/${lh3Match[1]}`
-    }
+  // lh3.googleusercontent.com/d/{id} URL
+  const lh3Match = url.match(/lh3\.googleusercontent\.com\/d\/([^/?#]+)/)
+  if (lh3Match) {
+    return `https://wsrv.nl/?url=https://lh3.googleusercontent.com/d/${lh3Match[1]}`
   }
+
+  // All other external http/https URLs → proxy through wsrv.nl to fix CORS
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return `https://wsrv.nl/?url=${encodeURIComponent(url)}`
+  }
+
   return url
 }
 
 /**
- * Load image element directly. For Google Drive URLs, use wsrv.nl proxy directly.
- * For other URLs that fail CORS, fall back to server-side proxy.
+ * Load image element via wsrv.nl proxy (all external URLs are already wrapped).
+ * No further server-side fallback is attempted since wsrv.nl handles CORS for
+ * every external host.
  */
 function loadImageElement(url: string): Promise<HTMLImageElement> {
   const directUrl = toDirectImageUrl(url)
@@ -115,21 +133,7 @@ function loadImageElement(url: string): Promise<HTMLImageElement> {
     const img = new Image()
     img.crossOrigin = 'anonymous'
     img.onload = () => resolve(img)
-    img.onerror = () => {
-      // Only use server-side proxy for non-Google Drive URLs that fail CORS
-      // Google Drive/wsrv.nl URLs already have their own proxy, so don't double-proxy
-      const isAlreadyProxied = /drive\.google\.com|lh3\.googleusercontent\.com|wsrv\.nl/.test(directUrl)
-      if (isAlreadyProxied) {
-        reject(new Error('Failed to load image from wsrv.nl'))
-      } else {
-        const proxyUrl = `/api/image-proxy?url=${encodeURIComponent(directUrl)}`
-        const img2 = new Image()
-        img2.crossOrigin = 'anonymous'
-        img2.onload = () => resolve(img2)
-        img2.onerror = () => reject(new Error('Failed to load image via proxy'))
-        img2.src = proxyUrl
-      }
-    }
+    img.onerror = () => reject(new Error('Failed to load image'))
     img.src = directUrl
   })
 }
@@ -137,8 +141,7 @@ function loadImageElement(url: string): Promise<HTMLImageElement> {
 /**
  * Loads an image from a URL, compresses it, and caches the result in IndexedDB.
  * Returns a data URL (from cache on subsequent calls).
- * Handles Google Drive URLs via wsrv.nl proxy. For other URLs, falls back to 
- * server-side proxy only on CORS failures.
+ * All external URLs are proxied through wsrv.nl to bypass CORS restrictions.
  */
 export async function cacheImage(url: string): Promise<string> {
   const cached = await getCached(url)
@@ -157,9 +160,8 @@ export async function cacheImage(url: string): Promise<string> {
 
 /**
  * Prepares an image URL for use, triggering background caching if needed.
- * For Google Drive URLs, returns the wsrv.nl proxy URL.
- * For data URLs, returns them directly.
- * For external URLs, triggers background caching and returns the direct URL.
+ * All external http/https URLs are proxied through wsrv.nl to bypass CORS.
+ * Data URLs are returned directly.
  */
 export function prepareImageUrl(url: string | null | undefined): string {
   if (!url) return ''
