@@ -89,3 +89,84 @@ All z-index values in the application are managed through CSS custom properties 
 
 *   **Layouts**: `grid` (default), `swipe` (Embla Carousel with native touch), `carousel-3d` (custom 3D with `useTouchSwipe` hook for swipe gestures).
 *   **Swipe Gestures**: `Releases3DCarouselLayout` uses `useTouchSwipe` from `src/hooks/use-touch-swipe.ts` for left/right swipe navigation. `ReleasesSwipeLayout` uses Embla Carousel which handles touch natively.
+
+## 10. Schema-Driven UI
+
+All admin and CMS form fields MUST be defined in schema registries — never hard-coded inline in component JSX.
+
+### Registries
+
+| Registry | File | Purpose |
+|---|---|---|
+| `FIELD_REGISTRY` | `src/cms/schemas.ts` | CMS fields keyed by `"schema.field"` (e.g. `"hero.headline"`) |
+| `SECTION_REGISTRY` | `src/lib/sections-registry.ts` | Admin panel section fields with `SectionConfigField[]` |
+
+### Rules
+
+*   **New CMS field** → add a `FieldMeta` entry to `FIELD_REGISTRY` in `src/cms/schemas.ts`. Never render a CMS field without an entry here.
+*   **New admin section field** → add a `SectionConfigField` to the appropriate entry in `SECTION_REGISTRY`. The `SectionFieldRenderer` and `SectionPanel` consume this automatically.
+*   **Generic CMS form rendering** → use `<SchemaFormRenderer fields={getFieldsForSchema('hero')} values={...} onChange={...} />` from `src/cms/components/SchemaFormRenderer.tsx`. This is the canonical way to render CMS fields in the sidebar.
+*   **Progressive disclosure**: set `advanced: true` on `FieldMeta` (CMS) or `disclosure: 'advanced' | 'expert'` on `SectionConfigField` (admin panel). Never build custom show/hide logic for field visibility.
+
+## 11. Inversion of Control (IoC)
+
+UI components MUST receive all data and callbacks as props — they must not directly access global state, context, or external stores.
+
+### Rules
+
+*   **No direct context reads in leaf components**: Components that render UI (sections, cards, widgets) must receive their data via props. Context access is only permitted in top-level wiring components (e.g., `App.tsx`, `AdminPanel.tsx`, `use-app-state.ts`).
+*   **Section contracts**: All page sections must extend `SectionProps` (or `EditableSectionProps<T>`) from `src/lib/component-contracts.ts`. The `editMode`, `sectionLabels`, and `onLabelChange` props are mandatory.
+*   **Admin panel contracts**: All admin sub-forms must extend `AdminPanelProps<T>` from `src/lib/component-contracts.ts`. No sub-form should import or read `AdminSettings` directly from storage/context.
+*   **Dialog contracts**: All modals must extend `DialogProps` (with `open` / `onClose`). No dialog should manage its own visibility state internally.
+
+## 12. Strict Tool Calling (AdminActionRegistry)
+
+All mutations to `AdminSettings` or `SiteData` from the admin panel MUST go through the `AdminActionRegistry`.
+
+### How it works
+
+*   **Registry**: `src/lib/admin-action-registry.ts` contains `ADMIN_ACTION_REGISTRY` — a map of typed, Zod-validated actions.
+*   **Dispatcher**: `dispatchAdminAction(actionId, rawInput, ctx, callerDisclosure)` validates input, enforces disclosure-level access control, and calls the action handler.
+*   **Actions** are `RegisteredAdminAction` objects with: `id`, `label`, `schema` (Zod), `minDisclosure`, and `execute`.
+
+### Available actions
+
+| Action ID | Min Disclosure | Description |
+|---|---|---|
+| `update_admin_value` | basic | Set any AdminSettings path by dot-notation |
+| `update_label` | basic | Rename a section heading label |
+| `set_section_visibility` | basic | Show/hide a section |
+| `set_section_order` | advanced | Reorder page sections |
+| `update_style_override` | advanced | Change a section style override |
+| `reset_section_styles` | expert | Reset all style overrides for a section |
+| `update_site_data_field` | basic | Update artistName, bio, heroImage, or website |
+
+### Rules
+
+*   **Register before using**: Every new admin mutation must be registered in `ADMIN_ACTION_REGISTRY` with a Zod schema before it can be called.
+*   **No raw state mutations**: Direct calls to `setAdminSettings(...)` or `setSiteData(...)` from UI components are only permitted via `dispatchAdminAction`. Components receive `dispatchAdminAction` as an injected dependency.
+*   **Disclosure enforcement**: `dispatchAdminAction` returns `{ ok: false, error }` when the caller's disclosure level is below `action.minDisclosure`. UI must surface this error to the user.
+*   **Input validation**: All inputs are validated against the Zod schema before execution. Malformed inputs are rejected with a typed error — never passed to the handler.
+*   **Tests required**: Every new action MUST have corresponding tests in `src/test/admin-action-registry.test.ts`.
+
+## 13. Agent Workflow Requirements
+
+These rules apply specifically to AI agent runs on this project:
+
+### After Every Run
+
+1.  **Update AGENTS.md**: If new conventions, patterns, or architectural decisions were introduced, add or update the relevant section in this file. AGENTS.md is the living specification of this project.
+2.  **Update documentation**: If new public APIs, components, or utilities were added, update the relevant docs in the `docs/` directory or inline JSDoc comments.
+3.  **Update `.ts-errors-remaining.txt`**: After fixing TypeScript errors, update or delete this file to reflect the current state. A clean typecheck means this file should either be empty or deleted.
+
+### Test-Driven Development
+
+*   Write tests **before or alongside** implementation — not after.
+*   New registries (action registry, field registry, section registry) MUST have comprehensive unit tests before being merged.
+*   New UI components that accept props MUST have rendering and interaction tests.
+
+### Minimal Changes Principle
+
+*   Make the **smallest possible change** that fully addresses the requirement.
+*   Do not refactor unrelated code in the same PR.
+*   Do not add new dependencies unless absolutely necessary — check `npm audit` for any new package.
