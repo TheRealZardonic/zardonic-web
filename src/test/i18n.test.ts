@@ -95,7 +95,7 @@ describe('i18n translation utility', () => {
   })
 
   it('should translate new releases keys', () => {
-    expect(t('releases.syncItunes', 'en')).toBe('Sync iTunes')
+    expect(t('releases.syncAndEnrich', 'en')).toBe('Sync & Enrich')
     expect(t('releases.showLess', 'en')).toBe('Show Less')
     expect(t('releases.showAll', 'en')).toBe('Show All')
   })

@@ -201,7 +201,7 @@ export default function OverviewTab({
                     {service === 'discogs' && (<>
                       <div>Set env: <code className="text-yellow-400">DISCOGS_TOKEN</code></div>
                       <div className="text-foreground/40">→ discogs.com → Settings → Developers</div>
-                      <div className="text-foreground/40">Optional: used as 3rd fallback source</div>
+                      <div className="text-foreground/40">Parallel release source for maximum coverage</div>
                     </>)}
                     {!['redis', 'spotify', 'bandsintown', 'itunes', 'musicbrainz', 'odesli', 'discogs'].includes(service) && (
                       <div>See <code className="text-yellow-400">.env.example</code></div>

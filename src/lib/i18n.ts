@@ -125,7 +125,7 @@ const translations: Record<string, Record<Locale, string>> = {
   'releases.defaultTitle':     { en: 'RELEASES', de: 'VERÖFFENTLICHUNGEN', ru: 'РЕЛИЗЫ', it: 'USCITE', es: 'LANZAMIENTOS', pt: 'LANÇAMENTOS', ja: 'リリース', ko: '릴리즈' },
   'releases.noReleases':       { en: 'No releases yet.', de: 'Noch keine Veröffentlichungen.', ru: 'Релизов пока нет.', it: 'Nessuna uscita ancora.', es: 'Sin lanzamientos aún.', pt: 'Sem lançamentos ainda.', ja: 'まだリリースはありません。', ko: '아직 릴리즈가 없습니다.' },
   'releases.addRelease':       { en: 'Add Release', de: 'Release hinzufügen', ru: 'Добавить релиз', it: 'Aggiungi uscita', es: 'Agregar lanzamiento', pt: 'Adicionar lançamento', ja: 'リリースを追加', ko: '릴리즈 추가' },
-  'releases.syncItunes':       { en: 'Sync iTunes', de: 'iTunes synchronisieren', ru: 'Синхронизировать iTunes', it: 'Sincronizza iTunes', es: 'Sincronizar iTunes', pt: 'Sincronizar iTunes', ja: 'iTunesを同期', ko: 'iTunes 동기화' },
+  'releases.syncAndEnrich':    { en: 'Sync & Enrich', de: 'Synchronisieren & Anreichern', ru: 'Синхронизировать и обогатить', it: 'Sincronizza e arricchisci', es: 'Sincronizar y enriquecer', pt: 'Sincronizar e enriquecer', ja: '同期・補完', ko: '동기화 및 보강' },
   'releases.showLess':         { en: 'Show Less', de: 'Weniger anzeigen', ru: 'Показать меньше', it: 'Mostra meno', es: 'Mostrar menos', pt: 'Mostrar menos', ja: '表示を減らす', ko: '덜 보기' },
   'releases.showAll':          { en: 'Show All', de: 'Alle anzeigen', ru: 'Показать все', it: 'Mostra tutto', es: 'Mostrar todo', pt: 'Mostrar tudo', ja: 'すべて表示', ko: '모두 보기' },
 

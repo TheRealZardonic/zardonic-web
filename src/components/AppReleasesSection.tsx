@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react'
+import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -13,8 +13,6 @@ import type { AdminSettings, SectionLabels, Release as FullRelease } from '@/lib
 import type { ReleaseCardVariant, ReleaseHoverEffect } from '@/components/releases/ReleaseCard'
 import type { Release } from '@/lib/app-types'
 import { useLocale } from '@/contexts/LocaleContext'
-
-const SYNC_DELAY_MS = 1_500  // 1.5 seconds between releases to respect rate limits
 
 interface AppReleasesSectionProps {
   releases: Release[]
@@ -34,8 +32,6 @@ interface AppReleasesSectionProps {
   onDeleteRelease?: (id: string) => void
   onAddRelease?: (release: FullRelease) => void
   onRefreshReleases?: () => void
-  /** Sync a single release with MusicBrainz + Odesli and update its card data */
-  onSyncRelease?: (id: string) => Promise<void>
 }
 
 /** Convert an app-types Release (streamingLinks array) to the richer types.ts Release for the edit dialog */
@@ -58,14 +54,10 @@ function toFullRelease(r: Release): FullRelease {
   }
 }
 
-export default function AppReleasesSection({ releases, sectionOrder, visible, editMode, sectionLabel, headingPrefix, adminSettings, iTunesFetching, hasAutoLoaded, syncProgress, sectionLabels, onLabelChange, onReleaseClick, onUpdateRelease, onDeleteRelease, onAddRelease, onRefreshReleases, onSyncRelease }: AppReleasesSectionProps) {
+export default function AppReleasesSection({ releases, sectionOrder, visible, editMode, sectionLabel, headingPrefix, adminSettings, iTunesFetching, hasAutoLoaded, syncProgress, sectionLabels, onLabelChange, onReleaseClick, onUpdateRelease, onDeleteRelease, onAddRelease, onRefreshReleases }: AppReleasesSectionProps) {
   const [showAllReleases, setShowAllReleases] = useState(false)
   const [editingRelease, setEditingRelease] = useState<FullRelease | null | 'new'>(null)
   const [activeFilter, setActiveFilter] = useState<'' | 'album' | 'ep' | 'single' | 'remix' | 'compilation'>('')
-  const [syncingId, setSyncingId] = useState<string | null>(null)
-  const [bulkSyncing, setBulkSyncing] = useState(false)
-  const [bulkSyncProgress, setBulkSyncProgress] = useState<{ current: number; total: number } | null>(null)
-  const abortBulkRef = useRef(false)
   const { t } = useLocale()
 
   // Read per-section style overrides
@@ -86,40 +78,6 @@ export default function AppReleasesSection({ releases, sectionOrder, visible, ed
     setActiveFilter(f)
     setShowAllReleases(false)
   }
-
-  const handleSyncSingle = useCallback(async (id: string) => {
-    if (!onSyncRelease || syncingId) return
-    setSyncingId(id)
-    try {
-      await onSyncRelease(id)
-    } finally {
-      setSyncingId(null)
-    }
-  }, [onSyncRelease, syncingId])
-
-  const handleSyncAll = useCallback(async (sortedReleases: Release[]) => {
-    if (!onSyncRelease || bulkSyncing) return
-    abortBulkRef.current = false
-    setBulkSyncing(true)
-    setBulkSyncProgress({ current: 0, total: sortedReleases.length })
-    for (let i = 0; i < sortedReleases.length; i++) {
-      if (abortBulkRef.current) break
-      const release = sortedReleases[i]
-      setSyncingId(release.id)
-      try {
-        await onSyncRelease(release.id)
-      } catch (err) {
-        console.error(`[ReleasesSync] Failed to sync "${release.title}":`, err)
-      }
-      setBulkSyncProgress({ current: i + 1, total: sortedReleases.length })
-      if (i < sortedReleases.length - 1 && !abortBulkRef.current) {
-        await new Promise(r => setTimeout(r, SYNC_DELAY_MS))
-      }
-    }
-    setSyncingId(null)
-    setBulkSyncing(false)
-    setBulkSyncProgress(null)
-  }, [onSyncRelease, bulkSyncing])
 
   const loadingLabel = sectionLabels?.releasesLoadingLabel ?? '// LOADING.ITUNES.RELEASES'
   const syncingText = sectionLabels?.releasesSyncingText ?? 'SYNCING...'
@@ -148,10 +106,9 @@ export default function AppReleasesSection({ releases, sectionOrder, visible, ed
       editMode={editMode}
       variant={cardVariant}
       hoverEffect={hoverEffect}
-      syncingId={syncingId}
-      bulkSyncing={bulkSyncing}
+      syncingId={null}
+      bulkSyncing={false}
       onReleaseClick={onReleaseClick}
-      onSyncRelease={onSyncRelease ? (id) => { void handleSyncSingle(id) } : undefined}
       onEditRelease={onUpdateRelease ? (r) => setEditingRelease(toFullRelease(r)) : undefined}
       onDeleteRelease={onDeleteRelease}
     />
@@ -189,32 +146,11 @@ export default function AppReleasesSection({ releases, sectionOrder, visible, ed
                       size="sm"
                       variant="outline"
                       onClick={() => onRefreshReleases()}
-                      disabled={iTunesFetching || bulkSyncing}
+                      disabled={iTunesFetching}
                       className="gap-2 border-primary/30 font-mono tracking-wider text-xs shrink-0"
                     >
                       <ArrowsClockwise className={`w-4 h-4 ${iTunesFetching ? 'animate-spin' : ''}`} />
-                      {t('releases.syncItunes')}
-                    </Button>
-                  )}
-                  {onSyncRelease && releases.length > 0 && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        const sorted = [...releases].sort((a, b) => {
-                          const yearA = a.releaseDate ? new Date(a.releaseDate).getTime() : parseInt(a.year) || 0
-                          const yearB = b.releaseDate ? new Date(b.releaseDate).getTime() : parseInt(b.year) || 0
-                          return yearB - yearA
-                        })
-                        void handleSyncAll(sorted)
-                      }}
-                      disabled={bulkSyncing || !!syncingId || iTunesFetching}
-                      className="gap-2 border-accent/30 font-mono tracking-wider text-xs shrink-0"
-                    >
-                      <ArrowsClockwise className={`w-4 h-4 ${bulkSyncing ? 'animate-spin' : ''}`} />
-                      {bulkSyncing && bulkSyncProgress
-                        ? `Syncing ${bulkSyncProgress.current}/${bulkSyncProgress.total}…`
-                        : 'Sync All Enrichment'}
+                      {t('releases.syncAndEnrich')}
                     </Button>
                   )}
                   {onAddRelease && (

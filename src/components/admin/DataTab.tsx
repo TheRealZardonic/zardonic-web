@@ -128,7 +128,7 @@ export default function DataTab({ siteData, onRefreshSiteData, onExport, onImpor
                 {isReleasesSyncing ? 'Syncing Releases…' : 'Sync Releases'}
               </div>
               <div className="font-mono text-xs text-muted-foreground">
-                Full sync: iTunes (fallback Spotify) → MusicBrainz metadata → Odesli streaming links. Overwrites all cached release data.
+                Full sync: Discogs + iTunes → aggregate &amp; deduplicate → MusicBrainz metadata → Odesli streaming links → Spotify backfill. Overwrites all cached release data.
               </div>
             </div>
           </button>

@@ -408,28 +408,6 @@ function App() {
           }))
         } : undefined}
         onRefreshReleases={editMode ? handleFetchITunesReleases : undefined}
-        onSyncRelease={editMode ? async (id: string) => {
-          const resp = await fetch('/api/releases-enrich-single', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ id }),
-          })
-          if (resp.ok) {
-            const data = await resp.json()
-            if (data.release) {
-              handleUpdateSiteData(prev => ({
-                ...prev,
-                releases: prev.releases.map(r =>
-                  r.id === id ? data.release : r
-                ),
-              }))
-            }
-          } else {
-            const err = await resp.json().catch(() => ({}))
-            throw new Error(err.error ?? `HTTP ${resp.status}`)
-          }
-        } : undefined}
       />
       </SectionErrorBoundary>
 
