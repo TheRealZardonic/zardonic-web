@@ -13,7 +13,7 @@ const VISIBLE_SIDE = 2 // cards visible on each side of center
 function getCardStyle(offset: number): React.CSSProperties {
   const absOffset = Math.abs(offset)
   if (absOffset > VISIBLE_SIDE) {
-    return { opacity: 0, pointerEvents: 'none', zIndex: 0 }
+    return { opacity: 0, pointerEvents: 'none' as const, zIndex: 0 }
   }
   const rotateY = offset * 38
   const translateX = offset * 55
@@ -63,7 +63,8 @@ export function Releases3DCarouselLayout({ releases, renderCard }: Releases3DCar
       <div className="relative h-[300px] md:h-[360px] flex items-center justify-center overflow-hidden">
         {releases.map((release, i) => {
           const offset = ((i - activeIndex + total) % total + total) % total
-          // Map offset to -VISIBLE_SIDE..VISIBLE_SIDE range
+          // Double-modulo normalizes to [0, total), then shift to [-total/2, total/2)
+          // so cards on either side of center get a correctly signed offset.
           const normalizedOffset = offset > total / 2 ? offset - total : offset
           const isCenter = normalizedOffset === 0
           return (

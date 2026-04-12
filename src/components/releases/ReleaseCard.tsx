@@ -298,7 +298,7 @@ function FlipCard({
 }: ReleaseCardProps) {
   const isSyncing = syncingId === release.id
 
-  const streamingPlatforms = release.streamingLinks?.map(l => l.platform) ?? []
+  const streamingPlatforms = release.streamingLinks?.map(link => link.platform) ?? []
 
   return (
     <div
