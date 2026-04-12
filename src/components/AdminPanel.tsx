@@ -444,7 +444,8 @@ export default function AdminPanel({
         <>
           {/* Backdrop — only on mobile */}
           <motion.div
-            className="fixed inset-0 z-[9997] bg-black/70 backdrop-blur-sm md:hidden"
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm md:hidden"
+            style={{ zIndex: 'var(--z-modal-backdrop)' } as React.CSSProperties}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -457,9 +458,10 @@ export default function AdminPanel({
             role="dialog"
             aria-modal="true"
             aria-label="Admin Panel"
-            className="fixed z-[9998] bg-card border-border flex flex-col
+            className="fixed bg-card border-border flex flex-col
               bottom-0 left-0 right-0 h-[92dvh] border-t
               md:top-0 md:bottom-0 md:left-auto md:right-0 md:w-[720px] md:h-full md:border-t-0 md:border-l"
+            style={{ zIndex: 'var(--z-overlay)' } as React.CSSProperties}
             initial={isDesktop ? { x: '100%' } : { y: '100%' }}
             animate={isDesktop ? { x: 0 } : { y: 0 }}
             exit={isDesktop ? { x: '100%' } : { y: '100%' }}
