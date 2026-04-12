@@ -200,31 +200,126 @@ const colorGroups: {
   },
 ]
 
+const HEADING_FONTS: { label: string; value: string }[] = [
+  { label: 'Orbitron', value: "'Orbitron', sans-serif" },
+  { label: 'Rajdhani', value: "'Rajdhani', sans-serif" },
+  { label: 'Exo 2', value: "'Exo 2', sans-serif" },
+  { label: 'Audiowide', value: "'Audiowide', sans-serif" },
+  { label: 'Share Tech', value: "'Share Tech', sans-serif" },
+  { label: 'Russo One', value: "'Russo One', sans-serif" },
+  { label: 'Teko', value: "'Teko', sans-serif" },
+  { label: 'Chakra Petch', value: "'Chakra Petch', sans-serif" },
+  { label: 'Oxanium', value: "'Oxanium', sans-serif" },
+  { label: 'Tektur', value: "'Tektur', sans-serif" },
+  { label: 'Michroma', value: "'Michroma', sans-serif" },
+  { label: 'Bruno Ace', value: "'Bruno Ace', sans-serif" },
+  { label: 'Electrolize', value: "'Electrolize', sans-serif" },
+  { label: 'Iceland', value: "'Iceland', monospace" },
+  { label: 'VT323', value: "'VT323', monospace" },
+  { label: 'Press Start 2P', value: "'Press Start 2P', monospace" },
+  { label: 'Bebas Neue', value: "'Bebas Neue', sans-serif" },
+  { label: 'Oswald', value: "'Oswald', sans-serif" },
+  { label: 'Anton', value: "'Anton', sans-serif" },
+  { label: 'Barlow Condensed', value: "'Barlow Condensed', sans-serif" },
+  { label: 'Saira Condensed', value: "'Saira Condensed', sans-serif" },
+  { label: 'system-ui', value: "system-ui, sans-serif" },
+]
+
+const BODY_FONTS: { label: string; value: string }[] = [
+  { label: 'system-ui', value: "system-ui, sans-serif" },
+  { label: 'Inter', value: "'Inter', sans-serif" },
+  { label: 'Roboto', value: "'Roboto', sans-serif" },
+  { label: 'Open Sans', value: "'Open Sans', sans-serif" },
+  { label: 'Lato', value: "'Lato', sans-serif" },
+  { label: 'Poppins', value: "'Poppins', sans-serif" },
+  { label: 'Source Sans 3', value: "'Source Sans 3', sans-serif" },
+  { label: 'Nunito', value: "'Nunito', sans-serif" },
+  { label: 'Raleway', value: "'Raleway', sans-serif" },
+  { label: 'Noto Sans', value: "'Noto Sans', sans-serif" },
+  { label: 'Outfit', value: "'Outfit', sans-serif" },
+  { label: 'Space Grotesk', value: "'Space Grotesk', sans-serif" },
+  { label: 'Syne', value: "'Syne', sans-serif" },
+  { label: 'DM Sans', value: "'DM Sans', sans-serif" },
+  { label: 'Barlow', value: "'Barlow', sans-serif" },
+  { label: 'Mulish', value: "'Mulish', sans-serif" },
+  { label: 'Share Tech Mono', value: "'Share Tech Mono', monospace" },
+  { label: 'Rajdhani', value: "'Rajdhani', sans-serif" },
+]
+
+const MONO_FONTS: { label: string; value: string }[] = [
+  { label: 'Share Tech Mono', value: "'Share Tech Mono', monospace" },
+  { label: 'JetBrains Mono', value: "'JetBrains Mono', monospace" },
+  { label: 'Fira Code', value: "'Fira Code', monospace" },
+  { label: 'Source Code Pro', value: "'Source Code Pro', monospace" },
+  { label: 'IBM Plex Mono', value: "'IBM Plex Mono', monospace" },
+  { label: 'Roboto Mono', value: "'Roboto Mono', monospace" },
+  { label: 'Space Mono', value: "'Space Mono', monospace" },
+  { label: 'Inconsolata', value: "'Inconsolata', monospace" },
+  { label: 'Noto Sans Mono', value: "'Noto Sans Mono', monospace" },
+  { label: 'Courier Prime', value: "'Courier Prime', monospace" },
+  { label: 'VT323', value: "'VT323', monospace" },
+  { label: 'ui-monospace', value: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" },
+  { label: 'Courier New', value: "'Courier New', Courier, monospace" },
+]
+
+/** The per-key font size limits (min / default / max in rem) used for the inline sliders */
+const FONT_SIZE_RANGES: Record<'fontHeading' | 'fontBody' | 'fontMono', { min: number; max: number; step: number; default: number; cssProp: string }> = {
+  fontHeading: { min: 1, max: 6, step: 0.1, default: 2.5, cssProp: 'headingFontSize' },
+  fontBody: { min: 0.75, max: 1.5, step: 0.05, default: 1, cssProp: 'bodyFontSize' },
+  fontMono: { min: 0.7, max: 1.2, step: 0.05, default: 0.875, cssProp: 'monoFontSize' },
+}
+
 const fontOptions: {
   key: 'fontHeading' | 'fontBody' | 'fontMono'
   label: string
   placeholder: string
-  options: string[]
+  fonts: { label: string; value: string }[]
 }[] = [
   {
     key: 'fontHeading',
     label: 'Heading Font',
-    placeholder: 'Orbitron, sans-serif',
-    options: ['Orbitron', 'Rajdhani', 'Exo 2', 'Audiowide', 'Share Tech', 'Russo One', 'Teko', 'system-ui'],
+    placeholder: "'Orbitron', sans-serif",
+    fonts: HEADING_FONTS,
   },
   {
     key: 'fontBody',
     label: 'Body Font',
-    placeholder: 'system-ui, sans-serif',
-    options: ['system-ui', 'Inter', 'Roboto', 'Open Sans', 'Lato', 'Poppins', 'Source Sans Pro', 'Share Tech Mono'],
+    placeholder: "system-ui, sans-serif",
+    fonts: BODY_FONTS,
   },
   {
     key: 'fontMono',
     label: 'Mono Font',
-    placeholder: 'Share Tech Mono, monospace',
-    options: ['Share Tech Mono', 'JetBrains Mono', 'Fira Code', 'Source Code Pro', 'IBM Plex Mono', 'Courier New'],
+    placeholder: "'Share Tech Mono', monospace",
+    fonts: MONO_FONTS,
   },
 ]
+
+/** Extract the first font-family name for Google Fonts loading. */
+function extractFontName(fontValue: string): string | null {
+  const systemFonts = new Set([
+    'system-ui', 'ui-monospace', 'ui-sans-serif', 'ui-serif',
+    'monospace', 'sans-serif', 'serif',
+    'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'Courier New', 'Courier',
+    'Georgia', 'Cambria', 'Times New Roman', 'Times', 'Arial', 'Helvetica',
+  ])
+  const first = fontValue.replace(/['"]/g, '').split(',')[0].trim()
+  if (!first || systemFonts.has(first)) return null
+  return first
+}
+
+const _loadedFontsTab = new Set<string>()
+
+/** Load a Google Font by injecting a stylesheet link (deduplicated). */
+function loadGoogleFontTab(fontName: string): void {
+  if (_loadedFontsTab.has(fontName)) return
+  _loadedFontsTab.add(fontName)
+  const family = fontName.replace(/ /g, '+')
+  const link = document.createElement('link')
+  link.rel = 'stylesheet'
+  link.href = `https://fonts.googleapis.com/css2?family=${family}:wght@300;400;500;700;900&display=swap`
+  document.head.appendChild(link)
+}
 
 
 /** Shows a WCAG contrast warning when foreground/background ratio is too low. */
@@ -469,36 +564,71 @@ export default function AppearanceTab({
       ))}
 
       {/* Fonts */}
-      <section className="space-y-3">
+      <section className="space-y-4">
         <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
           Fonts
         </h3>
-        {fontOptions.map(({ key, label, placeholder, options }) => (
-          <div key={key} className="space-y-1">
-            <Label className="font-mono text-[11px] text-muted-foreground">{label}</Label>
-            <select
-              value={options.includes(theme[key] || '') ? theme[key] ?? '' : ''}
-              onChange={(e) => {
-                if (e.target.value) updateTheme(key, e.target.value)
-              }}
-              className="w-full bg-background text-foreground border border-border rounded-md px-3 py-2 font-mono text-xs"
-              aria-label={label}
-            >
-              <option value="">Custom…</option>
-              {options.map((font) => (
-                <option key={font} value={font} style={{ fontFamily: font }}>
-                  {font}
-                </option>
-              ))}
-            </select>
-            <Input
-              value={theme[key] || ''}
-              onChange={(e) => updateTheme(key, e.target.value)}
-              placeholder={placeholder}
-              className="bg-background border-border font-mono text-xs"
-            />
-          </div>
-        ))}
+        {fontOptions.map(({ key, label, placeholder, fonts }) => {
+          const sizeRange = FONT_SIZE_RANGES[key]
+          const tyProp = sizeRange.cssProp as 'headingFontSize' | 'bodyFontSize' | 'monoFontSize'
+          const currentSize = adminSettings?.design?.typography?.[tyProp]
+          const sliderValue = parseSliderValue(currentSize, sizeRange.default)
+          const currentValue = theme[key] || ''
+          const matchingFont = fonts.find(f => f.value === currentValue)
+          return (
+            <div key={key} className="space-y-2 p-3 bg-muted/20 rounded border border-border/60">
+              <Label className="font-mono text-[11px] text-muted-foreground uppercase tracking-wider">{label}</Label>
+              <select
+                value={matchingFont ? currentValue : ''}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    updateTheme(key, e.target.value)
+                    const name = extractFontName(e.target.value)
+                    if (name) loadGoogleFontTab(name)
+                  }
+                }}
+                className="w-full bg-background text-foreground border border-border rounded-md px-3 py-2 font-mono text-xs"
+                aria-label={label}
+              >
+                <option value="">Custom…</option>
+                {fonts.map((font) => (
+                  <option key={font.value} value={font.value} style={{ fontFamily: font.value }}>
+                    {font.label}
+                  </option>
+                ))}
+              </select>
+              <Input
+                value={currentValue}
+                onChange={(e) => updateTheme(key, e.target.value)}
+                placeholder={placeholder}
+                className="bg-background border-border font-mono text-xs"
+                aria-label={`${label} custom value`}
+              />
+              {/* Font size slider — visible to all disclosure levels */}
+              <div className="space-y-1 pt-1">
+                <div className="flex justify-between">
+                  <Label className="font-mono text-[10px] text-muted-foreground">Font Size</Label>
+                  <span className="font-mono text-[10px] text-muted-foreground">{currentSize ?? `${sizeRange.default}rem (default)`}</span>
+                </div>
+                <Slider
+                  value={[sliderValue]}
+                  min={sizeRange.min}
+                  max={sizeRange.max}
+                  step={sizeRange.step}
+                  onValueChange={([v]) => setAdminSettings?.({
+                    ...(adminSettings ?? {}),
+                    design: { ...(adminSettings?.design ?? {}), typography: { ...(adminSettings?.design?.typography ?? {}), [tyProp]: `${v}rem` } },
+                  })}
+                  aria-label={`${label} size`}
+                />
+                <div className="flex justify-between font-mono text-[9px] text-muted-foreground/70">
+                  <span>{sizeRange.min}rem</span>
+                  <span>{sizeRange.max}rem</span>
+                </div>
+              </div>
+            </div>
+          )
+        })}
       </section>
 
       <Separator />
@@ -811,75 +941,6 @@ export default function AppearanceTab({
             <h3 className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
               Typography Details
             </h3>
-
-            {/* Heading Font Size — slider */}
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <Label className="font-mono text-xs">Heading Font Size</Label>
-                <span className="font-mono text-xs text-muted-foreground">
-                  {adminSettings?.design?.typography?.headingFontSize ?? 'default'}
-                </span>
-              </div>
-              <Slider
-                value={[parseSliderValue(adminSettings?.design?.typography?.headingFontSize, 2.5)]}
-                min={1}
-                max={6}
-                step={0.1}
-                onValueChange={([v]) => setAdminSettings?.({
-                  ...(adminSettings ?? {}),
-                  design: { ...(adminSettings?.design ?? {}), typography: { ...(adminSettings?.design?.typography ?? {}), headingFontSize: `${v}rem` } },
-                })}
-              />
-              <div className="flex justify-between font-mono text-[10px] text-muted-foreground">
-                <span>1rem</span><span>3.5rem</span><span>6rem</span>
-              </div>
-            </div>
-
-            {/* Body Font Size — slider */}
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <Label className="font-mono text-xs">Body Font Size</Label>
-                <span className="font-mono text-xs text-muted-foreground">
-                  {adminSettings?.design?.typography?.bodyFontSize ?? 'default'}
-                </span>
-              </div>
-              <Slider
-                value={[parseSliderValue(adminSettings?.design?.typography?.bodyFontSize, 1)]}
-                min={0.75}
-                max={1.5}
-                step={0.05}
-                onValueChange={([v]) => setAdminSettings?.({
-                  ...(adminSettings ?? {}),
-                  design: { ...(adminSettings?.design ?? {}), typography: { ...(adminSettings?.design?.typography ?? {}), bodyFontSize: `${v}rem` } },
-                })}
-              />
-              <div className="flex justify-between font-mono text-[10px] text-muted-foreground">
-                <span>0.75rem</span><span>1.125rem</span><span>1.5rem</span>
-              </div>
-            </div>
-
-            {/* Mono Font Size — slider */}
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <Label className="font-mono text-xs">Mono Font Size</Label>
-                <span className="font-mono text-xs text-muted-foreground">
-                  {adminSettings?.design?.typography?.monoFontSize ?? 'default'}
-                </span>
-              </div>
-              <Slider
-                value={[parseSliderValue(adminSettings?.design?.typography?.monoFontSize, 0.875)]}
-                min={0.7}
-                max={1.2}
-                step={0.05}
-                onValueChange={([v]) => setAdminSettings?.({
-                  ...(adminSettings ?? {}),
-                  design: { ...(adminSettings?.design ?? {}), typography: { ...(adminSettings?.design?.typography ?? {}), monoFontSize: `${v}rem` } },
-                })}
-              />
-              <div className="flex justify-between font-mono text-[10px] text-muted-foreground">
-                <span>0.7rem</span><span>0.95rem</span><span>1.2rem</span>
-              </div>
-            </div>
 
             {/* Heading Font Weight — select */}
             <div className="space-y-2">

@@ -7,6 +7,38 @@ import { applyConfigOverrides } from '@/lib/config'
  *  screen before admin settings arrive from the KV store). */
 const THEME_CACHE_KEY = 'nk-theme-cache'
 
+/** Track already-injected Google Fonts links so we don't duplicate them. */
+const _loadedFonts = new Set<string>()
+
+/** Extract the first font-family name from a CSS font stack string.
+ *  E.g. "'Orbitron', sans-serif" → "Orbitron"
+ *       "Rajdhani" → "Rajdhani"
+ *       "system-ui" → null (system font, no remote load needed) */
+function extractGoogleFontName(fontValue: string): string | null {
+  const systemFonts = new Set([
+    'system-ui', 'ui-monospace', 'ui-sans-serif', 'ui-serif',
+    'monospace', 'sans-serif', 'serif', 'cursive', 'fantasy',
+    'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'Courier New',
+    'Georgia', 'Cambria', 'Times New Roman', 'Times', 'Arial',
+    'Helvetica Neue', 'Helvetica',
+  ])
+  // Strip quotes and grab the first token
+  const first = fontValue.replace(/['"]/g, '').split(',')[0].trim()
+  if (!first || systemFonts.has(first)) return null
+  return first
+}
+
+/** Dynamically inject a Google Fonts stylesheet if not already loaded. */
+function loadGoogleFont(fontName: string): void {
+  if (_loadedFonts.has(fontName)) return
+  _loadedFonts.add(fontName)
+  const family = fontName.replace(/ /g, '+')
+  const link = document.createElement('link')
+  link.rel = 'stylesheet'
+  link.href = `https://fonts.googleapis.com/css2?family=${family}:wght@300;400;500;700;900&display=swap`
+  document.head.appendChild(link)
+}
+
 /** Parse the hue component from an oklch color string: "oklch(L C H)" → H */
 function parseOklchHue(oklchStr: string): number | null {
   const m = oklchStr.match(/oklch\(\s*[\d.]+\s+[\d.]+\s+([\d.]+)/)
@@ -69,9 +101,21 @@ export function useAppTheme(adminSettings: AdminSettings | undefined): void {
     if (t.ringColor) set('--ring', t.ringColor)
     if (t.hoverColor) set('--hover-color', t.hoverColor)
     if (t.borderRadius) set('--radius', t.borderRadius)
-    if (t.fontHeading) set('--font-heading', t.fontHeading)
-    if (t.fontBody) set('--font-body', t.fontBody)
-    if (t.fontMono) set('--font-mono', t.fontMono)
+    if (t.fontHeading) {
+      set('--font-heading', t.fontHeading)
+      const gfName = extractGoogleFontName(t.fontHeading)
+      if (gfName) loadGoogleFont(gfName)
+    }
+    if (t.fontBody) {
+      set('--font-body', t.fontBody)
+      const gfName = extractGoogleFontName(t.fontBody)
+      if (gfName) loadGoogleFont(gfName)
+    }
+    if (t.fontMono) {
+      set('--font-mono', t.fontMono)
+      const gfName = extractGoogleFontName(t.fontMono)
+      if (gfName) loadGoogleFont(gfName)
+    }
     if (t.dataLabelColor) set('--data-label-color', t.dataLabelColor)
     if (t.dataLabelFontSize) set('--data-label-font-size', t.dataLabelFontSize)
     if (t.dataLabelFontFamily) set('--data-label-font-family', t.dataLabelFontFamily)

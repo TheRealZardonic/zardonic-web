@@ -6,6 +6,7 @@ import {
   GearSix,
   SignOut,
   FileText,
+  ArrowCounterClockwise,
 } from '@phosphor-icons/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRef, useState, useCallback, useEffect, useMemo, type ChangeEvent } from 'react'
@@ -114,6 +115,28 @@ export default function AdminPanel({
   const [newPresetName, setNewPresetName] = useState('')
   const [apiHealth, setApiHealth] = useState<{ status: string; services: Record<string, unknown> } | null>(null)
 
+  // ── Undo stack ─────────────────────────────────────────────────────────────
+  const undoStack = useRef<AdminSettings[]>([])
+  const [canUndo, setCanUndo] = useState(false)
+
+  /** Wrap the external setAdminSettings so every change is pushed onto the undo stack. */
+  const setAdminSettingsWithUndo = useCallback((next: AdminSettings) => {
+    if (!setAdminSettings) return
+    if (adminSettings) {
+      undoStack.current = [...undoStack.current.slice(-49), adminSettings]
+      setCanUndo(true)
+    }
+    setAdminSettings(next)
+  }, [adminSettings, setAdminSettings])
+
+  const handleUndo = useCallback(() => {
+    const prev = undoStack.current.pop()
+    if (!prev || !setAdminSettings) return
+    setAdminSettings(prev)
+    setCanUndo(undoStack.current.length > 0)
+    toast.success('Undone')
+  }, [setAdminSettings])
+
   // Section order helpers
   const currentOrder: string[] = useMemo(
     () => getSectionOrder(adminSettings),
@@ -126,9 +149,9 @@ export default function AdminPanel({
       if (index <= 0 || !setAdminSettings) return
       const newOrder = [...currentOrder]
       ;[newOrder[index - 1], newOrder[index]] = [newOrder[index], newOrder[index - 1]]
-      setAdminSettings({ ...adminSettings, sections: { ...(adminSettings?.sections ?? {}), order: newOrder } })
+      setAdminSettingsWithUndo({ ...adminSettings, sections: { ...(adminSettings?.sections ?? {}), order: newOrder } })
     },
-    [currentOrder, adminSettings, setAdminSettings],
+    [currentOrder, adminSettings, setAdminSettings, setAdminSettingsWithUndo],
   )
 
   const moveSectionDown = useCallback(
@@ -136,9 +159,9 @@ export default function AdminPanel({
       if (index >= currentOrder.length - 1 || !setAdminSettings) return
       const newOrder = [...currentOrder]
       ;[newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]]
-      setAdminSettings({ ...adminSettings, sections: { ...(adminSettings?.sections ?? {}), order: newOrder } })
+      setAdminSettingsWithUndo({ ...adminSettings, sections: { ...(adminSettings?.sections ?? {}), order: newOrder } })
     },
-    [currentOrder, adminSettings, setAdminSettings],
+    [currentOrder, adminSettings, setAdminSettings, setAdminSettingsWithUndo],
   )
 
   const updateTheme = useCallback(
@@ -153,47 +176,47 @@ export default function AdminPanel({
         } else if (!isNaN(parsed)) {
           (newTheme as Record<string, unknown>)[key] = parsed
         }
-        setAdminSettings({ ...adminSettings, design: { ...(adminSettings?.design ?? {}), theme: newTheme } })
+        setAdminSettingsWithUndo({ ...adminSettings, design: { ...(adminSettings?.design ?? {}), theme: newTheme } })
       } else {
-        setAdminSettings({ ...adminSettings, design: { ...(adminSettings?.design ?? {}), theme: { ...adminSettings?.design?.theme, [key]: value } } })
+        setAdminSettingsWithUndo({ ...adminSettings, design: { ...(adminSettings?.design ?? {}), theme: { ...adminSettings?.design?.theme, [key]: value } } })
       }
     },
-    [adminSettings, setAdminSettings],
+    [adminSettings, setAdminSettings, setAdminSettingsWithUndo],
   )
 
   const applyPreset = useCallback(
     (themeUpdate: Partial<ThemeCustomization>) => {
       if (!setAdminSettings) return
-      setAdminSettings({ ...adminSettings, design: { ...(adminSettings?.design ?? {}), theme: { ...adminSettings?.design?.theme, ...themeUpdate } } })
+      setAdminSettingsWithUndo({ ...adminSettings, design: { ...(adminSettings?.design ?? {}), theme: { ...adminSettings?.design?.theme, ...themeUpdate } } })
     },
-    [adminSettings, setAdminSettings],
+    [adminSettings, setAdminSettings, setAdminSettingsWithUndo],
   )
 
   const updateAnimation = useCallback(
     (key: keyof AnimationSettings, value: boolean) => {
       if (!setAdminSettings) return
-      setAdminSettings({ ...adminSettings, background: { ...adminSettings?.background, [key]: value } })
+      setAdminSettingsWithUndo({ ...adminSettings, background: { ...adminSettings?.background, [key]: value } })
     },
-    [adminSettings, setAdminSettings],
+    [adminSettings, setAdminSettings, setAdminSettingsWithUndo],
   )
 
   const updateAnimationNumber = useCallback(
     (key: keyof AnimationSettings, value: number) => {
       if (!setAdminSettings) return
-      setAdminSettings({ ...adminSettings, background: { ...adminSettings?.background, [key]: value } })
+      setAdminSettingsWithUndo({ ...adminSettings, background: { ...adminSettings?.background, [key]: value } })
     },
-    [adminSettings, setAdminSettings],
+    [adminSettings, setAdminSettings, setAdminSettingsWithUndo],
   )
 
   const updateProgressiveMode = useCallback(
     (key: keyof ProgressiveOverlayModes, value: boolean) => {
       if (!setAdminSettings) return
-      setAdminSettings({
+      setAdminSettingsWithUndo({
         ...adminSettings,
         progressiveOverlayModes: { ...adminSettings?.progressiveOverlayModes, [key]: value },
       })
     },
-    [adminSettings, setAdminSettings],
+    [adminSettings, setAdminSettings, setAdminSettingsWithUndo],
   )
 
   const fetchApiHealth = useCallback(async () => {
@@ -309,7 +332,7 @@ export default function AdminPanel({
         <SectionPanel
           sectionId={page}
           adminSettings={adminSettings ?? undefined}
-          setAdminSettings={setAdminSettings}
+          setAdminSettings={setAdminSettingsWithUndo}
           siteData={siteData}
           onUpdateSiteData={onUpdateSiteData}
           disclosureLevel={disclosureLevel}
@@ -321,7 +344,7 @@ export default function AdminPanel({
         return (
           <AppearanceTab
             adminSettings={adminSettings}
-            setAdminSettings={setAdminSettings}
+            setAdminSettings={setAdminSettingsWithUndo}
             theme={theme}
             updateTheme={updateTheme}
             applyPreset={applyPreset}
@@ -342,7 +365,7 @@ export default function AdminPanel({
         return (
           <BackgroundTab
             adminSettings={adminSettings}
-            setAdminSettings={setAdminSettings}
+            setAdminSettings={setAdminSettingsWithUndo}
             anim={anim}
             updateAnimationNumber={updateAnimationNumber}
           />
@@ -352,7 +375,7 @@ export default function AdminPanel({
         return (
           <LayoutTab
             adminSettings={adminSettings}
-            setAdminSettings={setAdminSettings}
+            setAdminSettings={setAdminSettingsWithUndo}
             disclosureLevel={disclosureLevel}
           />
         )
@@ -362,7 +385,7 @@ export default function AdminPanel({
       return (
         <SectionsTab
           adminSettings={adminSettings}
-          setAdminSettings={setAdminSettings}
+          setAdminSettings={setAdminSettingsWithUndo}
           currentOrder={currentOrder}
           moveSectionUp={moveSectionUp}
           moveSectionDown={moveSectionDown}
@@ -407,7 +430,7 @@ export default function AdminPanel({
             onOpenContactInbox={onOpenContactInbox}
             onClose={onClose}
             adminSettings={adminSettings}
-            setAdminSettings={setAdminSettings}
+            setAdminSettings={setAdminSettingsWithUndo}
           />
         )
       }
@@ -429,7 +452,7 @@ export default function AdminPanel({
         return (
           <TranslationsTab
             adminSettings={adminSettings}
-            setAdminSettings={setAdminSettings}
+            setAdminSettings={setAdminSettingsWithUndo}
             translationImportRef={translationImportRef}
           />
         )
@@ -491,6 +514,17 @@ export default function AdminPanel({
                     if (reg) { setCategory('content'); setPage(tab) }
                   }
                 }} />
+
+                {/* Undo button */}
+                <button
+                  onClick={handleUndo}
+                  disabled={!canUndo}
+                  className="text-muted-foreground hover:text-primary transition-colors p-1 disabled:opacity-30 disabled:cursor-not-allowed"
+                  aria-label="Undo last change"
+                  title="Undo last change"
+                >
+                  <ArrowCounterClockwise size={18} />
+                </button>
 
                 {/* Disclosure level 3-segment button */}
                 <div className="flex border border-border rounded overflow-hidden text-[10px] font-mono">

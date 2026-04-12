@@ -28,6 +28,7 @@ export default function AppBioSection({ bio, sectionOrder, visible, editMode, se
 
   const readMoreText = sectionLabels?.bioReadMoreText ?? 'Read More'
   const showLessText = sectionLabels?.bioShowLessText ?? 'Show Less'
+  const bioTextSize = adminSettings?.sections?.styleOverrides?.bio?.textSize ?? 'text-lg'
 
   const handleSave = useCallback(() => {
     onUpdate?.(draft)
@@ -112,7 +113,7 @@ export default function AppBioSection({ bio, sectionOrder, visible, editMode, se
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.8, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-                  className={`text-lg leading-relaxed text-muted-foreground font-light overflow-hidden ${
+                  className={`${bioTextSize} leading-relaxed text-muted-foreground font-light overflow-hidden ${
                     !bioExpanded ? 'max-h-[280px]' : 'max-h-[2000px]'
                   }`}
                   style={{
