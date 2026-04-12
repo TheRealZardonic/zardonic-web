@@ -58,6 +58,9 @@
   /* Global post-processing FX — CRT, vignette, noise (pointer-events: none) */
   --z-global-fx:     40;
 
+  /* Modal backdrop — sits behind an overlay panel but above all page content */
+  --z-modal-backdrop: 49;
+
   /* Interactive overlays — modals, dialogs, galleries */
   --z-overlay:       50;
 

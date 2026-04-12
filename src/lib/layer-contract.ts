@@ -42,6 +42,11 @@ export const LAYERS = {
    *  MUST be pointer-events: none. All three share this layer since they are
    *  decorative and DOM order determines their paint order. */
   GLOBAL_FX: 40,
+  /** Modal backdrop — sits behind the overlay panel (OVERLAY) but above all
+   *  page content. Use this for semi-transparent darkening overlays behind
+   *  dialogs/admin panels so that Radix UI portal dropdowns (z-index 50) can
+   *  still appear above the panel through normal DOM ordering. */
+  MODAL_BACKDROP: 49,
   /** Interactive overlays – modals, dialogs, galleries. */
   OVERLAY: 50,
   /** System-level UI – loading screen, cookie consent, toasts. */
@@ -63,6 +68,8 @@ export const LAYER_INVARIANTS = {
   NAV_ABOVE_HUD: LAYERS.NAV > LAYERS.HUD,
   /** Overlays must be above global FX. */
   OVERLAY_ABOVE_GLOBAL_FX: LAYERS.OVERLAY > LAYERS.GLOBAL_FX,
+  /** Modal backdrop must be below its overlay panel. */
+  MODAL_BACKDROP_BELOW_OVERLAY: LAYERS.MODAL_BACKDROP < LAYERS.OVERLAY,
   /** System is the topmost layer. */
   SYSTEM_TOPMOST: LAYERS.SYSTEM > LAYERS.OVERLAY,
 } as const
