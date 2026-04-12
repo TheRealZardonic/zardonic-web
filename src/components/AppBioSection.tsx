@@ -109,23 +109,30 @@ export default function AppBioSection({ bio, sectionOrder, visible, editMode, se
               </div>
             ) : (
               <div>
-                <motion.div
-                  initial={{ opacity: 0, x: -30 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.8, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
+                {/* fontFamily is intentionally on a plain div — not on the motion.div —
+                    so framer-motion's style merging can never interfere with the font.
+                    The CSS variable --font-body is set by useAppTheme and restored on
+                    every page load by theme-restore.js. */}
+                <div
                   className={`${bioTextSize} leading-relaxed text-muted-foreground font-light overflow-hidden ${
                     !bioExpanded ? 'max-h-[280px]' : 'max-h-[2000px]'
                   }`}
                   style={{
-                    fontFamily: adminSettings?.design?.theme?.fontBody ?? 'var(--font-body)',
+                    fontFamily: 'var(--font-body)',
                     maskImage: !bioExpanded ? 'linear-gradient(to bottom, black 60%, transparent 100%)' : 'none',
                     WebkitMaskImage: !bioExpanded ? 'linear-gradient(to bottom, black 60%, transparent 100%)' : 'none',
                     transition: 'max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), mask-image 0.3s ease, -webkit-mask-image 0.3s ease',
                   }}
                 >
+                <motion.div
+                  initial={{ opacity: 0, x: -30 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.8, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
+                >
                   {bio}
                 </motion.div>
+                </div>
                 <motion.div
                   initial={{ opacity: 0 }}
                   whileInView={{ opacity: 1 }}
