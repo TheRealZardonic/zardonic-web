@@ -177,7 +177,7 @@ export default function CyberpunkOverlay({ overlay, onClose, adminSettings, arti
                           )}
 
                           {overlay.type === 'release' && overlay.data && (
-                            <ReleaseOverlayContent data={overlay.data} sectionLabels={adminSettings?.labels} />
+                            <ReleaseOverlayContent data={overlay.data} sectionLabels={adminSettings?.labels} mainArtistName={artistName} />
                           )}
                         </>
                       )}

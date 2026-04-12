@@ -357,7 +357,7 @@ export interface SectionStyleOverride {
   // Releases-specific
   releaseLayout?: 'grid' | 'swipe' | 'carousel-3d'
   releaseColumns?: '2' | '3' | '4'
-  releaseCardVariant?: 'default' | 'square-minimal' | 'square-titled' | 'compact'
+  releaseCardVariant?: 'default' | 'square-minimal' | 'square-titled' | 'compact' | 'square-cover'
   releaseHoverEffect?: 'default' | 'zoom' | 'glow' | 'lift' | 'scan' | 'chromatic' | 'flip'
 }
 

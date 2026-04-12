@@ -43,6 +43,8 @@ export default function AppHeroSection({
   const heroImageUrl = siteData?.heroImage
   const heroImageOpacity = adminSettings?.sections?.styleOverrides?.hero?.heroImageOpacity ?? 0.5
   const heroImageBlur = adminSettings?.sections?.styleOverrides?.hero?.heroImageBlur ?? 0
+  const heroMinHeight = adminSettings?.sections?.styleOverrides?.hero?.minHeight ?? 'min-h-screen'
+  const heroPaddingTop = adminSettings?.sections?.styleOverrides?.hero?.paddingTop
 
   const startEditLinks = () => {
     setLinksDraft(siteData?.heroLinks ?? DEFAULT_HERO_LINKS)
@@ -57,7 +59,11 @@ export default function AppHeroSection({
   const genId = () => (typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : Math.random().toString(36).slice(2))
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden scanline-effect" data-theme-color="foreground primary">
+    <section
+      className={`relative ${heroMinHeight} flex items-center justify-center pt-20 overflow-hidden scanline-effect`}
+      style={heroPaddingTop ? { paddingTop: heroPaddingTop } : undefined}
+      data-theme-color="foreground primary"
+    >
       {!hasCustomBackground && !heroImageUrl && <div className="absolute inset-0 bg-black" />}
       {heroImageUrl && (
         <div
