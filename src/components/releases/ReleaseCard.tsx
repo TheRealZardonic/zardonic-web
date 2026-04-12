@@ -343,6 +343,7 @@ function FlipCard({
   onDeleteRelease,
 }: ReleaseCardProps) {
   const isSyncing = syncingId === release.id
+
   const streamingPlatforms = release.streamingLinks?.map(link => link.platform) ?? []
 
   return (

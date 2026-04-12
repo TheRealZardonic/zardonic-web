@@ -27,35 +27,37 @@ function parseReleaseArtists(description: string | undefined, mainArtistName: st
 /**
  * Build a display string for a track's artists.
  * Main artist is returned first; featured artists follow.
- * If only the main artist is present, returns undefined (no need to display).
+ * Returns undefined when there is nothing beyond the main artist alone.
  */
 function buildTrackArtistLine(
   trackArtist: string | undefined,
   featuredArtists: string[] | undefined,
   mainArtistName: string,
 ): string[] | undefined {
-  const artists: string[] = []
+  const allArtists: string[] = []
 
+  // Main artist is always first when known
+  if (mainArtistName) allArtists.push(mainArtistName)
+
+  // Add the track artist if it differs from the main artist
   if (trackArtist) {
-    // Put main artist first if it differs from the track artist
-    const isMain = trackArtist.trim().toLowerCase() === mainArtistName.trim().toLowerCase()
-    if (!isMain && mainArtistName) artists.push(mainArtistName)
-    artists.push(trackArtist)
-  } else if (mainArtistName) {
-    artists.push(mainArtistName)
-  }
-
-  if (featuredArtists && featuredArtists.length > 0) {
-    for (const fa of featuredArtists) {
-      if (!artists.some(a => a.trim().toLowerCase() === fa.trim().toLowerCase())) {
-        artists.push(fa)
-      }
+    const norm = trackArtist.trim().toLowerCase()
+    if (!allArtists.some(a => a.trim().toLowerCase() === norm)) {
+      allArtists.push(trackArtist)
     }
   }
 
-  // Only show artist line if there's more than just the main artist alone
-  if (artists.length <= 1) return undefined
-  return artists
+  // Add any featured artists not already in the list
+  for (const fa of (featuredArtists ?? [])) {
+    const norm = fa.trim().toLowerCase()
+    if (!allArtists.some(a => a.trim().toLowerCase() === norm)) {
+      allArtists.push(fa)
+    }
+  }
+
+  // Only surface the artist line when there is more than just the main artist
+  if (allArtists.length <= 1) return undefined
+  return allArtists
 }
 
 export function ReleaseOverlayContent({ data, sectionLabels, mainArtistName = '' }: ReleaseOverlayContentProps) {

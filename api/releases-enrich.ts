@@ -350,7 +350,8 @@ async function enrichRelease(
         })
         if (searchRes.ok) {
           const searchData = await searchRes.json() as { albums?: { items?: SpotifyAlbum[] } }
-          const items = searchData.albums?.items ?? []
+          const rawItems = searchData?.albums?.items
+          const items = Array.isArray(rawItems) ? rawItems : []
           const lowerTitle = updated.title.trim().toLowerCase()
           const match = items.find(a =>
             a.name.trim().toLowerCase() === lowerTitle &&
