@@ -209,7 +209,7 @@ function applyThemeToDOM(theme: ThemeSettings | undefined) {
   if (theme.mutedForeground) root.style.setProperty('--muted-foreground', theme.mutedForeground)
   if (theme.border) root.style.setProperty('--border', theme.border)
   if (theme.secondary) root.style.setProperty('--secondary', theme.secondary)
-  if (theme.fontBody) root.style.setProperty('--font-sans', theme.fontBody)
+  if (theme.fontBody) root.style.setProperty('--font-body', theme.fontBody)
   if (theme.fontMono) root.style.setProperty('--font-mono', theme.fontMono)
 
   // Also update heading font
@@ -279,7 +279,7 @@ function resetThemeDOM() {
   const root = document.documentElement
   const props = [
     '--primary', '--accent', '--background', '--card', '--foreground',
-    '--muted-foreground', '--border', '--secondary', '--font-sans', '--font-mono',
+    '--muted-foreground', '--border', '--secondary', '--font-body', '--font-mono',
     '--font-heading', '--ring', '--destructive', '--primary-foreground',
     '--secondary-foreground', '--accent-foreground', '--card-foreground',
     '--popover-foreground', '--destructive-foreground', '--popover', '--muted',
