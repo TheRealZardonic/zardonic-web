@@ -19,7 +19,7 @@ import type {
   DisclosureLevel,
 } from '@/lib/types'
 import { isFieldVisible } from '@/lib/admin-settings'
-import { loadGoogleFont } from '@/lib/font-loader'
+import { loadGoogleFont, extractGoogleFontName } from '@/lib/font-loader'
 
 const BUILTIN_PRESETS: { name: string; theme: Partial<ThemeCustomization> }[] = [
   {
@@ -314,19 +314,6 @@ const fontOptions: {
   },
 ]
 
-/** Extract the first font-family name for Google Fonts loading. */
-function extractFontName(fontValue: string): string | null {
-  const systemFonts = new Set([
-    'system-ui', 'ui-monospace', 'ui-sans-serif', 'ui-serif',
-    'monospace', 'sans-serif', 'serif',
-    'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'Courier New', 'Courier',
-    'Georgia', 'Cambria', 'Times New Roman', 'Times', 'Arial', 'Helvetica',
-  ])
-  const first = fontValue.replace(/['"]/g, '').split(',')[0].trim()
-  if (!first || systemFonts.has(first)) return null
-  return first
-}
-
 
 /** Shows a WCAG contrast warning when foreground/background ratio is too low. */
 function ContrastBadge({ fg, bg, largeText = false }: { fg: string; bg: string; largeText?: boolean }) {
@@ -589,7 +576,7 @@ export default function AppearanceTab({
                 onChange={(e) => {
                   if (e.target.value) {
                     updateTheme(key, e.target.value)
-                    const name = extractFontName(e.target.value)
+                    const name = extractGoogleFontName(e.target.value)
                     if (name) loadGoogleFont(name)
                   }
                 }}
