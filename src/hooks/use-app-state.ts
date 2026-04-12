@@ -185,14 +185,17 @@ export function useAppState(): AppState {
     }
   }, [loading])
 
-  // ── Analytics (consent-gated) ──────────────────────────────────────────────
+  // ── Analytics (consent-gated + admin toggle) ──────────────────────────────
   const analyticsConsent = useAnalyticsConsent()
+  const analyticsAdminEnabled = adminSettings?.analytics?.enabled !== false
+  const analyticsPageViewsEnabled = analyticsAdminEnabled && adminSettings?.analytics?.trackPageViews !== false
+  const analyticsEventsEnabled = analyticsAdminEnabled && adminSettings?.analytics?.trackEvents !== false
   useEffect(() => {
-    if (analyticsConsent) trackPageView()
-  }, [analyticsConsent])
+    if (analyticsConsent && analyticsPageViewsEnabled) trackPageView()
+  }, [analyticsConsent, analyticsPageViewsEnabled])
 
   useEffect(() => {
-    if (!analyticsConsent) return
+    if (!analyticsConsent || !analyticsEventsEnabled) return
     const handleClick = (e: MouseEvent) => {
       const x = e.clientX / window.innerWidth
       const y = (e.clientY + window.scrollY) / document.documentElement.scrollHeight
@@ -211,7 +214,7 @@ export function useAppState(): AppState {
     }
     document.addEventListener('click', handleClick)
     return () => document.removeEventListener('click', handleClick)
-  }, [analyticsConsent])
+  }, [analyticsConsent, analyticsEventsEnabled])
 
   // ── Edit mode / selection lock ─────────────────────────────────────────────
   const [editMode, setEditMode] = useState(false)

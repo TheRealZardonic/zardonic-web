@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CaretLeft, CaretRight } from '@phosphor-icons/react'
 import type { Release } from '@/lib/app-types'
+import { useTouchSwipe } from '@/hooks/use-touch-swipe'
 
 interface Releases3DCarouselLayoutProps {
   releases: Release[]
@@ -50,6 +51,9 @@ export function Releases3DCarouselLayout({ releases, renderCard }: Releases3DCar
     return () => window.removeEventListener('keydown', onKey)
   }, [prev, next])
 
+  // Touch/swipe navigation
+  const swipeHandlers = useTouchSwipe({ onSwipeLeft: next, onSwipeRight: prev })
+
   if (total === 0) return null
 
   return (
@@ -58,6 +62,7 @@ export function Releases3DCarouselLayout({ releases, renderCard }: Releases3DCar
       role="region"
       aria-roledescription="3D carousel"
       aria-label="Releases"
+      {...swipeHandlers}
     >
       {/* Stage */}
       <div className="relative h-[300px] md:h-[360px] flex items-center justify-center overflow-hidden">
