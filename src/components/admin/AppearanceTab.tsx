@@ -247,6 +247,14 @@ function ContrastBadge({ fg, bg, largeText = false }: { fg: string; bg: string; 
   )
 }
 
+/** Safely parse a numeric value out of a CSS string like "2.5rem" or "1.6".
+ *  Returns `fallback` when the string is undefined, empty, or not a number.
+ *  Uses an explicit isNaN check so that zero values are preserved correctly. */
+function parseSliderValue(v: string | undefined, fallback: number): number {
+  const n = parseFloat(v ?? '')
+  return isNaN(n) ? fallback : n
+}
+
 export default function AppearanceTab({
   adminSettings,
   setAdminSettings,
@@ -813,7 +821,7 @@ export default function AppearanceTab({
                 </span>
               </div>
               <Slider
-                value={[parseFloat(adminSettings?.design?.typography?.headingFontSize ?? '') || 2.5]}
+                value={[parseSliderValue(adminSettings?.design?.typography?.headingFontSize, 2.5)]}
                 min={1}
                 max={6}
                 step={0.1}
@@ -836,7 +844,7 @@ export default function AppearanceTab({
                 </span>
               </div>
               <Slider
-                value={[parseFloat(adminSettings?.design?.typography?.bodyFontSize ?? '') || 1]}
+                value={[parseSliderValue(adminSettings?.design?.typography?.bodyFontSize, 1)]}
                 min={0.75}
                 max={1.5}
                 step={0.05}
@@ -859,7 +867,7 @@ export default function AppearanceTab({
                 </span>
               </div>
               <Slider
-                value={[parseFloat(adminSettings?.design?.typography?.monoFontSize ?? '') || 0.875]}
+                value={[parseSliderValue(adminSettings?.design?.typography?.monoFontSize, 0.875)]}
                 min={0.7}
                 max={1.2}
                 step={0.05}
@@ -901,7 +909,7 @@ export default function AppearanceTab({
                 </span>
               </div>
               <Slider
-                value={[parseFloat(adminSettings?.design?.typography?.headingLineHeight ?? '') || 1.1]}
+                value={[parseSliderValue(adminSettings?.design?.typography?.headingLineHeight, 1.1)]}
                 min={1}
                 max={2}
                 step={0.05}
@@ -924,7 +932,7 @@ export default function AppearanceTab({
                 </span>
               </div>
               <Slider
-                value={[parseFloat(adminSettings?.design?.typography?.bodyLineHeight ?? '') || 1.6]}
+                value={[parseSliderValue(adminSettings?.design?.typography?.bodyLineHeight, 1.6)]}
                 min={1}
                 max={2}
                 step={0.05}
@@ -947,7 +955,7 @@ export default function AppearanceTab({
                 </span>
               </div>
               <Slider
-                value={[parseFloat(adminSettings?.design?.typography?.headingLetterSpacing ?? '') || 0]}
+                value={[parseSliderValue(adminSettings?.design?.typography?.headingLetterSpacing, 0)]}
                 min={-0.05}
                 max={0.3}
                 step={0.01}
