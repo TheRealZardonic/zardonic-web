@@ -25,7 +25,7 @@ export default function BiographySection({
         transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
         className="relative"
       >
-        <h2 className="text-4xl md:text-6xl font-bold mb-12 uppercase tracking-tighter text-foreground font-['Orbitron'] zardonic-theme-hover-chromatic zardonic-theme-hover-glitch">
+        <h2 className="text-4xl md:text-6xl font-bold mb-12 uppercase tracking-tighter text-foreground zardonic-theme-hover-chromatic zardonic-theme-hover-glitch">
           {title}
         </h2>
         

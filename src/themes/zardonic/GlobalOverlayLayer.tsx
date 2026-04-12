@@ -1,3 +1,5 @@
+import React from 'react'
+
 interface GlobalOverlayLayerProps {
   crtIntensity?: number
   vignetteIntensity?: number
@@ -32,18 +34,19 @@ export default function GlobalOverlayLayer({
       {/* Animated scanline moving down the viewport */}
       {scanlineIntensity > 0 && (
         <div 
-          className="fixed inset-0 pointer-events-none z-[1]"
+          className="fixed inset-0 pointer-events-none"
           style={{
             background: 'repeating-linear-gradient(0deg, transparent 0px, rgba(255, 255, 255, 0.015) 1px, transparent 2px, transparent 4px)',
             transform: 'translateZ(0)',
-            opacity: scanlineIntensity
-          }}
+            opacity: scanlineIntensity,
+            zIndex: 'var(--z-bg-scanline)'
+          } as React.CSSProperties}
         >
           <div 
             className="absolute left-0 w-full h-[6px]"
             style={{
               background: 'linear-gradient(180deg, transparent 0%, rgba(255, 255, 255, 0.04) 50%, transparent 100%)',
-              animation: 'zardonic-theme-scanline-drift 6s linear infinite',
+              animation: 'scanline-drift 6s linear infinite',
               willChange: 'transform',
               transform: 'translateZ(0)'
             }}

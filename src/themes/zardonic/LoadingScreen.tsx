@@ -1,5 +1,5 @@
+import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { useEffect, useState } from 'react'
 
 interface LoadingScreenProps {
   onLoadComplete?: () => void
@@ -62,7 +62,7 @@ export default function LoadingScreen({ onLoadComplete, precacheUrls = [] }: Loa
       <div className="zardonic-theme-crt-overlay" style={{ opacity: 0.6 }} />
       <div className="zardonic-theme-crt-vignette" style={{ opacity: 0.3 }} />
 
-      <div className="relative z-10 flex flex-col items-center space-y-8 px-4">
+      <div className="relative flex flex-col items-center space-y-8 px-4" style={{ zIndex: 'var(--z-content)' } as React.CSSProperties}>
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}

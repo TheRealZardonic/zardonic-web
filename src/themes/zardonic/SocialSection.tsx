@@ -1,3 +1,4 @@
+import React from 'react'
 import { motion } from 'framer-motion'
 import { InstagramLogo, FacebookLogo, SpotifyLogo, YoutubeLogo, SoundcloudLogo, TiktokLogo, type Icon as PhosphorIcon } from '@phosphor-icons/react'
 
@@ -28,7 +29,7 @@ export default function SocialSection({
   videoEmbedUrl
 }: SocialSectionProps) {
   return (
-    <section id="connect" className="py-24 px-4 bg-card/50 zardonic-theme-scanline-effect zardonic-theme-crt-effect">
+    <section id="connect" className="py-24 px-4 bg-card/50 zardonic-theme-scanline-effect">
       <div className="container mx-auto max-w-4xl">
         <motion.div
           initial={{ opacity: 0, x: -30, filter: 'blur(10px)', clipPath: 'polygon(0 0, 0 0, 0 100%, 0 100%)' }}
@@ -37,7 +38,7 @@ export default function SocialSection({
           transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
           className="text-center"
         >
-          <h2 className="text-4xl md:text-6xl font-bold mb-12 uppercase tracking-tighter text-foreground font-['Orbitron'] zardonic-theme-hover-chromatic zardonic-theme-hover-glitch">
+          <h2 className="text-4xl md:text-6xl font-bold mb-12 uppercase tracking-tighter text-foreground zardonic-theme-hover-chromatic zardonic-theme-hover-glitch">
             {title}
           </h2>
 
@@ -74,7 +75,7 @@ export default function SocialSection({
               transition={{ duration: 0.6, delay: 0.6 }}
               className="relative aspect-video bg-muted border border-border zardonic-theme-cyber-card"
             >
-              <div className="zardonic-theme-data-label absolute top-2 left-2 z-10">// VIDEO.EMBED</div>
+              <div className="zardonic-theme-data-label absolute top-2 left-2" style={{ zIndex: 'var(--z-content)' } as React.CSSProperties}>// VIDEO.EMBED</div>
               <iframe
                 src={videoEmbedUrl}
                 className="absolute inset-0 w-full h-full"

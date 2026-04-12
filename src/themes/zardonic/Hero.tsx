@@ -1,3 +1,4 @@
+import React from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 
@@ -55,7 +56,8 @@ export default function Hero({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.15 }}
-        className="relative z-10 text-center px-4"
+        className="relative text-center px-4"
+        style={{ zIndex: 'var(--z-content)' } as React.CSSProperties}
       >
         {/* Logo */}
         <motion.div 
@@ -87,7 +89,7 @@ export default function Hero({
             ) : logo ? (
               logo
             ) : (
-              <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold uppercase font-['Orbitron'] tracking-tighter zardonic-theme-hover-chromatic">
+              <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold uppercase tracking-tighter zardonic-theme-hover-chromatic">
                 {brandName}
               </h1>
             )}

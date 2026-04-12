@@ -51,7 +51,7 @@ export default function GigsSection({
   }
 
   return (
-    <section id="gigs" className="py-24 px-4 zardonic-theme-noise-effect zardonic-theme-crt-effect">
+    <section id="gigs" className="py-24 px-4 zardonic-theme-noise-effect">
       <div className="container mx-auto max-w-6xl">
         <motion.div
           initial={{ opacity: 0, x: -30, filter: 'blur(10px)', clipPath: 'polygon(0 0, 0 0, 0 100%, 0 100%)' }}
@@ -59,7 +59,7 @@ export default function GigsSection({
           viewport={{ once: true }}
           transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
         >
-          <h2 className="text-4xl md:text-6xl font-bold mb-12 uppercase tracking-tighter text-foreground font-['Orbitron'] zardonic-theme-hover-chromatic zardonic-theme-hover-glitch">
+          <h2 className="text-4xl md:text-6xl font-bold mb-12 uppercase tracking-tighter text-foreground zardonic-theme-hover-chromatic zardonic-theme-hover-glitch">
             {title}
           </h2>
 

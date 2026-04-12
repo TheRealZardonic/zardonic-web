@@ -1,5 +1,5 @@
+import React, { type ReactNode } from 'react'
 import { motion } from 'framer-motion'
-import { ReactNode } from 'react'
 
 interface CardProps {
   children: ReactNode
@@ -47,7 +47,7 @@ export default function Card({
       {variant === 'cyber' && (
         <>
           <div className="zardonic-theme-scan-line" />
-          <div className="zardonic-theme-data-label absolute top-2 left-2 z-10 text-[8px]">
+          <div className="zardonic-theme-data-label absolute top-2 left-2 text-[8px]" style={{ zIndex: 'var(--z-content)' } as React.CSSProperties}>
             // CARD.ELEMENT
           </div>
         </>

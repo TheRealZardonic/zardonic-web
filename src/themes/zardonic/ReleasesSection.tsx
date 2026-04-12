@@ -1,3 +1,4 @@
+import React from 'react'
 import { motion } from 'framer-motion'
 import Card from './Card'
 
@@ -59,7 +60,7 @@ export default function ReleasesSection({
   onReleaseClick
 }: ReleasesSectionProps) {
   return (
-    <section id="releases" className="py-24 px-4 bg-card/50 zardonic-theme-scanline-effect zardonic-theme-crt-effect">
+    <section id="releases" className="py-24 px-4 bg-card/50 zardonic-theme-scanline-effect">
       <div className="container mx-auto max-w-6xl">
         <motion.div
           initial={{ opacity: 0, x: -30, filter: 'blur(10px)', clipPath: 'polygon(0 0, 0 0, 0 100%, 0 100%)' }}
@@ -67,7 +68,7 @@ export default function ReleasesSection({
           viewport={{ once: true }}
           transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
         >
-          <h2 className="text-4xl md:text-6xl font-bold mb-12 uppercase tracking-tighter text-foreground font-['Orbitron'] zardonic-theme-hover-chromatic zardonic-theme-hover-glitch">
+          <h2 className="text-4xl md:text-6xl font-bold mb-12 uppercase tracking-tighter text-foreground zardonic-theme-hover-chromatic zardonic-theme-hover-glitch">
             {title}
           </h2>
 
@@ -97,7 +98,7 @@ export default function ReleasesSection({
                     onClick={() => onReleaseClick?.(release)}
                     className="overflow-hidden cursor-pointer"
                   >
-                    <div className="zardonic-theme-data-label absolute top-2 left-2 z-10">// REL.{release.year}</div>
+                    <div className="zardonic-theme-data-label absolute top-2 left-2 text-[8px]" style={{ zIndex: 'var(--z-content)' } as React.CSSProperties}>// REL.{release.year}</div>
                     <div className="aspect-square bg-muted relative">
                       {release.artwork && (
                         <img 

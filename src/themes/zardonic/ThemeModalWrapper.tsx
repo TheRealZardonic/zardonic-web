@@ -1,6 +1,6 @@
+import React, { type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from '@phosphor-icons/react'
-import { ReactNode } from 'react'
 
 interface ThemeModalWrapperProps {
   isOpen: boolean
@@ -121,7 +121,8 @@ export default function ThemeModalWrapper({
               <div className="relative overflow-y-auto max-h-[90vh] p-8 md:p-12 pt-12">
                 <button
                   onClick={onClose}
-                  className="absolute top-4 right-4 text-foreground hover:text-primary transition-colors z-10"
+                  className="absolute top-4 right-4 text-foreground hover:text-primary transition-colors"
+                  style={{ zIndex: 'var(--z-content)' } as React.CSSProperties}
                 >
                   <X className="w-6 h-6" />
                 </button>
@@ -134,7 +135,7 @@ export default function ThemeModalWrapper({
                     className="mb-6"
                   >
                     <div className="zardonic-theme-data-label mb-2">// MODAL.CONTENT</div>
-                    <h2 className="text-4xl md:text-5xl font-bold uppercase font-['Orbitron'] mb-4 zardonic-theme-hover-chromatic">
+                    <h2 className="text-4xl md:text-5xl font-bold uppercase mb-4 zardonic-theme-hover-chromatic">
                       {title}
                     </h2>
                   </motion.div>
