@@ -42,6 +42,18 @@ export function getSectionStyle(
 }
 
 /**
+ * Returns the effective body font-size Tailwind class for the Biography section.
+ * Checks `bodyFontSize` first (canonical field used by the registry and LayoutTab),
+ * then falls back to the legacy `textSize` field for backward compatibility.
+ */
+export function getBioBodyFontSize(
+  settings: AdminSettings | undefined | null,
+): string {
+  const bio = settings?.sections?.styleOverrides?.bio
+  return bio?.bodyFontSize ?? bio?.textSize ?? 'text-lg'
+}
+
+/**
  * Checks whether a field at `fieldLevel` should be shown given `currentLevel`.
  * - basic  → always visible
  * - advanced → visible at 'advanced' or 'expert'

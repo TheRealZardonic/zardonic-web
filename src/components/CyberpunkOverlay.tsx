@@ -10,6 +10,7 @@ import {
   OVERLAY_GLITCH_PHASE_DELAY_MS,
   OVERLAY_REVEAL_PHASE_DELAY_MS,
 } from '@/lib/config'
+import { getRandomOverlayAnimation, getAllOverlayAnimations } from '@/lib/overlay-animations'
 import { ImpressumOverlayContent } from '@/components/overlays/ImpressumOverlayContent'
 import { PrivacyOverlayContent } from '@/components/overlays/PrivacyOverlayContent'
 import { ContactOverlayContent } from '@/components/overlays/ContactOverlayContent'
@@ -33,13 +34,16 @@ interface CyberpunkOverlayProps {
 export default function CyberpunkOverlay({ overlay, onClose, adminSettings, artistName = '' }: CyberpunkOverlayProps) {
   const [overlayPhase, setOverlayPhase] = useState<'loading' | 'glitch' | 'revealed'>('loading')
   const [loadingText, setLoadingText] = useState(OVERLAY_LOADING_TEXTS[0])
+  const [anim, setAnim] = useState(() => getAllOverlayAnimations()[0])
   const decorativeTexts = adminSettings?.decorative
   const systemLabel = decorativeTexts?.overlaySystemLabel ?? `// ${artistName ? `${artistName.toUpperCase()}.NET` : 'SYSTEM.INTERFACE'} // v${typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.0'}`
 
   useEffect(() => {
     if (!overlay) return
-
+    // Pick a new random animation each time an overlay opens
     // eslint-disable-next-line react-hooks/set-state-in-effect
+    setAnim(getRandomOverlayAnimation())
+
     setOverlayPhase('loading')
     setLoadingText(OVERLAY_LOADING_TEXTS[0])
 
@@ -73,20 +77,20 @@ export default function CyberpunkOverlay({ overlay, onClose, adminSettings, arti
         <>
           {/* Backdrop */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
+            initial={anim.backdrop.initial}
+            animate={anim.backdrop.animate}
+            exit={anim.backdrop.exit}
+            transition={anim.backdrop.transition ?? { duration: 0.3 }}
             className="fixed inset-0 bg-black/90 z-[100] backdrop-blur-sm cyberpunk-overlay-bg"
             onClick={onClose}
           />
 
           {/* Modal container */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.3 }}
+            initial={anim.modal.initial}
+            animate={anim.modal.animate}
+            exit={anim.modal.exit}
+            transition={anim.modal.transition ?? { duration: 0.3 }}
             className="fixed inset-0 z-[101] flex items-center justify-center p-4 md:p-8 pointer-events-none"
             style={{ perspective: '1000px' }}
           >

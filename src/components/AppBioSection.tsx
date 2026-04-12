@@ -6,6 +6,7 @@ import { Separator } from '@/components/ui/separator'
 import EditableHeading from '@/components/EditableHeading'
 import { CaretDown, CaretUp, FloppyDisk, PencilSimple, X } from '@phosphor-icons/react'
 import type { AdminSettings, SectionLabels } from '@/lib/types'
+import { getBioBodyFontSize } from '@/lib/admin-settings'
 import { toast } from 'sonner'
 
 interface AppBioSectionProps {
@@ -28,7 +29,7 @@ export default function AppBioSection({ bio, sectionOrder, visible, editMode, se
 
   const readMoreText = sectionLabels?.bioReadMoreText ?? 'Read More'
   const showLessText = sectionLabels?.bioShowLessText ?? 'Show Less'
-  const bioTextSize = adminSettings?.sections?.styleOverrides?.bio?.textSize ?? 'text-lg'
+  const bioTextSize = getBioBodyFontSize(adminSettings)
 
   const handleSave = useCallback(() => {
     onUpdate?.(draft)
@@ -117,6 +118,7 @@ export default function AppBioSection({ bio, sectionOrder, visible, editMode, se
                     !bioExpanded ? 'max-h-[280px]' : 'max-h-[2000px]'
                   }`}
                   style={{
+                    fontFamily: 'var(--font-body)',
                     maskImage: !bioExpanded ? 'linear-gradient(to bottom, black 60%, transparent 100%)' : 'none',
                     WebkitMaskImage: !bioExpanded ? 'linear-gradient(to bottom, black 60%, transparent 100%)' : 'none',
                     transition: 'max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), mask-image 0.3s ease, -webkit-mask-image 0.3s ease',

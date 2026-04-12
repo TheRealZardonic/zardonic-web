@@ -3,20 +3,20 @@
  * A random variant is selected each time an overlay opens.
  */
 
-import type { Transition } from 'framer-motion'
+import type { Transition, TargetAndTransition } from 'framer-motion'
 
 export interface OverlayAnimation {
   name: string
   backdrop: {
-    initial: Record<string, unknown>
-    animate: Record<string, unknown>
-    exit: Record<string, unknown>
+    initial: TargetAndTransition
+    animate: TargetAndTransition
+    exit: TargetAndTransition
     transition?: Transition
   }
   modal: {
-    initial: Record<string, unknown>
-    animate: Record<string, unknown>
-    exit: Record<string, unknown>
+    initial: TargetAndTransition
+    animate: TargetAndTransition
+    exit: TargetAndTransition
     transition?: Transition
   }
   /** CSS class name for the unique overlay loading indicator */

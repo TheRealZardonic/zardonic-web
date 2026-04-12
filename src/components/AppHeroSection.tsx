@@ -29,6 +29,7 @@ export default function AppHeroSection({
   editMode,
   scrollToSection,
   artistName,
+  adminSettings,
   sectionVisibility,
   onUpdateSiteData,
   siteData,
@@ -38,6 +39,10 @@ export default function AppHeroSection({
   const [editingLinks, setEditingLinks] = useState(false)
   const [linksDraft, setLinksDraft] = useState<HeroLink[]>(heroLinks)
   const prefersReducedMotion = useReducedMotion()
+
+  const heroImageUrl = siteData?.heroImage
+  const heroImageOpacity = adminSettings?.sections?.styleOverrides?.hero?.heroImageOpacity ?? 0.5
+  const heroImageBlur = adminSettings?.sections?.styleOverrides?.hero?.heroImageBlur ?? 0
 
   const startEditLinks = () => {
     setLinksDraft(siteData?.heroLinks ?? DEFAULT_HERO_LINKS)
@@ -53,7 +58,18 @@ export default function AppHeroSection({
 
   return (
     <section className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden scanline-effect" data-theme-color="foreground primary">
-      {!hasCustomBackground && <div className="absolute inset-0 bg-black" />}
+      {!hasCustomBackground && !heroImageUrl && <div className="absolute inset-0 bg-black" />}
+      {heroImageUrl && (
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: `url(${heroImageUrl})`,
+            opacity: heroImageOpacity,
+            filter: heroImageBlur > 0 ? `blur(${heroImageBlur}px)` : undefined,
+          }}
+          aria-hidden="true"
+        />
+      )}
       
       <div className="absolute inset-0 noise-effect" />
       

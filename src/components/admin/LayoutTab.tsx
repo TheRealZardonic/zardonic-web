@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 
 import type { AdminSettings, DisclosureLevel } from '@/lib/types'
-import { isFieldVisible } from '@/lib/admin-settings'
+import { isFieldVisible, getBioBodyFontSize } from '@/lib/admin-settings'
 
 interface LayoutTabProps {
   adminSettings: AdminSettings | null | undefined
@@ -31,7 +31,7 @@ export default function LayoutTab({ adminSettings, setAdminSettings, disclosureL
   const updateFooterStyling = (patch: Record<string, string | undefined>) => {
     setAdminSettings?.({ ...(adminSettings ?? {}), design: { ...(adminSettings?.design ?? {}), footer: { ...footerStyling, ...patch } } })
   }
-  const updateHeroSection = (patch: Record<string, string | undefined>) => {
+  const updateHeroSection = (patch: Record<string, string | number | undefined>) => {
     setAdminSettings?.({ ...(adminSettings ?? {}), sections: { ...(adminSettings?.sections ?? {}), styleOverrides: { ...(adminSettings?.sections?.styleOverrides ?? {}), hero: { ...heroSection, ...patch } } } })
   }
   const updateBioSection = (patch: Record<string, string | undefined>) => {
@@ -221,16 +221,48 @@ export default function LayoutTab({ adminSettings, setAdminSettings, disclosureL
             ))}
           </div>
         </div>
-        {isAdvanced && (
-          <div className="space-y-2">
-            <Label className="font-mono text-xs">Padding Top</Label>
-            <Input
-              className="font-mono text-xs h-8"
-              placeholder="5rem"
-              value={heroSection.paddingTop ?? ''}
-              onChange={(e) => updateHeroSection({ paddingTop: e.target.value || undefined })}
-            />
+        <div className="space-y-2">
+          <div className="flex justify-between">
+            <Label className="font-mono text-xs">Hero Image Opacity</Label>
+            <span className="font-mono text-xs text-muted-foreground">
+              {Math.round((heroSection.heroImageOpacity ?? 0.5) * 100)}%
+            </span>
           </div>
+          <Slider
+            value={[(heroSection.heroImageOpacity ?? 0.5) * 100]}
+            min={0}
+            max={100}
+            step={5}
+            onValueChange={([v]) => updateHeroSection({ heroImageOpacity: v / 100 })}
+          />
+        </div>
+        {isAdvanced && (
+          <>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label className="font-mono text-xs">Hero Image Blur</Label>
+                <span className="font-mono text-xs text-muted-foreground">
+                  {heroSection.heroImageBlur ?? 0}px
+                </span>
+              </div>
+              <Slider
+                value={[heroSection.heroImageBlur ?? 0]}
+                min={0}
+                max={20}
+                step={1}
+                onValueChange={([v]) => updateHeroSection({ heroImageBlur: v })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="font-mono text-xs">Padding Top</Label>
+              <Input
+                className="font-mono text-xs h-8"
+                placeholder="5rem"
+                value={heroSection.paddingTop ?? ''}
+                onChange={(e) => updateHeroSection({ paddingTop: e.target.value || undefined })}
+              />
+            </div>
+          </>
         )}
       </section>
 
@@ -247,9 +279,9 @@ export default function LayoutTab({ adminSettings, setAdminSettings, disclosureL
             {(['text-sm', 'text-base', 'text-lg', 'text-xl'] as const).map((opt) => (
               <button
                 key={opt}
-                onClick={() => updateBioSection({ textSize: opt })}
+                onClick={() => updateBioSection({ bodyFontSize: opt })}
                 className={`text-left px-3 py-2 border rounded font-mono text-xs transition-colors ${
-                  (bioSection.textSize ?? 'text-lg') === opt
+                  (getBioBodyFontSize(adminSettings)) === opt
                     ? 'border-primary bg-primary/10 text-primary'
                     : 'border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'
                 }`}

@@ -343,6 +343,9 @@ export interface SectionStyleOverride {
   paddingTop?: string
   readMoreMaxHeight?: string
   textSize?: string
+  // Hero-specific
+  heroImageOpacity?: number
+  heroImageBlur?: number
   // Gallery-specific
   columns?: string
   aspectRatio?: string
