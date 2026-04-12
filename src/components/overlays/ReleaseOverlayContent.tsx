@@ -8,9 +8,59 @@ import { formatReleaseDate } from '@/lib/format-release-date'
 interface ReleaseOverlayContentProps {
   data: Release
   sectionLabels?: SectionLabels
+  mainArtistName?: string
 }
 
-export function ReleaseOverlayContent({ data, sectionLabels }: ReleaseOverlayContentProps) {
+/**
+ * Parse the release artists from the description field.
+ * description = "ft. OtherArtist" means the release involves OtherArtist.
+ * Returns an array of artists with mainArtistName always first (if provided).
+ */
+function parseReleaseArtists(description: string | undefined, mainArtistName: string): string[] {
+  if (!mainArtistName) return []
+  if (!description?.startsWith('ft.')) return [mainArtistName]
+  const featured = description.slice(3).trim()
+  if (!featured) return [mainArtistName]
+  return [mainArtistName, featured]
+}
+
+/**
+ * Build a display string for a track's artists.
+ * Main artist is returned first; featured artists follow.
+ * Returns undefined when there is nothing beyond the main artist alone.
+ */
+function buildTrackArtistLine(
+  trackArtist: string | undefined,
+  featuredArtists: string[] | undefined,
+  mainArtistName: string,
+): string[] | undefined {
+  const allArtists: string[] = []
+
+  // Main artist is always first when known
+  if (mainArtistName) allArtists.push(mainArtistName)
+
+  // Add the track artist if it differs from the main artist
+  if (trackArtist) {
+    const norm = trackArtist.trim().toLowerCase()
+    if (!allArtists.some(a => a.trim().toLowerCase() === norm)) {
+      allArtists.push(trackArtist)
+    }
+  }
+
+  // Add any featured artists not already in the list
+  for (const fa of (featuredArtists ?? [])) {
+    const norm = fa.trim().toLowerCase()
+    if (!allArtists.some(a => a.trim().toLowerCase() === norm)) {
+      allArtists.push(fa)
+    }
+  }
+
+  // Only surface the artist line when there is more than just the main artist
+  if (allArtists.length <= 1) return undefined
+  return allArtists
+}
+
+export function ReleaseOverlayContent({ data, sectionLabels, mainArtistName = '' }: ReleaseOverlayContentProps) {
   const showType = sectionLabels?.releaseShowType !== false
   const showYear = sectionLabels?.releaseShowYear !== false
   const showDescription = sectionLabels?.releaseShowDescription !== false
@@ -22,6 +72,9 @@ export function ReleaseOverlayContent({ data, sectionLabels }: ReleaseOverlayCon
 
   const getLink = (platform: string) =>
     data.streamingLinks?.find(l => l.platform === platform)?.url
+
+  const releaseArtists = parseReleaseArtists(data.description, mainArtistName)
+  const showReleaseArtists = releaseArtists.length > 1
 
   return (
     <motion.div
@@ -58,6 +111,20 @@ export function ReleaseOverlayContent({ data, sectionLabels }: ReleaseOverlayCon
             <h2 className="text-3xl md:text-4xl font-bold uppercase font-mono mb-2 hover-chromatic crt-flash-in" data-text={data.title}>
               {data.title}
             </h2>
+            {showReleaseArtists && (
+              <p className="text-sm font-mono mt-1">
+                {releaseArtists.map((artist, i) => (
+                  <span key={artist}>
+                    {i === 0 ? (
+                      <span className="text-primary font-bold">{artist}</span>
+                    ) : (
+                      <span className="text-muted-foreground">{artist}</span>
+                    )}
+                    {i < releaseArtists.length - 1 && <span className="text-muted-foreground">, </span>}
+                  </span>
+                ))}
+              </p>
+            )}
             {showYear && (
               <p className="text-xl text-muted-foreground font-mono">
                 {formatReleaseDate(data.releaseDate, data.year)}
@@ -70,7 +137,7 @@ export function ReleaseOverlayContent({ data, sectionLabels }: ReleaseOverlayCon
             )}
           </motion.div>
 
-          {showDescription && data.description && (
+          {showDescription && data.description && !showReleaseArtists && (
             <motion.div
               className="cyber-grid p-4"
               initial={{ opacity: 0, x: -10 }}
@@ -185,18 +252,24 @@ export function ReleaseOverlayContent({ data, sectionLabels }: ReleaseOverlayCon
                     <span className="text-primary/50 w-5 text-right shrink-0 mt-0.5">{i + 1}.</span>
                     <div className="flex-1 min-w-0">
                       <span className="block">{track.title}</span>
-                      {data.type === 'compilation' && track.artist && (
-                        <span className="block text-xs text-muted-foreground mt-0.5">
-                          {track.featuredArtists && track.featuredArtists.length > 0
-                            ? `${track.artist} ft. ${track.featuredArtists.join(', ')}`
-                            : track.artist}
-                        </span>
-                      )}
-                      {data.type !== 'compilation' && track.featuredArtists && track.featuredArtists.length > 0 && (
-                        <span className="block text-xs text-muted-foreground mt-0.5">
-                          ft. {track.featuredArtists.join(', ')}
-                        </span>
-                      )}
+                      {(() => {
+                        const artistLine = buildTrackArtistLine(track.artist, track.featuredArtists, mainArtistName)
+                        if (!artistLine) return null
+                        return (
+                          <span className="flex flex-wrap gap-x-0.5 text-xs mt-0.5">
+                            {artistLine.map((artist, ai) => (
+                              <span key={artist}>
+                                {ai === 0 ? (
+                                  <span className="text-primary font-semibold">{artist}</span>
+                                ) : (
+                                  <span className="text-muted-foreground">{artist}</span>
+                                )}
+                                {ai < artistLine.length - 1 && <span className="text-muted-foreground">, </span>}
+                              </span>
+                            ))}
+                          </span>
+                        )
+                      })()}
                     </div>
                     {track.duration && (
                       <span className="text-muted-foreground text-xs shrink-0 mt-0.5">{track.duration}</span>

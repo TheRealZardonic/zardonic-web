@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card'
 import { ArrowsClockwise, PencilSimple, Trash } from '@phosphor-icons/react'
 import type { Release } from '@/lib/app-types'
 
-export type ReleaseCardVariant = 'default' | 'square-minimal' | 'square-titled' | 'compact'
+export type ReleaseCardVariant = 'default' | 'square-minimal' | 'square-titled' | 'compact' | 'square-cover'
 export type ReleaseHoverEffect = 'default' | 'zoom' | 'glow' | 'lift' | 'scan' | 'chromatic' | 'flip'
 
 interface ReleaseCardProps {
@@ -286,6 +286,52 @@ function CompactCard({
   )
 }
 
+function SquareCoverCard({
+  release,
+  editMode,
+  hoverEffect,
+  syncingId,
+  bulkSyncing,
+  onReleaseClick,
+  onSyncRelease,
+  onEditRelease,
+  onDeleteRelease,
+}: ReleaseCardProps) {
+  const isSyncing = syncingId === release.id
+  const hoverClass = getHoverClasses(hoverEffect)
+  const imageClass = hoverEffect === 'chromatic' ? 'glitch-image hover-chromatic-image' : 'glitch-image'
+
+  return (
+    <Card
+      className={`overflow-hidden bg-card border-border hover:border-primary/50 transition-all cursor-pointer relative ${hoverClass}`}
+      onClick={() => !editMode && onReleaseClick(release)}
+    >
+      <SyncBar isSyncing={isSyncing} />
+      {hoverEffect === 'scan' && <div className="scan-line" aria-hidden="true" />}
+      {editMode && (
+        <EditButtons
+          release={release}
+          syncingId={syncingId}
+          bulkSyncing={bulkSyncing}
+          onSyncRelease={onSyncRelease}
+          onEditRelease={onEditRelease}
+          onDeleteRelease={onDeleteRelease}
+        />
+      )}
+      <div className="aspect-square bg-muted relative">
+        {release.artwork ? (
+          <img src={release.artwork} alt={release.title} className={`w-full h-full object-cover ${imageClass}`} loading="lazy" decoding="async" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <span className="font-mono text-xs text-muted-foreground uppercase tracking-wider truncate px-2 text-center">{release.title}</span>
+          </div>
+        )}
+      </div>
+    </Card>
+  )
+}
+
+
 function FlipCard({
   release,
   editMode,
@@ -379,6 +425,7 @@ export function ReleaseCard(props: ReleaseCardProps) {
       viewport={{ once: true }}
       transition={{ duration: 0.6, delay: props.index * 0.08, ease: [0.25, 0.46, 0.45, 0.94] }}
     >
+      {variant === 'square-cover' && <SquareCoverCard {...props} />}
       {variant === 'square-minimal' && <SquareMinimalCard {...props} />}
       {variant === 'square-titled' && <SquareTitledCard {...props} />}
       {variant === 'compact' && <CompactCard {...props} />}

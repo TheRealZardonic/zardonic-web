@@ -263,6 +263,7 @@ export const SECTION_REGISTRY: SectionRegistryEntry[] = [
         type: 'select',
         options: [
           { label: 'Default (poster)', value: 'default' },
+          { label: 'Square – Cover Only (no text)', value: 'square-cover' },
           { label: 'Square – Minimal (artwork only)', value: 'square-minimal' },
           { label: 'Square – Titled (overlay)', value: 'square-titled' },
           { label: 'Compact (horizontal)', value: 'compact' },

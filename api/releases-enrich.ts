@@ -292,10 +292,12 @@ function applyMBMetadata(release: Release, mbMap: Map<string, MbReleaseData>): R
  * Order:
  *  1. Odesli — uses the iTunes Apple Music URL as primary lookup (always
  *     available). Falls back to the existing Spotify link if no Apple URL.
- *  2. MusicBrainz — applies type and date from the locally-matched `mbMap`
+ *  2. Spotify fallback — if Odesli returned no Spotify link, search the
+ *     Spotify API directly and add the first matching album link.
+ *  3. MusicBrainz — applies type and date from the locally-matched `mbMap`
  *     entry (no per-release API call).
- *  3. iTunes tracklist — fetched only when no tracks are present yet.
- *  4. Type fallback — inferred from track count / title if MB had no match.
+ *  4. iTunes tracklist — fetched only when no tracks are present yet.
+ *  5. Type fallback — inferred from track count / title if MB had no match.
  */
 async function enrichRelease(
   release: Release,
@@ -335,7 +337,40 @@ async function enrichRelease(
   // Only delay when we actually hit the Odesli API (not a Redis cache hit)
   if (!fromCache) await delay(ODESLI_DELAY_MS)
 
-  // ── Step 2: MusicBrainz — apply locally-matched metadata (type + date) ──
+  // ── Step 2: Spotify fallback — direct API search when Odesli has no Spotify ──
+  const hasSpotify = updated.streamingLinks?.some(l => l.platform === 'spotify')
+  if (!hasSpotify) {
+    try {
+      const token = await getSpotifyAccessToken()
+      if (token) {
+        const q = encodeURIComponent(`album:${updated.title} artist:${artistName}`)
+        const searchUrl = `https://api.spotify.com/v1/search?q=${q}&type=album&limit=5&market=US`
+        const searchRes = await fetchWithRetry(searchUrl, {
+          headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+        })
+        if (searchRes.ok) {
+          const searchData = await searchRes.json() as { albums?: { items?: SpotifyAlbum[] } }
+          const rawItems = searchData?.albums?.items
+          const items = Array.isArray(rawItems) ? rawItems : []
+          const lowerTitle = updated.title.trim().toLowerCase()
+          const match = items.find(a =>
+            a.name.trim().toLowerCase() === lowerTitle &&
+            a.artists?.some(ar => ar.name.trim().toLowerCase() === artistName.trim().toLowerCase())
+          ) ?? items.find(a => a.name.trim().toLowerCase() === lowerTitle)
+          if (match?.external_urls?.spotify) {
+            updated.streamingLinks = [
+              ...(updated.streamingLinks ?? []),
+              { platform: 'spotify', url: match.external_urls.spotify },
+            ]
+          }
+        }
+      }
+    } catch {
+      // Spotify fallback failure is non-fatal
+    }
+  }
+
+  // ── Step 3: MusicBrainz — apply locally-matched metadata (type + date) ──
   const withMB = applyMBMetadata(updated, mbMap)
   if (withMB.type && withMB.type !== updated.type) typeDetected = true
   Object.assign(updated, withMB)

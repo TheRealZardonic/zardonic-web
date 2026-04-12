@@ -62,7 +62,7 @@ export default function AppBioSection({ bio, sectionOrder, visible, editMode, se
             className="relative"
           >
             <div className="flex items-center justify-between mb-12 flex-wrap gap-4">
-              <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground font-mono hover-chromatic hover-glitch cyber2077-scan-build cyber2077-data-corrupt" data-text={`${headingPrefix ? headingPrefix + ' ' : ''}${sectionLabel || 'BIOGRAPHY'}`}>
+              <h2 className="text-4xl md:text-6xl font-bold uppercase tracking-tighter text-foreground hover-chromatic hover-glitch cyber2077-scan-build cyber2077-data-corrupt" data-text={`${headingPrefix ? headingPrefix + ' ' : ''}${sectionLabel || 'BIOGRAPHY'}`}>
                 {headingPrefix && <span className="text-primary/70 mr-2">{headingPrefix}</span>}
                 <EditableHeading onChange={() => {}}
                   text={sectionLabel}
