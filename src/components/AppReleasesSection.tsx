@@ -5,8 +5,12 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import EditableHeading from '@/components/EditableHeading'
 import ReleaseEditDialog from '@/components/ReleaseEditDialog'
-import { MusicNote, CaretDown, CaretUp, PencilSimple, Plus, Trash, ArrowsClockwise } from '@phosphor-icons/react'
+import { ReleaseCard } from '@/components/releases/ReleaseCard'
+import { ReleasesSwipeLayout } from '@/components/releases/ReleasesSwipeLayout'
+import { Releases3DCarouselLayout } from '@/components/releases/Releases3DCarouselLayout'
+import { MusicNote, CaretDown, CaretUp, Plus, ArrowsClockwise } from '@phosphor-icons/react'
 import type { AdminSettings, SectionLabels, Release as FullRelease } from '@/lib/types'
+import type { ReleaseCardVariant, ReleaseHoverEffect } from '@/components/releases/ReleaseCard'
 import type { Release } from '@/lib/app-types'
 import { useLocale } from '@/contexts/LocaleContext'
 
@@ -64,6 +68,20 @@ export default function AppReleasesSection({ releases, sectionOrder, visible, ed
   const abortBulkRef = useRef(false)
   const { t } = useLocale()
 
+  // Read per-section style overrides
+  const releaseOverrides = adminSettings?.sections?.styleOverrides?.['releases']
+  const releaseLayout = releaseOverrides?.releaseLayout ?? 'grid'
+  const releaseColumns = releaseOverrides?.releaseColumns ?? '4'
+  const cardVariant: ReleaseCardVariant = (releaseOverrides?.releaseCardVariant as ReleaseCardVariant) ?? 'default'
+  const hoverEffect: ReleaseHoverEffect = (releaseOverrides?.releaseHoverEffect as ReleaseHoverEffect) ?? 'default'
+
+  const gridColsClass: Record<string, string> = {
+    '2': 'grid-cols-2',
+    '3': 'grid-cols-2 md:grid-cols-3',
+    '4': 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4',
+  }
+  const columnsClass = gridColsClass[releaseColumns] ?? gridColsClass['4']
+
   const handleSetFilter = (f: '' | 'album' | 'ep' | 'single' | 'remix' | 'compilation') => {
     setActiveFilter(f)
     setShowAllReleases(false)
@@ -120,6 +138,24 @@ export default function AppReleasesSection({ releases, sectionOrder, visible, ed
     }
     setEditingRelease(null)
   }
+
+  /** Render a single release card with all edit-mode props wired */
+  const renderCard = (release: Release, index: number) => (
+    <ReleaseCard
+      key={release.id}
+      release={release}
+      index={index}
+      editMode={editMode}
+      variant={cardVariant}
+      hoverEffect={hoverEffect}
+      syncingId={syncingId}
+      bulkSyncing={bulkSyncing}
+      onReleaseClick={onReleaseClick}
+      onSyncRelease={onSyncRelease ? (id) => { void handleSyncSingle(id) } : undefined}
+      onEditRelease={onUpdateRelease ? (r) => setEditingRelease(toFullRelease(r)) : undefined}
+      onDeleteRelease={onDeleteRelease}
+    />
+  )
 
   return (
     <div style={{ order: sectionOrder }}>
@@ -281,7 +317,7 @@ export default function AppReleasesSection({ releases, sectionOrder, visible, ed
                 const filtered = activeFilter
                   ? sorted.filter(r => r.type === activeFilter || (activeFilter === 'album' && !r.type))
                   : sorted
-                const visibleReleases = showAllReleases ? filtered : filtered.slice(0, 8)
+                const visibleReleases = releaseLayout === 'grid' && !showAllReleases ? filtered.slice(0, 8) : filtered
                 return (
                   <>
                     <div className="flex gap-2 mb-6 flex-wrap">
@@ -299,113 +335,44 @@ export default function AppReleasesSection({ releases, sectionOrder, visible, ed
                         </button>
                       ))}
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                      {visibleReleases.map((release, index) => {
-                        const isSyncing = syncingId === release.id
-                        return (
+
+                    {releaseLayout === 'swipe' ? (
+                      <ReleasesSwipeLayout releases={filtered} renderCard={renderCard} />
+                    ) : releaseLayout === 'carousel-3d' ? (
+                      <Releases3DCarouselLayout releases={filtered} renderCard={renderCard} />
+                    ) : (
+                      <>
+                        <div className={`grid ${columnsClass} gap-6`}>
+                          {visibleReleases.map((release, index) => renderCard(release, index))}
+                        </div>
+                        {filtered.length > 8 && (
                           <motion.div
-                            key={release.id}
-                            initial={{ opacity: 0, clipPath: 'inset(0 0 100% 0)' }}
-                            whileInView={{ opacity: 1, clipPath: 'inset(0 0 0% 0)' }}
+                            className="flex justify-center mt-8"
+                            initial={{ opacity: 0 }}
+                            whileInView={{ opacity: 1 }}
                             viewport={{ once: true }}
-                            transition={{
-                              duration: 0.6,
-                              delay: index * 0.08,
-                              ease: [0.25, 0.46, 0.45, 0.94]
-                            }}
                           >
-                            <Card
-                              className="overflow-hidden bg-card border-border hover:border-primary/50 transition-all cursor-pointer cyber-card hover-noise relative"
-                              onClick={() => !editMode && onReleaseClick(release)}
+                            <Button
+                              variant="outline"
+                              size="lg"
+                              onClick={() => setShowAllReleases(!showAllReleases)}
+                              className="gap-2 uppercase font-mono cyber-border hover-glitch"
                             >
-                              {/* Per-card sync loading bar */}
-                              {isSyncing && (
-                                <div
-                                  className="absolute top-0 left-0 right-0 h-1 bg-border/30 overflow-hidden"
-                                  style={{ zIndex: 'var(--z-hud)' } as React.CSSProperties}
-                                >
-                                  <motion.div
-                                    className="absolute inset-y-0 left-0 bg-primary"
-                                    animate={{ x: ['-100%', '100%'] }}
-                                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                                    style={{ width: '50%' }}
-                                  />
-                                </div>
+                              {showAllReleases ? (
+                                <>
+                                  <CaretUp className="w-4 h-4" />
+                                  {showLessText}
+                                </>
+                              ) : (
+                                <>
+                                  <CaretDown className="w-4 h-4" />
+                                  {showAllText} ({filtered.length})
+                                </>
                               )}
-                              <div className="data-label absolute top-2 left-2 z-10" data-theme-color="data-label">// REL.{release.year}</div>
-                              {editMode && (
-                                <div className="absolute top-2 right-2 z-10 flex gap-1">
-                                  {onSyncRelease && (
-                                    <button
-                                      onClick={(e) => { e.stopPropagation(); void handleSyncSingle(release.id) }}
-                                      disabled={isSyncing || bulkSyncing}
-                                      className="p-1 bg-black/60 hover:bg-accent/80 text-foreground hover:text-accent-foreground rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                                      aria-label={`Sync ${release.title}`}
-                                      title="Sync with MusicBrainz + Odesli"
-                                    >
-                                      <ArrowsClockwise className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-                                    </button>
-                                  )}
-                                  {onUpdateRelease && (
-                                    <button
-                                      onClick={(e) => { e.stopPropagation(); setEditingRelease(toFullRelease(release)) }}
-                                      className="p-1 bg-black/60 hover:bg-primary/80 text-foreground hover:text-primary-foreground rounded transition-colors"
-                                      aria-label={`Edit ${release.title}`}
-                                    >
-                                      <PencilSimple className="w-3.5 h-3.5" />
-                                    </button>
-                                  )}
-                                  {onDeleteRelease && (
-                                    <button
-                                      onClick={(e) => { e.stopPropagation(); onDeleteRelease(release.id) }}
-                                      className="p-1 bg-black/60 hover:bg-destructive/80 text-foreground hover:text-destructive-foreground rounded transition-colors"
-                                      aria-label={`Delete ${release.title}`}
-                                    >
-                                      <Trash className="w-3.5 h-3.5" />
-                                    </button>
-                                  )}
-                                </div>
-                              )}
-                              <div className="aspect-square bg-muted relative">
-                                {release.artwork && (
-                                  <img src={release.artwork} alt={release.title} className="w-full h-full object-cover glitch-image hover-chromatic-image" loading="lazy" decoding="async" />
-                                )}
-                              </div>
-                              <div className="p-4">
-                                <h3 className="font-bold uppercase text-sm mb-1 truncate font-mono hover-chromatic">{release.title}</h3>
-                                <p className="text-xs text-muted-foreground mb-3 font-mono">{release.year}</p>
-                              </div>
-                            </Card>
+                            </Button>
                           </motion.div>
-                        )
-                      })}
-                    </div>
-                    {filtered.length > 8 && (
-                      <motion.div
-                        className="flex justify-center mt-8"
-                        initial={{ opacity: 0 }}
-                        whileInView={{ opacity: 1 }}
-                        viewport={{ once: true }}
-                      >
-                        <Button
-                          variant="outline"
-                          size="lg"
-                          onClick={() => setShowAllReleases(!showAllReleases)}
-                          className="gap-2 uppercase font-mono cyber-border hover-glitch"
-                        >
-                          {showAllReleases ? (
-                            <>
-                              <CaretUp className="w-4 h-4" />
-                              {showLessText}
-                            </>
-                          ) : (
-                            <>
-                              <CaretDown className="w-4 h-4" />
-                              {showAllText} ({filtered.length})
-                            </>
-                          )}
-                        </Button>
-                      </motion.div>
+                        )}
+                      </>
                     )}
                   </>
                 )

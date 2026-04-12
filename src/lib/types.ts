@@ -343,6 +343,19 @@ export interface SectionStyleOverride {
   paddingTop?: string
   readMoreMaxHeight?: string
   textSize?: string
+  // Gallery-specific
+  columns?: string
+  aspectRatio?: string
+  lightbox?: boolean
+  maxVisible?: number
+  gap?: string
+  // Media-specific
+  layout?: string
+  // Releases-specific
+  releaseLayout?: 'grid' | 'swipe' | 'carousel-3d'
+  releaseColumns?: '2' | '3' | '4'
+  releaseCardVariant?: 'default' | 'square-minimal' | 'square-titled' | 'compact'
+  releaseHoverEffect?: 'default' | 'zoom' | 'glow' | 'lift' | 'scan' | 'chromatic' | 'flip'
 }
 
 export interface AdminSettings {

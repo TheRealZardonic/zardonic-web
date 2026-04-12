@@ -660,6 +660,60 @@ h1, h2, h3, h4, h5, h6 {
   100% { top: 100%; opacity: 0; }
 }
 
+/* ── Release card hover effects ──────────────────────────────────────── */
+.release-hover-zoom {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.release-hover-zoom:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 32px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.release-hover-glow {
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.release-hover-glow:hover {
+  box-shadow: 0 0 24px 4px color-mix(in srgb, var(--primary) 45%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 60%, transparent) !important;
+}
+
+.release-hover-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.release-hover-lift:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 40px color-mix(in srgb, var(--primary) 25%, transparent);
+}
+
+/* Flip card */
+.release-hover-flip {
+  perspective: 900px;
+  width: 100%;
+}
+.release-hover-flip .flip-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.55s cubic-bezier(0.4, 0.2, 0.2, 1);
+}
+.release-hover-flip:hover .flip-inner,
+.release-hover-flip:focus-within .flip-inner {
+  transform: rotateY(180deg);
+}
+.release-hover-flip .flip-front,
+.release-hover-flip .flip-back {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  overflow: hidden;
+}
+.release-hover-flip .flip-back {
+  transform: rotateY(180deg);
+}
+
+
 .swipe-indicator {
   position: absolute;
   bottom: 20px;
