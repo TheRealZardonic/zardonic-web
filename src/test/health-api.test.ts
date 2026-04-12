@@ -50,6 +50,7 @@ describe('Health endpoint — ok status', () => {
     process.env.SPOTIFY_CLIENT_ID = 'test-client-id'
     process.env.SPOTIFY_CLIENT_SECRET = 'test-client-secret'
     process.env.BANDSINTOWN_API_KEY = 'test-api-key'
+    process.env.DISCOGS_TOKEN = 'test-discogs-token'
   })
 
   it('returns 200 with status=ok when KV is reachable', async () => {
@@ -76,6 +77,18 @@ describe('Health endpoint — ok status', () => {
     expect(body.services.spotify).toBe('configured')
     expect(body.services.bandsintown).toBe('configured')
     expect(body.services.imageProxy).toBe('ok')
+    expect(body.services.discogs).toBe('configured')
+  })
+
+  it('shows discogs=configured when DISCOGS_TOKEN is set', async () => {
+    mockRedisPing.mockResolvedValue('PONG')
+    process.env.DISCOGS_TOKEN = 'my-personal-access-token'
+
+    const res = mockRes()
+    await handler(mockReq(), res as unknown as unknown as VercelResponse)
+
+    const body = res.json.mock.calls[0][0]
+    expect(body.services.discogs).toBe('configured')
   })
 
   it('returns a valid ISO timestamp', async () => {
@@ -150,6 +163,7 @@ describe('Health endpoint — unconfigured services', () => {
     delete process.env.SPOTIFY_CLIENT_ID
     delete process.env.SPOTIFY_CLIENT_SECRET
     delete process.env.BANDSINTOWN_API_KEY
+    delete process.env.DISCOGS_TOKEN
   })
 
   it('shows spotify=unconfigured when credentials are missing', async () => {
@@ -170,6 +184,16 @@ describe('Health endpoint — unconfigured services', () => {
 
     const body = res.json.mock.calls[0][0]
     expect(body.services.bandsintown).toBe('unconfigured')
+  })
+
+  it('shows discogs=unconfigured when DISCOGS_TOKEN is missing', async () => {
+    mockRedisPing.mockResolvedValue('PONG')
+
+    const res = mockRes()
+    await handler(mockReq(), res as unknown as unknown as VercelResponse)
+
+    const body = res.json.mock.calls[0][0]
+    expect(body.services.discogs).toBe('unconfigured')
   })
 })
 

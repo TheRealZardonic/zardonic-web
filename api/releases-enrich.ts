@@ -4,15 +4,23 @@
  * Full release sync pipeline (cron + manual):
  *
  * 1. Fetch ALL releases from iTunes (primary), fall back to Spotify if iTunes
- *    returns nothing.
- * 2. Enrich EVERY release with Odesli platform links (Spotify, Apple Music,
+ *    returns nothing, then fall back to Discogs (when DISCOGS_TOKEN is set).
+ * 2. Discogs fallback pipeline (Steps 2-7 from the Discogs integration spec):
+ *    a. Find artist ID via /database/search
+ *    b. Fetch all paginated releases via /artists/{id}/releases
+ *    c. Enrich each release with iTunes Apple Music URL + hi-res cover + Spotify link
+ *    d. MusicBrainz metadata applied in step 3 (shared with other sources)
+ *    e. Data consolidated using quality rules (iTunes cover > Discogs thumb)
+ *    f. Odesli platform links queued via worker (shared enrichment pipeline)
+ * 3. Enrich EVERY release with Odesli platform links (Spotify, Apple Music,
  *    YouTube, SoundCloud, Bandcamp, Deezer, Tidal, Amazon Music) using the
  *    Apple Music URL that iTunes provides directly.
- * 3. Apply MusicBrainz metadata (type, date) from the pre-fetched bulk map.
- * 4. Completely OVERWRITE the releases array in KV — no merge with old data,
+ * 4. Apply MusicBrainz metadata (type, date) from the pre-fetched bulk map.
+ * 5. Completely OVERWRITE the releases array in KV — no merge with old data,
  *    no isEnriched flag.  Each run is a fresh, authoritative snapshot.
  *
- * Cron calls must supply `Authorization: Bearer <CRON_SECRET>`.\n * Admin can also trigger it manually (requires valid session).
+ * Cron calls must supply `Authorization: Bearer <CRON_SECRET>`.
+ * Admin can also trigger it manually (requires valid session).
  */
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { getRedisOrNull, isRedisConfigured } from './_redis.js'
@@ -35,6 +43,11 @@ import {
 import { getSpotifyAccessToken } from './_spotify-client.js'
 import { inferReleaseDescription, parseTrackArtists } from './_featured-artists.js'
 import { mergeWithExistingReleases } from './_release-merge.js'
+import {
+  fetchDiscogsArtistId,
+  fetchDiscogsArtistReleases,
+  type DiscogsReleaseItem,
+} from './_discogs.js'
 
 function verifyCronSecret(provided: string): boolean {
   const expected = process.env.CRON_SECRET
@@ -264,6 +277,160 @@ function sortReleases(releases: Release[]): Release[] {
   })
 }
 
+// ─── Step 1c: Fetch releases from Discogs (second fallback) ─────────────────
+//
+// Step 2: Find the artist ID via /database/search.
+// Step 3: Fetch all releases (paginated) via /artists/{id}/releases.
+// Step 4: Enrich each release with:
+//   - iTunes Apple Music URL + hi-res cover artwork
+//   - Spotify link (when Spotify credentials are available)
+// Step 6: Consolidate — prefer iTunes hi-res cover over Discogs thumb,
+//         prefer iTunes full release date over Discogs year-only.
+//
+// Steps 5 (MusicBrainz) and 7 (Odesli) are applied later by the shared
+// pipeline that handles all three sources (iTunes / Spotify / Discogs).
+
+/** Normalise a title for fuzzy comparison (lowercase, strip common suffixes). */
+function normTitle(t: string): string {
+  return t
+    .toLowerCase()
+    .replace(/\s*-\s*(ep|single|remixes?|deluxe edition|special edition)\s*$/i, '')
+    .replace(/\s*\(feat\.[^)]*\)/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/**
+ * Convert raw Discogs release items into the internal Release shape and
+ * enrich them with iTunes (Apple Music URL + hi-res cover) and Spotify links.
+ *
+ * Only 'master' releases are included — individual pressings / format
+ * variants (type='release') are skipped to avoid duplicates.
+ */
+async function fetchDiscogsReleases(artistName: string): Promise<Release[]> {
+  const token = process.env.DISCOGS_TOKEN
+  if (!token) return []
+
+  // Step 2 — find the artist ID
+  const artistId = await fetchDiscogsArtistId(artistName, token)
+  if (!artistId) {
+    console.log('[releases-enrich] Discogs: artist not found for', artistName)
+    return []
+  }
+  console.log(`[releases-enrich] Discogs: artist ID = ${artistId}`)
+
+  // Step 3 — paginated release list
+  const rawItems: DiscogsReleaseItem[] = await fetchDiscogsArtistReleases(artistId, token)
+  console.log(`[releases-enrich] Discogs: fetched ${rawItems.length} raw items`)
+
+  // Keep only master releases (canonical entry per title); skip individual pressings
+  const masterItems = rawItems.filter(r => r.type === 'master' || !r.type)
+  console.log(`[releases-enrich] Discogs: ${masterItems.length} master/unique items`)
+
+  if (masterItems.length === 0) return []
+
+  // Step 4a — bulk iTunes search so we can match titles without N individual calls
+  let itunesMap: Map<string, { artwork: string; appleUrl: string; releaseDate?: string }> = new Map()
+  try {
+    const [songsRes, albumsRes] = await Promise.all([
+      fetchWithRetry(`https://itunes.apple.com/search?term=${encodeURIComponent(artistName)}&entity=song&limit=200`),
+      fetchWithRetry(`https://itunes.apple.com/search?term=${encodeURIComponent(artistName)}&entity=album&limit=200`),
+    ])
+    if (songsRes.ok && albumsRes.ok) {
+      const [sData, aData] = await Promise.all([songsRes.json(), albumsRes.json()])
+      type ITunesItem = { collectionId?: number; collectionName?: string; artworkUrl100?: string; collectionViewUrl?: string; releaseDate?: string }
+      const items: ITunesItem[] = [...(sData.results ?? []), ...(aData.results ?? [])]
+      const seen = new Set<number>()
+      for (const item of items) {
+        if (!item.collectionId || !item.collectionName || seen.has(item.collectionId)) continue
+        seen.add(item.collectionId)
+        const key = normTitle(item.collectionName)
+        if (!itunesMap.has(key)) {
+          const artwork = (item.artworkUrl100 ?? '').replace('100x100bb', '600x600bb')
+          const appleUrl = item.collectionViewUrl ? cleanAppleMusicUrl(item.collectionViewUrl) : ''
+          itunesMap.set(key, { artwork, appleUrl, releaseDate: item.releaseDate })
+        }
+      }
+    }
+  } catch {
+    console.warn('[releases-enrich] Discogs: iTunes enrichment failed — continuing without iTunes data')
+  }
+
+  // Step 4b — bulk Spotify search for Spotify links
+  let spotifyMap: Map<string, string> = new Map()
+  try {
+    const spotifyToken = await getSpotifyAccessToken()
+    if (spotifyToken) {
+      const url = `https://api.spotify.com/v1/artists/${SPOTIFY_ARTIST_ID}/albums?include_groups=album,single,compilation&limit=50&market=US`
+      const sRes = await fetchWithRetry(url, {
+        headers: { 'Authorization': `Bearer ${spotifyToken}`, 'Accept': 'application/json' },
+      })
+      if (sRes.ok) {
+        const sData = await sRes.json() as { items?: Array<{ name: string; external_urls?: { spotify?: string } }> }
+        for (const a of sData.items ?? []) {
+          const spotifyUrl = a.external_urls?.spotify
+          if (spotifyUrl) spotifyMap.set(normTitle(a.name), spotifyUrl)
+        }
+      }
+    }
+  } catch {
+    // Spotify enrichment for Discogs is non-fatal
+  }
+
+  // Build final Release[] — consolidate Discogs + iTunes + Spotify (Step 6)
+  const releases: Release[] = masterItems.map(item => {
+    const titleKey = normTitle(item.title)
+    const itunesMatch = itunesMap.get(titleKey)
+    const spotifyUrl = spotifyMap.get(titleKey)
+
+    const streamingLinks: StreamingLink[] = []
+    if (itunesMatch?.appleUrl) streamingLinks.push({ platform: 'appleMusic', url: itunesMatch.appleUrl })
+    if (spotifyUrl) streamingLinks.push({ platform: 'spotify', url: spotifyUrl })
+
+    // Quality rule: prefer iTunes hi-res artwork over Discogs thumb
+    const artwork = itunesMatch?.artwork || item.thumb || ''
+
+    // Quality rule: prefer iTunes full date (YYYY-MM-DD) over Discogs year-only
+    let releaseDate: string | undefined
+    let year = item.year ? String(item.year) : ''
+    if (itunesMatch?.releaseDate) {
+      const d = new Date(itunesMatch.releaseDate)
+      if (!isNaN(d.getTime())) {
+        releaseDate = d.toISOString().split('T')[0]
+        year = d.getFullYear().toString()
+      }
+    } else if (item.year) {
+      releaseDate = `${item.year}-01-01`
+    }
+
+    // Use iTunes ID when matched so downstream pipeline (Odesli tracklist etc.)
+    // can treat this release identically to an iTunes-sourced release.
+    const id = itunesMatch?.appleUrl
+      ? `itunes-${itunesMatch.appleUrl.split('/').pop()?.replace(/\?.*$/, '') ?? item.id}`
+      : `discogs-${item.id}`
+
+    return {
+      id,
+      title: item.title,
+      artwork,
+      year,
+      releaseDate,
+      streamingLinks: streamingLinks.length > 0 ? streamingLinks : undefined,
+      description: inferReleaseDescription(item.artist ?? artistName, artistName),
+    }
+  })
+
+  // Deduplicate by id (paranoia — Discogs occasionally has duplicate masters)
+  const seen = new Set<string>()
+  const unique = releases.filter(r => {
+    if (seen.has(r.id)) return false
+    seen.add(r.id)
+    return true
+  })
+
+  return sortReleases(unique)
+}
+
 /**
  * Apply MusicBrainz metadata (type + date) from the pre-fetched map to a release.
  * Pure data transformation — no API calls.
@@ -447,9 +614,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     const existingBandData = await redis.get<SiteData>(BAND_DATA_KEY)
     const artistName = (existingBandData?.artistName as string | undefined)?.trim() || 'Zardonic'
 
-    // 1. Fetch releases — iTunes primary, Spotify fallback
+    // 1. Fetch releases — iTunes primary, Spotify fallback, Discogs second fallback
     let releases = await fetchITunesReleases(artistName)
-    let source: 'itunes' | 'spotify' = 'itunes'
+    let source: 'itunes' | 'spotify' | 'discogs' = 'itunes'
 
     if (releases.length === 0) {
       console.log('[releases-enrich] iTunes returned 0 releases, trying Spotify fallback…')
@@ -457,8 +624,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       source = 'spotify'
     }
 
+    if (releases.length === 0 && process.env.DISCOGS_TOKEN) {
+      console.log('[releases-enrich] Spotify returned 0 releases, trying Discogs fallback…')
+      releases = await fetchDiscogsReleases(artistName)
+      source = 'discogs'
+    }
+
     if (releases.length === 0) {
-      res.status(200).json({ ok: true, message: 'No releases found from iTunes or Spotify', queued: 0, synced: 0 })
+      res.status(200).json({ ok: true, message: 'No releases found from iTunes, Spotify or Discogs', queued: 0, synced: 0 })
       return
     }
 

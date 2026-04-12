@@ -38,6 +38,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           spotify: process.env.SPOTIFY_CLIENT_ID && process.env.SPOTIFY_CLIENT_SECRET ? 'configured' : 'unconfigured',
           bandsintown: process.env.BANDSINTOWN_API_KEY ? 'configured' : 'unconfigured',
           itunes: process.env.ITUNES_ARTIST_ID ? 'configured' : 'unconfigured',
+          discogs: process.env.DISCOGS_TOKEN ? 'configured' : 'unconfigured',
           musicbrainz: 'ok',
           odesli: 'ok',
           imageProxy: 'ok',
