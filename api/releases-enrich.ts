@@ -323,7 +323,9 @@ async function fetchDiscogsReleases(artistName: string): Promise<Release[]> {
   const rawItems: DiscogsReleaseItem[] = await fetchDiscogsArtistReleases(artistId, token)
   console.log(`[releases-enrich] Discogs: fetched ${rawItems.length} raw items`)
 
-  // Keep only master releases (canonical entry per title); skip individual pressings
+  // Keep only master releases (canonical entry per title); skip individual pressings.
+  // Releases without a type field are included as well — older Discogs API responses
+  // sometimes omit the type field entirely for main/canonical entries.
   const masterItems = rawItems.filter(r => r.type === 'master' || !r.type)
   console.log(`[releases-enrich] Discogs: ${masterItems.length} master/unique items`)
 
@@ -346,6 +348,8 @@ async function fetchDiscogsReleases(artistName: string): Promise<Release[]> {
         seen.add(item.collectionId)
         const key = normTitle(item.collectionName)
         if (!itunesMap.has(key)) {
+          // iTunes artwork URLs use a size-placeholder pattern: replace "100x100bb"
+          // with "600x600bb" to request a hi-res version (known iTunes URL pattern).
           const artwork = (item.artworkUrl100 ?? '').replace('100x100bb', '600x600bb')
           const appleUrl = item.collectionViewUrl ? cleanAppleMusicUrl(item.collectionViewUrl) : ''
           itunesMap.set(key, { artwork, appleUrl, releaseDate: item.releaseDate })
