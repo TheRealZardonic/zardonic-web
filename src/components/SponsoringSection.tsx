@@ -181,7 +181,7 @@ export default function SponsoringSection({
                     className="block"
                   >
                     <motion.img
-                      src={toDirectImageUrl(logo.src) || logo.src}
+                      src={toDirectImageUrl(logo.src, { w: 300 }) || logo.src}
                       alt={logo.alt}
                       className="h-10 md:h-14 w-auto object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity duration-300 hover-chromatic-image cursor-pointer"
                       initial={{ opacity: 0, y: 10 }}
@@ -194,7 +194,7 @@ export default function SponsoringSection({
                   </a>
                 ) : (
                   <motion.img
-                    src={toDirectImageUrl(logo.src) || logo.src}
+                    src={toDirectImageUrl(logo.src, { w: 300 }) || logo.src}
                     alt={logo.alt}
                     className="h-10 md:h-14 w-auto object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity duration-300 hover-chromatic-image"
                     initial={{ opacity: 0, y: 10 }}

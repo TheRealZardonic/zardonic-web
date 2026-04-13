@@ -50,6 +50,7 @@ This document records lessons learned during development sessions. Every coding 
 | 2026-04-01 | copilot/deep-audit-dokumentation | GitHub Copilot | JavaScript obfuscation is applied after the production build via `javascript-obfuscator`. This inflates bundle size by 30–80%, eliminates tree-shaking benefits, and does not meaningfully protect source code. Evaluate whether this step is worth the performance cost. | Performance | 🟠 High |
 | 2026-04-01 | copilot/deep-audit-dokumentation | GitHub Copilot | There are no E2E tests. Critical user flows (admin login, contact form, newsletter signup) could regress silently. When adding E2E tests, prioritise these three flows first. | Testing | 🟠 High |
 | 2026-04-01 | copilot/deep-audit-dokumentation | GitHub Copilot | `CookieBanner.tsx` and `CookieConsent.tsx` both exist in the components folder and appear to duplicate cookie consent logic. Before modifying either, investigate which one is actually rendered in `App.tsx` and remove or merge the unused one. | Architecture | 🟡 Medium |
+| 2026-04-13 | jules | Jules | When optimizing images via `wsrv.nl` proxy, ensure that query parameters (such as `w`, `q`, `output`) are appended defensively, especially if the URL already has parameters (e.g. Google Drive URLs), so as not to break the `?url=` parameter structure. Also apply these defaults strictly inside `toDirectImageUrl`. | Performance | 🟡 Medium |
 
 ---
 
@@ -69,11 +70,11 @@ This document records lessons learned during development sessions. Every coding 
 |----------|-------|
 | Architecture | 5 |
 | Security | 5 |
-| Performance | 2 |
+| Performance | 3 |
 | Dependencies | 1 |
 | Testing | 1 |
 | DevOps | 1 |
-| **Total** | **15** |
+| **Total** | **16** |
 
 ---
 

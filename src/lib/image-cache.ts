@@ -66,6 +66,30 @@ function compressImage(img: HTMLImageElement): string {
   return canvas.toDataURL('image/jpeg', JPEG_QUALITY)
 }
 
+interface WsrvOptions {
+  w?: number;
+  h?: number;
+  q?: number;
+  output?: 'webp' | 'jpeg' | 'png' | 'gif';
+}
+
+function appendWsrvOptions(baseUrl: string, options?: WsrvOptions): string {
+  if (!options) return baseUrl;
+
+  const params = new URLSearchParams();
+  if (options.w) params.append('w', options.w.toString());
+  if (options.h) params.append('h', options.h.toString());
+  if (options.q) params.append('q', options.q.toString());
+  if (options.output) params.append('output', options.output);
+
+  const queryString = params.toString();
+  if (!queryString) return baseUrl;
+
+  return baseUrl.includes('?')
+    ? `${baseUrl}&${queryString}`
+    : `${baseUrl}?${queryString}`;
+}
+
 /**
  * Transform any image URL into a wsrv.nl-proxied URL to bypass CORS restrictions
  * and provide CDN caching.
@@ -82,40 +106,51 @@ function compressImage(img: HTMLImageElement): string {
  * Data URLs, relative paths and already-proxied URLs are returned as-is.
  * Returns empty string for null/undefined/empty input.
  */
-export function toDirectImageUrl(url: string | null | undefined): string {
+export function toDirectImageUrl(url: string | null | undefined, options?: WsrvOptions): string {
+  // Default to webp and quality 80 for all proxied images
+  const finalOptions = { output: 'webp' as const, q: 80, ...(options || {}) };
+
   // Handle null, undefined, or empty string
   if (!url) return ''
 
   // Data URLs and relative paths — return as-is
   if (url.startsWith('data:') || url.startsWith('/') || url.startsWith('.')) return url
 
-  // Already proxied through wsrv.nl — avoid double-wrapping
-  if (url.startsWith('https://wsrv.nl/')) return url
+  // Already proxied through wsrv.nl — avoid double-wrapping, but append new options if needed
+  if (url.startsWith('https://wsrv.nl/')) {
+    // If it already has query parameters, we need to append carefully to not override 'url'
+    return appendWsrvOptions(url, finalOptions);
+  }
+
+  let proxyUrl = '';
 
   // Google Drive: /file/d/{fileId}/view  →  wsrv.nl proxy via lh3
   const driveFileMatch = url.match(/drive\.google\.com\/file\/d\/([^/?#]+)/)
   if (driveFileMatch) {
-    return `https://wsrv.nl/?url=https://lh3.googleusercontent.com/d/${driveFileMatch[1]}`
+    proxyUrl = `https://wsrv.nl/?url=https://lh3.googleusercontent.com/d/${driveFileMatch[1]}`
   }
   // Google Drive: open?id={fileId}
-  const driveOpenMatch = url.match(/drive\.google\.com\/open\?id=([^&#]+)/)
-  if (driveOpenMatch) {
-    return `https://wsrv.nl/?url=https://lh3.googleusercontent.com/d/${driveOpenMatch[1]}`
+  else if (url.match(/drive\.google\.com\/open\?id=([^&#]+)/)) {
+    const driveOpenMatch = url.match(/drive\.google\.com\/open\?id=([^&#]+)/)
+    proxyUrl = `https://wsrv.nl/?url=https://lh3.googleusercontent.com/d/${driveOpenMatch![1]}`
   }
   // Google Drive: uc?export=view&id={fileId}
-  const driveUcMatch = url.match(/drive\.google\.com\/uc\?[^#]*?id=([^&#]+)/)
-  if (driveUcMatch) {
-    return `https://wsrv.nl/?url=https://lh3.googleusercontent.com/d/${driveUcMatch[1]}`
+  else if (url.match(/drive\.google\.com\/uc\?[^#]*?id=([^&#]+)/)) {
+    const driveUcMatch = url.match(/drive\.google\.com\/uc\?[^#]*?id=([^&#]+)/)
+    proxyUrl = `https://wsrv.nl/?url=https://lh3.googleusercontent.com/d/${driveUcMatch![1]}`
   }
   // lh3.googleusercontent.com/d/{id} URL
-  const lh3Match = url.match(/lh3\.googleusercontent\.com\/d\/([^/?#]+)/)
-  if (lh3Match) {
-    return `https://wsrv.nl/?url=https://lh3.googleusercontent.com/d/${lh3Match[1]}`
+  else if (url.match(/lh3\.googleusercontent\.com\/d\/([^/?#]+)/)) {
+    const lh3Match = url.match(/lh3\.googleusercontent\.com\/d\/([^/?#]+)/)
+    proxyUrl = `https://wsrv.nl/?url=https://lh3.googleusercontent.com/d/${lh3Match![1]}`
+  }
+  // All other external http/https URLs → proxy through wsrv.nl to fix CORS
+  else if (url.startsWith('http://') || url.startsWith('https://')) {
+    proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(url)}`
   }
 
-  // All other external http/https URLs → proxy through wsrv.nl to fix CORS
-  if (url.startsWith('http://') || url.startsWith('https://')) {
-    return `https://wsrv.nl/?url=${encodeURIComponent(url)}`
+  if (proxyUrl) {
+    return appendWsrvOptions(proxyUrl, finalOptions);
   }
 
   return url
