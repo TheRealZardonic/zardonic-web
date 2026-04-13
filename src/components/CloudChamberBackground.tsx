@@ -127,6 +127,10 @@ const CloudChamberBackground = memo(function CloudChamberBackground({
       })
     }
 
+    /** Pending branch spawns: each entry is the frame at which to spawn + spawn args */
+    type PendingBranch = { spawnAt: number; bx: number; by: number; ba: number }
+    let pendingBranches: PendingBranch[] = []
+
     const draw = () => {
       if (!running || document.hidden) {
         animId = requestAnimationFrame(draw)
@@ -139,6 +143,15 @@ const CloudChamberBackground = memo(function CloudChamberBackground({
       ctx.fillStyle = 'rgba(0,0,0,0.025)'
       ctx.fillRect(0, 0, canvas.width, canvas.height)
 
+      // Spawn any pending branches whose frame has arrived
+      pendingBranches = pendingBranches.filter(b => {
+        if (frameCount >= b.spawnAt) {
+          spawnParticle(true, b.bx, b.by, b.ba)
+          return false
+        }
+        return true
+      })
+
       // Spawn primary track (and maybe a branch)
       if (frameCount >= nextSpawnFrame) {
         spawnParticle(false)
@@ -148,18 +161,13 @@ const CloudChamberBackground = memo(function CloudChamberBackground({
           const delay = 6 + Math.floor(Math.random() * 10) // frames
           const parentSnapshot = particles[particles.length - 1]
           if (parentSnapshot) {
-            // Store info needed for the branch at spawn time
-            const bx = parentSnapshot.x1 + (parentSnapshot.x2 - parentSnapshot.x1) * (0.3 + Math.random() * 0.4)
-            const by = parentSnapshot.y1 + (parentSnapshot.y2 - parentSnapshot.y1) * (0.3 + Math.random() * 0.4)
-            const ba = parentSnapshot.angle
-            // Schedule branch: use a lightweight counter check
-            const spawnAt = frameCount + delay
-            const branchTimer = setInterval(() => {
-              if (frameCount >= spawnAt) {
-                spawnParticle(true, bx, by, ba)
-                clearInterval(branchTimer)
-              }
-            }, 16)
+            // Schedule branch via the pending queue — no setInterval needed
+            pendingBranches.push({
+              spawnAt: frameCount + delay,
+              bx: parentSnapshot.x1 + (parentSnapshot.x2 - parentSnapshot.x1) * (0.3 + Math.random() * 0.4),
+              by: parentSnapshot.y1 + (parentSnapshot.y2 - parentSnapshot.y1) * (0.3 + Math.random() * 0.4),
+              ba: parentSnapshot.angle,
+            })
           }
         }
 
@@ -217,7 +225,9 @@ const CloudChamberBackground = memo(function CloudChamberBackground({
     animId = requestAnimationFrame(draw)
 
     return () => {
+      running = false
       cancelAnimationFrame(animId)
+      pendingBranches = []
       window.removeEventListener('resize', handleResize)
       document.removeEventListener('visibilitychange', handleVisibility)
     }

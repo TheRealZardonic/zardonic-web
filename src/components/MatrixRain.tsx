@@ -60,9 +60,9 @@ const MatrixRain = memo(function MatrixRain({ transparent, speed = 1, density = 
       return raw
     }
 
-    const applyColor = (ctx2d: CanvasRenderingContext2D, base: string, lightenRatio = 0.9) => {
+    const applyColor = (ctx2d: CanvasRenderingContext2D, base: string, baseColorRatio = 0.9) => {
       if (supportsColorMix) {
-        ctx2d.fillStyle = `color-mix(in srgb, ${base} ${Math.round(lightenRatio * 100)}%, white)`
+        ctx2d.fillStyle = `color-mix(in srgb, ${base} ${Math.round(baseColorRatio * 100)}%, white)`
       } else {
         ctx2d.fillStyle = base
       }
