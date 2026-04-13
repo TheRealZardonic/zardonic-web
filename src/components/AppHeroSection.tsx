@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Upload, Storefront, Plus, Trash, PencilSimple, Check } from '@phosphor-icons/react'
 import type { SiteData, HeroLink } from '@/lib/app-types'
 import type { AdminSettings, SectionVisibility } from '@/lib/types'
+import { toDirectImageUrl } from '@/lib/image-cache'
 import { useState } from 'react'
 
 const DEFAULT_HERO_LINKS: HeroLink[] = [
@@ -41,6 +42,8 @@ export default function AppHeroSection({
   const prefersReducedMotion = useReducedMotion()
 
   const heroImageUrl = siteData?.heroImage
+    ? toDirectImageUrl(siteData.heroImage, { output: 'webp', q: 85 })
+    : undefined
   const heroImageOpacity = adminSettings?.sections?.styleOverrides?.hero?.heroImageOpacity ?? 0.5
   const heroImageBlur = adminSettings?.sections?.styleOverrides?.hero?.heroImageBlur ?? 0
   const heroMinHeight = adminSettings?.sections?.styleOverrides?.hero?.minHeight ?? 'min-h-screen'

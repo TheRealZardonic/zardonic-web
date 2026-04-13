@@ -80,6 +80,10 @@
   --font-share-tech: 'Share Tech Mono', monospace;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   font-family: var(--font-body, 'Share Tech Mono', monospace);
   overflow-x: hidden;

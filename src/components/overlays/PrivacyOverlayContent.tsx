@@ -113,6 +113,25 @@ export function PrivacyOverlayContent({ adminSettings, artistName, decorativeTex
                   <p>If you subscribe to our newsletter, we will use the email address you provided to send you the newsletter. The legal basis is Art. 6(1)(a) GDPR. You can unsubscribe at any time by contacting us or using any unsubscribe link. Your data will be deleted immediately upon unsubscription.</p>
                 </div>
               </motion.div>
+
+              <motion.div className="cyber-grid p-4" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.45 }}>
+                <div className="data-label mb-2">5. Image CDN – wsrv.nl</div>
+                <div className="space-y-3 font-mono text-sm leading-relaxed">
+                  <p className="font-bold text-primary">Image Proxy Service</p>
+                  <p>To improve loading speed and visual quality, images on this website are delivered through the image CDN proxy service <strong>wsrv.nl</strong> (Images.weserv.nl). When your browser loads an image, a request is sent to wsrv.nl servers, which may process and temporarily log your IP address to deliver the image content.</p>
+                  <p>wsrv.nl is a free, open-source image proxy service. No personal tracking is performed and no cookies are set by this service. For more information, see: <a href="https://wsrv.nl" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">https://wsrv.nl</a></p>
+                  <p>The use of wsrv.nl is based on Art. 6(1)(f) GDPR. We have a legitimate interest in fast and reliable image delivery. No data is transferred to third parties for marketing purposes.</p>
+                </div>
+              </motion.div>
+
+              <motion.div className="cyber-grid p-4" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }}>
+                <div className="data-label mb-2">6. Third-Party Embeds (Spotify)</div>
+                <div className="space-y-3 font-mono text-sm leading-relaxed">
+                  <p className="font-bold text-primary">Spotify Player</p>
+                  <p>This website may embed a Spotify music player. The Spotify player is NOT loaded automatically — it only loads after you explicitly click the &quot;Load Spotify Player&quot; button. By doing so, you provide your consent for external content to be loaded from Spotify&apos;s servers.</p>
+                  <p>When you activate the Spotify player, your IP address and browser data are transmitted to Spotify AB, Regeringsgatan 19, SE-111 53 Stockholm, Sweden. This may also involve the transfer of data to the USA. The legal basis for this processing is Art. 6(1)(a) GDPR (your explicit consent via the two-click method). For Spotify&apos;s privacy policy, see: <a href="https://www.spotify.com/legal/privacy-policy/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">https://www.spotify.com/legal/privacy-policy/</a></p>
+                </div>
+              </motion.div>
             </div>
           ) : (
             <div className="space-y-6 text-foreground/90">
@@ -161,6 +180,25 @@ export function PrivacyOverlayContent({ adminSettings, artistName, decorativeTex
                   <p>Wenn Sie uns per Kontaktformular Anfragen zukommen lassen, werden Ihre Angaben aus dem Anfrageformular inklusive der von Ihnen dort angegebenen Kontaktdaten zwecks Bearbeitung der Anfrage bei uns gespeichert. Diese Daten geben wir nicht ohne Ihre Einwilligung weiter. Rechtsgrundlage ist Art. 6 Abs. 1 lit. a DSGVO (Einwilligung) oder Art. 6 Abs. 1 lit. b DSGVO (vorvertragliche Maßnahmen). Die Daten werden nach abschließender Bearbeitung Ihrer Anfrage gelöscht.</p>
                   <p className="font-bold text-primary mt-4">Newsletter</p>
                   <p>Wenn Sie den Newsletter abonnieren, verwenden wir Ihre angegebene E-Mail-Adresse zum Versand. Rechtsgrundlage ist Art. 6 Abs. 1 lit. a DSGVO. Sie können sich jederzeit durch Kontaktaufnahme oder über einen Abmeldelink abmelden. Ihre Daten werden nach der Abmeldung unverzüglich gelöscht.</p>
+                </div>
+              </motion.div>
+
+              <motion.div className="cyber-grid p-4" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.45 }}>
+                <div className="data-label mb-2">5. Bild-CDN – wsrv.nl</div>
+                <div className="space-y-3 font-mono text-sm leading-relaxed">
+                  <p className="font-bold text-primary">Bild-Proxy-Dienst</p>
+                  <p>Um die Ladegeschwindigkeit und visuelle Qualität zu verbessern, werden Bilder auf dieser Website über den Bild-CDN-Proxydienst <strong>wsrv.nl</strong> (Images.weserv.nl) ausgeliefert. Wenn Ihr Browser ein Bild lädt, wird eine Anfrage an die Server von wsrv.nl gesendet, die Ihre IP-Adresse zur Auslieferung des Bildinhalts verarbeiten und vorübergehend protokollieren können.</p>
+                  <p>wsrv.nl ist ein kostenloser, quelloffener Bild-Proxy-Dienst. Es wird kein personenbezogenes Tracking durchgeführt und vom Dienst werden keine Cookies gesetzt. Weitere Informationen finden Sie unter: <a href="https://wsrv.nl" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">https://wsrv.nl</a></p>
+                  <p>Die Nutzung von wsrv.nl erfolgt auf Grundlage von Art. 6 Abs. 1 lit. f DSGVO. Wir haben ein berechtigtes Interesse an einer schnellen und zuverlässigen Bildauslieferung. Es erfolgt keine Weitergabe von Daten zu Marketingzwecken an Dritte.</p>
+                </div>
+              </motion.div>
+
+              <motion.div className="cyber-grid p-4" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }}>
+                <div className="data-label mb-2">6. Drittanbieter-Einbindungen (Spotify)</div>
+                <div className="space-y-3 font-mono text-sm leading-relaxed">
+                  <p className="font-bold text-primary">Spotify-Player</p>
+                  <p>Diese Website kann einen eingebetteten Spotify-Musikplayer enthalten. Der Spotify-Player wird NICHT automatisch geladen – er wird erst nach Ihrem ausdrücklichen Klick auf die Schaltfläche „Spotify Player laden" aktiviert. Damit erteilen Sie Ihre Einwilligung zum Laden externer Inhalte von den Spotify-Servern.</p>
+                  <p>Wenn Sie den Spotify-Player aktivieren, werden Ihre IP-Adresse und Browser-Daten an die Spotify AB, Regeringsgatan 19, SE-111 53 Stockholm, Schweden, übermittelt. Dies kann auch eine Übermittlung von Daten in die USA beinhalten. Rechtsgrundlage für diese Verarbeitung ist Art. 6 Abs. 1 lit. a DSGVO (Ihre ausdrückliche Einwilligung über das Zwei-Klick-Verfahren). Zur Datenschutzerklärung von Spotify: <a href="https://www.spotify.com/de/legal/privacy-policy/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">https://www.spotify.com/de/legal/privacy-policy/</a></p>
                 </div>
               </motion.div>
             </div>

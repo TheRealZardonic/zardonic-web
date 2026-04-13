@@ -49,6 +49,7 @@ export function SpotifyEmbed({
   className,
 }: SpotifyEmbedProps) {
   const [isLoaded, setIsLoaded] = useState(false)
+  const [isPlayerReady, setIsPlayerReady] = useState(false)
   const [hasError, setHasError] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const controllerRef = useRef<SpotifyEmbedController | null>(null)
@@ -66,6 +67,7 @@ export function SpotifyEmbed({
 
   const handleRetry = useCallback(() => {
     setHasError(false)
+    setIsPlayerReady(false)
     initializedRef.current = false
     setIsLoaded(false)
   }, [])
@@ -90,6 +92,7 @@ export function SpotifyEmbed({
       try {
         IFrameAPI.createController(containerRef.current, options, (controller) => {
           controllerRef.current = controller
+          setIsPlayerReady(true)
         })
       } catch {
         setHasError(true)
@@ -199,5 +202,47 @@ export function SpotifyEmbed({
     )
   }
 
-  return <div ref={containerRef} className={className} />
+  return (
+    <div className={`relative ${className ?? ''}`} style={{ width, height }}>
+      {/* Skeleton loader shown until the Spotify controller fires its callback */}
+      {!isPlayerReady && (
+        <div
+          className="absolute inset-0 bg-black/40 border border-primary/20 flex flex-col gap-3 p-4 animate-pulse"
+          aria-label="Loading Spotify Player"
+          aria-live="polite"
+          aria-busy="true"
+        >
+          {/* Top bar: album art placeholder + text lines */}
+          <div className="flex items-center gap-3">
+            <div className="w-14 h-14 shrink-0 bg-primary/10 rounded-sm" />
+            <div className="flex-1 space-y-2">
+              <div className="h-3 bg-primary/15 rounded-sm w-3/4" />
+              <div className="h-2 bg-primary/10 rounded-sm w-1/2" />
+            </div>
+          </div>
+          {/* Progress bar placeholder */}
+          <div className="h-1 bg-primary/10 rounded-full w-full mt-1">
+            <div className="h-1 bg-primary/20 rounded-full w-1/3" />
+          </div>
+          {/* Controls placeholder */}
+          <div className="flex items-center justify-center gap-4 mt-1">
+            <div className="w-5 h-5 bg-primary/10 rounded-full" />
+            <div className="w-8 h-8 bg-primary/15 rounded-full" />
+            <div className="w-5 h-5 bg-primary/10 rounded-full" />
+          </div>
+          {/* Track list skeletons */}
+          <div className="space-y-2 mt-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center gap-2">
+                <div className="w-4 h-3 bg-primary/10 rounded-sm shrink-0" />
+                <div className="h-2 bg-primary/10 rounded-sm flex-1" style={{ width: `${60 + i * 10}%` }} />
+                <div className="w-8 h-2 bg-primary/10 rounded-sm shrink-0" />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      <div ref={containerRef} className="w-full h-full" />
+    </div>
+  )
 }
