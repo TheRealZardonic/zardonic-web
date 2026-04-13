@@ -395,9 +395,25 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
             <div className="space-y-2">
               {tracks.map((track, index) => (
                 <div key={index} className="flex gap-2 items-center">
-                  <Input value={track.title} disabled className="flex-1 bg-secondary border-input text-sm" />
-                  <Input value={track.artist || '—'} disabled className="w-28 bg-secondary border-input text-sm" placeholder="Artist" title="Artist" />
-                  <Input value={track.duration || '—'} disabled className="w-20 bg-secondary border-input text-sm text-center" />
+                  <Input
+                    value={track.title}
+                    onChange={(e) => setTracks(tracks.map((t, i) => i === index ? { ...t, title: e.target.value } : t))}
+                    className="flex-1 bg-secondary border-input text-sm"
+                    placeholder="Track title"
+                  />
+                  <Input
+                    value={track.artist || ''}
+                    onChange={(e) => setTracks(tracks.map((t, i) => i === index ? { ...t, artist: e.target.value || undefined } : t))}
+                    className="w-28 bg-secondary border-input text-sm"
+                    placeholder="Artist"
+                    title="Artist name for this track (optional)"
+                  />
+                  <Input
+                    value={track.duration || ''}
+                    onChange={(e) => setTracks(tracks.map((t, i) => i === index ? { ...t, duration: e.target.value || undefined } : t))}
+                    className="w-20 bg-secondary border-input text-sm text-center"
+                    placeholder="4:23"
+                  />
                   <Button type="button" variant="ghost" size="icon" onClick={() => removeTrack(index)}>
                     <X size={16} />
                   </Button>

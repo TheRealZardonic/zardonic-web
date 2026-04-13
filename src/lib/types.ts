@@ -483,6 +483,8 @@ export interface ContactSettings {
   formMessageLabel?: string
   formMessagePlaceholder?: string
   formButtonText?: string
+  /** Predefined subject options shown as a dropdown. When empty the subject field is a free-text input. */
+  contactSubjects?: string[]
 }
 
 export interface Member {

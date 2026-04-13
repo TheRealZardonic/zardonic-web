@@ -55,6 +55,8 @@ export function fullReleaseToStored(release: FullRelease): StoredRelease {
       : (release.year ?? ''),
     releaseDate: release.releaseDate,
     type: release.type,
+    description: release.description,
+    featured: release.featured,
     tracks: release.tracks,
     streamingLinks: streamingLinks.length > 0 ? streamingLinks : undefined,
     customLinks: release.customLinks,
@@ -86,9 +88,11 @@ export function mergeFullReleaseIntoStored(
     year: stored.year ?? existing.year,
     releaseDate: stored.releaseDate,
     type: stored.type ?? existing.type,
+    description: stored.description !== undefined ? stored.description : existing.description,
+    featured: stored.featured !== undefined ? stored.featured : existing.featured,
     tracks: stored.tracks ?? existing.tracks,
     streamingLinks: mergedLinks.length > 0 ? mergedLinks : existing.streamingLinks,
-    customLinks: stored.customLinks ?? existing.customLinks,
+    customLinks: stored.customLinks !== undefined ? stored.customLinks : existing.customLinks,
     manuallyEdited: stored.manuallyEdited ?? existing.manuallyEdited,
   }
 }

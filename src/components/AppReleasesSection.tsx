@@ -47,6 +47,8 @@ function toFullRelease(r: Release): FullRelease {
     year: r.year,
     releaseDate: r.releaseDate,
     type: r.type,
+    description: r.description,
+    featured: r.featured,
     tracks: r.tracks,
     customLinks: r.customLinks,
     manuallyEdited: r.manuallyEdited,

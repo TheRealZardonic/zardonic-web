@@ -30,6 +30,7 @@ export interface Release {
   artwork: string
   year: string
   releaseDate?: string
+  featured?: boolean
   streamingLinks?: Array<{ platform: string; url: string }>
   type?: '' | 'album' | 'ep' | 'single' | 'remix' | 'compilation'
   description?: string
@@ -81,6 +82,8 @@ export interface HeroLink {
 export interface SiteData {
   artistName: string
   heroImage: string
+  /** Additional hero images (up to 4 extra). When set, all images rotate in a crossfade slideshow. */
+  heroImages?: string[]
   bio: string
   tracks: Track[]
   gigs: Gig[]

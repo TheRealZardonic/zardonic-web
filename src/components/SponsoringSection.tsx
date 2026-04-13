@@ -46,7 +46,6 @@ export default function SponsoringSection({
   const sectionStyle = backgroundOpacity !== undefined
     ? { backgroundColor: `color-mix(in srgb, var(--card) ${Math.round(backgroundOpacity * 100)}%, transparent)` }
     : undefined
-  const logoFilter = `brightness(0) invert(1) brightness(${logoBrightness})`
 
   const startEditLabel = () => {
     setLabelDraft(sectionLabel || DEFAULT_LABEL)
@@ -185,7 +184,21 @@ export default function SponsoringSection({
           )}
 
           <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12 opacity-60 hover:opacity-90 transition-opacity duration-500">
-            {logos.filter(logo => logo.src).map((logo, index) => (
+            {logos.filter(logo => logo.src).map((logo, index) => {
+              const filterBase = `brightness(0) invert(1) brightness(${logoBrightness})`
+              const filterHover = `brightness(0) invert(1) brightness(${logoBrightness}) drop-shadow(2px 0 0 rgba(255,0,100,0.5)) drop-shadow(-2px 0 0 rgba(0,255,255,0.5))`
+              const imgMotionProps = {
+                initial: { opacity: 0, y: 10, filter: filterBase },
+                whileInView: { opacity: 0.7, y: 0, filter: filterBase },
+                viewport: { once: true } as const,
+                transition: { duration: 0.5, delay: index * 0.1 },
+                whileHover: { opacity: 1, filter: filterHover },
+                loading: 'lazy' as const,
+                src: toDirectImageUrl(logo.src, { w: 300 }) || logo.src,
+                alt: logo.alt,
+                className: 'h-10 md:h-14 w-auto object-contain',
+              }
+              return (
               <div key={`sponsor-${index}`} className="relative group flex flex-col items-center gap-1">
                 {logo.url ? (
                   <a
@@ -195,32 +208,10 @@ export default function SponsoringSection({
                     aria-label={logo.alt || logo.caption || 'Sponsor'}
                     className="block"
                   >
-                    <motion.img
-                      src={toDirectImageUrl(logo.src, { w: 300 }) || logo.src}
-                      alt={logo.alt}
-                      className="h-10 md:h-14 w-auto object-contain opacity-70 hover:opacity-100 transition-opacity duration-300 hover-chromatic-image cursor-pointer"
-                      style={{ filter: logoFilter }}
-                      initial={{ opacity: 0, y: 10 }}
-                      whileInView={{ opacity: 0.7, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.5, delay: index * 0.1 }}
-                      whileHover={{ opacity: 1 }}
-                      loading="lazy"
-                    />
+                    <motion.img {...imgMotionProps} className="h-10 md:h-14 w-auto object-contain cursor-pointer" />
                   </a>
                 ) : (
-                  <motion.img
-                    src={toDirectImageUrl(logo.src, { w: 300 }) || logo.src}
-                    alt={logo.alt}
-                    className="h-10 md:h-14 w-auto object-contain opacity-70 hover:opacity-100 transition-opacity duration-300 hover-chromatic-image"
-                    style={{ filter: logoFilter }}
-                    initial={{ opacity: 0, y: 10 }}
-                    whileInView={{ opacity: 0.7, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.5, delay: index * 0.1 }}
-                    whileHover={{ opacity: 1 }}
-                    loading="lazy"
-                  />
+                  <motion.img {...imgMotionProps} />
                 )}
                 {logo.caption && (
                   <span className="font-mono text-[10px] text-muted-foreground/70 text-center leading-tight max-w-[120px]">
@@ -237,7 +228,8 @@ export default function SponsoringSection({
                   </button>
                 )}
               </div>
-            ))}
+              )
+            })}
           </div>
 
           {/* Edit mode: show all entries (including those without src) */}

@@ -29,6 +29,12 @@ export default function GallerySection({
   setGalleryIndex,
   adminSettings,
 }: GallerySectionProps) {
+  // Combine manual gallery images and Instagram feed images
+  const allImages = [
+    ...siteData.gallery,
+    ...(siteData.instagramFeed ?? []),
+  ]
+
   return (
     <div style={{ order: sectionOrder }}>
     {visible && (
@@ -57,7 +63,7 @@ export default function GallerySection({
             </h2>
           </div>
 
-          {siteData.gallery.length === 0 ? (
+          {allImages.length === 0 ? (
             <Card className="p-12 text-center bg-card/50 border-border">
               <p className="text-xl text-muted-foreground uppercase tracking-wide font-mono">
                 Gallery coming soon
@@ -65,7 +71,7 @@ export default function GallerySection({
             </Card>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {siteData.gallery.map((image, index) => (
+              {allImages.map((image, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, clipPath: 'inset(0 0 100% 0)' }}

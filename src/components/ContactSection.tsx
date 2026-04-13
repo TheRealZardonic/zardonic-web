@@ -1,5 +1,5 @@
 import { motion, useInView } from 'framer-motion'
-import { PaperPlaneTilt, CheckCircle, Warning, PencilSimple } from '@phosphor-icons/react'
+import { PaperPlaneTilt, CheckCircle, Warning, PencilSimple, Plus, Trash } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -13,6 +13,15 @@ import {
   SECTION_GLITCH_DURATION_MS,
   SECTION_GLITCH_INTERVAL_MS,
 } from '@/lib/config'
+
+const DEFAULT_CONTACT_SUBJECTS = [
+  'Booking Request',
+  'Remix Request',
+  'Mix & Master Request',
+  'Music Production Request',
+  'Interview Request',
+  'Other Requests',
+]
 
 interface ContactSectionProps {
   onUpdate?: (settings: ContactSettings) => void
@@ -50,6 +59,11 @@ export default function ContactSection({
   const isInView = useInView(sectionRef, { once: true, amount: 0.2 })
   const titleText = sectionLabels?.contact || t('contact.defaultTitle')
   const showCursor = adminSettings?.background?.blinkingCursor !== false
+
+  // Resolved subject list: use configured subjects, fall back to built-in defaults
+  const subjectOptions = contactSettings?.contactSubjects?.length
+    ? contactSettings.contactSubjects
+    : DEFAULT_CONTACT_SUBJECTS
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -199,14 +213,17 @@ export default function ContactSection({
                 <Label className="font-mono text-xs text-foreground/60">
                   {contactSettings?.formSubjectLabel || t('contact.subjectLabel')}
                 </Label>
-                <Input
-                  type="text"
+                <select
                   required
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
-                  placeholder={contactSettings?.formSubjectPlaceholder || t('contact.subjectPlaceholder')}
-                  className={inputClass}
-                />
+                  className={`${inputClass} w-full appearance-none`}
+                >
+                  <option value="" disabled>{contactSettings?.formSubjectPlaceholder || t('contact.subjectPlaceholder') || 'Select a subject...'}</option>
+                  {subjectOptions.map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="space-y-1.5">
@@ -371,6 +388,44 @@ export default function ContactSection({
                   placeholder="Send"
                   className={inputClass}
                 />
+              </div>
+
+              {/* Subject options editor */}
+              <div className="space-y-2 sm:col-span-2 pt-2 border-t border-border/30">
+                <p className="font-mono text-xs text-primary/50 uppercase tracking-wider">Subject Options</p>
+                <div className="space-y-1">
+                  {subjectOptions.map((opt, idx) => (
+                    <div key={idx} className="flex gap-2 items-center">
+                      <Input
+                        value={opt}
+                        onChange={(e) => {
+                          const next = [...subjectOptions]
+                          next[idx] = e.target.value
+                          onUpdate({ ...contactSettings, contactSubjects: next })
+                        }}
+                        className={inputClass}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = subjectOptions.filter((_, i) => i !== idx)
+                          onUpdate({ ...contactSettings, contactSubjects: next })
+                        }}
+                        className="text-destructive/70 hover:text-destructive shrink-0"
+                        aria-label={`Remove subject ${opt}`}
+                      >
+                        <Trash size={14} />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => onUpdate({ ...contactSettings, contactSubjects: [...subjectOptions, ''] })}
+                    className="flex items-center gap-1 text-xs font-mono text-primary/50 hover:text-primary transition-colors mt-1"
+                  >
+                    <Plus size={12} /> Add subject
+                  </button>
+                </div>
               </div>
             </div>
           </motion.div>
