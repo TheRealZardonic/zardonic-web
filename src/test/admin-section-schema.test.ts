@@ -243,7 +243,7 @@ describe('Section schema shape invariants', () => {
     for (const schema of schemas) {
       if (!schema.validate) continue
       const defaults = schema.getDefaultData()
-      const errors = schema.validate(defaults as Parameters<typeof schema.validate>[0])
+      const errors = schema.validate(defaults as never)
       expect(typeof errors, `${schema.sectionId}: validate() must return object`).toBe('object')
     }
   })

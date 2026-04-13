@@ -53,7 +53,7 @@ function renderEditor(route: string) {
 
   return (
     <div className="flex flex-col items-center justify-center h-full min-h-[400px] gap-2">
-      <span className="text-zinc-500 text-sm font-mono">Route nicht gefunden</span>
+      <span className="text-zinc-500 text-sm font-mono">Route not found</span>
       <span className="text-zinc-700 text-xs font-mono">{route}</span>
     </div>
   )

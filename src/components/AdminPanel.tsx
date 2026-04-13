@@ -1,3 +1,14 @@
+/**
+ * @deprecated AdminPanel is the legacy admin UI (God Component, 24KB).
+ *
+ * Use the unified Admin Shell instead:
+ *   - Navigate to `#admin` to open the new schema-driven admin.
+ *   - The new system is in `src/cms/AdminShell.tsx` and is accessed via `CmsApp`.
+ *   - All entry points (keyboard shortcut Ctrl+K, `#admin` hash) still work.
+ *
+ * This file is kept for reference and backward-compatibility with legacy imports.
+ * Do NOT add new features here — add them to the Phase 1/2 schema-driven system.
+ */
 import React from 'react'
 import {
   X,

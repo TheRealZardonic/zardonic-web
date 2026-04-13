@@ -3,10 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary'
 import { Toaster } from 'sonner'
 import { useCmsAuth } from './hooks/useCmsAuth'
-import { useCmsRoute } from './hooks/useCmsRoute'
-import { CmsRouter } from './CmsRouter'
-import { CmsSidebar } from './CmsSidebar'
-import { CmsLayout } from './CmsLayout'
+import { AdminShell } from './AdminShell'
 import { CmsEditProvider } from './CmsEditContext'
 
 const queryClient = new QueryClient({
@@ -70,29 +67,10 @@ function CmsAuthGuard() {
     return <RedirectToMain />
   }
 
-  return <CmsInner logout={logout} />
-}
-
-function CmsInner({ logout }: { logout: () => Promise<void> }) {
-  const [route, navigate] = useCmsRoute()
-
   return (
-    <div className="flex h-screen bg-[#0a0a0a] overflow-hidden">
-      <CmsEditProvider>
-        <CmsSidebar
-          currentRoute={route}
-          onNavigate={navigate}
-          onLogout={() => void logout()}
-        />
-        <div className="flex-1 flex flex-col min-w-0">
-          <CmsLayout currentRoute={route} onNavigate={navigate}>
-            <Suspense fallback={<CmsLoadingFallback />}>
-              <CmsRouter route={route} />
-            </Suspense>
-          </CmsLayout>
-        </div>
-      </CmsEditProvider>
-    </div>
+    <CmsEditProvider>
+      <AdminShell logout={logout} />
+    </CmsEditProvider>
   )
 }
 
