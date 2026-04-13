@@ -337,6 +337,7 @@ function App() {
         visible={vis.creditHighlights !== false}
         sectionLabel={sectionLabels.creditHighlights || ''}
         sectionLabels={sectionLabels}
+        adminSettings={adminSettings}
         onLabelChange={editMode ? handleLabelChange : undefined}
         onUpdateSiteData={editMode ? handleUpdateSiteData : undefined}
       />
@@ -474,6 +475,7 @@ function App() {
         visible={vis.sponsoring !== false}
         sectionLabel={sectionLabels.sponsoring || ''}
         sectionLabels={sectionLabels}
+        adminSettings={adminSettings}
         onLabelChange={editMode ? handleLabelChange : undefined}
         onUpdateSiteData={editMode ? handleUpdateSiteData : undefined}
       />

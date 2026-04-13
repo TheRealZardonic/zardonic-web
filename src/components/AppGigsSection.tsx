@@ -69,10 +69,15 @@ export default function AppGigsSection({ gigs, sectionOrder, visible, editMode, 
 
   const visibleGigs = showAll ? upcomingGigs : upcomingGigs.slice(0, INITIAL_VISIBLE)
 
+  const gigsBackgroundOpacity = adminSettings?.sections?.styleOverrides?.['gigs']?.backgroundOpacity
+  const gigsSectionStyle = gigsBackgroundOpacity !== undefined
+    ? { backgroundColor: `color-mix(in srgb, var(--card) ${Math.round(gigsBackgroundOpacity * 100)}%, transparent)` }
+    : undefined
+
   return (
     <div style={{ order: sectionOrder }}>
       <Separator className="bg-border" />
-      <section id="gigs" className="py-24 px-4 noise-effect">
+      <section id="gigs" className="py-24 px-4 noise-effect" style={gigsSectionStyle}>
         <div className="container mx-auto max-w-6xl">
           <motion.div
             initial={{ opacity: 0, x: -30, filter: 'blur(10px)', clipPath: 'polygon(0 0, 0 0, 0 100%, 0 100%)' }}

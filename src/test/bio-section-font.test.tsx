@@ -185,4 +185,29 @@ describe('AppBioSection — font binding', () => {
     expect(bioText!.classList.contains('max-h-[2000px]')).toBe(false)
   })
 
+  it('bio text has whitespace-pre-wrap class so line breaks and paragraphs render correctly', async () => {
+    const { container } = await renderBioSection(undefined)
+    const bioText = container.querySelector('[style*="font-family"]')
+    expect(bioText).not.toBeNull()
+    expect(bioText!.classList.contains('whitespace-pre-wrap')).toBe(true)
+  })
+
+  it('bio section applies backgroundOpacity as inline style when set in styleOverrides', async () => {
+    const { container } = await renderBioSection({
+      sections: { styleOverrides: { bio: { backgroundOpacity: 0.5 } } },
+    })
+    const section = container.querySelector('section#bio')
+    expect(section).not.toBeNull()
+    expect(section!.getAttribute('style')).toContain('background-color')
+    expect(section!.getAttribute('style')).toContain('color-mix')
+  })
+
+  it('bio section has no inline background style when backgroundOpacity is not set', async () => {
+    const { container } = await renderBioSection(undefined)
+    const section = container.querySelector('section#bio')
+    expect(section).not.toBeNull()
+    // No inline background-color when using default class-based bg
+    expect(section!.getAttribute('style') ?? '').not.toContain('background-color')
+  })
+
 })

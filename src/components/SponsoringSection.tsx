@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { PencilSimple, Check, Plus, Trash, Eye, EyeSlash } from '@phosphor-icons/react'
 import { toDirectImageUrl } from '@/lib/image-cache'
 import type { SiteData } from '@/App'
-import type { SectionLabels } from '@/lib/types'
+import type { AdminSettings, SectionLabels } from '@/lib/types'
 
 const DEFAULT_LABEL = 'SPONSORING'
 
@@ -14,6 +14,7 @@ interface SponsoringSectionProps {
   visible: boolean
   sectionLabel: string
   sectionLabels?: SectionLabels
+  adminSettings?: AdminSettings
   onLabelChange?: (key: keyof SectionLabels, value: string | boolean) => void
   onUpdateSiteData?: (updater: SiteData | ((prev: SiteData) => SiteData)) => void
 }
@@ -25,6 +26,7 @@ export default function SponsoringSection({
   visible,
   sectionLabel,
   sectionLabels,
+  adminSettings,
   onLabelChange,
   onUpdateSiteData,
 }: SponsoringSectionProps) {
@@ -36,6 +38,15 @@ export default function SponsoringSection({
   const headingVisible = sectionLabels?.sponsoringHeadingVisible !== false
   const headingPrefix = sectionLabels?.sponsoringPrefix ?? '//'
   const logos = siteData.sponsoring ?? []
+
+  // Style overrides
+  const styleOverrides = adminSettings?.sections?.styleOverrides?.['sponsoring']
+  const logoBrightness = styleOverrides?.logoBrightness ?? 1
+  const backgroundOpacity = styleOverrides?.backgroundOpacity
+  const sectionStyle = backgroundOpacity !== undefined
+    ? { backgroundColor: `color-mix(in srgb, var(--card) ${Math.round(backgroundOpacity * 100)}%, transparent)` }
+    : undefined
+  const logoFilter = `brightness(0) invert(1) brightness(${logoBrightness})`
 
   const startEditLabel = () => {
     setLabelDraft(sectionLabel || DEFAULT_LABEL)
@@ -86,7 +97,11 @@ export default function SponsoringSection({
     <div style={{ order: sectionOrder }}>
     {visible && (
     <>
-    <section className="py-16 px-4 bg-card/50 noise-effect overflow-hidden" data-theme-color="primary accent card border">
+    <section
+      className={`py-16 px-4 noise-effect overflow-hidden${backgroundOpacity === undefined ? ' bg-card/50' : ''}`}
+      style={sectionStyle}
+      data-theme-color="primary accent card border"
+    >
       <div className="container mx-auto max-w-6xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -183,7 +198,8 @@ export default function SponsoringSection({
                     <motion.img
                       src={toDirectImageUrl(logo.src, { w: 300 }) || logo.src}
                       alt={logo.alt}
-                      className="h-10 md:h-14 w-auto object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity duration-300 hover-chromatic-image cursor-pointer"
+                      className="h-10 md:h-14 w-auto object-contain opacity-70 hover:opacity-100 transition-opacity duration-300 hover-chromatic-image cursor-pointer"
+                      style={{ filter: logoFilter }}
                       initial={{ opacity: 0, y: 10 }}
                       whileInView={{ opacity: 0.7, y: 0 }}
                       viewport={{ once: true }}
@@ -196,7 +212,8 @@ export default function SponsoringSection({
                   <motion.img
                     src={toDirectImageUrl(logo.src, { w: 300 }) || logo.src}
                     alt={logo.alt}
-                    className="h-10 md:h-14 w-auto object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity duration-300 hover-chromatic-image"
+                    className="h-10 md:h-14 w-auto object-contain opacity-70 hover:opacity-100 transition-opacity duration-300 hover-chromatic-image"
+                    style={{ filter: logoFilter }}
                     initial={{ opacity: 0, y: 10 }}
                     whileInView={{ opacity: 0.7, y: 0 }}
                     viewport={{ once: true }}

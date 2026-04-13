@@ -29,8 +29,8 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
     appleMusic: '',
     beatport: ''
   })
-  const [tracks, setTracks] = useState<Array<{ title: string; duration?: string }>>([])
-  const [newTrack, setNewTrack] = useState({ title: '', duration: '' })
+  const [tracks, setTracks] = useState<Array<{ title: string; duration?: string; artist?: string }>>([])
+  const [newTrack, setNewTrack] = useState({ title: '', duration: '', artist: '' })
   const [customLinks, setCustomLinks] = useState<Array<{ label: string; url: string }>>([])
   const [newCustomLink, setNewCustomLink] = useState({ label: '', url: '' })
   const [isSaving, setIsSaving] = useState(false)
@@ -54,15 +54,15 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
         appleMusic: links.appleMusic || '',
         beatport: links.beatport || ''
       })
-      setTracks(release.tracks || [])
+      setTracks((release.tracks || []).map(t => ({ title: t.title, duration: t.duration, artist: t.artist })))
       setCustomLinks(release.customLinks || [])
     }
   }, [release])
 
   const addTrack = () => {
     if (newTrack.title.trim()) {
-      setTracks([...tracks, { title: newTrack.title.trim(), duration: newTrack.duration || undefined }])
-      setNewTrack({ title: '', duration: '' })
+      setTracks([...tracks, { title: newTrack.title.trim(), duration: newTrack.duration || undefined, artist: newTrack.artist.trim() || undefined }])
+      setNewTrack({ title: '', duration: '', artist: '' })
     }
   }
 
@@ -396,6 +396,7 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
               {tracks.map((track, index) => (
                 <div key={index} className="flex gap-2 items-center">
                   <Input value={track.title} disabled className="flex-1 bg-secondary border-input text-sm" />
+                  <Input value={track.artist || '—'} disabled className="w-28 bg-secondary border-input text-sm" placeholder="Artist" title="Artist" />
                   <Input value={track.duration || '—'} disabled className="w-20 bg-secondary border-input text-sm text-center" />
                   <Button type="button" variant="ghost" size="icon" onClick={() => removeTrack(index)}>
                     <X size={16} />
@@ -409,6 +410,14 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
                   placeholder="Track title"
                   className="flex-1 bg-secondary border-input"
                   onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTrack() } }}
+                />
+                <Input
+                  value={newTrack.artist}
+                  onChange={(e) => setNewTrack({ ...newTrack, artist: e.target.value })}
+                  placeholder="Artist"
+                  className="w-28 bg-secondary border-input"
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTrack() } }}
+                  title="Artist name for this track (optional)"
                 />
                 <Input
                   value={newTrack.duration}

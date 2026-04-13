@@ -88,6 +88,11 @@ export default function AppReleasesSection({ releases, sectionOrder, visible, ed
 
   if (!visible) return null
 
+  const releasesBackgroundOpacity = adminSettings?.sections?.styleOverrides?.['releases']?.backgroundOpacity
+  const releasesSectionStyle = releasesBackgroundOpacity !== undefined
+    ? { backgroundColor: `color-mix(in srgb, var(--card) ${Math.round(releasesBackgroundOpacity * 100)}%, transparent)` }
+    : undefined
+
   const handleSaveRelease = (release: FullRelease) => {
     if (editingRelease === 'new') {
       onAddRelease?.(release)
@@ -117,7 +122,7 @@ export default function AppReleasesSection({ releases, sectionOrder, visible, ed
   return (
     <div style={{ order: sectionOrder }}>
       <Separator className="bg-border" />
-      <section id="releases" className="py-24 px-4 bg-card/50 scanline-effect">
+      <section id="releases" className={`py-24 px-4 scanline-effect${releasesBackgroundOpacity === undefined ? ' bg-card/50' : ''}`} style={releasesSectionStyle}>
         <div className="container mx-auto max-w-6xl">
           <motion.div
             initial={{ opacity: 0, x: -30, filter: 'blur(10px)', clipPath: 'polygon(0 0, 0 0, 0 100%, 0 100%)' }}
