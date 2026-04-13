@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { Card } from '@/components/ui/card'
 import { ArrowsClockwise, PencilSimple, Trash } from '@phosphor-icons/react'
 import type { Release } from '@/lib/app-types'
+import { toDirectImageUrl } from '@/lib/image-cache'
 
 export type ReleaseCardVariant = 'default' | 'square-minimal' | 'square-titled' | 'compact' | 'square-cover'
 export type ReleaseHoverEffect = 'default' | 'zoom' | 'glow' | 'lift' | 'scan' | 'chromatic' | 'flip'
@@ -136,7 +137,7 @@ function DefaultCard({
       )}
       <div className="aspect-square bg-muted relative">
         {release.artwork && (
-          <img src={release.artwork} alt={release.title} className={`w-full h-full object-cover ${imageClass}`} loading="lazy" decoding="async" />
+          <img src={toDirectImageUrl(release.artwork, { w: 600 }) || release.artwork} alt={release.title} className={`w-full h-full object-cover ${imageClass}`} loading="lazy" decoding="async" />
         )}
       </div>
       <div className="p-4">
@@ -182,7 +183,7 @@ function SquareMinimalCard({
       )}
       <div className="aspect-square bg-muted relative">
         {release.artwork ? (
-          <img src={release.artwork} alt={release.title} className={`w-full h-full object-cover ${imageClass}`} loading="lazy" decoding="async" />
+          <img src={toDirectImageUrl(release.artwork, { w: 600 }) || release.artwork} alt={release.title} className={`w-full h-full object-cover ${imageClass}`} loading="lazy" decoding="async" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <span className="font-mono text-xs text-muted-foreground uppercase tracking-wider truncate px-2 text-center">{release.title}</span>
@@ -227,7 +228,7 @@ function SquareTitledCard({
       )}
       <div className="aspect-square bg-muted relative">
         {release.artwork && (
-          <img src={release.artwork} alt={release.title} className={`w-full h-full object-cover ${imageClass}`} loading="lazy" decoding="async" />
+          <img src={toDirectImageUrl(release.artwork, { w: 600 }) || release.artwork} alt={release.title} className={`w-full h-full object-cover ${imageClass}`} loading="lazy" decoding="async" />
         )}
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-3">
           <h3 className="font-bold uppercase text-xs truncate font-mono text-white leading-tight">{release.title}</h3>
@@ -273,7 +274,7 @@ function CompactCard({
       <div className="flex items-stretch">
         <div className="w-16 h-16 shrink-0 bg-muted">
           {release.artwork && (
-            <img src={release.artwork} alt={release.title} className={`w-full h-full object-cover ${imageClass}`} loading="lazy" decoding="async" />
+            <img src={toDirectImageUrl(release.artwork, { w: 150 }) || release.artwork} alt={release.title} className={`w-full h-full object-cover ${imageClass}`} loading="lazy" decoding="async" />
           )}
         </div>
         <div className="px-3 py-2 flex flex-col justify-center min-w-0">
@@ -320,7 +321,7 @@ function SquareCoverCard({
       )}
       <div className="aspect-square bg-muted relative">
         {release.artwork ? (
-          <img src={release.artwork} alt={release.title} className={`w-full h-full object-cover ${imageClass}`} loading="lazy" decoding="async" />
+          <img src={toDirectImageUrl(release.artwork, { w: 600 }) || release.artwork} alt={release.title} className={`w-full h-full object-cover ${imageClass}`} loading="lazy" decoding="async" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <span className="font-mono text-xs text-muted-foreground uppercase tracking-wider truncate px-2 text-center">{release.title}</span>
@@ -368,7 +369,7 @@ function FlipCard({
         <div className="flip-front rounded-sm border border-border bg-card overflow-hidden">
           <div className="h-3/4 bg-muted relative">
             {release.artwork && (
-              <img src={release.artwork} alt={release.title} className="w-full h-full object-cover glitch-image" loading="lazy" decoding="async" />
+              <img src={toDirectImageUrl(release.artwork, { w: 600 }) || release.artwork} alt={release.title} className="w-full h-full object-cover glitch-image" loading="lazy" decoding="async" />
             )}
           </div>
           <div className="p-3 h-1/4 flex flex-col justify-center">
