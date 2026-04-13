@@ -47,7 +47,7 @@ export default function AppBioSection({ bio, sectionOrder, visible, editMode, se
 
   const bodyClasses = [
     bioTextSize,
-    'text-muted-foreground overflow-hidden font-light',
+    'text-muted-foreground overflow-hidden font-light whitespace-pre-wrap',
     !hasCustomBodyLineHeight ? 'leading-relaxed' : '',
     !bioExpanded ? 'max-h-[280px]' : 'max-h-none'
   ].filter(Boolean).join(' ')
@@ -70,10 +70,16 @@ export default function AppBioSection({ bio, sectionOrder, visible, editMode, se
 
   if (!visible) return null
 
+  const bioStyleOverrides = adminSettings?.sections?.styleOverrides?.['bio']
+  const bioBackgroundOpacity = bioStyleOverrides?.backgroundOpacity
+  const bioSectionStyle = bioBackgroundOpacity !== undefined
+    ? { backgroundColor: `color-mix(in srgb, var(--card) ${Math.round(bioBackgroundOpacity * 100)}%, transparent)` }
+    : undefined
+
   return (
     <div style={{ order: sectionOrder }}>
       <Separator className="bg-border" />
-      <section id="bio" className="py-24 px-4" data-theme-color="foreground muted-foreground card border">
+      <section id="bio" className="py-24 px-4" style={bioSectionStyle} data-theme-color="foreground muted-foreground card border">
         <div className="container mx-auto max-w-4xl">
           <motion.div
             initial={{ opacity: 0, x: -30, filter: 'blur(10px)', clipPath: 'polygon(0 0, 0 0, 0 100%, 0 100%)' }}

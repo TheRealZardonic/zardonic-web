@@ -333,6 +333,8 @@ export interface SectionStyleOverride {
   textAlign?: 'left' | 'center' | 'right'
   primaryColor?: string
   backgroundColor?: string
+  /** Opacity of the section background (0 = transparent, 1 = fully opaque). Default 0.5. */
+  backgroundOpacity?: number
   cardColor?: string
   borderColor?: string
   paddingY?: string
@@ -361,6 +363,9 @@ export interface SectionStyleOverride {
   releaseColumns?: '2' | '3' | '4'
   releaseCardVariant?: 'default' | 'square-minimal' | 'square-titled' | 'compact' | 'square-cover'
   releaseHoverEffect?: 'default' | 'zoom' | 'glow' | 'lift' | 'scan' | 'chromatic' | 'flip'
+  // Logo sections (creditHighlights, sponsoring)
+  /** Brightness of the logo images (0 = black, 1 = original, >1 = brighter). Default 1. */
+  logoBrightness?: number
 }
 
 export interface AdminSettings {

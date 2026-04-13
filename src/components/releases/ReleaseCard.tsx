@@ -119,7 +119,7 @@ function DefaultCard({
 
   return (
     <Card
-      className={`overflow-hidden bg-card border-border hover:border-primary/50 transition-all cursor-pointer relative ${hoverClass}`}
+      className={`overflow-hidden bg-card border-border hover:border-primary/50 transition-all cursor-pointer relative cyber-card ${hoverClass}`}
       onClick={() => !editMode && onReleaseClick(release)}
     >
       <SyncBar isSyncing={isSyncing} />
@@ -165,7 +165,7 @@ function SquareMinimalCard({
 
   return (
     <Card
-      className={`overflow-hidden bg-card border-border hover:border-primary/50 transition-all cursor-pointer relative ${hoverClass}`}
+      className={`overflow-hidden bg-card border-border hover:border-primary/50 transition-all cursor-pointer relative cyber-card ${hoverClass}`}
       onClick={() => !editMode && onReleaseClick(release)}
     >
       <SyncBar isSyncing={isSyncing} />
@@ -211,7 +211,7 @@ function SquareTitledCard({
 
   return (
     <Card
-      className={`overflow-hidden bg-card border-border hover:border-primary/50 transition-all cursor-pointer relative ${hoverClass}`}
+      className={`overflow-hidden bg-card border-border hover:border-primary/50 transition-all cursor-pointer relative cyber-card ${hoverClass}`}
       onClick={() => !editMode && onReleaseClick(release)}
     >
       <SyncBar isSyncing={isSyncing} />
@@ -256,7 +256,7 @@ function CompactCard({
 
   return (
     <Card
-      className={`overflow-hidden bg-card border-border hover:border-primary/50 transition-all cursor-pointer relative ${hoverClass}`}
+      className={`overflow-hidden bg-card border-border hover:border-primary/50 transition-all cursor-pointer relative cyber-card ${hoverClass}`}
       onClick={() => !editMode && onReleaseClick(release)}
     >
       <SyncBar isSyncing={isSyncing} />
@@ -304,7 +304,7 @@ function SquareCoverCard({
 
   return (
     <Card
-      className={`overflow-hidden bg-card border-border hover:border-primary/50 transition-all cursor-pointer relative ${hoverClass}`}
+      className={`overflow-hidden bg-card border-border hover:border-primary/50 transition-all cursor-pointer relative cyber-card ${hoverClass}`}
       onClick={() => !editMode && onReleaseClick(release)}
     >
       <SyncBar isSyncing={isSyncing} />

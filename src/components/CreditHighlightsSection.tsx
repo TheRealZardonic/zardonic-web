@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { PencilSimple, Check, Plus, Trash, Eye, EyeSlash } from '@phosphor-icons/react'
 import { toDirectImageUrl } from '@/lib/image-cache'
 import type { SiteData } from '@/App'
-import type { SectionLabels } from '@/lib/types'
+import type { AdminSettings, SectionLabels } from '@/lib/types'
 
 interface CreditHighlightsSectionProps {
   siteData: SiteData
@@ -12,6 +12,7 @@ interface CreditHighlightsSectionProps {
   visible: boolean
   sectionLabel: string
   sectionLabels?: SectionLabels
+  adminSettings?: AdminSettings
   onLabelChange?: (key: keyof SectionLabels, value: string | boolean) => void
   onUpdateSiteData?: (updater: SiteData | ((prev: SiteData) => SiteData)) => void
 }
@@ -23,6 +24,7 @@ export default function CreditHighlightsSection({
   visible,
   sectionLabel,
   sectionLabels,
+  adminSettings,
   onLabelChange,
   onUpdateSiteData,
 }: CreditHighlightsSectionProps) {
@@ -33,6 +35,16 @@ export default function CreditHighlightsSection({
 
   const headingVisible = sectionLabels?.creditHighlightsHeadingVisible !== false
   const headingPrefix = sectionLabels?.creditHighlightsPrefix ?? '//'
+
+  // Style overrides
+  const styleOverrides = adminSettings?.sections?.styleOverrides?.['creditHighlights']
+  const logoBrightness = styleOverrides?.logoBrightness ?? 1
+  const backgroundOpacity = styleOverrides?.backgroundOpacity
+  const sectionStyle = backgroundOpacity !== undefined
+    ? { backgroundColor: `color-mix(in srgb, var(--card) ${Math.round(backgroundOpacity * 100)}%, transparent)` }
+    : undefined
+  // brightness(0) invert(1) gives pure white; then brightness(logoBrightness) scales from there
+  const logoFilter = `brightness(0) invert(1) brightness(${logoBrightness})`
 
   const startEditLabel = () => {
     setLabelDraft(sectionLabel || 'CREDIT.HIGHLIGHTS')
@@ -83,7 +95,11 @@ export default function CreditHighlightsSection({
     <div style={{ order: sectionOrder }}>
     {visible && (
     <>
-    <section className="py-16 px-4 bg-card/50 noise-effect overflow-hidden" data-theme-color="primary accent card border">
+    <section
+      className={`py-16 px-4 noise-effect overflow-hidden${backgroundOpacity === undefined ? ' bg-card/50' : ''}`}
+      style={sectionStyle}
+      data-theme-color="primary accent card border"
+    >
       <div className="container mx-auto max-w-6xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -172,7 +188,8 @@ export default function CreditHighlightsSection({
                 <motion.img
                   src={toDirectImageUrl(logo.src, { w: 300 }) || logo.src}
                   alt={logo.alt}
-                  className="h-10 md:h-14 w-auto object-contain brightness-0 invert opacity-70 hover:opacity-100 transition-opacity duration-300 hover-chromatic-image"
+                  className="h-10 md:h-14 w-auto object-contain opacity-70 hover:opacity-100 transition-opacity duration-300 hover-chromatic-image"
+                  style={{ filter: logoFilter }}
                   initial={{ opacity: 0, y: 10 }}
                   whileInView={{ opacity: 0.7, y: 0 }}
                   viewport={{ once: true }}
