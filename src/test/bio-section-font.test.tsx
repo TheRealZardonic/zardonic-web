@@ -83,11 +83,21 @@ describe('AppBioSection — font binding', () => {
     expect(bioText!.getAttribute('style')).toContain('var(--font-body)')
   })
 
-  it('bio section h2 heading does NOT hardcode font-mono class', async () => {
+  it('bio section h2 heading has font-mono class by default (no custom headingFontFamily)', async () => {
     const { container } = await renderBioSection()
     const heading = container.querySelector('h2')
     expect(heading).not.toBeNull()
-    // font-mono hardcodes the mono typeface and ignores the admin heading font
+    // font-mono is the Share Tech Mono default — must be present when no custom heading font is set
+    expect(heading!.classList.contains('font-mono')).toBe(true)
+  })
+
+  it('bio section h2 heading does NOT have font-mono when headingFontFamily is configured', async () => {
+    const { container } = await renderBioSection({
+      design: { typography: { headingFontFamily: "'Orbitron', sans-serif" } },
+    })
+    const heading = container.querySelector('h2')
+    expect(heading).not.toBeNull()
+    // When admin sets a custom heading font, font-mono must be omitted so the custom font takes precedence
     expect(heading!.classList.contains('font-mono')).toBe(false)
   })
 

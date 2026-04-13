@@ -41,7 +41,8 @@ export default function AppBioSection({ bio, sectionOrder, visible, editMode, se
     'text-foreground hover-chromatic hover-glitch cyber2077-scan-build cyber2077-data-corrupt uppercase',
     !hasCustomHeadingSize ? 'text-4xl md:text-6xl' : '',
     !hasCustomHeadingWeight ? 'font-bold' : '',
-    !hasCustomHeadingLetterSpacing ? 'tracking-tighter' : ''
+    !hasCustomHeadingLetterSpacing ? 'tracking-tighter' : '',
+    !typography?.headingFontFamily ? 'font-mono' : '',
   ].filter(Boolean).join(' ')
 
   const bodyClasses = [
