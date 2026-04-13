@@ -106,6 +106,8 @@ interface BackgroundStackProps {
   backgroundImageParallax?: boolean
   backgroundImageOverlay?: boolean
   backgroundType?: BackgroundType
+  /** Controls all animated backgrounds (matrix, stars, circuit, etc.).
+   * Mapped from AnimationSettings.circuitBackgroundEnabled which is kept for backwards compatibility with stored settings. */
   animatedBackgroundEnabled?: boolean
   hudTexts?: HudTexts
   animSettings?: AnimationSettings
