@@ -184,52 +184,54 @@ export default function SponsoringSection({
           )}
 
           <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12 opacity-60 hover:opacity-90 transition-opacity duration-500">
-            {logos.filter(logo => logo.src).map((logo, index) => {
+            {(() => {
               const filterBase = `brightness(0) invert(1) brightness(${logoBrightness})`
               const filterHover = `brightness(0) invert(1) brightness(${logoBrightness}) drop-shadow(2px 0 0 rgba(255,0,100,0.5)) drop-shadow(-2px 0 0 rgba(0,255,255,0.5))`
-              const imgMotionProps = {
-                initial: { opacity: 0, y: 10, filter: filterBase },
-                whileInView: { opacity: 0.7, y: 0, filter: filterBase },
-                viewport: { once: true } as const,
-                transition: { duration: 0.5, delay: index * 0.1 },
-                whileHover: { opacity: 1, filter: filterHover },
-                loading: 'lazy' as const,
-                src: toDirectImageUrl(logo.src, { w: 300 }) || logo.src,
-                alt: logo.alt,
-                className: 'h-10 md:h-14 w-auto object-contain',
-              }
-              return (
-              <div key={`sponsor-${index}`} className="relative group flex flex-col items-center gap-1">
-                {logo.url ? (
-                  <a
-                    href={logo.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={logo.alt || logo.caption || 'Sponsor'}
-                    className="block"
-                  >
-                    <motion.img {...imgMotionProps} className="h-10 md:h-14 w-auto object-contain cursor-pointer" />
-                  </a>
-                ) : (
-                  <motion.img {...imgMotionProps} />
-                )}
-                {logo.caption && (
-                  <span className="font-mono text-[10px] text-muted-foreground/70 text-center leading-tight max-w-[120px]">
-                    {logo.caption}
-                  </span>
-                )}
-                {editMode && (
-                  <button
-                    onClick={() => removeLogo(index)}
-                    className="absolute -top-2 -right-2 bg-destructive/80 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                    aria-label="Remove sponsor logo"
-                  >
-                    <Trash size={10} className="text-white" />
-                  </button>
-                )}
-              </div>
-              )
-            })}
+              return logos.filter(logo => logo.src).map((logo, index) => {
+                const imgMotionProps = {
+                  initial: { opacity: 0, y: 10, filter: filterBase },
+                  whileInView: { opacity: 0.7, y: 0, filter: filterBase },
+                  viewport: { once: true } as const,
+                  transition: { duration: 0.5, delay: index * 0.1 },
+                  whileHover: { opacity: 1, filter: filterHover },
+                  loading: 'lazy' as const,
+                  src: toDirectImageUrl(logo.src, { w: 300 }) || logo.src,
+                  alt: logo.alt,
+                  className: 'h-10 md:h-14 w-auto object-contain',
+                }
+                return (
+                <div key={`sponsor-${index}`} className="relative group flex flex-col items-center gap-1">
+                  {logo.url ? (
+                    <a
+                      href={logo.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={logo.alt || logo.caption || 'Sponsor'}
+                      className="block"
+                    >
+                      <motion.img {...imgMotionProps} className="h-10 md:h-14 w-auto object-contain cursor-pointer" />
+                    </a>
+                  ) : (
+                    <motion.img {...imgMotionProps} />
+                  )}
+                  {logo.caption && (
+                    <span className="font-mono text-[10px] text-muted-foreground/70 text-center leading-tight max-w-[120px]">
+                      {logo.caption}
+                    </span>
+                  )}
+                  {editMode && (
+                    <button
+                      onClick={() => removeLogo(index)}
+                      className="absolute -top-2 -right-2 bg-destructive/80 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      aria-label="Remove sponsor logo"
+                    >
+                      <Trash size={10} className="text-white" />
+                    </button>
+                  )}
+                </div>
+                )
+              })
+            })()}
           </div>
 
           {/* Edit mode: show all entries (including those without src) */}

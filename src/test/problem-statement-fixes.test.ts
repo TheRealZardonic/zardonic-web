@@ -51,6 +51,12 @@ describe('fullReleaseToStored', () => {
     expect(stored.featured).toBe(true)
   })
 
+  it('persists featured: false explicitly', () => {
+    const full = makeFullRelease({ featured: false })
+    const stored = fullReleaseToStored(full)
+    expect(stored.featured).toBe(false)
+  })
+
   it('preserves customLinks', () => {
     const links = [{ label: 'CD', url: 'https://shop.example.com' }]
     const full = makeFullRelease({ customLinks: links })
@@ -81,6 +87,13 @@ describe('mergeFullReleaseIntoStored', () => {
     const existing = makeStoredRelease({ featured: false })
     const result = mergeFullReleaseIntoStored(updated, existing)
     expect(result.featured).toBe(true)
+  })
+
+  it('clears featured when user explicitly sets it to false', () => {
+    const updated = makeFullRelease({ featured: false })
+    const existing = makeStoredRelease({ featured: true })
+    const result = mergeFullReleaseIntoStored(updated, existing)
+    expect(result.featured).toBe(false)
   })
 
   it('preserves existing featured when not set in updated', () => {

@@ -217,6 +217,7 @@ export default function ContactSection({
                   required
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
+                  aria-label={contactSettings?.formSubjectLabel || t('contact.subjectLabel') || 'Subject'}
                   className={`${inputClass} w-full appearance-none`}
                 >
                   <option value="" disabled>{contactSettings?.formSubjectPlaceholder || t('contact.subjectPlaceholder') || 'Select a subject...'}</option>

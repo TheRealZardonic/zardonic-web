@@ -181,10 +181,10 @@ export default function CreditHighlightsSection({
           )}
 
           <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12 opacity-60 hover:opacity-90 transition-opacity duration-500">
-            {siteData.creditHighlights.filter(logo => logo.src).map((logo, index) => {
+            {(() => {
               const filterBase = `brightness(0) invert(1) brightness(${logoBrightness})`
               const filterHover = `brightness(0) invert(1) brightness(${logoBrightness}) drop-shadow(2px 0 0 rgba(255,0,100,0.5)) drop-shadow(-2px 0 0 rgba(0,255,255,0.5))`
-              return (
+              return siteData.creditHighlights.filter(logo => logo.src).map((logo, index) => (
               <div key={`credit-${index}`} className="relative group">
                 <motion.img
                   src={toDirectImageUrl(logo.src, { w: 300 }) || logo.src}
@@ -207,8 +207,8 @@ export default function CreditHighlightsSection({
                   </button>
                 )}
               </div>
-              )
-            })}
+              ))
+            })()}
           </div>
 
           {/* Edit mode: show all entries (including those without src) */}

@@ -43,7 +43,10 @@ export default function AppHeroSection({
   const artworkInputRef = useRef<HTMLInputElement>(null)
   const extraInputRef = useRef<HTMLInputElement>(null)
 
-  // All hero images: primary + extras (max 5 total)
+  const MAX_HERO_IMAGES = 5
+  const MAX_EXTRA_IMAGES = MAX_HERO_IMAGES - 1 // 4 extras + 1 primary = 5 total
+
+  // All hero images: primary + extras (max MAX_HERO_IMAGES total)
   const primaryImage = siteData?.heroImage || ''
   const extraImages = siteData?.heroImages ?? []
   const allImages = [primaryImage, ...extraImages].filter(Boolean)
@@ -85,7 +88,7 @@ export default function AppHeroSection({
     reader.onload = () => {
       onUpdateSiteData?.((prev) => {
         const current = prev.heroImages ?? []
-        if (current.length >= 4) return prev // max 4 extras = 5 total
+        if (current.length >= MAX_EXTRA_IMAGES) return prev
         return { ...prev, heroImages: [...current, reader.result as string] }
       })
     }
@@ -130,13 +133,12 @@ export default function AppHeroSection({
 
       {/* Crossfade slideshow */}
       {allImages.length > 0 && (
-        <AnimatePresence mode="sync">
+        <AnimatePresence mode="wait">
           <motion.div
             key={slideshowIndex}
             className="absolute inset-0 bg-cover bg-center bg-no-repeat"
             style={{
               backgroundImage: currentImageUrl ? `url(${currentImageUrl})` : undefined,
-              opacity: heroImageOpacity,
               filter: heroImageBlur > 0 ? `blur(${heroImageBlur}px)` : undefined,
             }}
             initial={{ opacity: 0 }}
@@ -236,7 +238,7 @@ export default function AppHeroSection({
                       </button>
                     </div>
                   ))}
-                  {allImages.length < 5 && (
+                  {allImages.length < MAX_HERO_IMAGES && (
                     <label className="cursor-pointer w-12 h-12 rounded border border-dashed border-primary/30 flex items-center justify-center hover:border-primary/60 transition-colors">
                       <Images className="w-4 h-4 text-primary/50" />
                       <input
