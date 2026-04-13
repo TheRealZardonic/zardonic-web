@@ -4,28 +4,12 @@ import { CircuitBackground } from '@/components/CircuitBackground'
 import CyberpunkBackground from '@/components/CyberpunkBackground'
 import type { BackgroundType, HudTexts, AnimationSettings } from '@/lib/types'
 import React from 'react'
+import { toDirectImageUrl } from '@/lib/image-cache'
 
 const MatrixRain = React.lazy(() => import('@/components/MatrixRain'))
 const StarField = React.lazy(() => import('@/components/StarField'))
 const CloudChamberBackground = React.lazy(() => import('@/components/CloudChamberBackground'))
 const GlitchGridBackground = React.lazy(() => import('@/components/GlitchGridBackground'))
-
-function resolveImageUrl(raw: string): string {
-  if (!raw) return raw
-  try {
-    const u = new URL(raw)
-    if (u.hostname === 'drive.google.com') {
-      const fileMatch = u.pathname.match(/\/file\/d\/([A-Za-z0-9_-]+)/)
-      const idParam = u.searchParams.get('id')
-      const fileId = fileMatch?.[1] ?? idParam
-      if (fileId) {
-        const direct = `https://drive.google.com/uc?export=view&id=${fileId}`
-        return `/api/image-proxy?url=${encodeURIComponent(direct)}`
-      }
-    }
-  } catch { /* ignore */ }
-  return raw
-}
 
 /** Fixed (non-scrolling) background image. Depth layer --z-bg-image. */
 function FixedBackgroundImage({ url, fit, opacity }: {
@@ -40,10 +24,13 @@ function FixedBackgroundImage({ url, fit, opacity }: {
       aria-hidden="true"
     >
       <img
-        src={resolveImageUrl(url)}
+        src={toDirectImageUrl(url)}
         alt=""
         className="w-full h-full"
         style={{ objectFit: fit ?? 'cover', objectPosition: 'center', display: 'block' }}
+        loading="eager"
+        fetchPriority="high"
+        decoding="async"
       />
     </div>
   )
@@ -68,10 +55,13 @@ function ParallaxBackgroundImage({ url, fit, opacity }: {
         style={{ y, willChange: 'transform', position: 'absolute', top: '-15%', left: 0, right: 0, bottom: '-15%' }}
       >
         <img
-          src={resolveImageUrl(url)}
+          src={toDirectImageUrl(url)}
           alt=""
           className="w-full h-full"
           style={{ objectFit: fit ?? 'cover', objectPosition: 'center', display: 'block' }}
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
         />
       </motion.div>
     </div>

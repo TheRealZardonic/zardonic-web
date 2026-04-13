@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import type { AdminSettings } from '@/lib/types'
 import { applyConfigOverrides } from '@/lib/config'
 import { extractGoogleFontName, loadGoogleFont } from '@/lib/font-loader'
+import { toDirectImageUrl, cacheImage } from '@/lib/image-cache'
 
 /** localStorage key used to persist the theme CSS variable map for instant
  *  restoration on the next page load (eliminates the red-flash on the loading
@@ -281,4 +282,30 @@ export function useAppTheme(adminSettings: AdminSettings | undefined): void {
       root.style.removeProperty('--mono-font-size')
     }
   }, [adminSettings?.design?.typography])
+
+  // Effect 7: Background image preload hint
+  useEffect(() => {
+    const rawUrl = adminSettings?.background?.backgroundImageUrl
+    if (!rawUrl) return
+    const resolvedUrl = toDirectImageUrl(rawUrl)
+    if (!resolvedUrl) return
+
+    const id = `bg-preload-${encodeURIComponent(rawUrl)}`
+    if (document.querySelector(`link[data-bg-preload="${id}"]`)) return
+
+    const link = document.createElement('link')
+    link.rel = 'preload'
+    link.as = 'image'
+    link.setAttribute('fetchpriority', 'high')
+    link.href = resolvedUrl
+    link.dataset.bgPreload = id
+    document.head.appendChild(link)
+
+    // Also warm the IndexedDB cache in the background
+    cacheImage(rawUrl).catch(() => {/* silently fail */})
+
+    return () => {
+      document.head.removeChild(link)
+    }
+  }, [adminSettings?.background?.backgroundImageUrl])
 }
