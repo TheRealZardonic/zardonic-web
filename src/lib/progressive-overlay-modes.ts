@@ -8,7 +8,7 @@
  * 3. No separate loading screen = no flickering
  */
 
-import type { Transition } from 'framer-motion'
+import type { Transition, TargetAndTransition } from 'framer-motion'
 import type { ProgressiveOverlayModes } from './types'
 
 export interface ProgressiveMode {
@@ -19,8 +19,8 @@ export interface ProgressiveMode {
   className: string
   /** Framer Motion variants for the content container */
   containerVariants: {
-    loading: Record<string, unknown>
-    loaded: Record<string, unknown>
+    loading: TargetAndTransition
+    loaded: TargetAndTransition
   }
   /** Transition configuration */
   transition: Transition

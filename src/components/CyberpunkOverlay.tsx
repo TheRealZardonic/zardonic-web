@@ -163,8 +163,8 @@ export default function CyberpunkOverlay({ overlay, onClose, adminSettings, arti
                         <motion.div
                           key={overlay.type}
                           className={progressiveMode.className}
-                          initial={progressiveMode.containerVariants.loading as Record<string, unknown>}
-                          animate={progressiveMode.containerVariants.loaded as Record<string, unknown>}
+                          initial={progressiveMode.containerVariants.loading}
+                          animate={progressiveMode.containerVariants.loaded}
                           transition={progressiveMode.transition}
                         >
                           {overlay.type === 'impressum' && (
