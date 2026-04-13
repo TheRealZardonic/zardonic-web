@@ -6,14 +6,14 @@
 export type Locale = 'en' | 'de' | 'ru' | 'it' | 'es' | 'pt' | 'ja' | 'ko'
 
 export const LOCALES: { code: Locale; label: string; flag: string }[] = [
-  { code: 'en', label: 'English',    flag: '🇬🇧' },
-  { code: 'de', label: 'Deutsch',    flag: '🇩🇪' },
-  { code: 'ru', label: 'Русский',    flag: '🇷🇺' },
-  { code: 'it', label: 'Italiano',   flag: '🇮🇹' },
-  { code: 'es', label: 'Español',    flag: '🇪🇸' },
-  { code: 'pt', label: 'Português',  flag: '🇵🇹' },
-  { code: 'ja', label: '日本語',      flag: '🇯🇵' },
-  { code: 'ko', label: '한국어',      flag: '🇰🇷' },
+  { code: 'en', label: 'English',    flag: '' },
+  { code: 'de', label: 'Deutsch',    flag: '' },
+  { code: 'ru', label: 'Русский',    flag: '' },
+  { code: 'it', label: 'Italiano',   flag: '' },
+  { code: 'es', label: 'Español',    flag: '' },
+  { code: 'pt', label: 'Português',  flag: '' },
+  { code: 'ja', label: '日本語',      flag: '' },
+  { code: 'ko', label: '한국어',      flag: '' },
 ]
 
 const translations: Record<string, Record<Locale, string>> = {
@@ -47,7 +47,7 @@ const translations: Record<string, Record<Locale, string>> = {
   'cookie.text':               { en: 'This website uses technically necessary local storage (Local Storage, IndexedDB) for settings and image caching. No tracking cookies are set. For more information, see our privacy policy.', de: 'Diese Website verwendet technisch notwendige lokale Speicherung (Local Storage, IndexedDB) für Einstellungen und Bildcaching. Es werden keine Tracking-Cookies gesetzt. Weitere Informationen finden Sie in unserer Datenschutzerklärung.', ru: 'Этот сайт использует технически необходимое локальное хранилище (Local Storage, IndexedDB) для настроек и кэширования изображений. Файлы отслеживания не устанавливаются. Подробнее в нашей политике конфиденциальности.', it: 'Questo sito web utilizza la memorizzazione locale tecnicamente necessaria (Local Storage, IndexedDB) per impostazioni e cache delle immagini. Non vengono impostati cookie di tracciamento. Per ulteriori informazioni, consultare la nostra informativa sulla privacy.', es: 'Este sitio web utiliza almacenamiento local técnicamente necesario (Local Storage, IndexedDB) para configuraciones y caché de imágenes. No se establecen cookies de seguimiento. Para más información, consulte nuestra política de privacidad.', pt: 'Este website utiliza armazenamento local tecnicamente necessário (Local Storage, IndexedDB) para definições e cache de imagens. Não são definidos cookies de rastreamento. Para mais informações, consulte a nossa política de privacidade.', ja: 'このウェブサイトは、設定および画像のキャッシュのために技術的に必要なローカルストレージ（Local Storage、IndexedDB）を使用しています。トラッキングクッキーは設定されていません。詳細については、プライバシーポリシーをご覧ください。', ko: '이 웹사이트는 설정 및 이미지 캐싱을 위해 기술적으로 필요한 로컬 스토리지(Local Storage, IndexedDB)를 사용합니다. 추적 쿠키는 설정되지 않습니다. 자세한 내용은 개인정보 처리방침을 참조하십시오.' },
   'cookie.decline':            { en: 'DECLINE', de: 'ABLEHNEN', ru: 'ОТКЛОНИТЬ', it: 'RIFIUTA', es: 'RECHAZAR', pt: 'RECUSAR', ja: '拒否', ko: '거절' },
   'cookie.accept':             { en: 'ACCEPT', de: 'AKZEPTIEREN', ru: 'ПРИНЯТЬ', it: 'ACCETTA', es: 'ACEPTAR', pt: 'ACEITAR', ja: '承認', ko: '수락' },
-  'cookie.title':              { en: '🍪 PRIVACY & DATA', de: '🍪 DATENSCHUTZ & COOKIES', ru: '🍪 КОНФИДЕНЦИАЛЬНОСТЬ', it: '🍪 PRIVACY & DATI', es: '🍪 PRIVACIDAD & DATOS', pt: '🍪 PRIVACIDADE & DADOS', ja: '🍪 プライバシーとデータ', ko: '🍪 개인정보 및 데이터' },
+  'cookie.title':              { en: 'PRIVACY & DATA', de: 'DATENSCHUTZ & COOKIES', ru: 'КОНФИДЕНЦИАЛЬНОСТЬ', it: 'PRIVACY & DATI', es: 'PRIVACIDAD & DATOS', pt: 'PRIVACIDADE & DADOS', ja: 'プライバシーとデータ', ko: '개인정보 및 데이터' },
   'cookie.bannerText':         { en: 'We use optional analytics to improve this site. Essential storage (image cache, settings) is always active. See our', de: 'Wir verwenden optionale Analyse-Tools zur Verbesserung dieser Seite. Notwendiger Speicher (Bild-Cache, Einstellungen) ist immer aktiv. Siehe unsere', ru: 'Мы используем необязательную аналитику для улучшения сайта. Основное хранилище (кэш изображений, настройки) всегда активно. Смотрите нашу', it: 'Utilizziamo analisi opzionali per migliorare questo sito. Lo storage essenziale (cache immagini, impostazioni) è sempre attivo. Vedi la nostra', es: 'Usamos análisis opcionales para mejorar este sitio. El almacenamiento esencial (caché de imágenes, configuraciones) siempre está activo. Consulta nuestra', pt: 'Usamos análises opcionais para melhorar este site. O armazenamento essencial (cache de imagens, definições) está sempre ativo. Consulte a nossa', ja: 'このサイトを改善するためにオプションのアナリティクスを使用しています。必須ストレージ（画像キャッシュ、設定）は常にアクティブです。', ko: '이 사이트를 개선하기 위해 선택적 분석을 사용합니다. 필수 저장소(이미지 캐시, 설정)는 항상 활성화되어 있습니다.' },
   'cookie.privacyPolicyLink':  { en: 'Privacy Policy.', de: 'Datenschutzerklärung.', ru: 'Политику конфиденциальности.', it: 'Informativa sulla privacy.', es: 'Política de privacidad.', pt: 'Política de Privacidade.', ja: 'プライバシーポリシー。', ko: '개인정보 처리방침.' },
   'cookie.privacyPrefs':       { en: 'PRIVACY PREFERENCES', de: 'DATENSCHUTZ-EINSTELLUNGEN', ru: 'НАСТРОЙКИ КОНФИДЕНЦИАЛЬНОСТИ', it: 'PREFERENZE PRIVACY', es: 'PREFERENCIAS DE PRIVACIDAD', pt: 'PREFERÊNCIAS DE PRIVACIDADE', ja: 'プライバシー設定', ko: '개인정보 설정' },

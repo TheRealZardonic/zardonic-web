@@ -479,7 +479,7 @@ export default function AttackerProfileDialog({ open, onClose, hashedIp }: Attac
                         </div>
                       </div>
                       <p className="text-xs text-foreground/40 mt-2">
-                        IP Status: {blocked.length > 0 ? '🔴 War geblockt' : tarpitted.length > 0 ? '🟠 War getarpit' : '🟡 Überwacht'}
+                        IP Status: {blocked.length > 0 ? 'War geblockt' : tarpitted.length > 0 ? 'War getarpit' : 'Überwacht'}
                       </p>
                     </div>
                   )

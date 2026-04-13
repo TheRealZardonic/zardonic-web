@@ -101,7 +101,7 @@ describe('i18n translation utility', () => {
   })
 
   it('should translate new cookie keys', () => {
-    expect(t('cookie.title', 'en')).toBe('🍪 PRIVACY & DATA')
+    expect(t('cookie.title', 'en')).toBe('PRIVACY & DATA')
     expect(t('cookie.acceptAll', 'en')).toBe('Accept All')
     expect(t('cookie.essentialOnly', 'en')).toBe('Essential Only')
   })
