@@ -67,10 +67,10 @@ export function useCmsContent<T>(key: string): UseCmsContentResult<T> {
       saveContent(key, value, asDraft),
     onSuccess: (_, { asDraft }) => {
       void queryClient.invalidateQueries({ queryKey })
-      toast.success(asDraft ? 'Entwurf gespeichert.' : 'Inhalt veröffentlicht.')
+      toast.success(asDraft ? 'Draft saved.' : 'Content published.')
     },
     onError: (err: Error) => {
-      toast.error(`Speichern fehlgeschlagen: ${err.message}`)
+      toast.error(`Save failed: ${err.message}`)
     },
   })
 
@@ -78,10 +78,10 @@ export function useCmsContent<T>(key: string): UseCmsContentResult<T> {
     mutationFn: () => publishContent(key, false),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey })
-      toast.success('Inhalt veröffentlicht.')
+      toast.success('Content published.')
     },
     onError: (err: Error) => {
-      toast.error(`Veröffentlichen fehlgeschlagen: ${err.message}`)
+      toast.error(`Publish failed: ${err.message}`)
     },
   })
 
@@ -89,10 +89,10 @@ export function useCmsContent<T>(key: string): UseCmsContentResult<T> {
     mutationFn: () => publishContent(key, true),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey })
-      toast.success('Entwurf zurückgesetzt.')
+      toast.success('Draft reverted.')
     },
     onError: (err: Error) => {
-      toast.error(`Zurücksetzen fehlgeschlagen: ${err.message}`)
+      toast.error(`Revert failed: ${err.message}`)
     },
   })
 

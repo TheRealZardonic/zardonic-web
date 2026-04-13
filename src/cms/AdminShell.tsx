@@ -143,7 +143,7 @@ export function AdminShell({ logout }: AdminShellProps) {
   const showLegacyCms = !isAdminRoute(route) && !isDashboard
 
   return (
-    <div className="flex h-screen bg-[#0a0a0a] overflow-hidden">
+    <div className="flex h-screen bg-[#0a0a0a] overflow-hidden" data-cms-shell>
       {/* Sidebar */}
       <AdminShellSidebar
         sections={sections}
@@ -341,7 +341,7 @@ function AdminShellSidebar({
     <aside
       className={`
         flex flex-col bg-[#0a0a0a] border-r border-zinc-800 h-screen
-        transition-all duration-200 ease-in-out flex-shrink-0
+        transition-[width] duration-200 ease-out flex-shrink-0 will-change-[width]
         ${open ? 'w-56' : 'w-0 overflow-hidden'}
         lg:relative absolute left-0 top-0 z-50 lg:z-auto
       `}

@@ -2170,6 +2170,13 @@ code, kbd, samp, pre {
 /* ─── CMS admin UI ─────────────────────────────────────────────────────────── */
 
 /* Skeleton pulse for LoadingState — cyberpunk dark shimmer */
+/* ─── CMS Animation Tokens ─────────────────────────────────────────── */
+:root {
+  --cms-duration-fast: 150ms;
+  --cms-duration-normal: 200ms;
+  --cms-duration-slow: 300ms;
+}
+
 @keyframes skeleton-shimmer {
   0% { opacity: 0.4; }
   50% { opacity: 0.8; }
@@ -2190,7 +2197,7 @@ code, kbd, samp, pre {
 /* Smooth height transition for collapsible field groups */
 .cms-group-content {
   overflow: hidden;
-  transition: grid-template-rows 200ms ease-out;
+  transition: grid-template-rows var(--cms-duration-normal) ease-out;
   display: grid;
 }
 
@@ -2219,7 +2226,7 @@ code, kbd, samp, pre {
 }
 
 .admin-error-in {
-  animation: admin-error-in 180ms ease-out forwards;
+  animation: admin-error-in var(--cms-duration-fast) ease-out forwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2235,12 +2242,22 @@ code, kbd, samp, pre {
 }
 
 .admin-content-fade {
-  animation: admin-content-fade 150ms ease-out forwards;
+  animation: admin-content-fade var(--cms-duration-fast) ease-out forwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .admin-content-fade {
     animation: none;
+  }
+}
+
+/* Global reduced-motion override for the entire CMS shell */
+@media (prefers-reduced-motion: reduce) {
+  [data-cms-shell] *,
+  [data-cms-shell] *::before,
+  [data-cms-shell] *::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
   }
 }
 

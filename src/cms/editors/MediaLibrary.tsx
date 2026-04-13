@@ -99,7 +99,7 @@ export default function MediaLibrary() {
 
       {isUploading && (
         <div className="w-full bg-zinc-800 rounded-full h-1.5">
-          <div className="bg-red-500 h-1.5 rounded-full transition-all" style={{ width: `${progress}%` }} />
+          <div className="bg-red-500 h-1.5 rounded-full transition-[width]" style={{ width: `${progress}%` }} />
         </div>
       )}
 

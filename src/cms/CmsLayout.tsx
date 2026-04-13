@@ -13,19 +13,19 @@ interface CmsLayoutProps {
 const ROUTE_LABELS: Record<string, string> = {
   'cms': 'Dashboard',
   'cms/dashboard': 'Dashboard',
-  'cms/site-config': 'Site-Konfiguration',
-  'cms/pages/home': 'Seiten › Startseite',
-  'cms/content/hero': 'Inhalte › Hero',
-  'cms/content/biography': 'Inhalte › Biografie',
-  'cms/content/members': 'Inhalte › Mitglieder',
-  'cms/content/releases': 'Inhalte › Releases',
-  'cms/content/news': 'Inhalte › News',
-  'cms/content/social': 'Inhalte › Social Links',
-  'cms/content/footer': 'Inhalte › Footer',
+  'cms/site-config': 'Site Configuration',
+  'cms/pages/home': 'Pages › Home',
+  'cms/content/hero': 'Content › Hero',
+  'cms/content/biography': 'Content › Biography',
+  'cms/content/members': 'Content › Members',
+  'cms/content/releases': 'Content › Releases',
+  'cms/content/news': 'Content › News',
+  'cms/content/social': 'Content › Social Links',
+  'cms/content/footer': 'Content › Footer',
   'cms/navigation': 'Navigation',
   'cms/theme': 'Theme',
-  'cms/media': 'Medienbibliothek',
-  'cms/preview': 'Vorschau',
+  'cms/media': 'Media Library',
+  'cms/preview': 'Preview',
 }
 
 function getBreadcrumb(route: string): string {
@@ -37,7 +37,7 @@ function PublishStatusBadge({ status }: { status: PublishStatus }) {
     return (
       <span className="flex items-center gap-1.5 text-xs font-mono px-2.5 py-1 rounded-full border border-green-700/40 bg-green-900/20 text-green-400">
         <CheckCircle size={11} aria-hidden="true" />
-        Veröffentlicht
+        Published
       </span>
     )
   }
@@ -45,7 +45,7 @@ function PublishStatusBadge({ status }: { status: PublishStatus }) {
     return (
       <span className="flex items-center gap-1.5 text-xs font-mono px-2.5 py-1 rounded-full border border-zinc-700/40 bg-zinc-900/40 text-zinc-400">
         <AlertCircle size={11} aria-hidden="true" />
-        Entwurf
+        Draft
       </span>
     )
   }
@@ -53,7 +53,7 @@ function PublishStatusBadge({ status }: { status: PublishStatus }) {
     return (
       <span className="flex items-center gap-1.5 text-xs font-mono px-2.5 py-1 rounded-full border border-blue-700/40 bg-blue-900/20 text-blue-400">
         <Clock size={11} aria-hidden="true" />
-        Auto-gespeichert
+        Auto-saved
       </span>
     )
   }

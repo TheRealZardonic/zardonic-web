@@ -89,7 +89,7 @@ function SectionCard({ schema, onClick, searchQuery }: SectionCardProps) {
     <button
       type="button"
       onClick={onClick}
-      className="text-left p-4 bg-[#111] border border-zinc-800 rounded-lg hover:border-red-500/40 hover:bg-red-900/5 transition-all duration-200 group focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:ring-offset-1 focus:ring-offset-[#0a0a0a]"
+      className="text-left p-4 bg-[#111] border border-zinc-800 rounded-lg hover:border-red-500/40 hover:bg-red-900/5 transition-colors duration-200 group focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:ring-offset-1 focus:ring-offset-[#0a0a0a]"
       aria-label={`Edit ${schema.label} section`}
       title="Press Enter to edit"
     >
@@ -134,7 +134,7 @@ function SectionCard({ schema, onClick, searchQuery }: SectionCardProps) {
         </div>
         <ArrowRight
           size={14}
-          className="text-zinc-700 group-hover:text-red-500 group-hover:translate-x-0.5 transition-all"
+          className="text-zinc-700 group-hover:text-red-500 group-hover:translate-x-0.5 transition-transform"
         />
       </div>
     </button>

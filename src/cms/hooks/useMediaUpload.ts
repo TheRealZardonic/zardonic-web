@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { toast } from 'sonner'
 
 interface MediaUploadResponse {
@@ -31,8 +31,24 @@ function fileToDataUrl(file: File): Promise<string> {
 export function useMediaUpload(): UseMediaUploadResult {
   const [progress, setProgress] = useState(0)
   const [isUploading, setIsUploading] = useState(false)
+  const progressResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Clear pending reset timer on unmount to prevent state update on unmounted component
+  useEffect(() => {
+    return () => {
+      if (progressResetTimerRef.current !== null) {
+        clearTimeout(progressResetTimerRef.current)
+      }
+    }
+  }, [])
 
   const upload = useCallback(async (file: File): Promise<MediaUploadResponse | null> => {
+    // Cancel any pending progress reset before starting a new upload
+    if (progressResetTimerRef.current !== null) {
+      clearTimeout(progressResetTimerRef.current)
+      progressResetTimerRef.current = null
+    }
+
     setIsUploading(true)
     setProgress(0)
 
@@ -61,16 +77,19 @@ export function useMediaUpload(): UseMediaUploadResult {
 
       const result = await res.json() as MediaUploadResponse
       setProgress(100)
-      toast.success(`"${file.name}" hochgeladen.`)
+      toast.success(`"${file.name}" uploaded.`)
       return result
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Upload fehlgeschlagen.'
+      const message = err instanceof Error ? err.message : 'Upload failed.'
       toast.error(message)
       return null
     } finally {
       setIsUploading(false)
       // Reset progress after a short delay so the UI can show 100%
-      setTimeout(() => setProgress(0), 800)
+      progressResetTimerRef.current = setTimeout(() => {
+        setProgress(0)
+        progressResetTimerRef.current = null
+      }, 800)
     }
   }, [])
 

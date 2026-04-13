@@ -198,13 +198,14 @@ export function LivePreviewPane({ sectionId, supportsPreview, className = '' }: 
         )}
 
         <div
-          className="h-full bg-white rounded shadow-2xl overflow-hidden transition-all duration-300"
+          className="h-full bg-white rounded shadow-2xl overflow-hidden transition-[width,transform] duration-300"
           style={{
             width: currentDevice.width,
             minWidth: device !== 'desktop' ? currentDevice.width : undefined,
             minHeight: '100%',
             transformOrigin: 'top center',
             transform: zoom !== 100 ? `scale(${zoom / 100})` : undefined,
+            willChange: 'width',
           }}
         >
           <iframe

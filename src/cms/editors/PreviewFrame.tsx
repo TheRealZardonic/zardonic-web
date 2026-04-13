@@ -73,7 +73,7 @@ export default function PreviewFrame() {
           type="button"
           onClick={() => setEditOverlay(v => !v)}
           className={`p-2 rounded transition-colors text-xs flex items-center gap-1 ${editOverlay ? 'bg-red-600/20 text-red-400 border border-red-500/30' : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800'}`}
-          title={editOverlay ? 'Inline-Editing deaktivieren' : 'Inline-Editing aktivieren'}
+          title={editOverlay ? 'Disable inline editing' : 'Enable inline editing'}
           aria-pressed={editOverlay}
         >
           <PencilSimple size={15} />
@@ -109,8 +109,8 @@ export default function PreviewFrame() {
 
       <div className="flex-1 overflow-auto flex justify-center bg-zinc-900 p-4">
         <div
-          className="h-full transition-all duration-300 bg-white rounded shadow-2xl overflow-hidden"
-          style={{ width: currentViewport.width, minHeight: '100%' }}
+          className="h-full transition-[width] duration-300 bg-white rounded shadow-2xl overflow-hidden"
+          style={{ width: currentViewport.width, minHeight: '100%', willChange: 'width' }}
         >
           <iframe
             ref={iframeRef}
