@@ -105,7 +105,7 @@ export default function CyberpunkOverlay({ overlay, onClose, adminSettings, arti
               }}
               data-theme-color="card card-foreground border"
               transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-              className="relative max-w-4xl w-full bg-background/98 border border-primary/30 pointer-events-auto overflow-hidden max-h-[90vh] scanline-effect cyber-card"
+              className="relative max-w-4xl w-full bg-background/98 border border-primary/30 pointer-events-auto overflow-hidden max-h-[90vh] flex flex-col scanline-effect cyber-card"
               style={{ borderRadius: 'var(--radius)' } as React.CSSProperties}
               onClick={(e) => e.stopPropagation()}
             >
@@ -125,7 +125,7 @@ export default function CyberpunkOverlay({ overlay, onClose, adminSettings, arti
               <motion.div className="absolute bottom-0 left-0 right-0 h-1 bg-primary/20" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.4, delay: 0.15 }} style={{ transformOrigin: 'right' }} />
 
               {/* Content phases */}
-              <div className="relative overflow-y-auto max-h-[90vh]">
+              <div className="relative overflow-y-auto flex-1 min-h-0">
                 {overlayPhase === 'loading' && (
                   <div className="flex items-center justify-center min-h-[400px]">
                     <motion.span className="progressive-loading-label text-primary font-mono text-lg" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>

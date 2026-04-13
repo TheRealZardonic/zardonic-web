@@ -88,7 +88,7 @@ function AnimatedBackgroundLayer({ type, hudTexts, transparent, animSettings }: 
   transparent?: boolean
   animSettings?: AnimationSettings
 }) {
-  const bg = type ?? 'cloud-chamber'
+  const bg = type ?? 'circuit'
   if (bg === 'circuit') return <CircuitBackground speed={animSettings?.circuitSpeed} glow={animSettings?.circuitGlow} />
   if (bg === 'cyberpunk-hud') return <CyberpunkBackground hudTexts={hudTexts} />
   if (bg === 'matrix') return <Suspense fallback={null}><MatrixRain transparent={transparent} speed={animSettings?.matrixSpeed} density={animSettings?.matrixDensity} color={animSettings?.matrixColor} /></Suspense>
@@ -106,7 +106,9 @@ interface BackgroundStackProps {
   backgroundImageParallax?: boolean
   backgroundImageOverlay?: boolean
   backgroundType?: BackgroundType
-  circuitBackgroundEnabled?: boolean
+  /** Controls all animated backgrounds (matrix, stars, circuit, etc.).
+   * Mapped from AnimationSettings.circuitBackgroundEnabled which is kept for backwards compatibility with stored settings. */
+  animatedBackgroundEnabled?: boolean
   hudTexts?: HudTexts
   animSettings?: AnimationSettings
 }
@@ -127,7 +129,7 @@ export function BackgroundStack({
   backgroundImageParallax = false,
   backgroundImageOverlay = false,
   backgroundType,
-  circuitBackgroundEnabled = true,
+  animatedBackgroundEnabled = true,
   hudTexts,
   animSettings,
 }: BackgroundStackProps) {
@@ -143,7 +145,7 @@ export function BackgroundStack({
         />
       )}
       {/* Depth layer --z-bg-animated — animated overlay (above image, below content). */}
-      {circuitBackgroundEnabled && (!backgroundImageUrl || backgroundImageOverlay) && (
+      {animatedBackgroundEnabled && (!backgroundImageUrl || backgroundImageOverlay) && (
         <div
           className="fixed inset-0 pointer-events-none"
           style={{ zIndex: 'var(--z-bg-animated)' as React.CSSProperties['zIndex'] }}

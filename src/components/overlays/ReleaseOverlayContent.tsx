@@ -130,14 +130,14 @@ export function ReleaseOverlayContent({ data, sectionLabels, mainArtistName = ''
           )}
         </motion.div>
 
-        <div className="space-y-6">
+        <div className="space-y-6 min-w-0">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
           >
             <div className="data-label mb-2">{infoLabel}</div>
-            <h2 className="text-3xl md:text-4xl font-bold uppercase font-mono mb-2 hover-chromatic crt-flash-in" data-text={data.title}>
+            <h2 className="text-3xl md:text-4xl font-bold uppercase font-mono mb-2 hover-chromatic crt-flash-in break-words" data-text={data.title}>
               {data.title}
             </h2>
             {showReleaseArtists && (
