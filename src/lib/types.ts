@@ -269,6 +269,7 @@ export interface FooterStylingSettings {
 }
 
 export interface TypographyDetailSettings {
+  headingFontFamily?: string
   headingFontSize?: string
   headingFontWeight?: string
   headingLineHeight?: string

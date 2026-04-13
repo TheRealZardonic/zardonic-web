@@ -45,3 +45,68 @@ describe('ReleaseOverlayContent Track Rendering Dedup', () => {
     expect(items[2].textContent).not.toContain('Main Artist')
   })
 })
+
+describe('ReleaseOverlayContent Track Rendering – compound artist dedup', () => {
+  it('splits compound trackArtist and avoids double-listing the main artist', () => {
+    const release: Release = {
+      id: 'compound-test',
+      title: 'Compound Release',
+      releaseDate: '2023-01-01',
+      type: 'album',
+      artwork: '',
+      year: '2023',
+      tracks: [
+        {
+          // "The Last Bear Ender & Zardonic" — Zardonic must not appear twice
+          title: 'Kernel Breaker (feat. Noisesmith, Roel Peijs & Kylee Brielle) [Remix]',
+          artist: 'The Last Bear Ender & Zardonic',
+        },
+      ],
+    }
+
+    const { container } = render(
+      <ReleaseOverlayContent data={release} mainArtistName="Zardonic" />,
+    )
+
+    const item = container.querySelector('li')!
+
+    // Clean title preserves [Remix] and strips feat. block
+    expect(item.textContent).toContain('Kernel Breaker [Remix]')
+
+    // Zardonic must appear exactly once in the track row
+    const artistSpans = item.querySelectorAll('span')
+    const zardonicMatches = Array.from(artistSpans).filter(
+      s => s.textContent?.trim().toLowerCase() === 'zardonic',
+    )
+    expect(zardonicMatches.length).toBe(1)
+
+    // Co-artist and feat. artists should all be present
+    expect(item.textContent).toContain('The Last Bear Ender')
+    expect(item.textContent).toContain('Noisesmith')
+    expect(item.textContent).toContain('Roel Peijs')
+    expect(item.textContent).toContain('Kylee Brielle')
+  })
+
+  it('omits main artist when they are NOT credited on a track', () => {
+    const release: Release = {
+      id: 'not-credited',
+      title: 'Various Artists Release',
+      releaseDate: '2023-01-01',
+      type: 'compilation',
+      artwork: '',
+      year: '2023',
+      tracks: [
+        { title: 'Some Track', artist: 'Other Artist' },
+      ],
+    }
+
+    const { container } = render(
+      <ReleaseOverlayContent data={release} mainArtistName="Zardonic" />,
+    )
+
+    const item = container.querySelector('li')!
+    // "Other Artist" is the sole artist — no artist line (length ≤ 1 rule)
+    // But "Zardonic" must definitely not appear here
+    expect(item.textContent).not.toContain('Zardonic')
+  })
+})

@@ -26,29 +26,56 @@ function parseReleaseArtists(description: string | undefined, mainArtistName: st
 }
 
 /**
- * Build a display string for a track's artists.
- * Main artist is returned first; featured artists follow.
- * Returns undefined when there is nothing beyond the main artist alone.
+ * Splits a compound artist string (e.g. "Artist A & Artist B") into individual names.
+ */
+function splitTrackArtist(artist: string): string[] {
+  return artist
+    .split(/\s*,\s*|\s*&\s*|\s+and\s+/i)
+    .map(s => s.trim())
+    .filter(s => s.length > 0)
+}
+
+/**
+ * Build the ordered artist list for a single track row.
+ *
+ * Rules:
+ * - If the main artist IS listed on the track, they appear first (highlighted).
+ * - If the main artist is NOT listed on the track, they are omitted entirely.
+ * - `trackArtist` may be a compound string ("A & B") — it is split before comparison.
+ * - `featuredArtists` (extracted from the title) are appended after, de-duplicated.
+ * - Returns `undefined` when the result contains only the main artist alone (no line needed).
  */
 function buildTrackArtistLine(
   trackArtist: string | undefined,
   featuredArtists: string[] | undefined,
   mainArtistName: string,
 ): string[] | undefined {
+  const mainNorm = mainArtistName.trim().toLowerCase()
+
+  // Split the compound track-artist field into individual names.
+  const trackParts = trackArtist ? splitTrackArtist(trackArtist) : []
+
+  // Determine whether the main artist is explicitly credited on this track.
+  // When trackArtist is absent we assume the track belongs to the main artist.
+  const trackHasMain =
+    !trackArtist || trackParts.some(p => p.trim().toLowerCase() === mainNorm)
+
   const allArtists: string[] = []
 
-  // Main artist is always first when known
-  if (mainArtistName) allArtists.push(mainArtistName)
+  // Prepend main artist only when they are actually on this track
+  if (mainArtistName && trackHasMain) {
+    allArtists.push(mainArtistName)
+  }
 
-  // Add the track artist if it differs from the main artist
-  if (trackArtist) {
-    const norm = trackArtist.trim().toLowerCase()
-    if (!allArtists.some(a => a.trim().toLowerCase() === norm)) {
-      allArtists.push(trackArtist)
+  // Add individual track artists that are not the main artist
+  for (const part of trackParts) {
+    const norm = part.toLowerCase()
+    if (norm !== mainNorm && !allArtists.some(a => a.trim().toLowerCase() === norm)) {
+      allArtists.push(part)
     }
   }
 
-  // Add any featured artists not already in the list
+  // Append featured artists (from title extraction) not already in the list
   for (const fa of (featuredArtists ?? [])) {
     const norm = fa.trim().toLowerCase()
     if (!allArtists.some(a => a.trim().toLowerCase() === norm)) {
@@ -56,8 +83,9 @@ function buildTrackArtistLine(
     }
   }
 
-  // Only surface the artist line when there is more than just the main artist
-  if (allArtists.length <= 1) return undefined
+  // Suppress the artist line when it contains only the main artist (no extra info)
+  if (allArtists.length === 0) return undefined
+  if (allArtists.length === 1 && allArtists[0].trim().toLowerCase() === mainNorm) return undefined
   return allArtists
 }
 

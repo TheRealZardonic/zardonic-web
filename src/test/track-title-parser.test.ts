@@ -37,4 +37,46 @@ describe('parseTrackTitle', () => {
     expect(result.cleanTitle).toBe("Song Name")
     expect(result.extractedArtists).toEqual(["Artist D"])
   })
+
+  it('extracts artists when (feat. X) is followed by [Remix] suffix', () => {
+    const result = parseTrackTitle("Kernel Breaker (feat. Noisesmith, Roel Peijs & Kylee Brielle) [Remix]")
+    expect(result.cleanTitle).toBe("Kernel Breaker [Remix]")
+    expect(result.extractedArtists).toEqual(["Noisesmith", "Roel Peijs", "Kylee Brielle"])
+  })
+
+  it('preserves (Zardonic Remix) suffix', () => {
+    const result = parseTrackTitle("Song (Zardonic Remix)")
+    expect(result.cleanTitle).toBe("Song (Zardonic Remix)")
+    expect(result.extractedArtists).toEqual([])
+  })
+
+  it('preserves [Remix] suffix', () => {
+    const result = parseTrackTitle("Song [Remix]")
+    expect(result.cleanTitle).toBe("Song [Remix]")
+    expect(result.extractedArtists).toEqual([])
+  })
+
+  it('handles [feat. X] square bracket pattern', () => {
+    const result = parseTrackTitle("Song Name [feat. Guest]")
+    expect(result.cleanTitle).toBe("Song Name")
+    expect(result.extractedArtists).toEqual(["Guest"])
+  })
+
+  it('handles "featuring" keyword', () => {
+    const result = parseTrackTitle("Song Name (featuring Artist E)")
+    expect(result.cleanTitle).toBe("Song Name")
+    expect(result.extractedArtists).toEqual(["Artist E"])
+  })
+
+  it('handles trailing feat. without brackets', () => {
+    const result = parseTrackTitle("Song Name feat. Someone")
+    expect(result.cleanTitle).toBe("Song Name")
+    expect(result.extractedArtists).toEqual(["Someone"])
+  })
+
+  it('handles (with X) pattern', () => {
+    const result = parseTrackTitle("Song Name (with Collaborator)")
+    expect(result.cleanTitle).toBe("Song Name")
+    expect(result.extractedArtists).toEqual(["Collaborator"])
+  })
 })
