@@ -305,7 +305,9 @@ export function useAppTheme(adminSettings: AdminSettings | undefined): void {
     cacheImage(rawUrl).catch(() => {/* silently fail */})
 
     return () => {
-      document.head.removeChild(link)
+      if (link.parentNode) {
+        link.parentNode.removeChild(link)
+      }
     }
   }, [adminSettings?.background?.backgroundImageUrl])
 }
