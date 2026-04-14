@@ -10,7 +10,6 @@ import { useState, useRef, useCallback } from 'react'
 import type { AdminSettings, AnimationSettings, BackgroundType, HudTexts, LoadingScreenType, LoadingScreenMode } from '@/lib/types'
 import { useVideoUpload } from '@/cms/hooks/useVideoUpload'
 import { useMediaUpload } from '@/cms/hooks/useMediaUpload'
-import { toDirectVideoUrl } from '@/lib/video-url'
 import { checkVideoScrollOptimization, type VideoOptimizationResult } from '@/lib/video-check'
 
 interface BackgroundTabProps {
@@ -67,7 +66,7 @@ export default function BackgroundTab({
       const video = document.createElement('video')
       video.preload = 'auto'
       video.muted = true
-      video.src = toDirectVideoUrl(url)
+      video.src = url
       videoCheckRef.current = video
       const result = await checkVideoScrollOptimization(video)
       setVideoCheckResult(result)
@@ -378,7 +377,7 @@ export default function BackgroundTab({
                 value={anim.backgroundVideoUrl ?? ''}
                 onChange={e => updateAnim({ backgroundVideoUrl: e.target.value || undefined })}
                 className="font-mono text-xs flex-1"
-                placeholder="https://... oder Google Drive Link"
+                placeholder="https://... (Vercel Blob URL)"
               />
               <label className="cursor-pointer">
                 <Button variant="outline" size="sm" asChild disabled={isUploadingVideo}>

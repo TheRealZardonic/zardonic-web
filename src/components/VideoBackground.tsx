@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState, memo } from 'react'
 import { shouldUseLiteMode } from '@/lib/device-capability'
 import { toDirectImageUrl } from '@/lib/image-cache'
-import { toDirectVideoUrl } from '@/lib/video-url'
 import { useLenisContext } from '@/contexts/LenisContext'
 
 interface VideoBackgroundProps {
-  /** URL of the video file (MP4/WebM). Google Drive share links are automatically converted. */
+  /** URL of the video file (MP4/WebM). Must be a Vercel Blob URL for reliable playback. */
   videoUrl: string
   /**
    * Fallback image URL shown when:
@@ -43,9 +42,7 @@ interface VideoBackgroundProps {
  * The `poster` attribute is always set to the fallback image URL so the
  * browser renders the static image instantly while the video buffers.
  *
- * Google Drive share URLs are automatically converted to direct download URLs.
- * Note: Google Drive has CORS/Range-request limitations; for reliable scroll-mode
- * seeking, self-hosted or Vercel Blob URLs are recommended.
+ * Videos must be uploaded to Vercel Blob for reliable playback and seeking support.
  */
 const VideoBackground = memo(function VideoBackground({
   videoUrl,
@@ -60,9 +57,6 @@ const VideoBackground = memo(function VideoBackground({
   // Always call useLenisContext (hooks must not be called conditionally).
   // scrollY is only used when scrollMode === true.
   const { scrollY } = useLenisContext()
-
-  // Resolve Google Drive share links → direct download URLs
-  const resolvedVideoUrl = toDirectVideoUrl(videoUrl)
 
   // ── Loop mode: attempt autoplay ──────────────────────────────────────────
   useEffect(() => {
@@ -96,7 +90,7 @@ const VideoBackground = memo(function VideoBackground({
       video.removeEventListener('progress', handleProgress)
       video.removeEventListener('playing', handleProgress)
     }
-  }, [useFallback, scrollMode, resolvedVideoUrl])
+  }, [useFallback, scrollMode, videoUrl])
 
   // ── Scroll mode: drive currentTime from Lenis scrollY ────────────────────
   useEffect(() => {
@@ -164,7 +158,7 @@ const VideoBackground = memo(function VideoBackground({
     return (
       <video
         ref={videoRef}
-        src={resolvedVideoUrl}
+        src={videoUrl}
         muted
         playsInline
         aria-hidden="true"
@@ -181,7 +175,7 @@ const VideoBackground = memo(function VideoBackground({
   return (
     <video
       ref={videoRef}
-      src={resolvedVideoUrl}
+      src={videoUrl}
       autoPlay
       muted
       loop

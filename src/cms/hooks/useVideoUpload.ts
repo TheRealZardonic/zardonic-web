@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
+import { upload as blobUpload } from '@vercel/blob/client'
 import { toast } from 'sonner'
 
 interface VideoUploadResponse {
@@ -12,15 +13,6 @@ interface UseVideoUploadResult {
   upload: (file: File) => Promise<VideoUploadResponse | null>
   progress: number
   isUploading: boolean
-}
-
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result as string)
-    reader.onerror = () => reject(new Error('Failed to read file'))
-    reader.readAsDataURL(file)
-  })
 }
 
 export function useVideoUpload(): UseVideoUploadResult {
@@ -48,32 +40,26 @@ export function useVideoUpload(): UseVideoUploadResult {
     setProgress(0)
 
     try {
-      setProgress(10)
-      const dataUrl = await fileToDataUrl(file)
-      setProgress(40)
+      // Sanitise filename — keep only safe characters; include a timestamp to avoid collisions
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 255)
+      const pathname = `videos/${Date.now()}-${safeName}`
 
-      const res = await fetch('/api/cms/video', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fileName: file.name,
-          mimeType: file.type,
-          dataUrl,
-        }),
+      const blob = await blobUpload(pathname, file, {
+        access: 'public',
+        handleUploadUrl: '/api/cms/video-upload-token',
+        onUploadProgress: ({ percentage }) => {
+          setProgress(Math.round(percentage))
+        },
       })
 
-      setProgress(90)
-
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({})) as { error?: string }
-        throw new Error(body.error ?? `Upload failed: ${res.status}`)
-      }
-
-      const result = await res.json() as VideoUploadResponse
       setProgress(100)
       toast.success(`"${file.name}" uploaded.`)
-      return result
+      return {
+        url: blob.url,
+        fileName: safeName,
+        mimeType: file.type,
+        size: file.size,
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Upload failed.'
       toast.error(message)
