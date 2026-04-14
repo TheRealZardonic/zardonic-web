@@ -78,12 +78,20 @@ export function mergeWithExistingReleases<T extends MergeableRelease>(
       )
       result.push({ ...existingRelease, streamingLinks: mergedLinks })
     } else {
-      // Normal update: overwrite with fetched, merge streaming links
+      // Normal update: overwrite with fetched, merge streaming links.
+      // Preserve tracks and customLinks from the existing release because
+      // the iTunes/Discogs fetch does not include detailed track data or
+      // admin-entered custom links — they would be silently wiped on every sync.
       const mergedLinks = mergeStreamingLinks(
         fetchedRelease.streamingLinks,
         existingRelease.streamingLinks,
       )
-      result.push({ ...fetchedRelease, streamingLinks: mergedLinks })
+      result.push({
+        ...fetchedRelease,
+        streamingLinks: mergedLinks,
+        tracks: fetchedRelease.tracks ?? existingRelease.tracks,
+        customLinks: fetchedRelease.customLinks ?? existingRelease.customLinks,
+      })
     }
   }
 

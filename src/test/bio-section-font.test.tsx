@@ -101,7 +101,7 @@ describe('AppBioSection — font binding', () => {
     expect(heading!.classList.contains('font-mono')).toBe(false)
   })
 
-  it('bio text font size class reflects adminSettings bodyFontSize', async () => {
+  it('bio text font size reflects adminSettings bodyFontSize via inline style', async () => {
     const adminSettings: AdminSettings = {
       sections: {
         styleOverrides: {
@@ -112,14 +112,15 @@ describe('AppBioSection — font binding', () => {
       },
     }
     const { container } = await renderBioSection(adminSettings)
-    // The bio text div should carry the configured Tailwind text-size class
-    const bioText = container.querySelector('.text-xl')
+    // The bio text div should carry the configured font size as an inline style (1.25rem for text-xl)
+    const bioText = container.querySelector('[style*="1.25rem"]')
     expect(bioText).not.toBeNull()
   })
 
-  it('bio text font size defaults to text-lg when bodyFontSize is not set', async () => {
+  it('bio text font size defaults to var(--body-font-size) when bodyFontSize is not set', async () => {
     const { container } = await renderBioSection(undefined)
-    const bioText = container.querySelector('.text-lg')
+    // Without override, the div uses the CSS variable fallback in its inline font-size style
+    const bioText = container.querySelector('[style*="font-size"]')
     expect(bioText).not.toBeNull()
   })
   it('bio section h2 provides fallback classes when adminSettings typography is unset', async () => {

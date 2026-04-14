@@ -177,6 +177,25 @@ export function ReleaseOverlayContent({ data, sectionLabels, mainArtistName = ''
             </motion.div>
           )}
 
+          {data.customLinks && data.customLinks.length > 0 && (
+            <motion.div
+              className="cyber-grid p-4"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.28 }}
+            >
+              <div className="flex flex-wrap gap-4">
+                {data.customLinks.map((link, i) => (
+                  <Button key={i} asChild variant="outline" className="font-mono">
+                    <a href={link.url} target="_blank" rel="noopener noreferrer">
+                      <span className="hover-chromatic">{link.label}</span>
+                    </a>
+                  </Button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
           <motion.div
             className="cyber-grid p-4"
             initial={{ opacity: 0, x: -10 }}
@@ -243,26 +262,6 @@ export function ReleaseOverlayContent({ data, sectionLabels, mainArtistName = ''
               )}
             </div>
           </motion.div>
-
-          {data.customLinks && data.customLinks.length > 0 && (
-            <motion.div
-              className="cyber-grid p-4"
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.33 }}
-            >
-              <div className="data-label mb-3">// BUY.PHYSICAL</div>
-              <div className="flex flex-wrap gap-4">
-                {data.customLinks.map((link, i) => (
-                  <Button key={i} asChild variant="outline" className="font-mono">
-                    <a href={link.url} target="_blank" rel="noopener noreferrer">
-                      <span className="hover-chromatic">{link.label}</span>
-                    </a>
-                  </Button>
-                ))}
-              </div>
-            </motion.div>
-          )}
 
           {showTracks && data.tracks && data.tracks.length > 0 && (
             <motion.div

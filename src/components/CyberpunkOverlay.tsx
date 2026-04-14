@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import type React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
@@ -38,6 +38,14 @@ export default function CyberpunkOverlay({ overlay, onClose, adminSettings, arti
   const [progressiveMode, setProgressiveMode] = useState(() => getRandomProgressiveMode())
   const decorativeTexts = adminSettings?.decorative
 
+  // Use a ref so the progressive modes config is always current inside the effect
+  // without it being a dependency — prevents a re-run (and phase reset) whenever
+  // adminSettings changes while the overlay is already open.
+  const progressiveOverlayModesRef = useRef(adminSettings?.progressiveOverlayModes)
+  // Update the ref after every render so the effect always reads the latest value.
+  // This pattern (assigning .current in render) is safe: refs are not reactive.
+  progressiveOverlayModesRef.current = adminSettings?.progressiveOverlayModes
+
   // Pick a new random animation each time the overlay opens (overlay goes null→truthy).
   // NOTE: `overlay` is intentionally in the dep array even though getRandomOverlayAnimation()
   // does not close over it — we rely on the reference change to trigger a new random pick.
@@ -47,8 +55,10 @@ export default function CyberpunkOverlay({ overlay, onClose, adminSettings, arti
 
   useEffect(() => {
     if (!overlay) return
-    // Pick a new random progressive content reveal mode
-    setProgressiveMode(getRandomProgressiveMode(adminSettings?.progressiveOverlayModes))
+    // Pick a new random progressive content reveal mode using the ref so this
+    // effect only re-runs when `overlay` itself changes, not when adminSettings
+    // updates (which would reset the phase and create an endless loading loop).
+    setProgressiveMode(getRandomProgressiveMode(progressiveOverlayModesRef.current))
 
     setOverlayPhase('loading')
     setLoadingText(OVERLAY_LOADING_TEXTS[0])
@@ -75,7 +85,7 @@ export default function CyberpunkOverlay({ overlay, onClose, adminSettings, arti
       clearTimeout(glitchTimer)
       clearTimeout(revealTimer)
     }
-  }, [overlay, adminSettings?.progressiveOverlayModes])
+  }, [overlay])
 
   return (
     <AnimatePresence>
@@ -102,12 +112,12 @@ export default function CyberpunkOverlay({ overlay, onClose, adminSettings, arti
             style={{ zIndex: 'var(--z-overlay)', perspective: '1000px' } as React.CSSProperties}
           >
             <motion.div
-              initial={{ boxShadow: '0 0 0px rgba(180, 50, 50, 0)' }}
+              initial={{ boxShadow: '0 0 0px rgba(0, 0, 0, 0)' }}
               animate={{
                 boxShadow: [
-                  '0 0 20px rgba(180, 50, 50, 0.3)',
-                  '0 0 40px rgba(180, 50, 50, 0.4)',
-                  '0 0 20px rgba(180, 50, 50, 0.3)',
+                  `0 0 20px ${adminSettings?.design?.theme?.modalGlowColor ?? 'rgba(180, 50, 50, 0.3)'}`,
+                  `0 0 40px ${adminSettings?.design?.theme?.modalGlowColor ?? 'rgba(180, 50, 50, 0.4)'}`,
+                  `0 0 20px ${adminSettings?.design?.theme?.modalGlowColor ?? 'rgba(180, 50, 50, 0.3)'}`,
                 ],
               }}
               data-theme-color="card card-foreground border"
