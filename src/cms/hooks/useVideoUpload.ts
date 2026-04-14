@@ -8,6 +8,12 @@ interface VideoUploadResponse {
   size: number
 }
 
+/** Shape of the JSON returned by /api/cms/video-upload */
+interface VideoUploadApiResponse {
+  url: string
+  pathname: string
+}
+
 interface UseVideoUploadResult {
   upload: (file: File) => Promise<VideoUploadResponse | null>
   progress: number
@@ -42,6 +48,13 @@ export function useVideoUpload(): UseVideoUploadResult {
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 255)
     const pathname = `videos/${Date.now()}-${safeName}`
 
+    const resetProgressAfterDelay = () => {
+      progressResetTimerRef.current = setTimeout(() => {
+        setProgress(0)
+        progressResetTimerRef.current = null
+      }, 800)
+    }
+
     return new Promise<VideoUploadResponse | null>((resolve) => {
       const xhr = new XMLHttpRequest()
 
@@ -55,26 +68,19 @@ export function useVideoUpload(): UseVideoUploadResult {
         setIsUploading(false)
 
         if (xhr.status >= 200 && xhr.status < 300) {
-          let data: { url: string; pathname: string }
+          let data: VideoUploadApiResponse
           try {
-            data = JSON.parse(xhr.responseText) as { url: string; pathname: string }
+            data = JSON.parse(xhr.responseText) as VideoUploadApiResponse
           } catch {
             toast.error('Upload failed: invalid response from server.')
-            progressResetTimerRef.current = setTimeout(() => {
-              setProgress(0)
-              progressResetTimerRef.current = null
-            }, 800)
+            resetProgressAfterDelay()
             resolve(null)
             return
           }
 
           setProgress(100)
           toast.success(`"${file.name}" uploaded.`)
-
-          progressResetTimerRef.current = setTimeout(() => {
-            setProgress(0)
-            progressResetTimerRef.current = null
-          }, 800)
+          resetProgressAfterDelay()
 
           resolve({
             url: data.url,
@@ -91,12 +97,7 @@ export function useVideoUpload(): UseVideoUploadResult {
             // use default message
           }
           toast.error(message)
-
-          progressResetTimerRef.current = setTimeout(() => {
-            setProgress(0)
-            progressResetTimerRef.current = null
-          }, 800)
-
+          resetProgressAfterDelay()
           resolve(null)
         }
       })
@@ -104,23 +105,13 @@ export function useVideoUpload(): UseVideoUploadResult {
       xhr.addEventListener('error', () => {
         setIsUploading(false)
         toast.error('Upload failed: network error.')
-
-        progressResetTimerRef.current = setTimeout(() => {
-          setProgress(0)
-          progressResetTimerRef.current = null
-        }, 800)
-
+        resetProgressAfterDelay()
         resolve(null)
       })
 
       xhr.addEventListener('abort', () => {
         setIsUploading(false)
-
-        progressResetTimerRef.current = setTimeout(() => {
-          setProgress(0)
-          progressResetTimerRef.current = null
-        }, 800)
-
+        resetProgressAfterDelay()
         resolve(null)
       })
 
