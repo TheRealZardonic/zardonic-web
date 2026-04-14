@@ -47,7 +47,7 @@ export function useAutoSave(
       setLastSaved(new Date())
       setHasPendingChanges(false)
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Autosave fehlgeschlagen.'
+      const message = err instanceof Error ? err.message : 'Autosave failed.'
       toast.error(message)
     } finally {
       setIsSaving(false)

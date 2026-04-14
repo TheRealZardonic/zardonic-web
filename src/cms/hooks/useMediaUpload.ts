@@ -61,10 +61,10 @@ export function useMediaUpload(): UseMediaUploadResult {
 
       const result = await res.json() as MediaUploadResponse
       setProgress(100)
-      toast.success(`"${file.name}" hochgeladen.`)
+      toast.success(`"${file.name}" uploaded.`)
       return result
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Upload fehlgeschlagen.'
+      const message = err instanceof Error ? err.message : 'Upload failed.'
       toast.error(message)
       return null
     } finally {

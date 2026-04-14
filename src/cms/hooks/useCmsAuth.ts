@@ -48,7 +48,7 @@ export function useCmsAuth(): UseCmsAuthResult {
       })
       setIsAuthenticated(false)
     } catch {
-      toast.error('Logout fehlgeschlagen. Bitte versuche es erneut.')
+      toast.error('Logout failed. Please try again.')
     }
   }, [])
 

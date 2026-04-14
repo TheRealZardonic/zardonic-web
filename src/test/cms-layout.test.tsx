@@ -22,7 +22,7 @@ describe('CmsLayout — breadcrumb and status badge', () => {
         publishStatus: 'unknown',
       }, React.createElement('div', {}, 'Content'))
     )
-    expect(screen.getByLabelText('Zum Dashboard')).toBeInTheDocument()
+    expect(screen.getByLabelText('Go to Dashboard')).toBeInTheDocument()
   })
 
   it('shows route breadcrumb for non-dashboard routes', () => {
@@ -32,7 +32,7 @@ describe('CmsLayout — breadcrumb and status badge', () => {
         onNavigate: vi.fn() as (route: string) => void,
       }, React.createElement('div', {}, 'Hero Editor'))
     )
-    expect(screen.getByText('Inhalte › Hero')).toBeInTheDocument()
+    expect(screen.getByText('Content › Hero')).toBeInTheDocument()
   })
 
   it('hides route breadcrumb on dashboard route', () => {
@@ -54,7 +54,7 @@ describe('CmsLayout — breadcrumb and status badge', () => {
         onNavigate,
       }, React.createElement('div', {}, 'Hero'))
     )
-    fireEvent.click(screen.getByLabelText('Zum Dashboard'))
+    fireEvent.click(screen.getByLabelText('Go to Dashboard'))
     expect(onNavigate).toHaveBeenCalledWith('cms/dashboard')
   })
 
@@ -77,7 +77,7 @@ describe('CmsLayout — breadcrumb and status badge', () => {
         publishStatus: 'published',
       }, React.createElement('div', {}, 'x'))
     )
-    expect(screen.getByText('Veröffentlicht')).toBeInTheDocument()
+    expect(screen.getByText('Published')).toBeInTheDocument()
   })
 
   it('shows draft status badge when status is draft', () => {
@@ -88,7 +88,7 @@ describe('CmsLayout — breadcrumb and status badge', () => {
         publishStatus: 'draft',
       }, React.createElement('div', {}, 'x'))
     )
-    expect(screen.getByText('Entwurf')).toBeInTheDocument()
+    expect(screen.getByText('Draft')).toBeInTheDocument()
   })
 
   it('shows autosaved status badge when status is autosaved', () => {
@@ -99,7 +99,7 @@ describe('CmsLayout — breadcrumb and status badge', () => {
         publishStatus: 'autosaved',
       }, React.createElement('div', {}, 'x'))
     )
-    expect(screen.getByText('Auto-gespeichert')).toBeInTheDocument()
+    expect(screen.getByText('Auto-saved')).toBeInTheDocument()
   })
 
   it('shows loading skeleton when isTransitioning is true', () => {
@@ -121,7 +121,7 @@ describe('CmsLayout — breadcrumb and status badge', () => {
         onNavigate: vi.fn() as (route: string) => void,
       }, React.createElement('div', {}, 'x'))
     )
-    expect(screen.getByText('Site-Konfiguration')).toBeInTheDocument()
+    expect(screen.getByText('Site Configuration')).toBeInTheDocument()
   })
 
   it('shows correct breadcrumb for media route', () => {
@@ -131,7 +131,7 @@ describe('CmsLayout — breadcrumb and status badge', () => {
         onNavigate: vi.fn() as (route: string) => void,
       }, React.createElement('div', {}, 'x'))
     )
-    expect(screen.getByText('Medienbibliothek')).toBeInTheDocument()
+    expect(screen.getByText('Media Library')).toBeInTheDocument()
   })
 
   it('main content area has correct id for accessibility', () => {

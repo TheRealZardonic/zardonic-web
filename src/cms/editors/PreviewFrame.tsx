@@ -73,7 +73,7 @@ export default function PreviewFrame() {
           type="button"
           onClick={() => setEditOverlay(v => !v)}
           className={`p-2 rounded transition-colors text-xs flex items-center gap-1 ${editOverlay ? 'bg-red-600/20 text-red-400 border border-red-500/30' : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800'}`}
-          title={editOverlay ? 'Inline-Editing deaktivieren' : 'Inline-Editing aktivieren'}
+          title={editOverlay ? 'Disable inline editing' : 'Enable inline editing'}
           aria-pressed={editOverlay}
         >
           <PencilSimple size={15} />
