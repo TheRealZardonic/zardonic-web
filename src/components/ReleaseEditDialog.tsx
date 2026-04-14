@@ -151,13 +151,14 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
         toast.error((err as { error?: string }).error ?? 'Tracklist sync failed')
         return
       }
-      const { release: enrichedRelease } = await resp.json() as { release: { tracks?: Array<{ title: string; duration?: string; artist?: string }> } }
+      type EnrichmentResponse = { release: { tracks?: Array<{ title: string; duration?: string; artist?: string }> } }
+      const { release: enrichedRelease } = await resp.json() as EnrichmentResponse
       const newTracks = enrichedRelease.tracks
       if (!newTracks || newTracks.length === 0) {
         toast.info('No tracklist found for this release')
         return
       }
-      setTracksHistory(prev => [...prev, tracks])
+      setTracksHistory(prev => [...prev.slice(-49), tracks])
       setTracks(newTracks)
       toast.success(`Tracklist synced — ${newTracks.length} tracks`)
     } catch {
