@@ -58,7 +58,7 @@ export default function BandInfoEditDialog({ open, onOpenChange, name, genres, l
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent data-admin-ui="true" className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Band Info</DialogTitle>
         </DialogHeader>

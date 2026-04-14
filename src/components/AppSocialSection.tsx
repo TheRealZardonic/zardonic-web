@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { memo, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -36,7 +36,7 @@ interface AppSocialSectionProps {
   setAdminSettings?: (s: AdminSettings) => void
 }
 
-export default function AppSocialSection({ social, sectionOrder, visible, editMode, sectionLabel, headingPrefix, adminSettings, onContactClick, setAdminSettings }: AppSocialSectionProps) {
+function AppSocialSection({ social, sectionOrder, visible, editMode, sectionLabel, headingPrefix, adminSettings, onContactClick, setAdminSettings }: AppSocialSectionProps) {
   const { t } = useLocale()
   const prefersReducedMotion = useReducedMotion()
   const [newLinkLabel, setNewLinkLabel] = useState('')
@@ -220,3 +220,4 @@ export default function AppSocialSection({ social, sectionOrder, visible, editMo
     </div>
   )
 }
+export default memo(AppSocialSection)

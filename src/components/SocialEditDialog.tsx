@@ -29,7 +29,7 @@ export default function SocialEditDialog({ socialLinks, onSave, onClose }: Socia
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="bg-card border-border max-h-[90vh] overflow-y-auto">
+      <DialogContent data-admin-ui="true" className="bg-card border-border max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Social Links</DialogTitle>
         </DialogHeader>

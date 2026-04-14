@@ -85,6 +85,9 @@ export default function AppNavBar({
           <button
             className="md:hidden text-foreground"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-nav-menu"
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <List className="w-6 h-6" />}
           </button>
@@ -98,6 +101,7 @@ export default function AppNavBar({
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             className="md:hidden bg-card/95 border-t border-border overflow-hidden"
+            id="mobile-nav-menu"
           >
             <div className="container mx-auto px-4 py-4 flex flex-col gap-4">
               {navItems.map(({ id, label }) => (

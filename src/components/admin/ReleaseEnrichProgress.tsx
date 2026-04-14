@@ -97,7 +97,7 @@ export function ReleaseEnrichProgress({ releases, onClose, onComplete }: Props) 
 
   return (
     <Dialog open onOpenChange={open => { if (!open && !running) onClose() }}>
-      <DialogContent className="max-w-xl font-mono">
+      <DialogContent data-admin-ui="true" className="max-w-xl font-mono">
         <DialogHeader>
           <DialogTitle className="text-sm uppercase tracking-widest flex items-center gap-2">
             <ArrowsClockwise size={16} className={running ? 'animate-spin text-primary' : 'text-primary'} />

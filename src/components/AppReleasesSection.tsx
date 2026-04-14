@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { memo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -56,7 +56,7 @@ function toFullRelease(r: Release): FullRelease {
   }
 }
 
-export default function AppReleasesSection({ releases, sectionOrder, visible, editMode, sectionLabel, headingPrefix, adminSettings, iTunesFetching, hasAutoLoaded, syncProgress, sectionLabels, onLabelChange, onReleaseClick, onUpdateRelease, onDeleteRelease, onAddRelease, onRefreshReleases }: AppReleasesSectionProps) {
+function AppReleasesSection({ releases, sectionOrder, visible, editMode, sectionLabel, headingPrefix, adminSettings, iTunesFetching, hasAutoLoaded, syncProgress, sectionLabels, onLabelChange, onReleaseClick, onUpdateRelease, onDeleteRelease, onAddRelease, onRefreshReleases }: AppReleasesSectionProps) {
   const [showAllReleases, setShowAllReleases] = useState(false)
   const [editingRelease, setEditingRelease] = useState<FullRelease | null | 'new'>(null)
   const [activeFilter, setActiveFilter] = useState<'' | 'album' | 'ep' | 'single' | 'remix' | 'compilation'>('')
@@ -335,3 +335,4 @@ export default function AppReleasesSection({ releases, sectionOrder, visible, ed
     </div>
   )
 }
+export default memo(AppReleasesSection)

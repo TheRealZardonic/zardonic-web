@@ -9,7 +9,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useKV } from '@/hooks/use-kv'
 import { useAdminAuth } from '@/hooks/use-admin-auth'
-import { useAnalyticsConsent } from '@/components/CookieConsent'
+import { useAnalyticsConsent } from '@/lib/consent'
 import { trackPageView, trackHeatmapClick } from '@/hooks/use-analytics'
 import { normalizeStoredRelease } from '@/lib/release-adapters'
 import type { AdminSettings, SectionLabels, TerminalCommand } from '@/lib/types'

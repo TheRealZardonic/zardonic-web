@@ -51,7 +51,7 @@ export default function ImpressumEditDialog({ open, onOpenChange, impressum, onS
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent data-admin-ui="true" className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Impressum bearbeiten</DialogTitle>
         </DialogHeader>

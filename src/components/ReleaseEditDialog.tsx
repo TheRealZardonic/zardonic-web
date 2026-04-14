@@ -236,7 +236,7 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="bg-card border-border max-h-[90vh] overflow-y-auto">
+      <DialogContent data-admin-ui="true" className="bg-card border-border max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{release ? 'Edit Release' : 'Add New Release'}</DialogTitle>
         </DialogHeader>

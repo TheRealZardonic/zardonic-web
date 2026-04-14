@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { memo, useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -22,7 +22,7 @@ interface AppBioSectionProps {
   onUpdate?: (bio: string) => void
 }
 
-export default function AppBioSection({ bio, sectionOrder, visible, editMode, sectionLabel, headingPrefix, adminSettings, sectionLabels, onLabelChange: _onLabelChange, onUpdate }: AppBioSectionProps) {
+function AppBioSection({ bio, sectionOrder, visible, editMode, sectionLabel, headingPrefix, adminSettings, sectionLabels, onLabelChange: _onLabelChange, onUpdate }: AppBioSectionProps) {
   const [bioExpanded, setBioExpanded] = useState(false)
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(bio)
@@ -200,3 +200,4 @@ export default function AppBioSection({ bio, sectionOrder, visible, editMode, se
     </div>
   )
 }
+export default memo(AppBioSection)

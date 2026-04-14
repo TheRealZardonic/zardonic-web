@@ -103,7 +103,7 @@ export default function AdminLoginDialog({ open, onOpenChange, mode, onLogin, on
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="bg-card border-border sm:max-w-md">
+      <DialogContent data-admin-ui="true" className="bg-card border-border sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-mono text-primary">
             {isLoginMode

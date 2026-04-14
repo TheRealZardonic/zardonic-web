@@ -17,65 +17,27 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { X, Shield } from '@phosphor-icons/react'
 import { useLocale } from '@/contexts/LocaleContext'
+import {
+  CONSENT_VERSION,
+  type ConsentPreferences,
+  readStoredConsent,
+  writeStoredConsent,
+  removeStoredConsent,
+  getAnalyticsConsentSync,
+  dispatchConsentEvent,
+  useAnalyticsConsent,
+  getConsentPreferencesAsync,
+} from '@/lib/consent'
 
-/** Bump this whenever the privacy policy or processing purposes change materially */
-const CONSENT_VERSION = 2
-const STORAGE_KEY = 'zd-cookie-consent'
-
-export interface ConsentPreferences {
-  essential: boolean  // Always true — technically necessary, no consent required
-  analytics: boolean  // Optional — requires explicit opt-in
-  timestamp: number   // Unix ms when consent was recorded
-  version: number     // Consent schema version
-}
+// Re-export for consumers that import directly from this module
+export type { ConsentPreferences }
+// eslint-disable-next-line react-refresh/only-export-components
+export { getAnalyticsConsentSync, dispatchConsentEvent, useAnalyticsConsent, getConsentPreferencesAsync }
 
 interface CookieConsentProps {
   onPreferencesChange?: (preferences: ConsentPreferences) => void
   /** Called when user clicks the Privacy Policy link */
   onOpenPrivacyPolicy?: () => void
-}
-
-// ─── localStorage helpers (synchronous, no API call needed) ──────────────────
-
-function readStoredConsent(): ConsentPreferences | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw) as ConsentPreferences
-    // Re-show banner if consent was given under an older version
-    if (!parsed.version || parsed.version < CONSENT_VERSION) return null
-    return parsed
-  } catch {
-    return null
-  }
-}
-
-function writeStoredConsent(prefs: ConsentPreferences): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs))
-  } catch {
-    // Storage unavailable — consent stays in memory only for this session
-  }
-}
-
-function removeStoredConsent(): void {
-  try {
-    localStorage.removeItem(STORAGE_KEY)
-  } catch { /* ignore */ }
-}
-
-// ─── Public API ───────────────────────────────────────────────────────────────
-
-/** Synchronously read analytics consent from localStorage (safe to call outside React) */
-// eslint-disable-next-line react-refresh/only-export-components
-export function getAnalyticsConsentSync(): boolean {
-  return readStoredConsent()?.analytics === true
-}
-
-/** Expose a global event so other parts of the app can react to consent changes */
-// eslint-disable-next-line react-refresh/only-export-components
-export function dispatchConsentEvent(prefs: ConsentPreferences): void {
-  window.dispatchEvent(new CustomEvent('zd:consent-change', { detail: prefs }))
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -320,35 +282,4 @@ export function CookiePreferencesButton({ onPreferencesChange, onOpenPrivacyPoli
       )}
     </>
   )
-}
-
-// ─── Hook ─────────────────────────────────────────────────────────────────────
-
-/**
- * React hook that reactively tracks analytics consent.
- * Updates when the user changes their preference (listens for zd:consent-change).
- */
-// eslint-disable-next-line react-refresh/only-export-components
-export function useAnalyticsConsent(): boolean {
-  const [hasConsent, setHasConsent] = useState<boolean>(() => getAnalyticsConsentSync())
-
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent<ConsentPreferences>).detail
-      setHasConsent(detail.analytics === true)
-    }
-    window.addEventListener('zd:consent-change', handler)
-    return () => window.removeEventListener('zd:consent-change', handler)
-  }, [])
-
-  return hasConsent
-}
-
-/**
- * Synchronously read full consent preferences (no async, no network call).
- * Returns null if no consent has been recorded yet.
- */
-// eslint-disable-next-line react-refresh/only-export-components
-export function getConsentPreferencesAsync(): ConsentPreferences | null {
-  return readStoredConsent()
 }

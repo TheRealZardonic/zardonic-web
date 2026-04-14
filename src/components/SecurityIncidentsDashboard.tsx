@@ -1,5 +1,6 @@
 import { Trash, ShieldWarning, Globe, Clock, User, Hash, Eye, ShieldCheck, CaretDown, CaretUp, X } from '@phosphor-icons/react'
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { useState, useEffect } from 'react'
 import { SecurityIncident, classifyIncident, classifyCountermeasure } from '@/lib/security-incidents'
 
@@ -34,6 +35,7 @@ export default function SecurityIncidentsDashboard({ open, onClose, onViewProfil
   const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState<'all' | 'honeytoken' | 'robots'>('all')
   const [expandedKey, setExpandedKey] = useState<string | null>(null)
+  const [confirmClear, setConfirmClear] = useState(false)
 
   useEffect(() => {
     if (!open) return
@@ -63,8 +65,10 @@ export default function SecurityIncidentsDashboard({ open, onClose, onViewProfil
   const robotsCount = incidents.filter(i => i.key.startsWith('robots:')).length
   const autoBlockedCount = incidents.filter(i => i.autoBlocked || i.key?.startsWith('blocked:')).length
 
-  const handleClear = async () => {
-    if (!window.confirm('Clear all security incident records? This cannot be undone.')) return
+  const handleClear = () => setConfirmClear(true)
+
+  const doClear = async () => {
+    setConfirmClear(false)
     try {
       const res = await fetch('/api/security-incidents', { method: 'DELETE', credentials: 'same-origin' })
       if (res.ok) setIncidents([])
@@ -76,8 +80,9 @@ export default function SecurityIncidentsDashboard({ open, onClose, onViewProfil
   }
 
   return (
+    <>
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="w-full max-w-5xl bg-card border border-primary/30 p-0 overflow-hidden flex flex-col max-h-[90dvh] [&>button:last-child]:hidden">
+      <DialogContent data-admin-ui="true" className="w-full max-w-5xl bg-card border border-primary/30 p-0 overflow-hidden flex flex-col max-h-[90dvh] [&>button:last-child]:hidden">
         <DialogTitle className="sr-only">Security Incidents Dashboard</DialogTitle>
 
         {/* HUD corners */}
@@ -345,5 +350,23 @@ export default function SecurityIncidentsDashboard({ open, onClose, onViewProfil
         </div>
       </DialogContent>
     </Dialog>
+
+    <AlertDialog open={confirmClear} onOpenChange={(o) => { if (!o) setConfirmClear(false) }}>
+      <AlertDialogContent data-admin-ui="true">
+        <AlertDialogHeader>
+          <AlertDialogTitle>Clear all security incidents?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This will permanently delete all security incident records. This cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={() => void doClear()} className="bg-red-600 hover:bg-red-700">
+            Clear all
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   )
 }

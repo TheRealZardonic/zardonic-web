@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { motion } from 'framer-motion'
 import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
@@ -40,7 +41,7 @@ interface AppMusicSectionProps {
   spotifyUrl?: string
 }
 
-export default function AppMusicSection({
+function AppMusicSection({
   sectionOrder,
   visible,
   editMode,
@@ -124,3 +125,4 @@ export default function AppMusicSection({
     </div>
   )
 }
+export default memo(AppMusicSection)

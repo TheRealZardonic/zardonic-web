@@ -1,4 +1,4 @@
-import { useEffect, useRef, memo } from 'react'
+import React, { useEffect, useRef, memo } from 'react'
 
 /**
  * MatrixRain – Canvas-based cascading character rain inspired by the Matrix.
@@ -44,23 +44,30 @@ const MatrixRain = memo(function MatrixRain({ transparent, speed = 1, density = 
     const handleResize = () => resize()
     window.addEventListener('resize', handleResize)
 
-    // Resolve color: use prop override or CSS variable.
-    // Fall back to a safe hex color when color-mix() with oklch() is not
-    // supported (older Firefox) — an unsupported fillStyle is silently ignored
-    // which makes the canvas blank.
-    const supportsColorMix = typeof CSS !== 'undefined' &&
-      CSS.supports('color', 'color-mix(in srgb, red 50%, blue)')
+    // Resolve color once (outside the animation loop) and cache it.
+    // Re-reading getComputedStyle on every rAF frame forces a synchronous
+    // layout recalculation — expensive and unnecessary since the CSS variable
+    // changes only when the admin saves new theme settings.
+    const getColor = () => color ?? (getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#cc3300')
+    let cachedColor = getColor()
 
-    const resolveColor = (): string => {
-      if (color) return color
-      const raw = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim()
-      if (!raw) return '#cc3300'
-      // If color-mix is unsupported we can't use oklch() inside it — return
-      // the raw value as-is and skip color-mix usage below.
-      return raw
-    }
+    const resolveColor = (): string => cachedColor
+
+    // Refresh the cached color whenever the --primary theme CSS variable changes.
+    // MutationObserver on <html> style attribute detects setProperty() calls
+    // from useAppTheme without polling. We check whether --primary actually
+    // changed to avoid redundant work on unrelated style mutations.
+    const observer = new MutationObserver(() => {
+      const newColor = getColor()
+      if (newColor !== cachedColor) {
+        cachedColor = newColor
+      }
+    })
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] })
 
     const applyColor = (ctx2d: CanvasRenderingContext2D, base: string, baseColorRatio = 0.9) => {
+      const supportsColorMix = typeof CSS !== 'undefined' &&
+        CSS.supports('color', 'color-mix(in srgb, red 50%, blue)')
       if (supportsColorMix) {
         ctx2d.fillStyle = `color-mix(in srgb, ${base} ${Math.round(baseColorRatio * 100)}%, white)`
       } else {
@@ -124,6 +131,7 @@ const MatrixRain = memo(function MatrixRain({ transparent, speed = 1, density = 
 
     return () => {
       cancelAnimationFrame(animId)
+      observer.disconnect()
       window.removeEventListener('resize', handleResize)
       document.removeEventListener('visibilitychange', handleVisibility)
     }
@@ -132,7 +140,8 @@ const MatrixRain = memo(function MatrixRain({ transparent, speed = 1, density = 
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 z-0 pointer-events-none opacity-20"
+      className="fixed inset-0 pointer-events-none opacity-20"
+      style={{ zIndex: 'var(--z-bg-animated)' } as React.CSSProperties}
       aria-hidden="true"
     />
   )

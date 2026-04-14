@@ -148,7 +148,7 @@ export default function AttackerProfileDialog({ open, onClose, hashedIp }: Attac
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="w-full max-w-6xl bg-card border border-primary/30 p-0 overflow-hidden flex flex-col max-h-[90dvh] [&>button:last-child]:hidden">
+      <DialogContent data-admin-ui="true" className="w-full max-w-6xl bg-card border border-primary/30 p-0 overflow-hidden flex flex-col max-h-[90dvh] [&>button:last-child]:hidden">
         <DialogTitle className="sr-only">Attacker Profile</DialogTitle>
 
         {/* HUD corners */}
@@ -161,7 +161,7 @@ export default function AttackerProfileDialog({ open, onClose, hashedIp }: Attac
         <div className="h-10 bg-primary/10 border-b border-primary/30 flex items-center justify-between px-4 flex-shrink-0">
           <div className="flex items-center gap-3">
             <Shield size={16} className="text-primary/70" />
-            <span className="font-mono text-[11px] text-primary/70 tracking-wider uppercase">
+            <span className="font-mono text-xs text-primary/70 tracking-wider uppercase">
               ATTACKER PROFILE // DETAILED ANALYSIS
             </span>
           </div>
@@ -175,13 +175,13 @@ export default function AttackerProfileDialog({ open, onClose, hashedIp }: Attac
           {loading && (
             <div className="flex items-center justify-center py-12">
               <div className="w-4 h-4 border-2 border-primary/40 border-t-primary rounded-full animate-spin" />
-              <span className="ml-3 font-mono text-[11px] text-primary/50">LOADING PROFILE...</span>
+              <span className="ml-3 font-mono text-xs text-primary/50">LOADING PROFILE...</span>
             </div>
           )}
 
           {error && (
             <div className="border border-red-500/30 bg-red-500/10 p-4 text-center">
-              <p className="font-mono text-[12px] text-red-400">FAILED TO LOAD: {error}</p>
+              <p className="font-mono text-xs text-red-400">FAILED TO LOAD: {error}</p>
             </div>
           )}
 
@@ -192,7 +192,7 @@ export default function AttackerProfileDialog({ open, onClose, hashedIp }: Attac
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-mono text-xs text-primary/50 uppercase">IP Hash (SHA-256)</p>
-                    <p className="font-mono text-[12px] text-foreground/90 mt-1">{hashedIp}</p>
+                    <p className="font-mono text-xs text-foreground/90 mt-1">{hashedIp}</p>
                   </div>
                   <div className="text-right">
                     <p className="font-mono text-xs text-primary/50 uppercase">Current Threat Score</p>
@@ -216,15 +216,15 @@ export default function AttackerProfileDialog({ open, onClose, hashedIp }: Attac
                   </div>
                   <div>
                     <p className="font-mono text-xs text-primary/50">First Seen</p>
-                    <p className="font-mono text-[11px] text-foreground/80">{formatShortTime(profile.firstSeen)}</p>
+                    <p className="font-mono text-xs text-foreground/80">{formatShortTime(profile.firstSeen)}</p>
                   </div>
                   <div>
                     <p className="font-mono text-xs text-primary/50">Last Seen</p>
-                    <p className="font-mono text-[11px] text-foreground/80">{formatShortTime(profile.lastSeen)}</p>
+                    <p className="font-mono text-xs text-foreground/80">{formatShortTime(profile.lastSeen)}</p>
                   </div>
                   <div>
                     <p className="font-mono text-xs text-primary/50">UA Diversity</p>
-                    <p className="font-mono text-[11px] text-foreground/80">{profile.userAgentAnalysis.diversity}</p>
+                    <p className="font-mono text-xs text-foreground/80">{profile.userAgentAnalysis.diversity}</p>
                   </div>
                 </div>
               </div>
@@ -232,7 +232,7 @@ export default function AttackerProfileDialog({ open, onClose, hashedIp }: Attac
               {/* Behavioral Patterns */}
               {profile.behavioralPatterns.length > 0 && (
                 <div className="border border-primary/20 bg-card p-4">
-                  <h3 className="font-mono text-[12px] text-primary/70 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <h3 className="font-mono text-xs text-primary/70 uppercase tracking-wider mb-3 flex items-center gap-2">
                     <ChartLine size={14} />
                     Behavioral Patterns Detected ({profile.behavioralPatterns.length})
                   </h3>
@@ -242,7 +242,7 @@ export default function AttackerProfileDialog({ open, onClose, hashedIp }: Attac
                         {getSeverityIcon(pattern.severity)}
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <p className="font-mono text-[11px] text-foreground/90 uppercase">{pattern.type.replace(/_/g, ' ')}</p>
+                            <p className="font-mono text-xs text-foreground/90 uppercase">{pattern.type.replace(/_/g, ' ')}</p>
                             <span
                               className="px-2 py-0.5 text-xs font-mono font-bold rounded"
                               style={{
@@ -265,7 +265,7 @@ export default function AttackerProfileDialog({ open, onClose, hashedIp }: Attac
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* Threat Score Timeline */}
                 <div className="border border-primary/20 bg-card p-4">
-                  <h3 className="font-mono text-[12px] text-primary/70 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <h3 className="font-mono text-xs text-primary/70 uppercase tracking-wider mb-3 flex items-center gap-2">
                     <ChartLine size={14} />
                     Threat Score Timeline
                   </h3>
@@ -305,7 +305,7 @@ export default function AttackerProfileDialog({ open, onClose, hashedIp }: Attac
 
                 {/* Attack Type Distribution */}
                 <div className="border border-primary/20 bg-card p-4">
-                  <h3 className="font-mono text-[12px] text-primary/70 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <h3 className="font-mono text-xs text-primary/70 uppercase tracking-wider mb-3 flex items-center gap-2">
                     <Globe size={14} />
                     Attack Type Distribution
                   </h3>
@@ -340,7 +340,7 @@ export default function AttackerProfileDialog({ open, onClose, hashedIp }: Attac
 
               {/* User-Agent Analysis */}
               <div className="border border-primary/20 bg-card p-4">
-                <h3 className="font-mono text-[12px] text-primary/70 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <h3 className="font-mono text-xs text-primary/70 uppercase tracking-wider mb-3 flex items-center gap-2">
                   <User size={14} />
                   User-Agent Analysis ({profile.userAgentAnalysis.unique} unique)
                 </h3>
@@ -393,7 +393,7 @@ export default function AttackerProfileDialog({ open, onClose, hashedIp }: Attac
                               {ua.category}
                             </span>
                           </div>
-                          <span className="font-mono text-[11px] text-primary/60">{ua.count}×</span>
+                          <span className="font-mono text-xs text-primary/60">{ua.count}×</span>
                         </div>
                       ))}
                     </div>
@@ -403,7 +403,7 @@ export default function AttackerProfileDialog({ open, onClose, hashedIp }: Attac
 
               {/* Incident Timeline */}
               <div className="border border-primary/20 bg-card p-4">
-                <h3 className="font-mono text-[12px] text-primary/70 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <h3 className="font-mono text-xs text-primary/70 uppercase tracking-wider mb-3 flex items-center gap-2">
                   <List size={14} />
                   Recent Incidents ({profile.incidents.length})
                 </h3>
@@ -445,7 +445,7 @@ export default function AttackerProfileDialog({ open, onClose, hashedIp }: Attac
 
               {/* Automatische Reaktionen */}
               <div className="border border-primary/20 bg-card p-4">
-                <h3 className="font-mono text-[12px] text-primary/70 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <h3 className="font-mono text-xs text-primary/70 uppercase tracking-wider mb-3 flex items-center gap-2">
                   <Shield size={14} />
                   Automatische Reaktionen
                 </h3>
@@ -457,7 +457,7 @@ export default function AttackerProfileDialog({ open, onClose, hashedIp }: Attac
                     ? [...profile.incidents].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())[0]
                     : null
                   return (
-                    <div className="space-y-2 text-[11px] font-mono">
+                    <div className="space-y-2 text-xs font-mono">
                       {firstAlert && (
                         <p className="text-foreground/60">
                           <span className="text-primary/50">Erster Alert:</span>{' '}

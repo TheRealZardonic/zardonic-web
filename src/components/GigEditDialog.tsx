@@ -107,7 +107,7 @@ export default function GigEditDialog({ gig, onSave, onClose }: GigEditDialogPro
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="bg-card border-border max-h-[90vh] overflow-y-auto">
+      <DialogContent data-admin-ui="true" className="bg-card border-border max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{gig ? 'Edit Gig' : 'Add New Gig'}</DialogTitle>
         </DialogHeader>

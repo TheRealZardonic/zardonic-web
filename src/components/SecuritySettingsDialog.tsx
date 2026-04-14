@@ -176,7 +176,7 @@ export default function SecuritySettingsDialog({ open, onClose }: SecuritySettin
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="w-full max-w-2xl bg-card border border-primary/30 p-0 overflow-hidden flex flex-col max-h-[90dvh] [&>button:last-child]:hidden">
+      <DialogContent data-admin-ui="true" className="w-full max-w-2xl bg-card border border-primary/30 p-0 overflow-hidden flex flex-col max-h-[90dvh] [&>button:last-child]:hidden">
         <DialogTitle className="sr-only">Security Settings</DialogTitle>
 
         {/* HUD corners */}

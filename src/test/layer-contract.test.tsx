@@ -103,8 +103,14 @@ describe('MatrixRain layer enforcement', () => {
     const canvas = container.querySelector('canvas')
     expect(canvas).not.toBeNull()
     expect(canvas!.className).toContain('pointer-events-none')
-    const zIndex = Number(canvas!.style.zIndex ?? '0')
-    expect(zIndex).toBeLessThanOrEqual(LAYERS.ANIMATED_BG)
+    // The z-index should be set either as a raw number ≤ ANIMATED_BG or as the
+    // CSS custom property token var(--z-bg-animated) — both are compliant.
+    const rawZIndex = canvas!.style.zIndex ?? '0'
+    const isToken = rawZIndex.trim().startsWith('var(--z-bg-animated)')
+    const numericZIndex = Number(rawZIndex)
+    if (!isToken) {
+      expect(numericZIndex).toBeLessThanOrEqual(LAYERS.ANIMATED_BG)
+    }
   })
 })
 

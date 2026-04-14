@@ -72,7 +72,7 @@ export default function SubscriberListDialog({ open, onClose }: SubscriberListDi
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogContent data-admin-ui="true" className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="font-mono text-primary flex items-center gap-2">
             <Users size={20} />

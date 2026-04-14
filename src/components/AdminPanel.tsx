@@ -492,6 +492,7 @@ export default function AdminPanel({
             role="dialog"
             aria-modal="true"
             aria-label="Admin Panel"
+            data-admin-ui="true"
             className="fixed bg-card border-border flex flex-col
               bottom-0 left-0 right-0 h-[92dvh] border-t
               md:top-0 md:bottom-0 md:left-auto md:right-0 md:w-[720px] md:h-full md:border-t-0 md:border-l"

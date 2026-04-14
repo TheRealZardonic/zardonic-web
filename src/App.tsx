@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import React, { Suspense } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { useKonami } from '@/hooks/use-konami'
@@ -98,6 +98,31 @@ function App() {
   useSound(adminSettings?.sound)
   const { iTunesFetching, bandsintownFetching, hasAutoLoaded, iTunesProgress, handleFetchBandsintownEvents, handleFetchITunesReleases } = useSiteDataSync(siteData, isSiteDataLoaded, refetchSiteData, isOwner)
   useDocumentTitle(siteData?.artistName ?? '')
+
+  // ── Stable release mutation callbacks (useCallback prevents re-renders of
+  //    memoised children when unrelated state changes) ──────────────────────
+  const handleUpdateRelease = useCallback((updated: FullRelease) => {
+    handleUpdateSiteData(prev => ({
+      ...prev,
+      releases: prev.releases.map(r =>
+        r.id === updated.id ? mergeFullReleaseIntoStored(updated, r) : r
+      ),
+    }))
+  }, [handleUpdateSiteData])
+
+  const handleDeleteRelease = useCallback((id: string) => {
+    handleUpdateSiteData(prev => ({
+      ...prev,
+      releases: prev.releases.filter(r => r.id !== id),
+    }))
+  }, [handleUpdateSiteData])
+
+  const handleAddRelease = useCallback((release: FullRelease) => {
+    handleUpdateSiteData(prev => ({
+      ...prev,
+      releases: [...prev.releases, fullReleaseToStored(release)],
+    }))
+  }, [handleUpdateSiteData])
 
   useEffect(() => {
     if (konamiActivated) {
@@ -299,7 +324,7 @@ function App() {
         }
       >
         {siteData?.tracks && siteData.tracks.length > 0 && siteData.tracks[0]?.url && (
-          <audio src={siteData.tracks[0].url} aria-label="Background music player" />
+          <audio src={siteData.tracks[0].url} aria-hidden="true" />
         )}
         <AppHeroSection
           contentLoaded={contentLoaded}
@@ -411,26 +436,9 @@ function App() {
         sectionLabels={sectionLabels}
         onLabelChange={editMode ? handleLabelChange : undefined}
         onReleaseClick={(release) => setCyberpunkOverlay({ type: 'release', data: release })}
-        onUpdateRelease={editMode ? (updated: FullRelease) => {
-          handleUpdateSiteData(prev => ({
-            ...prev,
-            releases: prev.releases.map(r =>
-              r.id === updated.id ? mergeFullReleaseIntoStored(updated, r) : r
-            ),
-          }))
-        } : undefined}
-        onDeleteRelease={editMode ? (id) => {
-          handleUpdateSiteData(prev => ({
-            ...prev,
-            releases: prev.releases.filter(r => r.id !== id),
-          }))
-        } : undefined}
-        onAddRelease={editMode ? (release: FullRelease) => {
-          handleUpdateSiteData(prev => ({
-            ...prev,
-            releases: [...prev.releases, fullReleaseToStored(release)],
-          }))
-        } : undefined}
+        onUpdateRelease={editMode ? handleUpdateRelease : undefined}
+        onDeleteRelease={editMode ? handleDeleteRelease : undefined}
+        onAddRelease={editMode ? handleAddRelease : undefined}
         onRefreshReleases={editMode ? handleFetchITunesReleases : undefined}
       />
       </Suspense>

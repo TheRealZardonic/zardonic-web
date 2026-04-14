@@ -164,6 +164,10 @@ async function sendEmailNotification({ name, email, subject, message }: { name: 
 const CORS_ORIGIN = process.env.ALLOWED_ORIGIN ||
   (process.env.VERCEL_ENV === 'production' ? 'null' : '*')
 
+if (process.env.VERCEL_ENV === 'production' && !process.env.ALLOWED_ORIGIN) {
+  console.warn('[contact] ALLOWED_ORIGIN env var is not set. CORS defaults to "null" which blocks all cross-origin requests. Set ALLOWED_ORIGIN to your production domain (e.g. https://yourdomain.com) to allow the contact form to work from your site.')
+}
+
 function setCorsHeaders(res: VercelResponse): void {
   res.setHeader('Access-Control-Allow-Origin', CORS_ORIGIN)
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')

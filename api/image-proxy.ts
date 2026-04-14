@@ -24,6 +24,10 @@ const CACHE_TTL_SECONDS = 60 * 60 * 24 * 30 // 30 days
 const CORS_ORIGIN = process.env.ALLOWED_ORIGIN ||
   (process.env.VERCEL_ENV === 'production' ? 'null' : '*')
 
+if (process.env.VERCEL_ENV === 'production' && !process.env.ALLOWED_ORIGIN) {
+  console.warn('[image-proxy] ALLOWED_ORIGIN env var is not set. CORS defaults to "null" which blocks all cross-origin image requests. Set ALLOWED_ORIGIN to your production domain (e.g. https://yourdomain.com).')
+}
+
 const BLOCKED_HOST_PATTERNS = [
   /^localhost$/i, /^127\./, /^10\./, /^172\.(1[6-9]|2\d|3[01])\./, /^192\.168\./,
   /^0\./, /^169\.254\./, /^\[::1\]/, /^\[::ffff:/i, /^\[fe80:/i, /^\[fc/i, /^\[fd/i,

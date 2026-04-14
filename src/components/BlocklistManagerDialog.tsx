@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { ProhibitInset, Trash, Plus, CheckCircle, X } from '@phosphor-icons/react'
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 
@@ -21,6 +22,7 @@ export default function BlocklistManagerDialog({ open, onClose }: BlocklistManag
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
+  const [confirmUnblockIp, setConfirmUnblockIp] = useState<string | null>(null)
 
   // Add form state
   const [newHashedIp, setNewHashedIp] = useState('')
@@ -49,7 +51,13 @@ export default function BlocklistManagerDialog({ open, onClose }: BlocklistManag
   }
 
   const handleUnblock = async (hashedIp: string) => {
-    if (!window.confirm(`Unblock IP hash ${hashedIp.slice(0, 12)}...? This cannot be undone.`)) return
+    setConfirmUnblockIp(hashedIp)
+  }
+
+  const confirmUnblock = async () => {
+    const hashedIp = confirmUnblockIp
+    setConfirmUnblockIp(null)
+    if (!hashedIp) return
     try {
       const res = await fetch('/api/blocklist', {
         method: 'DELETE',
@@ -134,8 +142,9 @@ export default function BlocklistManagerDialog({ open, onClose }: BlocklistManag
   const manualBlocked = totalBlocked - autoBlocked
 
   return (
+    <>
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="w-full max-w-4xl bg-card border border-primary/30 p-0 overflow-hidden flex flex-col max-h-[90dvh] [&>button:last-child]:hidden">
+      <DialogContent data-admin-ui="true" className="w-full max-w-4xl bg-card border border-primary/30 p-0 overflow-hidden flex flex-col max-h-[90dvh] [&>button:last-child]:hidden">
         <DialogTitle className="sr-only">Blocklist Manager</DialogTitle>
 
         {/* HUD corners */}
@@ -318,5 +327,23 @@ export default function BlocklistManagerDialog({ open, onClose }: BlocklistManag
         </div>
       </DialogContent>
     </Dialog>
+
+    <AlertDialog open={!!confirmUnblockIp} onOpenChange={(o) => { if (!o) setConfirmUnblockIp(null) }}>
+      <AlertDialogContent data-admin-ui="true">
+        <AlertDialogHeader>
+          <AlertDialogTitle>Unblock IP address?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Unblock <span className="font-mono">{confirmUnblockIp?.slice(0, 12)}…</span>? This cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={() => void confirmUnblock()} className="bg-red-600 hover:bg-red-700">
+            Unblock
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   )
 }

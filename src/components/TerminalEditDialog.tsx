@@ -74,7 +74,7 @@ export default function TerminalEditDialog({ open, onOpenChange, commands, onSav
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+      <DialogContent data-admin-ui="true" className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Terminal Commands</DialogTitle>
         </DialogHeader>

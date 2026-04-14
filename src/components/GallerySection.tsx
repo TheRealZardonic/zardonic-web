@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { memo } from 'react'
 import { motion } from 'framer-motion'
 import { Separator } from '@/components/ui/separator'
 import { Card } from '@/components/ui/card'
@@ -19,7 +19,7 @@ interface GallerySectionProps {
   adminSettings: AdminSettings | undefined
 }
 
-export default function GallerySection({
+function GallerySection({
   siteData,
   editMode,
   sectionOrder,
@@ -108,3 +108,4 @@ export default function GallerySection({
     </div>
   )
 }
+export default memo(GallerySection)

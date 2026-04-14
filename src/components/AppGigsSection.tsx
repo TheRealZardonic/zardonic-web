@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { memo, useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -46,7 +46,7 @@ interface AppGigsSectionProps {
   onRefresh?: () => void
 }
 
-export default function AppGigsSection({ gigs, sectionOrder, visible, editMode, sectionLabel, headingPrefix, adminSettings, bandsintownFetching, sectionLabels, onLabelChange, onGigClick, onRefresh }: AppGigsSectionProps) {
+function AppGigsSection({ gigs, sectionOrder, visible, editMode, sectionLabel, headingPrefix, adminSettings, bandsintownFetching, sectionLabels, onLabelChange, onGigClick, onRefresh }: AppGigsSectionProps) {
   const [showAll, setShowAll] = useState(false)
   const { t } = useLocale()
 
@@ -248,3 +248,4 @@ export default function AppGigsSection({ gigs, sectionOrder, visible, editMode, 
     </div>
   )
 }
+export default memo(AppGigsSection)

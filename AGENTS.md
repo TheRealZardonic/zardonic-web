@@ -78,11 +78,13 @@ All z-index values in the application are managed through CSS custom properties 
 *   **Google Fonts Loading**: `use-app-theme.ts` automatically injects a `<link>` to Google Fonts whenever a non-system font is selected. Font names are extracted via `extractGoogleFontName()`. No manual font injection is needed for fonts in the admin dropdowns.
 *   **Biography font**: `AppBioSection.tsx` reads `adminSettings.sections.styleOverrides.bio.textSize` for the Tailwind text-size class. The body font is inherited via CSS from the `body` element (`--font-body`).
 *   **Font Dropdowns**: Managed in `src/components/admin/AppearanceTab.tsx` via `HEADING_FONTS`, `BODY_FONTS`, `MONO_FONTS` arrays (proper CSS values with stacks). Font size sliders are inline below each dropdown for all disclosure levels.
+*   **Admin UI Typography Shield**: Theme font/size customisations MUST NEVER affect the admin panel or CMS shell. Any admin container MUST carry `data-admin-ui="true"`. The `[data-admin-ui]` CSS rule in `index.css` resets all `--font-*`, `--heading-*`, `--body-*`, `--mono-*` variables to stable system fallbacks. This rule covers: `AdminPanel.tsx` (root motion.div), `CmsApp.tsx` (wrapping div), and every admin `DialogContent` element. When adding new admin dialogs or overlays, always add `data-admin-ui="true"` to their root portaled element.
 
 ## 8. Admin Panel Features
 
 *   **Undo**: `AdminPanel.tsx` maintains an undo stack (max 50 entries) in `undoStack.current`. Every `setAdminSettings` call through the panel is intercepted by `setAdminSettingsWithUndo`. The undo button (↺ icon) in the header triggers `handleUndo`.
 *   **Analytics Toggle**: `adminSettings.analytics.enabled` (and `trackPageViews`, `trackEvents`) are checked in `use-app-state.ts` before firing any tracking. The admin toggle in `AnalyticsTab` is the single point of control alongside user cookie consent.
+*   **Consent Helpers**: Pure consent functions (`useAnalyticsConsent`, `getAnalyticsConsentSync`, `getConsentPreferencesAsync`, `dispatchConsentEvent`) live in `src/lib/consent.ts`. Non-UI modules (e.g. `use-app-state.ts`) MUST import from `@/lib/consent`, never from `@/components/CookieConsent`. The component re-exports everything for backwards compatibility.
 *   **Section order callbacks** (`moveSectionUp`, `moveSectionDown`) also go through `setAdminSettingsWithUndo`.
 
 ## 9. Release Gallery

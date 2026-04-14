@@ -4,6 +4,7 @@ import { useMediaUpload } from '../hooks/useMediaUpload'
 import { type MediaItem } from '../schemas'
 import { Loader2, Upload, Trash2, X, Image as ImageIcon } from 'lucide-react'
 import { toast } from 'sonner'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 
 interface MediaResponse {
   items: MediaItem[]
@@ -27,6 +28,7 @@ export default function MediaLibrary() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [confirmDeleteItem, setConfirmDeleteItem] = useState<MediaItem | null>(null)
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
@@ -39,7 +41,13 @@ export default function MediaLibrary() {
   }
 
   const handleDelete = async (item: MediaItem) => {
-    if (!window.confirm(`Delete "${item.fileName}"?`)) return
+    setConfirmDeleteItem(item)
+  }
+
+  const confirmDelete = async () => {
+    const item = confirmDeleteItem
+    setConfirmDeleteItem(null)
+    if (!item) return
     setDeletingId(item.id)
     try {
       await deleteMedia(item.id)
@@ -75,6 +83,7 @@ export default function MediaLibrary() {
   const items = data?.items ?? []
 
   return (
+    <>
     <div className="p-6 h-full flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-zinc-100 text-xl font-semibold">Media Library</h1>
@@ -195,5 +204,23 @@ export default function MediaLibrary() {
         )}
       </div>
     </div>
+
+    <AlertDialog open={!!confirmDeleteItem} onOpenChange={(o) => { if (!o) setConfirmDeleteItem(null) }}>
+      <AlertDialogContent data-admin-ui="true">
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete file?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Delete <span className="font-mono">&quot;{confirmDeleteItem?.fileName}&quot;</span>? This cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={() => void confirmDelete()} className="bg-red-600 hover:bg-red-700">
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   )
 }

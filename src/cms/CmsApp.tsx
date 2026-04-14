@@ -76,6 +76,7 @@ function CmsAuthGuard() {
 
 export default function CmsApp() {
   return (
+    <div data-admin-ui="true">
     <QueryClientProvider client={queryClient}>
       <ErrorBoundary FallbackComponent={CmsErrorFallback}>
         <Suspense fallback={<CmsLoadingFallback />}>
@@ -94,5 +95,6 @@ export default function CmsApp() {
         }}
       />
     </QueryClientProvider>
+    </div>
   )
 }
