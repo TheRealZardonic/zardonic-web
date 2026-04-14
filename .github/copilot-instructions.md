@@ -21,24 +21,33 @@ Violating the Feature Sync Rule will be treated as a blocking review issue.
 
 ## File Upload (Vercel Blob)
 
-- **Server-side streaming upload**: use `put()` from `@vercel/blob` (NOT `/client`) in `api/cms/video-upload.ts`.
-  - The endpoint streams the raw request body directly to Blob storage — no buffering, supports large files.
-  - Client sends the file as the raw `POST` body via `XMLHttpRequest` with custom headers:
-    - `x-blob-pathname` — the desired storage path (e.g. `videos/timestamp-filename.mp4`)
-    - `Content-Type` — the video MIME type (`video/mp4` or `video/webm`)
-  - The API endpoint requires `export const config = { api: { bodyParser: false } }` to disable Vercel's body parser.
-  - Example server call: `put(pathname, req, { access: 'public', contentType, token: process.env.BLOB_READ_WRITE_TOKEN })`
+- **Client-side upload**: use `upload()` from `@vercel/blob/client` in `src/cms/hooks/useVideoUpload.ts`.
+  - The Blob Store is configured as **Public**, so client-side uploads work correctly — the file goes directly from the browser to `*.public.blob.vercel-storage.com` with no Vercel Serverless Function body-size limit.
+  - The server-side token endpoint `api/cms/video-upload-token.ts` uses `handleUpload` from `@vercel/blob/client` to generate a short-lived client token. **Always pass `token` explicitly** to `handleUpload`.
+  - Example token endpoint (in `api/cms/video-upload-token.ts`):
+    ```typescript
+    const jsonResponse = await handleUpload({
+      token: process.env.BLOB_READ_WRITE_TOKEN,
+      request: req,
+      body: req.body as HandleUploadBody,
+      onBeforeGenerateToken: async (_pathname: string) => ({
+        allowedContentTypes: ['video/mp4', 'video/webm'],
+        maximumSizeInBytes: 500 * 1024 * 1024,
+      }),
+      onUploadCompleted: async ({ blob }: { blob: { url: string } }) => {
+        console.log('upload completed:', blob.url)
+      },
+    })
+    ```
   - Example client call (in `src/cms/hooks/useVideoUpload.ts`):
     ```typescript
-    const xhr = new XMLHttpRequest()
-    xhr.open('POST', '/api/cms/video-upload')
-    xhr.withCredentials = true
-    xhr.setRequestHeader('x-blob-pathname', pathname)
-    xhr.setRequestHeader('Content-Type', file.type)
-    xhr.send(file)
+    const blob = await blobUpload(pathname, file, {
+      access: 'public',
+      handleUploadUrl: '/api/cms/video-upload-token',
+      onUploadProgress: ({ percentage }) => { setProgress(Math.round(percentage)) },
+    })
     ```
-  - This eliminates all CORS issues — the upload goes through the project's own API (`'self'`), not `vercel.com/api/blob/`.
-  - Do **NOT** use `@vercel/blob/client`'s `upload()` — it routes uploads through `vercel.com/api/blob/` which causes CORS errors.
+  - Do **NOT** use a server-side streaming proxy (`put()` with `req` as the body) — Vercel Hobby plan has a hard 4.5 MB body-size limit on Serverless Functions, making it unusable for real video files.
 
 ## TypeScript Strict Mode
 
