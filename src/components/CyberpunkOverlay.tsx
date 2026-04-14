@@ -42,9 +42,11 @@ export default function CyberpunkOverlay({ overlay, onClose, adminSettings, arti
   // without it being a dependency — prevents a re-run (and phase reset) whenever
   // adminSettings changes while the overlay is already open.
   const progressiveOverlayModesRef = useRef(adminSettings?.progressiveOverlayModes)
-  // Update the ref after every render so the effect always reads the latest value.
-  // This pattern (assigning .current in render) is safe: refs are not reactive.
-  progressiveOverlayModesRef.current = adminSettings?.progressiveOverlayModes
+
+  // Keep the ref in sync as a separate effect so we don't assign to .current during render.
+  useEffect(() => {
+    progressiveOverlayModesRef.current = adminSettings?.progressiveOverlayModes
+  }, [adminSettings?.progressiveOverlayModes])
 
   // Pick a new random animation each time the overlay opens (overlay goes null→truthy).
   // NOTE: `overlay` is intentionally in the dep array even though getRandomOverlayAnimation()

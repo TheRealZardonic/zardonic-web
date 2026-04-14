@@ -50,7 +50,7 @@ export default function AppBioSection({ bio, sectionOrder, visible, editMode, se
   // the global "Body Font Size" slider in the Appearance tab takes effect on the bio.
   const tailwindSizeToRem: Record<string, string> = {
     'text-xs': '0.75rem', 'text-sm': '0.875rem', 'text-base': '1rem',
-    'text-lg': '1.125rem', 'text-xl': '1.25rem', '2xl': '1.5rem', 'text-2xl': '1.5rem',
+    'text-lg': '1.125rem', 'text-xl': '1.25rem', 'text-2xl': '1.5rem',
   }
   const bioFontSizeStyle = tailwindSizeToRem[bioTextSize] ?? undefined
 
