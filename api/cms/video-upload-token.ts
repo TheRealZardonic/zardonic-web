@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { handleUpload, type HandleUploadBody } from '@vercel/blob'
+import { handleUpload, type HandleUploadBody } from '@vercel/blob/client'
 import { applyRateLimit } from '../_ratelimit.js'
 import { validateSession } from '../auth.js'
 
@@ -27,13 +27,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const jsonResponse = await handleUpload({
       request: req,
       body: req.body as HandleUploadBody,
-      onBeforeGenerateToken: async (_pathname) => {
+      onBeforeGenerateToken: async (_pathname: string) => {
         return {
           allowedContentTypes: ALLOWED_VIDEO_TYPES,
           maximumSizeInBytes: MAX_VIDEO_SIZE,
         }
       },
-      onUploadCompleted: async ({ blob }) => {
+      onUploadCompleted: async ({ blob }: { blob: { url: string } }) => {
         console.log('[cms/video-upload-token] upload completed:', blob.url)
       },
     })
