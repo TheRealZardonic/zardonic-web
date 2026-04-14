@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState, memo } from 'react'
 import { shouldUseLiteMode } from '@/lib/device-capability'
 import { toDirectImageUrl } from '@/lib/image-cache'
+import { toDirectVideoUrl } from '@/lib/video-url'
+import { useLenisContext } from '@/contexts/LenisContext'
 
 interface VideoBackgroundProps {
-  /** URL of the video file (MP4/WebM). External URLs are served directly. */
+  /** URL of the video file (MP4/WebM). Google Drive share links are automatically converted. */
   videoUrl: string
   /**
    * Fallback image URL shown when:
@@ -16,14 +18,21 @@ interface VideoBackgroundProps {
   opacity?: number
   /** CSS object-fit for the video/image. Default: 'cover'. */
   fit?: 'cover' | 'contain' | 'fill' | 'none'
+  /**
+   * When true: video currentTime is driven by scroll position instead of autoplay.
+   * Requires the video to be faststart-encoded (moov atom at start).
+   * Default: false
+   */
+  scrollMode?: boolean
 }
 
 /**
- * VideoBackground — fixed full-screen looping video at `--z-bg-animated` (z=1).
+ * VideoBackground — fixed full-screen video at `--z-bg-animated` (z=1).
  *
- * The video plays `autoPlay muted loop playsInline` to satisfy all browser
- * autoplay policies. No user consent is required because there is no
- * third-party tracking (same as a background image).
+ * Supports two modes:
+ *   - **loop** (default): `autoPlay muted loop playsInline`
+ *   - **scroll**: video `currentTime` is driven by Lenis scroll position
+ *     (top of page = frame 0, bottom = last frame). Requires faststart MP4.
  *
  * **Fallback chain (highest → lowest priority):**
  * 1. Lite mode detected at mount (reduced-motion / slow connection / low-end HW)
@@ -33,20 +42,31 @@ interface VideoBackgroundProps {
  *
  * The `poster` attribute is always set to the fallback image URL so the
  * browser renders the static image instantly while the video buffers.
+ *
+ * Google Drive share URLs are automatically converted to direct download URLs.
+ * Note: Google Drive has CORS/Range-request limitations; for reliable scroll-mode
+ * seeking, self-hosted or Vercel Blob URLs are recommended.
  */
 const VideoBackground = memo(function VideoBackground({
   videoUrl,
   fallbackImageUrl,
   opacity = 1,
   fit = 'cover',
+  scrollMode = false,
 }: VideoBackgroundProps) {
   const [useFallback, setUseFallback] = useState<boolean>(() => shouldUseLiteMode())
   const videoRef = useRef<HTMLVideoElement>(null)
 
-  // Attempt to start playback once the element is mounted. Some browsers
-  // (particularly Safari on iOS) require an explicit play() call.
+  // Always call useLenisContext (hooks must not be called conditionally).
+  // scrollY is only used when scrollMode === true.
+  const { scrollY } = useLenisContext()
+
+  // Resolve Google Drive share links → direct download URLs
+  const resolvedVideoUrl = toDirectVideoUrl(videoUrl)
+
+  // ── Loop mode: attempt autoplay ──────────────────────────────────────────
   useEffect(() => {
-    if (useFallback) return
+    if (useFallback || scrollMode) return
     const video = videoRef.current
     if (!video) return
 
@@ -76,7 +96,46 @@ const VideoBackground = memo(function VideoBackground({
       video.removeEventListener('progress', handleProgress)
       video.removeEventListener('playing', handleProgress)
     }
-  }, [useFallback, videoUrl])
+  }, [useFallback, scrollMode, resolvedVideoUrl])
+
+  // ── Scroll mode: drive currentTime from Lenis scrollY ────────────────────
+  useEffect(() => {
+    if (!scrollMode || useFallback) return
+    const video = videoRef.current
+    if (!video) return
+
+    // Only scrub when the video is sufficiently loaded (HAVE_CURRENT_DATA)
+    if (video.readyState < 2) return
+
+    requestAnimationFrame(() => {
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight
+      const progress = maxScroll > 0 ? Math.max(0, Math.min(1, scrollY / maxScroll)) : 0
+      video.currentTime = progress * (video.duration || 0)
+    })
+  }, [scrollY, scrollMode, useFallback])
+
+  // ── Scroll mode: canplay handler ─────────────────────────────────────────
+  useEffect(() => {
+    if (!scrollMode || useFallback) return
+    const video = videoRef.current
+    if (!video) return
+
+    const handleError = () => {
+      setUseFallback(true)
+    }
+    const handleCanPlayThrough = () => { /* ready for full playback */ }
+
+    video.addEventListener('error', handleError)
+    video.addEventListener('canplaythrough', handleCanPlayThrough)
+    const handleCanPlay = () => { /* scrubbing enabled */ }
+    video.addEventListener('canplay', handleCanPlay)
+
+    return () => {
+      video.removeEventListener('error', handleError)
+      video.removeEventListener('canplaythrough', handleCanPlayThrough)
+      video.removeEventListener('canplay', handleCanPlay)
+    }
+  }, [scrollMode, useFallback])
 
   const sharedStyle: React.CSSProperties = {
     position: 'fixed',
@@ -106,20 +165,38 @@ const VideoBackground = memo(function VideoBackground({
     )
   }
 
+  const posterUrl = fallbackImageUrl
+    ? toDirectImageUrl(fallbackImageUrl, { output: 'webp', q: 80 })
+    : undefined
+
+  if (scrollMode) {
+    return (
+      <video
+        ref={videoRef}
+        src={resolvedVideoUrl}
+        muted
+        playsInline
+        aria-hidden="true"
+        poster={posterUrl}
+        preload="auto"
+        style={{
+          ...sharedStyle,
+          willChange: 'auto',
+        }}
+      />
+    )
+  }
+
   return (
     <video
       ref={videoRef}
-      src={videoUrl}
+      src={resolvedVideoUrl}
       autoPlay
       muted
       loop
       playsInline
       aria-hidden="true"
-      poster={
-        fallbackImageUrl
-          ? toDirectImageUrl(fallbackImageUrl, { output: 'webp', q: 80 })
-          : undefined
-      }
+      poster={posterUrl}
       style={sharedStyle}
       preload="auto"
     />

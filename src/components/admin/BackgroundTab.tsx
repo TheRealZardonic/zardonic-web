@@ -3,8 +3,15 @@ import { Slider } from '@/components/ui/slider'
 import { Separator } from '@/components/ui/separator'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
+import { Button } from '@/components/ui/button'
+import { Upload, CheckCircle, AlertTriangle } from 'lucide-react'
+import { useState, useRef, useCallback } from 'react'
 
 import type { AdminSettings, AnimationSettings, BackgroundType, HudTexts, LoadingScreenType, LoadingScreenMode } from '@/lib/types'
+import { useVideoUpload } from '@/cms/hooks/useVideoUpload'
+import { useMediaUpload } from '@/cms/hooks/useMediaUpload'
+import { toDirectVideoUrl } from '@/lib/video-url'
+import { checkVideoScrollOptimization, type VideoOptimizationResult } from '@/lib/video-check'
 
 interface BackgroundTabProps {
   adminSettings?: AdminSettings | null
@@ -21,12 +28,57 @@ export default function BackgroundTab({
 }: BackgroundTabProps) {
   const currentBg = anim.backgroundType ?? 'circuit'
 
+  const { upload: uploadVideo, progress: videoUploadProgress, isUploading: isUploadingVideo } = useVideoUpload()
+  const { upload: uploadImage, progress: imageUploadProgress, isUploading: isUploadingImage } = useMediaUpload()
+
+  const [videoCheckResult, setVideoCheckResult] = useState<VideoOptimizationResult | null>(null)
+  const [isCheckingVideo, setIsCheckingVideo] = useState(false)
+  const videoCheckRef = useRef<HTMLVideoElement | null>(null)
+
   const updateAnim = (patch: Partial<AnimationSettings>) => {
     setAdminSettings?.({
       ...(adminSettings ?? {}),
       background: { ...anim, ...patch },
     })
   }
+
+  const handleVideoUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const result = await uploadVideo(file)
+    if (result) updateAnim({ backgroundVideoUrl: result.url })
+    e.target.value = ''
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uploadVideo])
+
+  const handleFallbackImageUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const result = await uploadImage(file)
+    if (result) updateAnim({ backgroundVideoFallbackImageUrl: result.url })
+    e.target.value = ''
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uploadImage])
+
+  const handleCheckVideo = useCallback(async () => {
+    const url = anim.backgroundVideoUrl
+    if (!url) return
+    setIsCheckingVideo(true)
+    setVideoCheckResult(null)
+    try {
+      const video = document.createElement('video')
+      video.preload = 'auto'
+      video.muted = true
+      video.src = toDirectVideoUrl(url)
+      videoCheckRef.current = video
+      const result = await checkVideoScrollOptimization(video)
+      setVideoCheckResult(result)
+    } catch {
+      setVideoCheckResult({ isOptimized: false, warnings: ['Fehler beim Prüfen des Videos.'], recommendations: [] })
+    } finally {
+      setIsCheckingVideo(false)
+    }
+  }, [anim.backgroundVideoUrl])
 
   return (
     <div className="flex-1 overflow-y-auto p-4 space-y-4 mt-0">
@@ -292,29 +344,126 @@ export default function BackgroundTab({
             Video Background Options
           </h3>
           <p className="font-mono text-xs text-muted-foreground">
-            Upload or link a looping video file (MP4 recommended). On low-end devices or
+            Upload or link a video file (MP4 recommended). On low-end devices or
             when the user prefers reduced motion, the fallback image is shown instead.
           </p>
+
+          {/* Playback Mode selector */}
           <div className="space-y-1">
-            <Label className="font-mono text-xs text-muted-foreground">Video URL (MP4 / WebM)</Label>
-            <Input
-              value={anim.backgroundVideoUrl ?? ''}
-              onChange={e => updateAnim({ backgroundVideoUrl: e.target.value || undefined })}
-              className="font-mono text-xs"
-              placeholder="https://example.com/background.mp4"
-            />
+            <Label className="font-mono text-xs text-muted-foreground">Playback Mode</Label>
+            <div className="grid grid-cols-2 gap-1">
+              {([
+                { value: 'loop', label: 'Loop', desc: 'Auto-playing looping video' },
+                { value: 'scroll', label: 'Scroll', desc: 'Video progress follows page scroll' },
+              ] as { value: 'loop' | 'scroll'; label: string; desc: string }[]).map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => updateAnim({ backgroundVideoMode: opt.value })}
+                  className={`text-left px-2 py-2 border rounded font-mono text-xs transition-colors ${
+                    (anim.backgroundVideoMode ?? 'loop') === opt.value
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border text-muted-foreground hover:border-primary/40'
+                  }`}
+                >
+                  <div className="font-semibold">{opt.label}</div>
+                  <div className="text-[10px] text-muted-foreground/60">{opt.desc}</div>
+                </button>
+              ))}
+            </div>
           </div>
+
+          {/* Video Source */}
+          <div className="space-y-2">
+            <Label className="font-mono text-xs text-muted-foreground">Video Source</Label>
+            <div className="flex gap-2">
+              <Input
+                value={anim.backgroundVideoUrl ?? ''}
+                onChange={e => updateAnim({ backgroundVideoUrl: e.target.value || undefined })}
+                className="font-mono text-xs flex-1"
+                placeholder="https://... oder Google Drive Link"
+              />
+              <label className="cursor-pointer">
+                <Button variant="outline" size="sm" asChild disabled={isUploadingVideo}>
+                  <span className="font-mono text-xs">
+                    {isUploadingVideo ? `${videoUploadProgress}%` : <Upload className="w-3 h-3" />}
+                  </span>
+                </Button>
+                <input
+                  type="file"
+                  accept="video/mp4,video/webm"
+                  className="hidden"
+                  onChange={handleVideoUpload}
+                />
+              </label>
+            </div>
+            {videoUploadProgress > 0 && videoUploadProgress < 100 && (
+              <div className="w-full bg-border rounded-full h-1">
+                <div className="bg-primary h-1 rounded-full transition-all" style={{ width: `${videoUploadProgress}%` }} />
+              </div>
+            )}
+          </div>
+
+          {/* Video optimization check (scroll mode only) */}
+          {(anim.backgroundVideoMode ?? 'loop') === 'scroll' && anim.backgroundVideoUrl && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCheckVideo}
+                  disabled={isCheckingVideo}
+                  className="font-mono text-xs"
+                >
+                  {isCheckingVideo ? 'Prüfe…' : 'Video prüfen'}
+                </Button>
+              </div>
+              {videoCheckResult && (
+                <div className={`rounded border p-2 space-y-1 font-mono text-[10px] ${videoCheckResult.isOptimized ? 'border-green-500/40 bg-green-500/5 text-green-400' : 'border-yellow-500/40 bg-yellow-500/5 text-yellow-400'}`}>
+                  <div className="flex items-center gap-1">
+                    {videoCheckResult.isOptimized
+                      ? <CheckCircle className="w-3 h-3" />
+                      : <AlertTriangle className="w-3 h-3" />}
+                    <span className="font-semibold">
+                      {videoCheckResult.isOptimized ? 'Video ist optimiert' : 'Optimierung empfohlen'}
+                    </span>
+                  </div>
+                  {videoCheckResult.warnings.map((w, i) => (
+                    <div key={i} className="text-yellow-300/80">{w}</div>
+                  ))}
+                  {videoCheckResult.recommendations.map((r, i) => (
+                    <code key={i} className="block bg-black/30 rounded px-1 py-0.5 text-[9px] break-all">{r}</code>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="space-y-1">
             <Label className="font-mono text-xs text-muted-foreground">Fallback Image URL</Label>
             <p className="font-mono text-[10px] text-muted-foreground/60">
-              Shown while video loads (poster) and on low-end / reduced-motion devices.
+              Falls leer: reguläres Hintergrundbild wird verwendet
             </p>
-            <Input
-              value={anim.backgroundVideoFallbackImageUrl ?? ''}
-              onChange={e => updateAnim({ backgroundVideoFallbackImageUrl: e.target.value || undefined })}
-              className="font-mono text-xs"
-              placeholder="https://example.com/poster.jpg"
-            />
+            <div className="flex gap-2">
+              <Input
+                value={anim.backgroundVideoFallbackImageUrl ?? ''}
+                onChange={e => updateAnim({ backgroundVideoFallbackImageUrl: e.target.value || undefined })}
+                className="font-mono text-xs flex-1"
+                placeholder="https://example.com/poster.jpg"
+              />
+              <label className="cursor-pointer">
+                <Button variant="outline" size="sm" asChild disabled={isUploadingImage}>
+                  <span className="font-mono text-xs">
+                    {isUploadingImage ? `${imageUploadProgress}%` : <Upload className="w-3 h-3" />}
+                  </span>
+                </Button>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFallbackImageUpload}
+                />
+              </label>
+            </div>
           </div>
           <div className="space-y-2">
             <div className="flex justify-between">

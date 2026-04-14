@@ -94,6 +94,15 @@ export function LenisProvider({
   const [scrollY, setScrollY] = useState(0)
   const [velocityY, setVelocityY] = useState(0)
 
+  // Use refs for easing and duration so changing them doesn't destroy/recreate
+  // Lenis mid-scroll (which would cause a visible jump).
+  const easingRef = useRef(easing)
+  const durationRef = useRef(duration)
+  useEffect(() => { easingRef.current = easing }, [easing])
+  useEffect(() => { durationRef.current = duration }, [duration])
+
+  // Main Lenis init effect only depends on liteMode so Lenis is never
+  // recreated just because an easing function reference changed.
   useEffect(() => {
     if (liteMode) return
 
@@ -102,15 +111,14 @@ export function LenisProvider({
 
     try {
       lenis = new Lenis({
-        duration,
-        easing,
+        duration: durationRef.current,
+        easing: (t: number) => easingRef.current(t),
         smoothWheel: true,
         wheelMultiplier: 1,
         touchMultiplier: 2,
       })
 
       lenisRef.current = lenis
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLenisInstance(lenis)
       lenis.on('scroll', (e: { scroll: number; velocity: number }) => {
         setScrollY(e.scroll)
@@ -134,7 +142,7 @@ export function LenisProvider({
       lenisRef.current = null
       setLenisInstance(null)
     }
-  }, [liteMode, duration, easing])
+  }, [liteMode])
 
   const scrollTo = useCallback(
     (

@@ -101,8 +101,9 @@ function AnimatedBackgroundLayer({ type, hudTexts, transparent, animSettings }: 
     return (
       <VideoBackground
         videoUrl={animSettings.backgroundVideoUrl}
-        fallbackImageUrl={animSettings.backgroundVideoFallbackImageUrl}
+        fallbackImageUrl={animSettings.backgroundVideoFallbackImageUrl ?? animSettings.backgroundImageUrl}
         opacity={animSettings.backgroundVideoOpacity ?? 1}
+        scrollMode={animSettings.backgroundVideoMode === 'scroll'}
       />
     )
   }

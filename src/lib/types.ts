@@ -116,6 +116,8 @@ export interface AnimationSettings {
   backgroundVideoUrl?: string
   backgroundVideoFallbackImageUrl?: string
   backgroundVideoOpacity?: number
+  /** 'loop' = auto-playing looping video (default). 'scroll' = video playback driven by scroll position. */
+  backgroundVideoMode?: 'loop' | 'scroll'
 }
 
 export interface LoaderTexts {
