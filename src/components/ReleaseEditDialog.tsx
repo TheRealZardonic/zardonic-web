@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { UploadSimple, Plus, X, ArrowsClockwise } from '@phosphor-icons/react'
+import { UploadSimple, Plus, X, ArrowsClockwise, ArrowCounterClockwise } from '@phosphor-icons/react'
 import type { Release } from '@/lib/types'
 import { fetchOdesliLinks } from '@/lib/odesli'
 import { toast } from 'sonner'
@@ -30,11 +30,13 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
     beatport: ''
   })
   const [tracks, setTracks] = useState<Array<{ title: string; duration?: string; artist?: string }>>([])
+  const [tracksHistory, setTracksHistory] = useState<Array<Array<{ title: string; duration?: string; artist?: string }>>>([])
   const [newTrack, setNewTrack] = useState({ title: '', duration: '', artist: '' })
   const [customLinks, setCustomLinks] = useState<Array<{ label: string; url: string }>>([])
   const [newCustomLink, setNewCustomLink] = useState({ label: '', url: '' })
   const [isSaving, setIsSaving] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
+  const [isSyncingTracklist, setIsSyncingTracklist] = useState(false)
   const artworkInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -55,6 +57,7 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
         beatport: links.beatport || ''
       })
       setTracks((release.tracks || []).map(t => ({ title: t.title, duration: t.duration, artist: t.artist })))
+      setTracksHistory([])
       setCustomLinks(release.customLinks || [])
     }
   }, [release])
@@ -131,6 +134,47 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
     } finally {
       setIsSyncing(false)
     }
+  }
+
+  const handleTracklistSync = async () => {
+    if (!release?.id) return
+    setIsSyncingTracklist(true)
+    try {
+      const resp = await fetch('/api/releases-enrich-single', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ id: release.id }),
+      })
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}))
+        toast.error((err as { error?: string }).error ?? 'Tracklist sync failed')
+        return
+      }
+      type EnrichmentResponse = { release: { tracks?: Array<{ title: string; duration?: string; artist?: string }> } }
+      const { release: enrichedRelease } = await resp.json() as EnrichmentResponse
+      const newTracks = enrichedRelease.tracks
+      if (!newTracks || newTracks.length === 0) {
+        toast.info('No tracklist found for this release')
+        return
+      }
+      setTracksHistory(prev => [...prev.slice(-49), tracks])
+      setTracks(newTracks)
+      toast.success(`Tracklist synced — ${newTracks.length} tracks`)
+    } catch {
+      toast.error('Tracklist sync failed')
+    } finally {
+      setIsSyncingTracklist(false)
+    }
+  }
+
+  const handleUndoTracklist = () => {
+    setTracksHistory(prev => {
+      if (prev.length === 0) return prev
+      const previous = prev[prev.length - 1]
+      setTracks(previous)
+      return prev.slice(0, -1)
+    })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -391,7 +435,40 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
           </div>
 
           <div className="border-t border-border pt-4">
-            <h4 className="font-semibold mb-3">Track List (optional)</h4>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="font-semibold">Track List (optional)</h4>
+              {release?.id && (
+                <div className="flex items-center gap-1.5">
+                  {tracksHistory.length > 0 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleUndoTracklist}
+                      disabled={isSyncingTracklist || isSaving}
+                      className="border-primary/30 hover:bg-primary/10 text-xs gap-1.5"
+                      title="Undo last tracklist sync"
+                      aria-label="Undo tracklist sync"
+                    >
+                      <ArrowCounterClockwise size={14} />
+                      Undo
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleTracklistSync}
+                    disabled={isSyncingTracklist || isSaving}
+                    className="border-primary/30 hover:bg-primary/10 text-xs gap-1.5"
+                    title="Sync tracklist from MusicBrainz"
+                  >
+                    <ArrowsClockwise size={14} className={isSyncingTracklist ? 'animate-spin' : ''} />
+                    {isSyncingTracklist ? 'Syncing…' : 'Sync Tracklist'}
+                  </Button>
+                </div>
+              )}
+            </div>
             <div className="space-y-2">
               {tracks.map((track, index) => (
                 <div key={index} className="flex gap-2 items-center">
