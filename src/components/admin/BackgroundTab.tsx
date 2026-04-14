@@ -9,7 +9,6 @@ import { useState, useRef, useCallback } from 'react'
 
 import type { AdminSettings, AnimationSettings, BackgroundType, HudTexts, LoadingScreenType, LoadingScreenMode } from '@/lib/types'
 import { useVideoUpload } from '@/cms/hooks/useVideoUpload'
-import { useMediaUpload } from '@/cms/hooks/useMediaUpload'
 import { checkVideoScrollOptimization, type VideoOptimizationResult } from '@/lib/video-check'
 
 interface BackgroundTabProps {
@@ -28,7 +27,6 @@ export default function BackgroundTab({
   const currentBg = anim.backgroundType ?? 'circuit'
 
   const { upload: uploadVideo, progress: videoUploadProgress, isUploading: isUploadingVideo } = useVideoUpload()
-  const { upload: uploadImage, progress: imageUploadProgress, isUploading: isUploadingImage } = useMediaUpload()
 
   const [videoCheckResult, setVideoCheckResult] = useState<VideoOptimizationResult | null>(null)
   const [isCheckingVideo, setIsCheckingVideo] = useState(false)
@@ -48,14 +46,6 @@ export default function BackgroundTab({
     if (result) updateAnim({ backgroundVideoUrl: result.url })
     e.target.value = ''
   }, [uploadVideo, updateAnim])
-
-  const handleFallbackImageUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const result = await uploadImage(file)
-    if (result) updateAnim({ backgroundVideoFallbackImageUrl: result.url })
-    e.target.value = ''
-  }, [uploadImage, updateAnim])
 
   const handleCheckVideo = useCallback(async () => {
     const url = anim.backgroundVideoUrl
@@ -435,33 +425,6 @@ export default function BackgroundTab({
             </div>
           )}
 
-          <div className="space-y-1">
-            <Label className="font-mono text-xs text-muted-foreground">Fallback Image URL</Label>
-            <p className="font-mono text-[10px] text-muted-foreground/60">
-              Falls leer: reguläres Hintergrundbild wird verwendet
-            </p>
-            <div className="flex gap-2">
-              <Input
-                value={anim.backgroundVideoFallbackImageUrl ?? ''}
-                onChange={e => updateAnim({ backgroundVideoFallbackImageUrl: e.target.value || undefined })}
-                className="font-mono text-xs flex-1"
-                placeholder="https://example.com/poster.jpg"
-              />
-              <label className="cursor-pointer">
-                <Button variant="outline" size="sm" asChild disabled={isUploadingImage}>
-                  <span className="font-mono text-xs">
-                    {isUploadingImage ? `${imageUploadProgress}%` : <Upload className="w-3 h-3" />}
-                  </span>
-                </Button>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleFallbackImageUpload}
-                />
-              </label>
-            </div>
-          </div>
           <div className="space-y-2">
             <div className="flex justify-between">
               <Label className="font-mono text-xs">Opacity</Label>

@@ -157,19 +157,25 @@ describe('vercel.json Content-Security-Policy', () => {
   })
 
   it('does not allow connect-src to arbitrary external domains (only whitelisted APIs)', () => {
-    // connect-src allows 'self' and specific whitelisted APIs — no wildcards
+    // connect-src allows 'self' and specific whitelisted APIs.
+    // Wildcards are only permitted for Vercel Blob storage (required for client-side video uploads).
     const connectSrc = cspHeader.value.match(/connect-src ([^;]+)/)
     expect(connectSrc).toBeTruthy()
     const connectSrcValue = connectSrc[1].trim()
     expect(connectSrcValue).toContain("'self'")
-    expect(connectSrcValue).not.toContain('*')
     // Verify only known trusted origins are present
     const allowed = ["'self'", 'https://api.spotify.com', 'https://open.spotify.com',
       'https://spclient.wg.spotify.com',
-      'https://api.song.link', 'https://rest.bandsintown.com', 'https://itunes.apple.com', 'https://wsrv.nl']
+      'https://api.song.link', 'https://rest.bandsintown.com', 'https://itunes.apple.com', 'https://wsrv.nl',
+      'https://*.public.blob.vercel-storage.com']
     const domains = connectSrcValue.split(/\s+/)
     for (const domain of domains) {
       expect(allowed).toContain(domain)
+    }
+    // Wildcards must be limited to the known Vercel Blob storage pattern only
+    const wildcardDomains = domains.filter((d: string) => d.includes('*'))
+    for (const wc of wildcardDomains) {
+      expect(['https://*.public.blob.vercel-storage.com']).toContain(wc)
     }
   })
 })
