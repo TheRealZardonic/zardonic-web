@@ -33,6 +33,7 @@ const translations: Record<string, Record<Locale, string>> = {
   'nav.home':                  { en: 'HOME', de: 'STARTSEITE', ru: 'ГЛАВНАЯ', it: 'HOME', es: 'INICIO', pt: 'INÍCIO', ja: 'ホーム', ko: '홈' },
   'nav.news':                  { en: 'NEWS', de: 'NEUIGKEITEN', ru: 'НОВОСТИ', it: 'NOTIZIE', es: 'NOTICIAS', pt: 'NOTÍCIAS', ja: 'ニュース', ko: '뉴스' },
   'nav.biography':             { en: 'BIOGRAPHY', de: 'BIOGRAFIE', ru: 'БИОГРАФИЯ', it: 'BIOGRAFIA', es: 'BIOGRAFÍA', pt: 'BIOGRAFIA', ja: '経歴', ko: '바이오그래피' },
+  'nav.bio':                   { en: 'BIO', de: 'BIO', ru: 'БИО', it: 'BIO', es: 'BIO', pt: 'BIO', ja: 'BIO', ko: 'BIO' },
   'nav.music':                 { en: 'MUSIC', de: 'MUSIK', ru: 'МУЗЫКА', it: 'MUSICA', es: 'MÚSICA', pt: 'MÚSICA', ja: '音楽', ko: '음악' },
   'nav.gallery':               { en: 'GALLERY', de: 'GALERIE', ru: 'ГАЛЕРЕЯ', it: 'GALLERIA', es: 'GALERÍA', pt: 'GALERIA', ja: 'ギャラリー', ko: '갤러리' },
   'nav.gigs':                  { en: 'GIGS', de: 'AUFTRITTE', ru: 'КОНЦЕРТЫ', it: 'CONCERTI', es: 'CONCIERTOS', pt: 'CONCERTOS', ja: 'ライブ', ko: '공연' },

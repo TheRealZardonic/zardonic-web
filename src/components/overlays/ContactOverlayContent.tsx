@@ -142,7 +142,21 @@ export function ContactOverlayContent({ adminSettings, decorativeTexts }: Contac
             </div>
             <div>
               <Label className="font-mono text-xs uppercase tracking-wide">{adminSettings?.contact?.formSubjectLabel || 'Subject'}</Label>
-              <Input name="subject" required maxLength={200} placeholder={adminSettings?.contact?.formSubjectPlaceholder || 'Subject'} className="bg-card border-border font-mono mt-1" />
+              {adminSettings?.contact?.contactSubjects && adminSettings.contact.contactSubjects.length > 0 ? (
+                <select
+                  name="subject"
+                  required
+                  defaultValue=""
+                  className="w-full bg-card border border-border font-mono text-sm mt-1 px-3 py-2 rounded-md text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="" disabled>{adminSettings?.contact?.formSubjectPlaceholder || 'Select a subject...'}</option>
+                  {adminSettings.contact.contactSubjects.map((s, i) => (
+                    <option key={i} value={s}>{s}</option>
+                  ))}
+                </select>
+              ) : (
+                <Input name="subject" required maxLength={200} placeholder={adminSettings?.contact?.formSubjectPlaceholder || 'Subject'} className="bg-card border-border font-mono mt-1" />
+              )}
             </div>
             <div>
               <Label className="font-mono text-xs uppercase tracking-wide">{adminSettings?.contact?.formMessageLabel || 'Message'}</Label>

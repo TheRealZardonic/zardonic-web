@@ -45,8 +45,16 @@ export default function AppBioSection({ bio, sectionOrder, visible, editMode, se
     !typography?.headingFontFamily ? 'font-mono' : '',
   ].filter(Boolean).join(' ')
 
+  // Map Tailwind text-size class to explicit rem value so we can use it in inline style.
+  // This lets us fall back to var(--body-font-size) when no override is set, which means
+  // the global "Body Font Size" slider in the Appearance tab takes effect on the bio.
+  const tailwindSizeToRem: Record<string, string> = {
+    'text-xs': '0.75rem', 'text-sm': '0.875rem', 'text-base': '1rem',
+    'text-lg': '1.125rem', 'text-xl': '1.25rem', 'text-2xl': '1.5rem',
+  }
+  const bioFontSizeStyle = tailwindSizeToRem[bioTextSize] ?? undefined
+
   const bodyClasses = [
-    bioTextSize,
     'text-muted-foreground overflow-hidden font-light whitespace-pre-wrap',
     !hasCustomBodyLineHeight ? 'leading-relaxed' : '',
     !bioExpanded ? 'max-h-[280px]' : 'max-h-none'
@@ -80,7 +88,7 @@ export default function AppBioSection({ bio, sectionOrder, visible, editMode, se
     <div style={{ order: sectionOrder }}>
       <Separator className="bg-border" />
       <section id="bio" className="py-24 px-4" style={bioSectionStyle} data-theme-color="foreground muted-foreground card border">
-        <div className="container mx-auto max-w-4xl">
+        <div className="container mx-auto max-w-6xl">
           <motion.div
             initial={{ opacity: 0, x: -30, filter: 'blur(10px)', clipPath: 'polygon(0 0, 0 0, 0 100%, 0 100%)' }}
             whileInView={{ opacity: 1, x: 0, filter: 'blur(0px)', clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' }}
@@ -144,6 +152,7 @@ export default function AppBioSection({ bio, sectionOrder, visible, editMode, se
                   className={bodyClasses}
                   style={{
                     fontFamily: 'var(--font-body)',
+                    fontSize: bioFontSizeStyle ?? 'var(--body-font-size, 1.125rem)',
                     maskImage: !bioExpanded ? 'linear-gradient(to bottom, black 60%, transparent 100%)' : 'none',
                     WebkitMaskImage: !bioExpanded ? 'linear-gradient(to bottom, black 60%, transparent 100%)' : 'none',
                     transition: 'max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), mask-image 0.3s ease, -webkit-mask-image 0.3s ease',
