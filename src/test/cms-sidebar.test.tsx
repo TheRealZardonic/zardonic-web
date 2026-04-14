@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import React from 'react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 // Stub Radix Collapsible to simple divs for testing
 vi.mock('@radix-ui/react-collapsible', () => ({
@@ -42,11 +43,19 @@ vi.mock('lucide-react', () => {
     HardDrive: stub('HardDrive'),
     Shield: stub('Shield'),
     InfoIcon: stub('InfoIcon'),
+    Loader2: stub('Loader2'),
+    Check: stub('Check'),
   }
 })
 
 // Import after mocks
 const { CmsSidebar } = await import('@/cms/CmsSidebar')
+
+/** Wraps a node in a QueryClientProvider for tests that trigger React Query hooks. */
+function withQueryClient(node: React.ReactElement): React.ReactElement {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  return React.createElement(QueryClientProvider, { client }, node)
+}
 
 describe('CmsSidebar — click interactions', () => {
   it('renders navigation links for top-level items', () => {
@@ -107,10 +116,10 @@ describe('CmsSidebar — click interactions', () => {
 
   it('marks active route with aria-current="page"', () => {
     render(
-      React.createElement(CmsSidebar, {
+      withQueryClient(React.createElement(CmsSidebar, {
         currentRoute: 'cms/content/hero',
         onNavigate: vi.fn(),
-      })
+      }))
     )
     const activeLink = screen.getByText('Hero').closest('button')
     expect(activeLink).toHaveAttribute('aria-current', 'page')

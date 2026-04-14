@@ -77,9 +77,9 @@ interface SidebarGroup {
 }
 
 const SIDEBAR_GROUPS: SidebarGroup[] = [
-  { id: 'content', label: 'Content', sectionIds: ['hero', 'bio', 'music', 'releases', 'gigs', 'social', 'contact'] },
+  { id: 'content', label: 'Content', sectionIds: ['hero', 'bio', 'music', 'releases', 'gigs', 'connect', 'contact'] },
   { id: 'media', label: 'Media', sectionIds: ['gallery', 'media'] },
-  { id: 'configuration', label: 'Configuration', sectionIds: ['shell', 'partners', 'sponsoring', 'credit-highlights'] },
+  { id: 'configuration', label: 'Configuration', sectionIds: ['shell', 'collabs', 'sponsoring', 'creditHighlights'] },
   { id: 'legal', label: 'Legal', sectionIds: ['footer', 'impressum'] },
 ]
 

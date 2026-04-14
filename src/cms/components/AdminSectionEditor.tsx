@@ -112,8 +112,7 @@ function EditorInner({
     isLoading,
     error,
     save,
-    revert: _revert,
-  } = useCmsContent<Record<string, unknown>>(sectionId)
+  } = useCmsContent<Record<string, unknown>>(`zd-cms:${sectionId}`)
 
   // ── Local draft state ──────────────────────────────────────────────────────
   const defaultData = useMemo(
@@ -122,6 +121,7 @@ function EditorInner({
   )
 
   const [draftData, setDraftData] = useState<Record<string, unknown> | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
   const [disclosure, setDisclosure] = useState<DisclosureLevel>('basic')
   const [showDisclosureMenu, setShowDisclosureMenu] = useState(false)
@@ -133,11 +133,11 @@ function EditorInner({
   const isDirty = draftData !== null
 
   // ── Undo / Redo ────────────────────────────────────────────────────────────
-  const { push: pushHistory, undo, redo, canUndo, canRedo, historyIndex, historySize } =
+  const { push: pushHistory, undo, redo, reset: resetHistory, canUndo, canRedo, historyIndex, historySize } =
     useUndoRedo<Record<string, unknown>>(effectiveData)
 
   // ── Hooks ──────────────────────────────────────────────────────────────────
-  useAutoSave(sectionId, effectiveData, isDirty)
+  useAutoSave(`zd-cms:${sectionId}`, effectiveData, isDirty)
   useUnsavedChanges(isDirty)
 
   // ── Handlers ──────────────────────────────────────────────────────────────
@@ -160,16 +160,16 @@ function EditorInner({
       toast.error('Please fix validation errors before saving.')
       return
     }
+    setIsSaving(true)
     try {
       await save(effectiveData, false) // save as published
       setDraftData(null)
       setValidationErrors({})
-      toast.success(`${schema.label} saved.`)
-    } catch (err) {
-      // Primary error toast is shown by useCmsContent; this is a safety net.
-      toast.error(err instanceof Error ? err.message : 'Save failed. Please try again.')
+      resetHistory(effectiveData) // clear undo history so Ctrl+Z cannot regress past the save point
+    } finally {
+      setIsSaving(false)
     }
-  }, [effectiveData, schema, save])
+  }, [effectiveData, schema, save, resetHistory])
 
   const handleDiscard = useCallback(() => {
     setDraftData(null)
@@ -179,17 +179,17 @@ function EditorInner({
 
   const handleReset = useCallback(async () => {
     const fresh = schema.getDefaultData() as Record<string, unknown>
+    setIsSaving(true)
     try {
       await save(fresh, false)
       setDraftData(null)
       setValidationErrors({})
       onPreviewDataChange?.(fresh)
-      toast.success(`${schema.label} reset to defaults.`)
-    } catch (err) {
-      // Primary error toast is shown by useCmsContent; this is a safety net.
-      toast.error(err instanceof Error ? err.message : 'Reset failed. Please try again.')
+      resetHistory(fresh) // clear undo history after reset
+    } finally {
+      setIsSaving(false)
     }
-  }, [schema, save, onPreviewDataChange])
+  }, [schema, save, onPreviewDataChange, resetHistory])
 
   const handleUndoAction = useCallback(() => {
     const prev = undo()
@@ -213,6 +213,8 @@ function EditorInner({
     onUndo: handleUndoAction,
     onRedo: handleRedoAction,
     onEscape: useCallback(() => setShowDisclosureMenu(false), []),
+    // Disable shortcuts while loading to prevent firing save/undo on uninitialised data
+    enabled: !isLoading,
   })
 
   // ── Loading state ──────────────────────────────────────────────────────────
@@ -223,7 +225,7 @@ function EditorInner({
           schema={schema}
           isDirty={false}
           isDraft={false}
-          isSaving={false}
+          isSaving={isSaving}
           canUndo={false}
           canRedo={false}
           historyIndex={0}
@@ -265,7 +267,7 @@ function EditorInner({
         schema={schema}
         isDirty={isDirty}
         isDraft={isDraft}
-        isSaving={false}
+        isSaving={isSaving}
         canUndo={canUndo}
         canRedo={canRedo}
         historyIndex={historyIndex}

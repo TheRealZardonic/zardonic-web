@@ -139,15 +139,6 @@ export function LivePreviewPane({ sectionId, supportsPreview, className = '' }: 
         className={`flex flex-col bg-[#0a0a0a] border-l border-zinc-800 h-full ${className}`}
         aria-label="Section preview"
       >
-        <PreviewToolbar
-          device={device}
-          zoom={zoom}
-          onDeviceChange={setDevice}
-          onRefresh={handleRefresh}
-          onZoomDown={cycleZoomDown}
-          onZoomUp={cycleZoomUp}
-          iframeSrc={iframeSrc}
-        />
         <div className="flex-1 flex flex-col items-center justify-center gap-4 p-8 text-center">
           <Desktop size={40} className="text-zinc-700" />
           <div className="space-y-2 max-w-xs">

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Loader2, RefreshCw, Calendar, Music2, CheckCircle2, AlertCircle } from 'lucide-react'
 
 interface SyncStatus {
@@ -7,19 +7,6 @@ interface SyncStatus {
   lastSync?: string
   count?: number
   error?: string
-}
-
-async function fetchGigsSyncStatus(): Promise<SyncStatus> {
-  try {
-    const res = await fetch('/api/gigs-sync', { credentials: 'include' })
-    if (res.ok) {
-      const data = await res.json()
-      return { ok: true, count: data.count, lastSync: new Date().toISOString() }
-    }
-    return { ok: false, error: `HTTP ${res.status}` }
-  } catch (e) {
-    return { ok: false, error: String(e) }
-  }
 }
 
 async function triggerGigsSync(): Promise<SyncStatus> {
@@ -54,13 +41,6 @@ export default function TourSyncEditor() {
   const queryClient = useQueryClient()
   const [bandsintownStatus, setBandsintownStatus] = useState<SyncStatus | null>(null)
   const [setlistStatus, setSetlistStatus] = useState<SyncStatus | null>(null)
-
-  const { isLoading: gigsLoading } = useQuery({
-    queryKey: ['gigs-status'],
-    queryFn: fetchGigsSyncStatus,
-    staleTime: Infinity,
-    enabled: false,
-  })
 
   const gigsMutation = useMutation({
     mutationFn: triggerGigsSync,
@@ -104,7 +84,7 @@ export default function TourSyncEditor() {
         <button
           type="button"
           onClick={() => gigsMutation.mutate()}
-          disabled={gigsMutation.isPending || gigsLoading}
+          disabled={gigsMutation.isPending}
           className="flex items-center gap-2 text-sm bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3 py-1.5 rounded disabled:opacity-50 transition-colors"
         >
           {gigsMutation.isPending

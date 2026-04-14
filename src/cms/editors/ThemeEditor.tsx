@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useForm, useFormState } from 'react-hook-form'
+import { useForm, useFormState, useController } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { themeConfigSchema, type ThemeConfig } from '../schemas'
 import { useCmsContent } from '../hooks/useCmsContent'
@@ -27,6 +27,14 @@ export default function ThemeEditor() {
     },
   })
   const { isDirty } = useFormState({ control })
+
+  // Each color field is wired via useController so the color picker and the hex
+  // text input share one RHF registration — calling register() twice for the same
+  // field name causes conflicts and breaks the sync between the two inputs.
+  const primaryColorCtrl = useController({ name: 'primaryColor', control })
+  const secondaryColorCtrl = useController({ name: 'secondaryColor', control })
+  const accentColorCtrl = useController({ name: 'accentColor', control })
+  const overlayColorCtrl = useController({ name: 'overlaySettings.color', control })
 
   useEffect(() => {
     if (data) reset(data)
@@ -73,8 +81,16 @@ export default function ThemeEditor() {
               htmlFor="primaryColor"
             />
             <div className="flex items-center gap-2">
-              <input id="primaryColor" type="color" {...register('primaryColor')} className="w-10 h-9 rounded border border-zinc-700 bg-transparent cursor-pointer" />
-              <input {...register('primaryColor')} className={inputClass} placeholder="#e11d48" />
+              <input id="primaryColor" type="color"
+                value={primaryColorCtrl.field.value ?? '#e11d48'}
+                onChange={e => primaryColorCtrl.field.onChange(e.target.value)}
+                onBlur={primaryColorCtrl.field.onBlur}
+                className="w-10 h-9 rounded border border-zinc-700 bg-transparent cursor-pointer" />
+              <input
+                value={primaryColorCtrl.field.value ?? ''}
+                onChange={e => primaryColorCtrl.field.onChange(e.target.value)}
+                onBlur={primaryColorCtrl.field.onBlur}
+                className={inputClass} placeholder="#e11d48" />
             </div>
             {errors.primaryColor && <p className="text-red-500 text-xs mt-1">{errors.primaryColor.message}</p>}
           </div>
@@ -85,8 +101,16 @@ export default function ThemeEditor() {
               htmlFor="secondaryColor"
             />
             <div className="flex items-center gap-2">
-              <input id="secondaryColor" type="color" {...register('secondaryColor')} className="w-10 h-9 rounded border border-zinc-700 bg-transparent cursor-pointer" />
-              <input {...register('secondaryColor')} className={inputClass} placeholder="#18181b" />
+              <input id="secondaryColor" type="color"
+                value={secondaryColorCtrl.field.value ?? '#18181b'}
+                onChange={e => secondaryColorCtrl.field.onChange(e.target.value)}
+                onBlur={secondaryColorCtrl.field.onBlur}
+                className="w-10 h-9 rounded border border-zinc-700 bg-transparent cursor-pointer" />
+              <input
+                value={secondaryColorCtrl.field.value ?? ''}
+                onChange={e => secondaryColorCtrl.field.onChange(e.target.value)}
+                onBlur={secondaryColorCtrl.field.onBlur}
+                className={inputClass} placeholder="#18181b" />
             </div>
             {errors.secondaryColor && <p className="text-red-500 text-xs mt-1">{errors.secondaryColor.message}</p>}
           </div>
@@ -97,8 +121,16 @@ export default function ThemeEditor() {
               htmlFor="accentColor"
             />
             <div className="flex items-center gap-2">
-              <input id="accentColor" type="color" {...register('accentColor')} className="w-10 h-9 rounded border border-zinc-700 bg-transparent cursor-pointer" />
-              <input {...register('accentColor')} className={inputClass} placeholder="#dc2626" />
+              <input id="accentColor" type="color"
+                value={accentColorCtrl.field.value ?? '#dc2626'}
+                onChange={e => accentColorCtrl.field.onChange(e.target.value)}
+                onBlur={accentColorCtrl.field.onBlur}
+                className="w-10 h-9 rounded border border-zinc-700 bg-transparent cursor-pointer" />
+              <input
+                value={accentColorCtrl.field.value ?? ''}
+                onChange={e => accentColorCtrl.field.onChange(e.target.value)}
+                onBlur={accentColorCtrl.field.onBlur}
+                className={inputClass} placeholder="#dc2626" />
             </div>
             {errors.accentColor && <p className="text-red-500 text-xs mt-1">{errors.accentColor.message}</p>}
           </div>
@@ -152,8 +184,16 @@ export default function ThemeEditor() {
                       htmlFor="overlayColor"
                     />
                     <div className="flex items-center gap-2">
-                      <input id="overlayColor" type="color" {...register('overlaySettings.color')} className="w-10 h-9 rounded border border-zinc-700 bg-transparent cursor-pointer" />
-                      <input {...register('overlaySettings.color')} className={inputClass} placeholder="#000000" />
+                      <input id="overlayColor" type="color"
+                        value={overlayColorCtrl.field.value ?? '#000000'}
+                        onChange={e => overlayColorCtrl.field.onChange(e.target.value)}
+                        onBlur={overlayColorCtrl.field.onBlur}
+                        className="w-10 h-9 rounded border border-zinc-700 bg-transparent cursor-pointer" />
+                      <input
+                        value={overlayColorCtrl.field.value ?? ''}
+                        onChange={e => overlayColorCtrl.field.onChange(e.target.value)}
+                        onBlur={overlayColorCtrl.field.onBlur}
+                        className={inputClass} placeholder="#000000" />
                     </div>
                   </div>
                   <div>

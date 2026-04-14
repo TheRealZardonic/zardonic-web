@@ -208,12 +208,12 @@ describe('LivePreviewPane', () => {
     expect(screen.getByText(/Save your changes and visit the site/i)).toBeInTheDocument()
   })
 
-  it('still renders the toolbar when supportsPreview is false', () => {
+  it('does not render device toggle buttons when supportsPreview is false', () => {
     render(
       <LivePreviewPane sectionId="gigs" supportsPreview={false} />,
     )
-    // Device toggles still present (toolbar is always rendered)
-    expect(screen.getByRole('button', { name: /preview at desktop width/i })).toBeInTheDocument()
+    // Device toggles must NOT appear — they are only relevant when preview is active
+    expect(screen.queryByRole('button', { name: /preview at desktop width/i })).not.toBeInTheDocument()
   })
 
   it('renders an iframe when supportsPreview is true', () => {

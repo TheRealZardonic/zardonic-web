@@ -25,28 +25,59 @@ import {
   Calendar,
   HardDrive,
   Shield,
+  Loader2,
+  Check,
 } from 'lucide-react'
 import { useCmsEdit } from './CmsEditContext'
 import { getFieldsForSchema, SCHEMA_ROUTE_MAP } from './schemas'
 import { SchemaFormRenderer } from './components/SchemaFormRenderer'
+import { useCmsContent } from './hooks/useCmsContent'
 
 // ─── Schema-driven inline editor panel ───────────────────────────────────────
 
 /** Schema-driven inline editor panel shown below the nav when a schema is active. */
 function InlineEditorPanel({ schemaName }: { schemaName: string }) {
+  const { data, save } = useCmsContent<Record<string, string | number | boolean>>(`zd-cms:${schemaName}`)
   const [values, setValues] = useState<Record<string, string | number | boolean>>({})
+  const [isSaving, setIsSaving] = useState(false)
+
+  // Seed local state once remote data arrives (first load only)
+  const [seeded, setSeeded] = useState(false)
+  if (!seeded && data !== null) {
+    setValues(data)
+    setSeeded(true)
+  }
 
   const allFields = getFieldsForSchema(schemaName)
 
   if (allFields.length === 0) return null
 
+  const handleSave = async () => {
+    setIsSaving(true)
+    try {
+      await save(values, false)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   return (
     <div className="border-t border-zinc-800 bg-[#0d0d0d]">
-      <div className="px-3 py-2 flex items-center border-b border-zinc-800/50">
+      <div className="px-3 py-2 flex items-center justify-between border-b border-zinc-800/50">
         <span className="text-xs font-mono uppercase tracking-widest text-zinc-500 flex items-center gap-1.5">
           <Pencil size={11} />
           {schemaName}
         </span>
+        <button
+          type="button"
+          onClick={() => void handleSave()}
+          disabled={isSaving}
+          className="flex items-center gap-1 text-[10px] font-mono text-zinc-500 hover:text-zinc-200 disabled:opacity-50 transition-colors"
+          aria-label="Save inline editor changes"
+        >
+          {isSaving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />}
+          Save
+        </button>
       </div>
 
       <div className="px-2 py-3 max-h-80 overflow-y-auto">

@@ -28,7 +28,7 @@
  * Note: This component does NOT handle save/publish — wire those in the parent.
  */
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { ChevronDown } from 'lucide-react'
 import type { AdminSectionSchema, AdminFieldDefinition, AdminFieldGroup } from '@/lib/admin-section-schema'
 import {
@@ -297,13 +297,25 @@ interface FieldGroupPanelProps {
   disabled?: boolean
   /** Force expanded state from parent (for expand/collapse all). */
   forceExpanded?: boolean
+  /** Called when the user manually toggles the panel so the parent can return per-group control. */
+  onManualToggle?: () => void
 }
 
-function FieldGroupPanel({ group, fields, data, errors, onFieldChange, disabled, forceExpanded }: FieldGroupPanelProps) {
+function FieldGroupPanel({ group, fields, data, errors, onFieldChange, disabled, forceExpanded, onManualToggle }: FieldGroupPanelProps) {
   const [localExpanded, setLocalExpanded] = useState(group.defaultExpanded ?? false)
 
-  // When forceExpanded changes externally, sync the local state
-  const expanded = forceExpanded !== undefined ? forceExpanded : localExpanded
+  // Sync local state when expand/collapse-all is invoked from the parent
+  useEffect(() => {
+    if (forceExpanded !== undefined) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setLocalExpanded(forceExpanded)
+    }
+  }, [forceExpanded])
+
+  // Once synced via forceExpanded we use localExpanded as the single source of
+  // truth so that individual group toggles work correctly without requiring the
+  // parent to be aware of each group's state.
+  const expanded = localExpanded
 
   if (fields.length === 0) return null
 
@@ -328,7 +340,12 @@ function FieldGroupPanel({ group, fields, data, errors, onFieldChange, disabled,
       {/* Group header */}
       <button
         type="button"
-        onClick={() => setLocalExpanded(v => !v)}
+        onClick={() => {
+          setLocalExpanded(v => !v)
+          // Tell the parent to stop forcing a global expanded/collapsed state so
+          // this individual toggle takes effect immediately.
+          onManualToggle?.()
+        }}
         className={`flex items-center gap-2 w-full px-3 py-2 transition-colors text-left ${
           hasErrors
             ? 'bg-red-900/10 hover:bg-red-900/20'
@@ -418,6 +435,15 @@ export function SectionEditorFactory<T extends Record<string, unknown>>({
   // null = each group controls itself, true = all expanded, false = all collapsed
   const [allExpanded, setAllExpanded] = useState<boolean | null>(null)
 
+  // Keep a ref to the latest data so handleFieldChange can spread it
+  // without `data` appearing in its dependency array (which would recreate
+  // the callback — and therefore all child FieldRenderer instances — on
+  // every single keystroke).
+  const dataRef = useRef(data)
+  useEffect(() => {
+    dataRef.current = data
+  }, [data])
+
   const handleFieldChange = useCallback(
     (key: string, val: unknown) => {
       const fieldDef = schema.fields.find(f => f.key === key)
@@ -430,9 +456,9 @@ export function SectionEditorFactory<T extends Record<string, unknown>>({
           return next
         })
       }
-      onChange({ ...data, [key]: val })
+      onChange({ ...dataRef.current, [key]: val } as T)
     },
-    [schema.fields, data, onChange],
+    [schema.fields, onChange],
   )
 
   // Merge external + internal errors (external wins)
@@ -527,6 +553,7 @@ export function SectionEditorFactory<T extends Record<string, unknown>>({
             onFieldChange={handleFieldChange}
             disabled={disabled}
             forceExpanded={allExpanded !== null ? allExpanded : undefined}
+            onManualToggle={() => setAllExpanded(null)}
           />
         )
       })}
