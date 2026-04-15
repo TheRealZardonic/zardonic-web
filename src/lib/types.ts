@@ -114,9 +114,15 @@ export interface AnimationSettings {
   glitchFrequency?: number
   // Video background options
   backgroundVideoUrl?: string
+  backgroundVideoMobileUrl?: string
   backgroundVideoOpacity?: number
   /** 'loop' = auto-playing looping video (default). 'scroll' = video playback driven by scroll position. */
   backgroundVideoMode?: 'loop' | 'scroll'
+  /**
+   * Optional animated effect rendered above the video layer.
+   * 'none' or undefined = no overlay effect.
+   */
+  backgroundVideoOverlayEffect?: 'none' | 'circuit' | 'cyberpunk-hud' | 'matrix' | 'stars' | 'cloud-chamber' | 'glitch-grid'
 }
 
 export interface LoaderTexts {

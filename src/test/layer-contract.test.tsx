@@ -29,8 +29,14 @@ describe('LAYERS z-index contract invariants', () => {
   it('CONTENT is strictly above ANIMATED_BG', () => {
     expect(LAYERS.CONTENT).toBeGreaterThan(LAYERS.ANIMATED_BG)
     // Concrete values must match the CSS tokens in src/layers.css
-    expect(LAYERS.ANIMATED_BG).toBe(1)
+    expect(LAYERS.ANIMATED_BG).toBe(2)
     expect(LAYERS.CONTENT).toBe(10)
+  })
+
+  it('BG_VIDEO is between BACKGROUND_IMAGE and ANIMATED_BG', () => {
+    expect(LAYERS.BG_VIDEO).toBeGreaterThan(LAYERS.BACKGROUND_IMAGE)
+    expect(LAYERS.BG_VIDEO).toBeLessThan(LAYERS.ANIMATED_BG)
+    expect(LAYERS.BG_VIDEO).toBe(1)
   })
 
   it('NAV is above HUD', () => {
@@ -253,9 +259,9 @@ describe('App layout: sections wrapper z-index', () => {
     expect(LAYERS.CONTENT).toBe(10)
   })
 
-  it('ANIMATED_BG layer value matches the CSS token --z-bg-animated (1)', () => {
-    // --z-bg-animated in layers.css is 1. Must match LAYERS.ANIMATED_BG.
-    expect(LAYERS.ANIMATED_BG).toBe(1)
+  it('ANIMATED_BG layer value matches the CSS token --z-bg-animated (2)', () => {
+    // --z-bg-animated in layers.css is 2. Must match LAYERS.ANIMATED_BG.
+    expect(LAYERS.ANIMATED_BG).toBe(2)
   })
 })
 

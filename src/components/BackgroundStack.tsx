@@ -96,18 +96,7 @@ function AnimatedBackgroundLayer({ type, hudTexts, transparent, animSettings }: 
   if (bg === 'stars') return <Suspense fallback={null}><StarField transparent={transparent} starCount={animSettings?.starCount} starSpeed={animSettings?.starSpeed} /></Suspense>
   if (bg === 'cloud-chamber') return <Suspense fallback={null}><CloudChamberBackground glowColor={animSettings?.cloudGlowColor} /></Suspense>
   if (bg === 'glitch-grid') return <Suspense fallback={null}><GlitchGridBackground transparent={transparent} gridSize={animSettings?.glitchGridSize} scanSpeed={animSettings?.glitchScanSpeed} glitchFrequency={animSettings?.glitchFrequency} /></Suspense>
-  if (bg === 'video') {
-    if (!animSettings?.backgroundVideoUrl) return null
-    return (
-      <VideoBackground
-        videoUrl={animSettings.backgroundVideoUrl}
-        fallbackImageUrl={animSettings.backgroundImageUrl}
-        opacity={animSettings.backgroundVideoOpacity ?? 1}
-        scrollMode={animSettings.backgroundVideoMode === 'scroll'}
-      />
-    )
-  }
-  // 'minimal' – no decorative background
+  // 'minimal' or 'video' handled at BackgroundStack level — no fallback here
   return null
 }
 
@@ -129,8 +118,9 @@ interface BackgroundStackProps {
  * BackgroundStack — consolidates all background layers behind page content.
  *
  * Rendering order (bottom to top):
- *   1. Background image (--z-bg-image = 0)  — parallax-optional static photo
- *   2. Animated overlay (--z-bg-animated = 1) — MatrixRain, CircuitBg, VideoBackground, etc.
+ *   1. Background image (--z-bg-image = 0)     — parallax-optional static photo
+ *   2. Video background (--z-bg-video = 1)      — full-screen video with fallback image embedded
+ *   3. Animated overlay (--z-bg-animated = 2)   — MatrixRain, CircuitBg, etc. or video overlay effect
  *
  * All elements are `position: fixed; pointer-events: none`.
  */
@@ -147,7 +137,7 @@ export function BackgroundStack({
 }: BackgroundStackProps) {
   return (
     <>
-      {/* Depth layer --z-bg-image — background image (deepest). */}
+      {/* Layer 0 (--z-bg-image): Static background image — always render when set */}
       {backgroundImageUrl && (
         <BackgroundImage
           url={backgroundImageUrl}
@@ -156,10 +146,23 @@ export function BackgroundStack({
           parallax={backgroundImageParallax}
         />
       )}
-      {/* Depth layer --z-bg-animated — animated overlay (above image, below content).
-          All animated background types (including VideoBackground) render inside this
-          wrapper so z-index is managed in one place. */}
-      {animatedBackgroundEnabled && (!backgroundImageUrl || backgroundImageOverlay) && (
+
+      {/* Layer 1 (--z-bg-video): Video — independent of background image, has its own z-index.
+          VideoBackground manages its own zIndex via --z-bg-video internally. */}
+      {animatedBackgroundEnabled && backgroundType === 'video' && animSettings?.backgroundVideoUrl && (
+        <VideoBackground
+          videoUrl={animSettings.backgroundVideoUrl}
+          mobileVideoUrl={animSettings.backgroundVideoMobileUrl}
+          fallbackImageUrl={animSettings.backgroundImageUrl}
+          opacity={animSettings.backgroundVideoOpacity ?? 1}
+          scrollMode={animSettings.backgroundVideoMode === 'scroll'}
+          fit={animSettings.backgroundImageFit}
+        />
+      )}
+
+      {/* Layer 2 (--z-bg-animated): Animated effect.
+          Case A: No video active — render effect as sole animated layer */}
+      {animatedBackgroundEnabled && backgroundType !== 'video' && backgroundType !== 'minimal' && (
         <div
           className="fixed inset-0 pointer-events-none"
           style={{ zIndex: 'var(--z-bg-animated)' as React.CSSProperties['zIndex'] }}
@@ -168,6 +171,25 @@ export function BackgroundStack({
             type={backgroundType}
             hudTexts={hudTexts}
             transparent={Boolean(backgroundImageUrl && backgroundImageOverlay)}
+            animSettings={animSettings}
+          />
+        </div>
+      )}
+
+      {/* Layer 2 (--z-bg-animated): Animated effect.
+          Case B: Video active AND an overlay effect selected — render effect above the video */}
+      {animatedBackgroundEnabled &&
+        backgroundType === 'video' &&
+        animSettings?.backgroundVideoOverlayEffect &&
+        animSettings.backgroundVideoOverlayEffect !== 'none' && (
+        <div
+          className="fixed inset-0 pointer-events-none"
+          style={{ zIndex: 'var(--z-bg-animated)' as React.CSSProperties['zIndex'] }}
+        >
+          <AnimatedBackgroundLayer
+            type={animSettings.backgroundVideoOverlayEffect as BackgroundType}
+            hudTexts={hudTexts}
+            transparent={true}
             animSettings={animSettings}
           />
         </div>

@@ -12,11 +12,18 @@ vi.mock('@/lib/image-cache', () => ({
   toDirectImageUrl: (url: string) => url,
 }))
 
+// Mock useIsMobile — default to desktop (false)
+vi.mock('@/hooks/use-mobile', () => ({
+  useIsMobile: vi.fn().mockReturnValue(false),
+}))
+
 import { shouldUseLiteMode } from '@/lib/device-capability'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 describe('VideoBackground — capable device', () => {
   beforeEach(() => {
     vi.mocked(shouldUseLiteMode).mockReturnValue(false)
+    vi.mocked(useIsMobile).mockReturnValue(false)
   })
 
   it('renders a <video> element by default', () => {
@@ -38,15 +45,18 @@ describe('VideoBackground — capable device', () => {
     expect(video.playsInline).toBe(true)
   })
 
-  it('sets poster when fallbackImageUrl is provided', () => {
+  it('renders fallback <img> behind video when fallbackImageUrl is provided', () => {
     const { container } = render(
       <VideoBackground
         videoUrl="https://example.com/bg.mp4"
         fallbackImageUrl="https://example.com/poster.jpg"
       />
     )
-    const video = container.querySelector('video') as HTMLVideoElement
-    expect(video.poster).toBe('https://example.com/poster.jpg')
+    const img = container.querySelector('img') as HTMLImageElement
+    expect(img).not.toBeNull()
+    expect(img.src).toContain('poster.jpg')
+    // The video must also be present
+    expect(container.querySelector('video')).not.toBeNull()
   })
 
   it('is aria-hidden', () => {
@@ -56,11 +66,21 @@ describe('VideoBackground — capable device', () => {
     const video = container.querySelector('video')
     expect(video?.getAttribute('aria-hidden')).toBe('true')
   })
+
+  it('renders a wrapper div with --z-bg-video zIndex', () => {
+    const { container } = render(
+      <VideoBackground videoUrl="https://example.com/bg.mp4" />
+    )
+    const wrapper = container.firstElementChild as HTMLElement
+    expect(wrapper.tagName).toBe('DIV')
+    expect(wrapper.style.zIndex).toContain('--z-bg-video')
+  })
 })
 
 describe('VideoBackground — lite mode device', () => {
   beforeEach(() => {
     vi.mocked(shouldUseLiteMode).mockReturnValue(true)
+    vi.mocked(useIsMobile).mockReturnValue(false)
   })
 
   it('renders an <img> instead of <video> in lite mode', () => {
@@ -99,13 +119,71 @@ describe('VideoBackground — lite mode device', () => {
 describe('VideoBackground — opacity prop', () => {
   beforeEach(() => {
     vi.mocked(shouldUseLiteMode).mockReturnValue(false)
+    vi.mocked(useIsMobile).mockReturnValue(false)
   })
 
-  it('applies opacity style to the video element', () => {
+  it('applies opacity style to the video element only (not the wrapper)', () => {
     const { container } = render(
       <VideoBackground videoUrl="https://example.com/bg.mp4" opacity={0.5} />
     )
     const video = container.querySelector('video') as HTMLVideoElement
     expect(video.style.opacity).toBe('0.5')
+    // Wrapper should not have opacity set
+    const wrapper = container.firstElementChild as HTMLElement
+    expect(wrapper.style.opacity).toBe('')
+  })
+
+  it('fallback image always has opacity 1 regardless of video opacity', () => {
+    const { container } = render(
+      <VideoBackground
+        videoUrl="https://example.com/bg.mp4"
+        fallbackImageUrl="https://example.com/poster.jpg"
+        opacity={0.2}
+      />
+    )
+    const img = container.querySelector('img') as HTMLImageElement
+    expect(img.style.opacity).toBe('1')
+    const video = container.querySelector('video') as HTMLVideoElement
+    expect(video.style.opacity).toBe('0.2')
   })
 })
+
+describe('VideoBackground — mobileVideoUrl', () => {
+  beforeEach(() => {
+    vi.mocked(shouldUseLiteMode).mockReturnValue(false)
+  })
+
+  it('uses mobileVideoUrl on mobile viewports', () => {
+    vi.mocked(useIsMobile).mockReturnValue(true)
+    const { container } = render(
+      <VideoBackground
+        videoUrl="https://example.com/desktop.mp4"
+        mobileVideoUrl="https://example.com/mobile.mp4"
+      />
+    )
+    const video = container.querySelector('video') as HTMLVideoElement
+    expect(video.src).toContain('mobile.mp4')
+  })
+
+  it('uses videoUrl on desktop viewports', () => {
+    vi.mocked(useIsMobile).mockReturnValue(false)
+    const { container } = render(
+      <VideoBackground
+        videoUrl="https://example.com/desktop.mp4"
+        mobileVideoUrl="https://example.com/mobile.mp4"
+      />
+    )
+    const video = container.querySelector('video') as HTMLVideoElement
+    expect(video.src).toContain('desktop.mp4')
+  })
+
+  it('falls back to videoUrl when mobileVideoUrl is not provided on mobile', () => {
+    vi.mocked(useIsMobile).mockReturnValue(true)
+    const { container } = render(
+      <VideoBackground videoUrl="https://example.com/desktop.mp4" />
+    )
+    const video = container.querySelector('video') as HTMLVideoElement
+    expect(video.src).toContain('desktop.mp4')
+  })
+})
+
