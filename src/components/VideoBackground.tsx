@@ -2,18 +2,20 @@ import { useEffect, useRef, useState, memo } from 'react'
 import { shouldUseLiteMode } from '@/lib/device-capability'
 import { toDirectImageUrl } from '@/lib/image-cache'
 import { useLenisContext } from '@/contexts/LenisContext'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 interface VideoBackgroundProps {
   /** URL of the video file (MP4/WebM). Must be a Vercel Blob URL for reliable playback. */
   videoUrl: string
+  /** Optional separate video URL for mobile viewports (< 768px). Falls back to videoUrl if not set. */
+  mobileVideoUrl?: string
   /**
    * Fallback image URL shown when:
    *   - Device is in lite mode (reduced-motion / slow connection / low-end HW)
    *   - Video fails to load or play
-   *   - While the video is buffering (poster)
    */
   fallbackImageUrl?: string
-  /** Overall layer opacity (0–1). Default: 1. */
+  /** Overall layer opacity applied to the video element only (0–1). Default: 1. */
   opacity?: number
   /** CSS object-fit for the video/image. Default: 'cover'. */
   fit?: 'cover' | 'contain' | 'fill' | 'none'
@@ -25,8 +27,24 @@ interface VideoBackgroundProps {
   scrollMode?: boolean
 }
 
+const wrapperStyle: React.CSSProperties = {
+  position: 'fixed',
+  inset: 0,
+  zIndex: 'var(--z-bg-video)' as React.CSSProperties['zIndex'],
+  pointerEvents: 'none',
+}
+
+const sharedMediaStyle: React.CSSProperties = {
+  position: 'absolute',
+  inset: 0,
+  width: '100%',
+  height: '100%',
+  objectPosition: 'center',
+  display: 'block',
+}
+
 /**
- * VideoBackground — fixed full-screen video at `--z-bg-animated` (z=1).
+ * VideoBackground — fixed full-screen video at `--z-bg-video` (z=1).
  *
  * Supports two modes:
  *   - **loop** (default): `autoPlay muted loop playsInline`
@@ -39,13 +57,16 @@ interface VideoBackgroundProps {
  * 2. Video `onError` or `onStalled` → switch from video to `<img>`
  * 3. No fallback image provided → render nothing when video is not available
  *
- * The `poster` attribute is always set to the fallback image URL so the
- * browser renders the static image instantly while the video buffers.
+ * The fallback image is rendered as a true `<img>` element directly behind the
+ * `<video>` inside the same wrapper. Opacity is applied only to the video, so
+ * reducing video opacity reveals the fallback image — not a separate background
+ * layer.
  *
  * Videos must be uploaded to Vercel Blob for reliable playback and seeking support.
  */
 const VideoBackground = memo(function VideoBackground({
   videoUrl,
+  mobileVideoUrl,
   fallbackImageUrl,
   opacity = 1,
   fit = 'cover',
@@ -54,9 +75,13 @@ const VideoBackground = memo(function VideoBackground({
   const [useFallback, setUseFallback] = useState<boolean>(() => shouldUseLiteMode())
   const videoRef = useRef<HTMLVideoElement>(null)
 
-  // Always call useLenisContext (hooks must not be called conditionally).
+  // Always call hooks unconditionally.
   // scrollY is only used when scrollMode === true.
   const { scrollY } = useLenisContext()
+  const isMobile = useIsMobile()
+
+  // Select desktop or mobile video URL based on viewport width
+  const activeVideoUrl = (isMobile && mobileVideoUrl) ? mobileVideoUrl : videoUrl
 
   // ── Loop mode: attempt autoplay ──────────────────────────────────────────
   useEffect(() => {
@@ -90,7 +115,7 @@ const VideoBackground = memo(function VideoBackground({
       video.removeEventListener('progress', handleProgress)
       video.removeEventListener('playing', handleProgress)
     }
-  }, [useFallback, scrollMode, videoUrl])
+  }, [useFallback, scrollMode, activeVideoUrl])
 
   // ── Scroll mode: drive currentTime from Lenis scrollY ────────────────────
   useEffect(() => {
@@ -122,69 +147,71 @@ const VideoBackground = memo(function VideoBackground({
     }
   }, [scrollMode, useFallback])
 
-  const sharedStyle: React.CSSProperties = {
-    position: 'fixed',
-    inset: 0,
-    width: '100%',
-    height: '100%',
-    objectFit: fit,
-    objectPosition: 'center',
-    pointerEvents: 'none',
-    opacity,
-    display: 'block',
-  }
+  const fallbackImgNode = fallbackImageUrl ? (
+    <img
+      src={toDirectImageUrl(fallbackImageUrl, { output: 'webp', q: 80 })}
+      alt=""
+      aria-hidden="true"
+      style={{ ...sharedMediaStyle, objectFit: fit, opacity: 1 }}
+      loading="eager"
+      fetchPriority="high"
+      decoding="async"
+    />
+  ) : null
 
-  // Lite mode or fallback: render static image only
+  // Lite mode or video error fallback: render wrapper with static image only
   if (useFallback) {
     if (!fallbackImageUrl) return null
     return (
-      <img
-        src={toDirectImageUrl(fallbackImageUrl, { output: 'webp', q: 80 })}
-        alt=""
-        aria-hidden="true"
-        style={sharedStyle}
-        loading="eager"
-        fetchPriority="high"
-        decoding="async"
-      />
+      <div aria-hidden="true" style={wrapperStyle}>
+        {fallbackImgNode}
+      </div>
     )
   }
 
-  const posterUrl = fallbackImageUrl
-    ? toDirectImageUrl(fallbackImageUrl, { output: 'webp', q: 80 })
-    : undefined
-
   if (scrollMode) {
     return (
-      <video
-        ref={videoRef}
-        src={videoUrl}
-        muted
-        playsInline
-        aria-hidden="true"
-        poster={posterUrl}
-        preload="auto"
-        style={{
-          ...sharedStyle,
-          willChange: 'auto',
-        }}
-      />
+      <div aria-hidden="true" style={wrapperStyle}>
+        {fallbackImgNode}
+        <video
+          ref={videoRef}
+          src={activeVideoUrl}
+          muted
+          playsInline
+          aria-hidden="true"
+          preload="auto"
+          style={{
+            ...sharedMediaStyle,
+            objectFit: fit,
+            opacity,
+            willChange: 'auto',
+          }}
+        />
+      </div>
     )
   }
 
   return (
-    <video
-      ref={videoRef}
-      src={videoUrl}
-      autoPlay
-      muted
-      loop
-      playsInline
-      aria-hidden="true"
-      poster={posterUrl}
-      style={sharedStyle}
-      preload="auto"
-    />
+    <div aria-hidden="true" style={wrapperStyle}>
+      {fallbackImgNode}
+      <video
+        ref={videoRef}
+        src={activeVideoUrl}
+        autoPlay
+        muted
+        loop
+        playsInline
+        aria-hidden="true"
+        preload="auto"
+        style={{
+          ...sharedMediaStyle,
+          objectFit: fit,
+          opacity,
+          willChange: 'transform',
+          transform: 'translateZ(0)',
+        }}
+      />
+    </div>
   )
 })
 

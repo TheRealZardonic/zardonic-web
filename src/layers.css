@@ -8,8 +8,9 @@
  *
  *   ┌─────────────────────────────────────────────────┐
  *   │  bg-image (0)       — static background image   │
- *   │  bg-animated (1)    — animated overlays          │
- *   │  bg-scanline (2)    — CRT scanline background    │
+ *   │  bg-video (1)       — video background layer    │
+ *   │  bg-animated (2)    — animated overlays          │
+ *   │  bg-scanline (3)    — CRT scanline background    │
  *   ├─────────────────────────────────────────────────┤
  *   │  content (10)       — all page sections, footer  │
  *   │  section-fx (15)    — section-local effects      │
@@ -40,8 +41,9 @@
 :root {
   /* Background layers — behind everything */
   --z-bg-image:      0;
-  --z-bg-animated:   1;
-  --z-bg-scanline:   2;
+  --z-bg-video:      1;
+  --z-bg-animated:   2;
+  --z-bg-scanline:   3;
 
   /* Content layer — normal document flow */
   --z-content:       10;

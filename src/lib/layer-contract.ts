@@ -6,7 +6,7 @@
  * runtime styling; these constants allow compile-time invariant checking in tests.
  *
  * Layer architecture (lowest → highest):
- *   BACKGROUND_IMAGE (0) → ANIMATED_BG (1) → BG_SCANLINE (2)
+ *   BACKGROUND_IMAGE (0) → BG_VIDEO (1) → ANIMATED_BG (2) → BG_SCANLINE (3)
  *   → CONTENT (10) → SECTION_FX (15) → HUD (20) → NAV (30)
  *   → GLOBAL_FX (40) → OVERLAY (50) → SYSTEM (60)
  *
@@ -23,12 +23,15 @@
 export const LAYERS = {
   /** Fixed background image – deepest layer, always below everything. */
   BACKGROUND_IMAGE: 0,
+  /** Video background layer – sits above the static background image.
+   *  Renders full-screen video with its own opacity and fallback image. */
+  BG_VIDEO: 1,
   /** Animated overlay effects (MatrixRain, CircuitBackground, etc.).
-   *  MUST be above BACKGROUND_IMAGE, MUST be below CONTENT.
+   *  MUST be above BG_VIDEO and BACKGROUND_IMAGE, MUST be below CONTENT.
    *  MUST NOT paint an opaque background fill when in transparent/overlay mode. */
-  ANIMATED_BG: 1,
+  ANIMATED_BG: 2,
   /** Background CRT scanline – sits above animated background, below content. */
-  BG_SCANLINE: 2,
+  BG_SCANLINE: 3,
   /** All UI content: sections, footer.
    *  MUST be strictly above ANIMATED_BG. */
   CONTENT: 10,
@@ -61,10 +64,14 @@ export type LayerValue = (typeof LAYERS)[LayerKey]
 
 /** Invariants the test suite enforces. Any violation breaks the build. */
 export const LAYER_INVARIANTS = {
+  /** Video layer must be above the static background image. */
+  BG_VIDEO_ABOVE_IMAGE: LAYERS.BG_VIDEO > LAYERS.BACKGROUND_IMAGE,
+  /** Animated background must always be above the video layer. */
+  ANIMATED_BG_ABOVE_VIDEO: LAYERS.ANIMATED_BG > LAYERS.BG_VIDEO,
   /** Animated background must always be below content. */
   ANIMATED_BG_BELOW_CONTENT: LAYERS.ANIMATED_BG < LAYERS.CONTENT,
   /** Background image must always be the deepest layer. */
-  BG_IMAGE_DEEPEST: LAYERS.BACKGROUND_IMAGE < LAYERS.ANIMATED_BG,
+  BG_IMAGE_DEEPEST: LAYERS.BACKGROUND_IMAGE < LAYERS.BG_VIDEO,
   /** Global FX effects must always be above content. */
   GLOBAL_FX_ABOVE_CONTENT: LAYERS.GLOBAL_FX > LAYERS.CONTENT,
   /** Navigation must be above content and HUD. */

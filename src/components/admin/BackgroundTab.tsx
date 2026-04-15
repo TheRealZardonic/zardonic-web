@@ -27,6 +27,7 @@ export default function BackgroundTab({
   const currentBg = anim.backgroundType ?? 'circuit'
 
   const { upload: uploadVideo, progress: videoUploadProgress, isUploading: isUploadingVideo } = useVideoUpload()
+  const { upload: uploadVideoMobile, progress: videoMobileUploadProgress, isUploading: isUploadingVideoMobile } = useVideoUpload()
 
   const [videoCheckResult, setVideoCheckResult] = useState<VideoOptimizationResult | null>(null)
   const [isCheckingVideo, setIsCheckingVideo] = useState(false)
@@ -46,6 +47,14 @@ export default function BackgroundTab({
     if (result) updateAnim({ backgroundVideoUrl: result.url })
     e.target.value = ''
   }, [uploadVideo, updateAnim])
+
+  const handleMobileVideoUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const result = await uploadVideoMobile(file)
+    if (result) updateAnim({ backgroundVideoMobileUrl: result.url })
+    e.target.value = ''
+  }, [uploadVideoMobile, updateAnim])
 
   const handleCheckVideo = useCallback(async () => {
     const url = anim.backgroundVideoUrl
@@ -439,6 +448,69 @@ export default function BackgroundTab({
               step={5}
               onValueChange={([v]) => updateAnim({ backgroundVideoOpacity: v / 100 })}
             />
+          </div>
+
+          {/* Mobile Video Source */}
+          <div className="space-y-2">
+            <Label className="font-mono text-xs text-muted-foreground">Mobile Video Source (optional)</Label>
+            <div className="flex gap-2">
+              <Input
+                value={anim.backgroundVideoMobileUrl ?? ''}
+                onChange={e => updateAnim({ backgroundVideoMobileUrl: e.target.value || undefined })}
+                className="font-mono text-xs flex-1"
+                placeholder="https://... (Mobil-Video, optional)"
+              />
+              <label className="cursor-pointer">
+                <Button variant="outline" size="sm" asChild disabled={isUploadingVideoMobile}>
+                  <span className="font-mono text-xs">
+                    {isUploadingVideoMobile ? `${videoMobileUploadProgress}%` : <Upload className="w-3 h-3" />}
+                  </span>
+                </Button>
+                <input
+                  type="file"
+                  accept="video/mp4,video/webm"
+                  className="hidden"
+                  onChange={handleMobileVideoUpload}
+                />
+              </label>
+            </div>
+            {videoMobileUploadProgress > 0 && videoMobileUploadProgress < 100 && (
+              <div className="w-full bg-border rounded-full h-1">
+                <div className="bg-primary h-1 rounded-full transition-all" style={{ width: `${videoMobileUploadProgress}%` }} />
+              </div>
+            )}
+            <p className="font-mono text-[10px] text-muted-foreground/60">
+              Wird auf Geräten unter 768px Breite statt des Desktop-Videos verwendet.
+            </p>
+          </div>
+
+          {/* Overlay effect above video */}
+          <div className="space-y-1">
+            <Label className="font-mono text-xs text-muted-foreground">Overlay-Effekt über Video</Label>
+            <div className="grid grid-cols-2 gap-1">
+              {([
+                { value: 'none', label: 'Keiner', desc: 'Nur Video' },
+                { value: 'circuit', label: 'Circuit', desc: 'Rote Circuit-Traces' },
+                { value: 'matrix', label: 'Matrix', desc: 'Matrix Rain' },
+                { value: 'glitch-grid', label: 'Glitch Grid', desc: 'Glitch-Raster' },
+                { value: 'stars', label: 'Stars', desc: 'Sternenfeld' },
+                { value: 'cloud-chamber', label: 'Cloud Chamber', desc: 'Partikel-Tracks' },
+                { value: 'cyberpunk-hud', label: 'Cyberpunk HUD', desc: 'HUD-Overlay' },
+              ] as { value: string; label: string; desc: string }[]).map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => updateAnim({ backgroundVideoOverlayEffect: opt.value === 'none' ? undefined : opt.value as AnimationSettings['backgroundVideoOverlayEffect'] })}
+                  className={`text-left px-2 py-2 border rounded font-mono text-xs transition-colors ${
+                    (anim.backgroundVideoOverlayEffect ?? 'none') === opt.value
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border text-muted-foreground hover:border-primary/40'
+                  }`}
+                >
+                  <div className="font-semibold">{opt.label}</div>
+                  <div className="text-[10px] text-muted-foreground/60">{opt.desc}</div>
+                </button>
+              ))}
+            </div>
           </div>
         </section>
       )}
