@@ -167,6 +167,7 @@ describe('vercel.json Content-Security-Policy', () => {
     const allowed = ["'self'", 'https://api.spotify.com', 'https://open.spotify.com',
       'https://spclient.wg.spotify.com',
       'https://api.song.link', 'https://rest.bandsintown.com', 'https://itunes.apple.com', 'https://wsrv.nl',
+      'https://vercel.com',  // required for @vercel/blob/client SDK (client-side video upload token exchange)
       'https://*.public.blob.vercel-storage.com']
     const domains = connectSrcValue.split(/\s+/)
     for (const domain of domains) {
