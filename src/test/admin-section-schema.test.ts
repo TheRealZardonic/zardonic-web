@@ -313,3 +313,30 @@ describe('AdminSectionSchema validate function (impressum)', () => {
     expect(Object.keys(errors)).toHaveLength(0)
   })
 })
+
+// ─── AdminSectionSchema group field ──────────────────────────────────────────
+
+describe('AdminSectionSchema group field', () => {
+  it('all registered sections have a valid group or undefined group', async () => {
+    // Import the barrel to register all schemas
+    await import('@/cms/section-schemas')
+    const { getSections } = await import('@/lib/admin-schema-registry')
+    const validGroups = ['content', 'media', 'configuration', 'legal', undefined]
+    for (const section of getSections()) {
+      expect(
+        validGroups.includes(section.group),
+        `Section "${section.sectionId}" has invalid group "${String(section.group)}"`,
+      ).toBe(true)
+    }
+  })
+
+  it('all 15 schemas have a group set', async () => {
+    const schemas = await loadAllSchemas()
+    for (const schema of schemas) {
+      expect(
+        schema.group,
+        `Section "${schema.sectionId}" is missing the group field`,
+      ).toBeDefined()
+    }
+  })
+})

@@ -196,3 +196,17 @@ describe('SECTION_REGISTRY', () => {
     expect(paddingTop?.disclosure).toBe('expert')
   })
 })
+
+describe('AdminSectionSchema registry completeness', () => {
+  it('all DEFAULT_SECTION_ORDER entries have a registered AdminSectionSchema', async () => {
+    // Side-effect: registers all schemas
+    await import('@/cms/section-schemas')
+    const { hasSection } = await import('@/lib/admin-schema-registry')
+    for (const id of DEFAULT_SECTION_ORDER) {
+      expect(
+        hasSection(id),
+        `Missing AdminSectionSchema for section "${id}" — add it to src/cms/section-schemas/ and register it in src/cms/section-schemas/index.ts`,
+      ).toBe(true)
+    }
+  })
+})

@@ -13,6 +13,7 @@ interface GallerySectionData {
 
 const gallerySectionSchema: AdminSectionSchema<GallerySectionData> = {
   sectionId: 'gallery',
+  group: 'media',
   label: 'Gallery',
   icon: 'Images',
   description: 'Photo gallery section. Manage the image grid displayed on the page.',

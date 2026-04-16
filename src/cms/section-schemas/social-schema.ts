@@ -26,6 +26,7 @@ interface SocialSectionData {
 
 const socialSectionSchema: AdminSectionSchema<SocialSectionData> = {
   sectionId: 'connect',
+  group: 'content',
   label: 'Social / Connect',
   icon: 'ShareNetwork',
   description: 'Social media links and platform profiles displayed in the Connect section.',

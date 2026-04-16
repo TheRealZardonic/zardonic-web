@@ -17,6 +17,7 @@ interface FooterSectionData {
 
 const footerSectionSchema: AdminSectionSchema<FooterSectionData> = {
   sectionId: 'footer',
+  group: 'legal',
   label: 'Footer',
   icon: 'Rows',
   description: 'The page footer. Configure copyright text, contact email, and footer links.',

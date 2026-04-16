@@ -22,6 +22,7 @@ interface SponsoringSectionData {
 
 const sponsoringSectionSchema: AdminSectionSchema<SponsoringSectionData> = {
   sectionId: 'sponsoring',
+  group: 'configuration',
   label: 'Sponsoring',
   icon: 'Star',
   description: 'The sponsoring and endorsements section. Manage sponsor logos and links.',

@@ -20,6 +20,7 @@ interface HeroSectionData {
 
 const heroSectionSchema: AdminSectionSchema<HeroSectionData> = {
   sectionId: 'hero',
+  group: 'content',
   label: 'Hero',
   icon: 'House',
   description: 'The full-bleed top section of the page with artist name, background image, and call-to-action links.',

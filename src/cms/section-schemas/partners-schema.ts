@@ -21,6 +21,7 @@ interface PartnersSectionData {
 
 const partnersSectionSchema: AdminSectionSchema<PartnersSectionData> = {
   sectionId: 'collabs',
+  group: 'configuration',
   label: 'Partners & Friends',
   icon: 'UsersThree',
   description: 'The partners, collaborators, and friends section. Manage partner profiles and links.',

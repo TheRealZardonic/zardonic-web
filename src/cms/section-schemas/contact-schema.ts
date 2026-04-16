@@ -27,6 +27,7 @@ interface ContactSectionData {
 
 const contactSectionSchema: AdminSectionSchema<ContactSectionData> = {
   sectionId: 'contact',
+  group: 'content',
   label: 'Contact',
   icon: 'Envelope',
   description: 'The contact form section. Configure the form fields, labels, and email forwarding.',

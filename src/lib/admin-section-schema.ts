@@ -150,6 +150,26 @@ export interface AdminFieldGroup {
   defaultExpanded?: boolean
 }
 
+// ─── Section Group ────────────────────────────────────────────────────────────
+
+/**
+ * Logical grouping used in the admin dashboard and sidebar.
+ * Sections without a group fall into the implicit "Other" bucket.
+ */
+export type AdminSectionGroup = 'content' | 'media' | 'configuration' | 'legal'
+
+/**
+ * Ordered list of group display configs shared by `AdminDashboard` and `AdminShell`.
+ * This is the single source of truth for group order and labels — no hardcoded
+ * `sectionIds` required. Groups are derived from `AdminSectionSchema.group`.
+ */
+export const ADMIN_SECTION_GROUP_CONFIG: Array<{ id: AdminSectionGroup; label: string }> = [
+  { id: 'content', label: 'Content' },
+  { id: 'media', label: 'Media' },
+  { id: 'configuration', label: 'Configuration' },
+  { id: 'legal', label: 'Legal' },
+]
+
 // ─── Section Schema ───────────────────────────────────────────────────────────
 
 /**
@@ -217,6 +237,13 @@ export interface AdminSectionSchema<T = Record<string, unknown>> {
    * Used when a section has no saved data or when the user clicks "Reset".
    */
   getDefaultData: () => T
+
+  /**
+   * Logical grouping for dashboard and sidebar display.
+   * Determines which collapsible group this section appears under.
+   * Sections without a group are placed under "Other".
+   */
+  group?: AdminSectionGroup
 
   /**
    * Optional cross-field validation function called before save.

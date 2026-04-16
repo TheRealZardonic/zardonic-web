@@ -27,6 +27,7 @@ interface ImpressumSectionData {
 
 const impressumSectionSchema: AdminSectionSchema<ImpressumSectionData> = {
   sectionId: 'impressum',
+  group: 'legal',
   label: 'Impressum / Legal',
   icon: 'Scales',
   description: 'Legal notice (Impressum) shown in the footer overlay. Required by German law (TMG §5).',

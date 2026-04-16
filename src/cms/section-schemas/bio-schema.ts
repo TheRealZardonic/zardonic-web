@@ -20,6 +20,7 @@ interface BioSectionData {
 
 const bioSectionSchema: AdminSectionSchema<BioSectionData> = {
   sectionId: 'bio',
+  group: 'content',
   label: 'Biography',
   icon: 'BookOpen',
   description: 'The biography and story section. Includes rich text narrative, founding date, achievements, and photo gallery.',

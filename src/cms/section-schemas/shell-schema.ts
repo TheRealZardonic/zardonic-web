@@ -21,6 +21,7 @@ interface ShellSectionData {
 
 const shellSectionSchema: AdminSectionSchema<ShellSectionData> = {
   sectionId: 'shell',
+  group: 'configuration',
   label: 'Terminal / Shell',
   icon: 'Terminal',
   description: 'The terminal boot sequence section. Configure the animated text output and system messages.',

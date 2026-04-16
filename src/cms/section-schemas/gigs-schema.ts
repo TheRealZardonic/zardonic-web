@@ -17,6 +17,7 @@ interface GigsSectionData {
 
 const gigsSectionSchema: AdminSectionSchema<GigsSectionData> = {
   sectionId: 'gigs',
+  group: 'content',
   label: 'Gigs / Tour Dates',
   icon: 'CalendarBlank',
   description: 'The upcoming shows and tour dates section. Manage event list and display labels.',

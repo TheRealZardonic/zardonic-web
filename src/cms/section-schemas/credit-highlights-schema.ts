@@ -21,6 +21,7 @@ interface CreditHighlightsSectionData {
 
 const creditHighlightsSectionSchema: AdminSectionSchema<CreditHighlightsSectionData> = {
   sectionId: 'creditHighlights',
+  group: 'configuration',
   label: 'Credit Highlights',
   icon: 'Trophy',
   description: 'Notable credits, labels, festivals, and achievements displayed as a logo grid.',

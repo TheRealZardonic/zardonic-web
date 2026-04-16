@@ -20,6 +20,7 @@ interface MediaSectionData {
 
 const mediaSectionSchema: AdminSectionSchema<MediaSectionData> = {
   sectionId: 'media',
+  group: 'media',
   label: 'Media',
   icon: 'Video',
   description: 'The media section. Manage audio files, YouTube embeds, and downloadable assets.',

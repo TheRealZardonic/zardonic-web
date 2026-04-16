@@ -27,6 +27,7 @@ interface ReleasesSectionData {
 
 const releasesSectionSchema: AdminSectionSchema<ReleasesSectionData> = {
   sectionId: 'releases',
+  group: 'content',
   label: 'Releases',
   icon: 'Disc',
   description: 'The discography section. Shows release cards with artwork, streaming links, and track lists.',

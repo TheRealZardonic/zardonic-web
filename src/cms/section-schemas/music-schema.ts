@@ -22,6 +22,7 @@ interface MusicSectionData {
 
 const musicSectionSchema: AdminSectionSchema<MusicSectionData> = {
   sectionId: 'music',
+  group: 'content',
   label: 'Music Player',
   icon: 'MusicNote',
   description: 'The audio player section. Manage the track list and player display labels.',

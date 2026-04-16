@@ -2,6 +2,7 @@ import type React from 'react'
 import { useState, useMemo } from 'react'
 import { MagnifyingGlass, X } from '@phosphor-icons/react'
 import { FIELD_REGISTRY, SCHEMA_ROUTE_MAP } from '@/cms/schemas'
+import { SECTION_REGISTRY } from '@/lib/sections-registry'
 
 interface SearchableItem {
   label: string
@@ -13,8 +14,11 @@ interface SearchableItem {
 /**
  * Searchable settings registry — a flat list of all admin setting labels
  * mapped to the tab they live in. This enables the global search feature.
+ *
+ * Section-specific items (Visibility toggles and Section Config fields) are
+ * derived dynamically from SECTION_REGISTRY so they stay in sync automatically.
  */
-const SEARCHABLE_ITEMS: SearchableItem[] = [
+const STATIC_SEARCHABLE_ITEMS: SearchableItem[] = [
   // Overview
   { label: 'Edit Mode', tab: 'overview', tabLabel: 'Overview' },
   { label: 'Export Data', tab: 'overview', tabLabel: 'Overview' },
@@ -85,24 +89,9 @@ const SEARCHABLE_ITEMS: SearchableItem[] = [
   { label: 'Background Animation', tab: 'background', tabLabel: 'Background' },
   { label: 'Matrix Rain', tab: 'background', tabLabel: 'Background' },
 
-  // Sections
+  // Sections (generic, non-section-specific)
   { label: 'Section Visibility', tab: 'sections', tabLabel: 'Sections' },
   { label: 'Section Order', tab: 'sections', tabLabel: 'Sections' },
-  { label: 'Biography Visible', tab: 'sections', tabLabel: 'Sections' },
-  { label: 'Music Visible', tab: 'sections', tabLabel: 'Sections' },
-  { label: 'Gigs Visible', tab: 'sections', tabLabel: 'Sections' },
-  { label: 'Releases Visible', tab: 'sections', tabLabel: 'Sections' },
-  { label: 'Gallery Visible', tab: 'sections', tabLabel: 'Sections' },
-  { label: 'Connect Visible', tab: 'sections', tabLabel: 'Sections' },
-
-  // Section Config
-  { label: 'Release Info Label', tab: 'section-config', tabLabel: 'Section Config' },
-  { label: 'Release Stream Label', tab: 'section-config', tabLabel: 'Section Config' },
-  { label: 'Release Status Label', tab: 'section-config', tabLabel: 'Section Config' },
-  { label: 'Release Show Type', tab: 'section-config', tabLabel: 'Section Config' },
-  { label: 'Release Show Year', tab: 'section-config', tabLabel: 'Section Config' },
-  { label: 'Release Show Tracks', tab: 'section-config', tabLabel: 'Section Config' },
-  { label: 'Credit Highlights Heading Visible', tab: 'section-config', tabLabel: 'Section Config' },
 
   // Security
   { label: 'Password', tab: 'security', tabLabel: 'Security' },
@@ -156,6 +145,34 @@ const SEARCHABLE_ITEMS: SearchableItem[] = [
   { label: 'Glitch Duration (ms)', tab: 'appearance', tabLabel: 'Appearance', group: 'Glitch' },
 ]
 
+/**
+ * Dynamically derive section visibility toggle items from SECTION_REGISTRY.
+ * Each section gets a "<Label> Visible" entry pointing to the Sections tab.
+ */
+function buildSectionVisibilityItems(): SearchableItem[] {
+  return SECTION_REGISTRY.map(entry => ({
+    label: `${entry.label} Visible`,
+    tab: 'sections',
+    tabLabel: 'Sections',
+    group: 'Visibility',
+  }))
+}
+
+/**
+ * Dynamically derive section config field items from SECTION_REGISTRY.
+ * Each configField gets an entry pointing to the section-config tab.
+ */
+function buildSectionConfigItems(): SearchableItem[] {
+  return SECTION_REGISTRY.flatMap(entry =>
+    entry.configFields.map(f => ({
+      label: f.label,
+      tab: 'section-config',
+      tabLabel: 'Section Config',
+      group: entry.label,
+    })),
+  )
+}
+
 // Dynamically derive additional searchable items from the schema field registry
 // so that the global search always stays in sync with src/cms/schemas.ts.
 function buildSchemaItems(): SearchableItem[] {
@@ -176,6 +193,10 @@ function buildSchemaItems(): SearchableItem[] {
 // Merge static items with schema-derived items (deduplicated by label+tab)
 const SCHEMA_ITEMS: SearchableItem[] = buildSchemaItems()
 
+// Module-level constants for section-derived items (SECTION_REGISTRY is static)
+const SECTION_VISIBILITY_ITEMS: SearchableItem[] = buildSectionVisibilityItems()
+const SECTION_CONFIG_ITEMS: SearchableItem[] = buildSectionConfigItems()
+
 interface AdminSearchProps {
   onNavigate: (tab: string) => void
 }
@@ -187,7 +208,12 @@ export function AdminSearch({ onNavigate }: AdminSearchProps) {
   const results = useMemo(() => {
     if (!query.trim()) return []
     const q = query.toLowerCase()
-    const allItems = [...SEARCHABLE_ITEMS, ...SCHEMA_ITEMS]
+    const allItems = [
+      ...STATIC_SEARCHABLE_ITEMS,
+      ...SECTION_VISIBILITY_ITEMS,
+      ...SECTION_CONFIG_ITEMS,
+      ...SCHEMA_ITEMS,
+    ]
     // Deduplicate by label+tab to avoid duplicates between static list and schema
     const seen = new Set<string>()
     return allItems
