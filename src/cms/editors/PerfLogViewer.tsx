@@ -13,7 +13,7 @@
  *   - Export to JSON / Clear log buttons
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useKV } from '@/hooks/use-kv'
 import type { AdminSettings } from '@/lib/types'
 import {
@@ -60,6 +60,13 @@ type FilterType = 'all' | 'resource' | 'paint' | 'lcp' | 'fid' | 'cls' | 'inp' |
 type ViewMode = 'summary' | 'table' | 'breakdown'
 
 // ─── Main Component ───────────────────────────────────────────────────────────
+
+/** Tab definitions for the view-mode selector. Defined outside the component to avoid re-creating on each render. */
+const VIEW_TABS: ReadonlyArray<readonly [ViewMode, React.ReactElement, string]> = [
+  ['summary', <Gauge key="g" size={12} />, 'Summary'],
+  ['breakdown', <ChartBar key="c" size={12} />, 'By Type'],
+  ['table', <Table key="t" size={12} />, 'Full Log'],
+]
 
 export default function PerfLogViewer() {
   const [adminSettings, setAdminSettings] = useKV<AdminSettings>('admin-settings', {})
@@ -132,8 +139,9 @@ export default function PerfLogViewer() {
         if (sortField === 'name') return e.name
         if (sortField === 'startTime') return e.startTime
         if (sortField === 'duration') return e.duration
-        // transferSize only exists on PerfResourceEntry
-        return e.type !== 'navigation' ? ((e as PerfResourceEntry).transferSize ?? 0) : 0
+        // transferSize only exists on PerfResourceEntry; PerfNavigationEntry has type 'navigation'
+        if (e.type === 'navigation') return 0
+        return (e as PerfResourceEntry).transferSize ?? 0
       }
       const aVal = getVal(a)
       const bVal = getVal(b)
@@ -215,9 +223,7 @@ export default function PerfLogViewer() {
 
       {/* View mode tabs */}
       <div className="flex gap-1 px-4 py-2 border-b border-zinc-800 flex-shrink-0">
-        {([['summary', <Gauge key="g" size={12} />, 'Summary'] as const,
-           ['breakdown', <ChartBar key="c" size={12} />, 'By Type'] as const,
-           ['table', <Table key="t" size={12} />, 'Full Log'] as const] as const).map(([mode, icon, label]) => (
+        {VIEW_TABS.map(([mode, icon, label]) => (
           <button
             key={mode}
             type="button"
