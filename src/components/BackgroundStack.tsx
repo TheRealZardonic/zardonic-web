@@ -1,12 +1,14 @@
 import { Suspense } from 'react'
-import { motion, useScroll, useTransform } from 'framer-motion'
-import { CircuitBackground } from '@/components/CircuitBackground'
-import CyberpunkBackground from '@/components/CyberpunkBackground'
+import { m, useScroll, useTransform } from 'framer-motion'
 import VideoBackground from '@/components/VideoBackground'
 import type { BackgroundType, HudTexts, AnimationSettings } from '@/lib/types'
 import React from 'react'
 import { toDirectImageUrl } from '@/lib/image-cache'
 
+const CircuitBackground = React.lazy(() =>
+  import('@/components/CircuitBackground').then(m => ({ default: m.CircuitBackground }))
+)
+const CyberpunkBackground = React.lazy(() => import('@/components/CyberpunkBackground'))
 const MatrixRain = React.lazy(() => import('@/components/MatrixRain'))
 const StarField = React.lazy(() => import('@/components/StarField'))
 const CloudChamberBackground = React.lazy(() => import('@/components/CloudChamberBackground'))
@@ -52,7 +54,7 @@ function ParallaxBackgroundImage({ url, fit, opacity }: {
       style={{ zIndex: 'var(--z-bg-image)' as React.CSSProperties['zIndex'], opacity }}
       aria-hidden="true"
     >
-      <motion.div
+      <m.div
         style={{ y, willChange: 'transform', position: 'absolute', top: '-15%', left: 0, right: 0, bottom: '-15%' }}
       >
         <img
@@ -64,7 +66,7 @@ function ParallaxBackgroundImage({ url, fit, opacity }: {
           fetchPriority="high"
           decoding="async"
         />
-      </motion.div>
+      </m.div>
     </div>
   )
 }
@@ -90,8 +92,8 @@ function AnimatedBackgroundLayer({ type, hudTexts, transparent, animSettings }: 
   animSettings?: AnimationSettings
 }) {
   const bg = type ?? 'circuit'
-  if (bg === 'circuit') return <CircuitBackground speed={animSettings?.circuitSpeed} glow={animSettings?.circuitGlow} />
-  if (bg === 'cyberpunk-hud') return <CyberpunkBackground hudTexts={hudTexts} />
+  if (bg === 'circuit') return <Suspense fallback={null}><CircuitBackground speed={animSettings?.circuitSpeed} glow={animSettings?.circuitGlow} /></Suspense>
+  if (bg === 'cyberpunk-hud') return <Suspense fallback={null}><CyberpunkBackground hudTexts={hudTexts} /></Suspense>
   if (bg === 'matrix') return <Suspense fallback={null}><MatrixRain transparent={transparent} speed={animSettings?.matrixSpeed} density={animSettings?.matrixDensity} color={animSettings?.matrixColor} /></Suspense>
   if (bg === 'stars') return <Suspense fallback={null}><StarField transparent={transparent} starCount={animSettings?.starCount} starSpeed={animSettings?.starSpeed} /></Suspense>
   if (bg === 'cloud-chamber') return <Suspense fallback={null}><CloudChamberBackground glowColor={animSettings?.cloudGlowColor} /></Suspense>

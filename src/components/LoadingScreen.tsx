@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/purity */
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
+import { m, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { useEffect, useState, useMemo, memo, useRef } from 'react'
 import type React from 'react'
 import { cacheImage } from '@/lib/image-cache'
@@ -130,7 +130,7 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
   )
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 1 }}
       exit={{ opacity: prefersReducedMotion ? 1 : 0 }}
       transition={{ duration: prefersReducedMotion ? 0 : 0.5 }}
@@ -145,7 +145,7 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
       
       {rainDropStyles.map((style, i) => (
-        <motion.div
+        <m.div
           key={i}
           className="absolute w-0.5 h-32 bg-gradient-to-b from-transparent via-primary/30 to-transparent"
           style={{
@@ -165,14 +165,14 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
         />
       ))}
 
-      <motion.div
+      <m.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.15 }}
         className="relative z-10 flex flex-col items-center"
       >
         <div className="mb-8">
-          <motion.div
+          <m.div
             className="data-label text-center"
             animate={{
               opacity: [0.5, 1, 0.5],
@@ -183,10 +183,10 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
             }}
           >
             {'>'} {loaderTexts?.titleLabel ?? 'ARTIST.SYS v2.0'} {'<'}
-          </motion.div>
+          </m.div>
         </div>
         
-        <motion.div
+        <m.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
@@ -194,7 +194,7 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
         >
           <div className="mb-6 h-8">
             <AnimatePresence mode="wait">
-              <motion.p
+              <m.p
                 key={loadingStage}
                 initial={{ opacity: 0, y: 10, filter: 'blur(4px)' }}
                 animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
@@ -203,7 +203,7 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
                 className="text-primary font-mono text-sm uppercase tracking-widest text-chromatic"
               >
                 {'// '}{messages[loadingStage]}
-              </motion.p>
+              </m.p>
             </AnimatePresence>
           </div>
           
@@ -218,14 +218,14 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
               
               <div className="flex items-center justify-center gap-3">
                 <div className="flex-1 h-2 bg-border/20 relative overflow-hidden border border-primary/20">
-                  <motion.div
+                  <m.div
                     className="absolute inset-0 bg-gradient-to-r from-primary via-accent to-primary"
                     initial={{ scaleX: 0 }}
                     animate={{ scaleX: loadingProgress / 100 }}
                     style={{ transformOrigin: 'left' }}
                     transition={{ duration: 0.3 }}
                   />
-                  <motion.div
+                  <m.div
                     className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
                     animate={{ x: ['-100%', '200%'] }}
                     transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
@@ -239,7 +239,7 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
                     />
                   ))}
                 </div>
-                <motion.span
+                <m.span
                   className="text-primary font-mono text-sm min-w-[4ch] tabular-nums"
                   animate={{
                     textShadow: [
@@ -254,7 +254,7 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
                   }}
                 >
                   {Math.floor(loadingProgress)}%
-                </motion.span>
+                </m.span>
               </div>
             </div>
 
@@ -262,27 +262,27 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
               {systemCheckLabels.map((label, idx) => {
                 const threshold = idx === 0 ? 10 : idx === 1 ? 40 : 70
                 return (
-                  <motion.div
+                  <m.div
                     key={label}
                     className="flex items-center gap-1"
                     animate={{ opacity: loadingProgress > threshold ? 1 : 0.3 }}
                   >
-                    <motion.span
+                    <m.span
                       animate={{
                         color: loadingProgress > threshold ? primaryColor : 'oklch(0.6 0 0)',
                       }}
                     >
                       ▸
-                    </motion.span>
+                    </m.span>
                     <span>{label}</span>
                     {loadingProgress > threshold && <span className="text-primary">✓</span>}
-                  </motion.div>
+                  </m.div>
                 )
               })}
             </div>
           </div>
-        </motion.div>
-      </motion.div>
+        </m.div>
+      </m.div>
 
       <div className="absolute bottom-8 left-8 font-mono text-xs text-muted-foreground opacity-50">
         <div>{loaderTexts?.buildInfo ?? `BUILD: ${BUILD_VERSION}`}</div>
@@ -290,13 +290,13 @@ export const LoadingScreen = memo(function LoadingScreen({ onLoadComplete, preca
       </div>
 
       <div className="absolute bottom-8 right-8 font-mono text-xs text-muted-foreground opacity-50">
-        <motion.div
+        <m.div
           animate={{ opacity: [0.3, 0.7, 0.3] }}
           transition={{ duration: 2, repeat: Infinity }}
         >
           {loaderTexts?.connectionStatus ?? CONNECTION_STATUS}
-        </motion.div>
+        </m.div>
       </div>
-    </motion.div>
+    </m.div>
   )
 })

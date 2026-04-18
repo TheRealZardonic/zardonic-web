@@ -9,6 +9,7 @@ import { useAppTheme } from '@/hooks/use-app-theme'
 import { useSiteDataSync } from '@/hooks/use-site-data-sync'
 import { useAppState } from '@/hooks/use-app-state'
 import { useSound } from '@/hooks/use-sound'
+import { usePerfLog } from '@/hooks/use-perf-log'
 import { LocaleProvider } from '@/contexts/LocaleContext'
 import { useLenisContext } from '@/contexts/LenisContext'
 import type { SiteData, CyberpunkOverlayState } from '@/lib/app-types'
@@ -97,6 +98,7 @@ function App() {
 
   useAppTheme(adminSettings)
   useSound(adminSettings?.sound)
+  usePerfLog({ enabled: adminSettings?.devTools?.performanceLogEnabled ?? false })
   const { iTunesFetching, bandsintownFetching, hasAutoLoaded, iTunesProgress, handleFetchBandsintownEvents, handleFetchITunesReleases } = useSiteDataSync(siteData, isSiteDataLoaded, refetchSiteData, isOwner)
   useDocumentTitle(siteData?.artistName ?? '')
 

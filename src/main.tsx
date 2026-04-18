@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { ErrorBoundary } from "react-error-boundary";
 import { lazy, Suspense } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { LazyMotion } from 'framer-motion'
 
 import App from './App.tsx'
 import { ErrorFallback } from './ErrorFallback.tsx'
@@ -33,6 +34,10 @@ const queryClient = new QueryClient({
 
 const CmsApp = lazy(() => import('./cms/CmsApp'))
 
+// Async feature bundle: Vite splits this into a separate chunk so the heavier
+// domAnimation features load after the first paint, not blocking it.
+const loadMotionFeatures = () => import('@/lib/motion-features').then(m => m.default)
+
 function isCmsRoute(): boolean {
   return window.location.hash.startsWith('#cms')
 }
@@ -46,15 +51,20 @@ function Root() {
     )
   }
   return (
-    // LenisProvider initialises smooth scroll for the main site only.
-    // The CMS route (#cms) doesn't need Lenis — it has its own scrollable panels.
-    <LenisProvider>
-      <QueryClientProvider client={queryClient}>
-        <ErrorBoundary FallbackComponent={ErrorFallback}>
-          <App />
-        </ErrorBoundary>
-      </QueryClientProvider>
-    </LenisProvider>
+    // LazyMotion defers the domAnimation feature bundle to a separate async
+    // chunk, reducing the initial JS parse cost. strict=false allows the few
+    // remaining motion.* usages in lazy-loaded components to still work.
+    <LazyMotion features={loadMotionFeatures} strict={false}>
+      {/* LenisProvider initialises smooth scroll for the main site only.
+          The CMS route (#cms) doesn't need Lenis — it has its own scrollable panels. */}
+      <LenisProvider>
+        <QueryClientProvider client={queryClient}>
+          <ErrorBoundary FallbackComponent={ErrorFallback}>
+            <App />
+          </ErrorBoundary>
+        </QueryClientProvider>
+      </LenisProvider>
+    </LazyMotion>
   )
 }
 

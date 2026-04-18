@@ -22,9 +22,17 @@
     <meta name="twitter:image" content="/og-image.png" />
     <link rel="canonical" href="https://zardonic.com/" />
     <link rel="icon" type="image/webp" href="/src/assets/images/meta_eyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ==.webp" />
+    <!-- Font preconnect & prefetch — improves FCP by initiating font requests early -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Preload the Google Fonts CSS so the browser fetches it in parallel with other resources -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Share+Tech+Mono&display=swap" as="style">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <!-- DNS prefetch for external data APIs used at runtime -->
+    <link rel="dns-prefetch" href="https://rest.bandsintown.com">
+    <link rel="dns-prefetch" href="https://itunes.apple.com">
+    <link rel="dns-prefetch" href="https://api.song.link">
+    <link rel="dns-prefetch" href="https://api.spotify.com">
     <link href="/src/main.css" rel="stylesheet" />
     <!-- FOUC prevention: hide #root until React has mounted and added
          the 'hydrated' class. This prevents raw DOM from flashing through

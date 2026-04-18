@@ -460,6 +460,12 @@ export interface AdminSettings {
     trackPageViews?: boolean
     trackEvents?: boolean
   }
+
+  // Developer tools (admin-only, not visible to site visitors)
+  devTools?: {
+    /** When true, enables the performance logger (stored in sessionStorage). */
+    performanceLogEnabled?: boolean
+  }
 }
 
 export interface CustomColorPreset {

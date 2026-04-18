@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react'
 import logoImage from '@/assets/images/meta_eyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ==.webp'
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
+import { m, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Upload, Storefront, Plus, Trash, PencilSimple, Check, Images } from '@phosphor-icons/react'
 import type { SiteData, HeroLink } from '@/lib/app-types'
@@ -134,7 +134,7 @@ export default function AppHeroSection({
       {/* Crossfade slideshow */}
       {allImages.length > 0 && (
         <AnimatePresence mode="wait">
-          <motion.div
+          <m.div
             key={slideshowIndex}
             className="absolute inset-0 bg-cover bg-center bg-no-repeat"
             style={{
@@ -152,13 +152,13 @@ export default function AppHeroSection({
       
       <div className="absolute inset-0 noise-effect" />
       
-      <motion.div
+      <m.div
         initial={{ opacity: 0 }}
         animate={contentLoaded ? { opacity: 1 } : { opacity: 0 }}
         transition={{ duration: prefersReducedMotion ? 0 : 0.15 }}
         className="relative z-10 text-center px-4"
       >
-        <motion.div 
+        <m.div 
           className="mb-8 relative"
           initial={{ opacity: 1 }}
           animate={contentLoaded ? { opacity: 1 } : { opacity: 0 }}
@@ -183,7 +183,7 @@ export default function AppHeroSection({
               className="absolute inset-0 h-32 md:h-48 lg:h-64 w-auto object-contain brightness-110 hero-logo-b"
             />
           </div>
-        </motion.div>
+        </m.div>
 
         {editMode && onUpdateSiteData && (
           <div className="mt-6 space-y-3">
@@ -256,7 +256,7 @@ export default function AppHeroSection({
           </div>
         )}
 
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: 20 }}
           animate={contentLoaded ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           transition={{ delay: prefersReducedMotion ? 0 : 1.2, duration: prefersReducedMotion ? 0 : 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
@@ -305,8 +305,8 @@ export default function AppHeroSection({
               Edit Links
             </Button>
           )}
-        </motion.div>
-      </motion.div>
+        </m.div>
+      </m.div>
 
       {/* Edit hero links dialog */}
       {editingLinks && (

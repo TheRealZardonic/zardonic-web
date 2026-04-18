@@ -13,7 +13,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import type { CSSProperties } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { m, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { X, Shield } from '@phosphor-icons/react'
 import { useLocale } from '@/contexts/LocaleContext'
@@ -85,7 +85,7 @@ export function CookieConsent({ onPreferencesChange, onOpenPrivacyPolicy }: Cook
   return (
     <AnimatePresence>
       {showBanner && (
-        <motion.div
+        <m.div
           role="dialog"
           aria-modal="true"
           aria-labelledby="cookie-banner-title"
@@ -236,7 +236,7 @@ export function CookieConsent({ onPreferencesChange, onOpenPrivacyPolicy }: Cook
               </div>
             )}
           </div>
-        </motion.div>
+        </m.div>
       )}
     </AnimatePresence>
   )
