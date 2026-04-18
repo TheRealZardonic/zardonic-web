@@ -41,6 +41,7 @@ import {
   Bell,
   CalendarBlank,
   Envelope as EnvelopeIcon,
+  Gauge,
 } from '@phosphor-icons/react'
 // Ensure all schemas are registered before calling getSections()
 import '@/cms/section-schemas'
@@ -313,6 +314,7 @@ function AdminShellSidebar({
     configuration: false,
     legacy: false,
     legal: false,
+    devtools: false,
   })
 
   const toggleGroup = (groupId: string) => {
@@ -443,7 +445,7 @@ function AdminShellSidebar({
         <SidebarGroup
           label="CMS Tools"
           isExpanded={expandedGroups['legacy'] ?? false}
-          hasActiveChild={!isAdminRoute(route) && route !== ''}
+          hasActiveChild={!isAdminRoute(route) && route !== '' && !route.startsWith('cms/devtools/')}
           onToggle={() => toggleGroup('legacy')}
         >
           {LEGACY_NAV_ITEMS.map(item => (
@@ -456,6 +458,23 @@ function AdminShellSidebar({
               indent
             />
           ))}
+        </SidebarGroup>
+
+        {/* Dev Tools — only visible to admins; for performance diagnostics */}
+        <SidebarGroup
+          label="Dev Tools"
+          isExpanded={expandedGroups['devtools'] ?? false}
+          hasActiveChild={route.startsWith('cms/devtools/')}
+          onToggle={() => toggleGroup('devtools')}
+        >
+          <SidebarNavItem
+            label="Performance Log"
+            icon={<Gauge size={14} />}
+            isActive={route === 'cms/devtools/perf-log'}
+            onClick={() => onNavigate('cms/devtools/perf-log')}
+            indent
+            tooltip="Dev-only load time diagnostics"
+          />
         </SidebarGroup>
       </nav>
 

@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react'
 
+const PerfLogViewer = lazy(() => import('./editors/PerfLogViewer'))
 const CmsDashboard = lazy(() => import('./editors/CmsDashboard'))
 const SiteConfigEditor = lazy(() => import('./editors/SiteConfigEditor'))
 const SectionsManager = lazy(() => import('./editors/SectionsManager'))
@@ -50,6 +51,7 @@ function renderEditor(route: string) {
   if (route === 'cms/api/tour') return <TourSyncEditor />
   if (route === 'cms/api/storage') return <StorageEditor />
   if (route === 'cms/api/security') return <SecurityDashboard />
+  if (route === 'cms/devtools/perf-log') return <PerfLogViewer />
 
   return (
     <div className="flex flex-col items-center justify-center h-full min-h-[400px] gap-2">
