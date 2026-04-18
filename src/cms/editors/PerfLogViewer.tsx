@@ -128,8 +128,15 @@ export default function PerfLogViewer() {
       return true
     })
     .sort((a, b) => {
-      const aVal = (a as unknown as Record<string, unknown>)[sortField] as number | string | undefined ?? 0
-      const bVal = (b as unknown as Record<string, unknown>)[sortField] as number | string | undefined ?? 0
+      function getVal(e: PerfLogEntry): number | string {
+        if (sortField === 'name') return e.name
+        if (sortField === 'startTime') return e.startTime
+        if (sortField === 'duration') return e.duration
+        // transferSize only exists on PerfResourceEntry
+        return e.type !== 'navigation' ? ((e as PerfResourceEntry).transferSize ?? 0) : 0
+      }
+      const aVal = getVal(a)
+      const bVal = getVal(b)
       if (typeof aVal === 'string' && typeof bVal === 'string') {
         return sortAsc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal)
       }
@@ -295,7 +302,7 @@ export default function PerfLogViewer() {
             {summary.slowest.length > 0 && (
               <section>
                 <h3 className="font-mono text-[10px] text-zinc-500 uppercase tracking-widest mb-2">⏱ Top 10 Slowest Resources</h3>
-                <ResourceTable resources={summary.slowest} sortKey="duration" />
+                <ResourceTable resources={summary.slowest} />
               </section>
             )}
 
@@ -303,7 +310,7 @@ export default function PerfLogViewer() {
             {summary.largest.length > 0 && (
               <section>
                 <h3 className="font-mono text-[10px] text-zinc-500 uppercase tracking-widest mb-2">📦 Top 10 Largest Resources</h3>
-                <ResourceTable resources={summary.largest} sortKey="transferSize" />
+                <ResourceTable resources={summary.largest} />
               </section>
             )}
           </div>
@@ -433,7 +440,7 @@ export default function PerfLogViewer() {
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
 
-function ResourceTable({ resources, sortKey: _sortKey }: { resources: PerfResourceEntry[]; sortKey: 'duration' | 'transferSize' }) {
+function ResourceTable({ resources }: { resources: PerfResourceEntry[] }) {
   return (
     <div className="overflow-x-auto rounded border border-zinc-800">
       <table className="w-full text-xs font-mono">
