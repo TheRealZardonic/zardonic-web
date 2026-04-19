@@ -43,12 +43,10 @@ export default defineConfig(() => {
         '@': resolve(projectRoot, 'src')
       }
     },
-    assetsInclude: ['**/*.glb', '**/*.gltf'],
     build: {
       rollupOptions: {
         output: {
           manualChunks(id: string) {
-            if (id.includes('/node_modules/@react-three/fiber') || id.includes('/node_modules/@react-three/drei')) return 'vendor-three-react'
             if (
               id.includes('/node_modules/@radix-ui/react-accordion') ||
               id.includes('/node_modules/@radix-ui/react-alert-dialog') ||
@@ -85,7 +83,6 @@ export default defineConfig(() => {
             if (id.includes('/node_modules/dompurify') || id.includes('/node_modules/marked')) return 'vendor-content'
             if (id.includes('/node_modules/react') || id.includes('/node_modules/react-dom')) return 'vendor-react'
             if (id.includes('/node_modules/framer-motion')) return 'vendor-motion'
-            if (id.includes('/node_modules/three')) return 'vendor-three'
             if (id.includes('/node_modules/@phosphor-icons')) return 'vendor-icons'
             if (id.includes('/node_modules/@tanstack/react-query')) return 'vendor-query'
             if (id.includes('/node_modules/lucide-react')) return 'vendor-lucide'

@@ -400,21 +400,22 @@ This document records the findings of a comprehensive deep-audit of the Zardonic
 - **Finding:** Obfuscating JavaScript after a Vite build significantly inflates bundle size (typically 30–80% larger) and eliminates all tree-shaking and minification benefits from Rollup/Vite.
 - **Recommendation:** Remove obfuscation from the build pipeline. Security through obscurity does not protect against determined attackers. Deploy source maps only to a private error-tracking service.
 
-### G-02 🟡 No Dynamic Import / Lazy Loading for Heavy Dependencies
+### G-02 ✅ Three.js / Logo3D removed — vendor-three chunk eliminated
 
-- **Finding:** `three` (Three.js), `d3`, `recharts`, and `framer-motion` are all eagerly imported. These are among the heaviest packages in the bundle.
-- **Recommendation:** Use `React.lazy()` + `React.Suspense` for components that use heavy libraries (`Logo3D`, `StatsDashboard`, `AudioVisualizer`).
+- **Finding (resolved):** `Logo3D.tsx` was dead code — imported nowhere. `three`, `@react-three/fiber`, and `@react-three/drei` were its sole consumers.
+- **Resolution:** Deleted `Logo3D.tsx`, `ZARDONICTEXT.glb`, `ZARDONICHEAD.glb`, and removed all three packages from `package.json`. The `vendor-three` (~138 kB gzipped) and `vendor-three-react` chunks no longer exist in the production bundle.
+- **Remaining:** `d3`, `recharts`, and `framer-motion` are still eagerly imported. Use `React.lazy()` + `React.Suspense` for `StatsDashboard` and `AudioVisualizer` if bundle size becomes a concern.
 
 ### G-03 🟡 No Route-Based Code Splitting
 
 - **Finding:** Because there is no router, all page content is bundled and downloaded upfront, even sections the user may never view.
 - **Recommendation:** Routing (see [A-06](#a-06-🟡-no-client-side-router)) combined with dynamic imports will enable route-based code splitting.
 
-### G-04 🟢 Loading Screen May Block LCP
+### G-04 🟢 Loading Screen Does Not Block LCP
 
 - **File:** `src/components/LoadingScreen.tsx`
-- **Finding:** The 3D loading screen (Three.js model) may delay the Largest Contentful Paint (LCP) metric, impacting Core Web Vitals and SEO.
-- **Recommendation:** Use a lightweight CSS-only loader as the initial fallback while Three.js initialises asynchronously.
+- **Finding (resolved):** The 3D loading screen that previously relied on Three.js has been removed along with `Logo3D.tsx` and all Three.js dependencies. `LoadingScreen.tsx` now uses CSS/Framer Motion animations only.
+- **Recommendation:** No action required.
 
 ---
 

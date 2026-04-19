@@ -118,7 +118,6 @@ build: {
       manualChunks: {
         'vendor-react': ['react', 'react-dom'],
         'vendor-motion': ['framer-motion'],
-        'vendor-three': ['three'],
         'vendor-icons': ['@phosphor-icons/react'],
         'vendor-ui': ['@radix-ui/react-dialog', '@radix-ui/react-separator', '@radix-ui/react-slot'],
       },
@@ -129,9 +128,10 @@ build: {
 }
 ```
 
-**Impact**:
+**Impact** (after Three.js removal):
 - Main bundle: 404 kB (118 kB gzipped)
-- vendor-three: 541 kB (138 kB gzipped)
+- ~~vendor-three: 541 kB (138 kB gzipped)~~ **removed** — `Logo3D.tsx` was dead code
+- ~~vendor-three-react~~ **removed** — `@react-three/fiber` / `@react-three/drei` fully eliminated
 - vendor-motion: 138 kB (46 kB gzipped)
 - vendor-icons: 62 kB (14 kB gzipped)
 - vendor-ui: 40 kB (13 kB gzipped)
@@ -309,12 +309,14 @@ useEffect(() => {
 
 ```
 index.js:         404 kB (118 kB gzipped)  - Main application
-vendor-three.js:  541 kB (138 kB gzipped)  - 3D rendering
 vendor-motion.js: 138 kB ( 46 kB gzipped)  - Animations
 vendor-icons.js:   62 kB ( 14 kB gzipped)  - Icons
 vendor-ui.js:      40 kB ( 13 kB gzipped)  - UI components
 index.css:        396 kB ( 73 kB gzipped)  - Styles
 ```
+
+> **Note:** `vendor-three.js` (541 kB / 138 kB gzipped) and `vendor-three-react` have been eliminated.
+> `Logo3D.tsx` was dead code — removed along with `three`, `@react-three/fiber`, and `@react-three/drei`.
 
 ---
 
