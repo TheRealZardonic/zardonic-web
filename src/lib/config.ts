@@ -41,6 +41,7 @@ export const DEFAULT_SECTION_ORDER = [
   'releases',
   'gallery',
   'media',
+  'newsletter',
   'connect',
   'contact',
   'sponsoring',

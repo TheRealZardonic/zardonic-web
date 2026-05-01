@@ -145,6 +145,16 @@ export interface ProgressiveOverlayModes {
   holographicMaterialization?: boolean
 }
 
+export interface NewsletterSettings {
+  enabled?: boolean
+  showSection?: boolean
+  title?: string
+  description?: string
+  placeholder?: string
+  buttonText?: string
+  successMessage?: string
+}
+
 export interface SectionLabels {
   hero?: string
   biography?: string
@@ -160,6 +170,7 @@ export interface SectionLabels {
   tourDates?: string
   shell?: string
   contact?: string
+  newsletter?: string
   headingPrefix?: string
   collabs?: string
   closeButtonText?: string
@@ -422,6 +433,9 @@ export interface AdminSettings {
   // Contact & legal
   contact?: ContactInfo & ContactSettings
   legal?: LegalContent
+
+  // Newsletter
+  newsletter?: NewsletterSettings
 
   // Shell / member
   shell?: ShellMember
