@@ -102,6 +102,9 @@ export function ReleaseOverlayContent({ data, sectionLabels, mainArtistName = ''
   const getLink = (platform: string) =>
     data.streamingLinks?.find(l => l.platform === platform)?.url
 
+  const hasStreamLinks = ['spotify', 'youtube', 'soundcloud', 'bandcamp', 'appleMusic',
+    'beatport', 'deezer', 'tidal', 'amazonMusic'].some(p => getLink(p))
+
   const releaseArtists = parseReleaseArtists(data.description, mainArtistName)
   const showReleaseArtists = releaseArtists.length > 1
 
@@ -196,6 +199,7 @@ export function ReleaseOverlayContent({ data, sectionLabels, mainArtistName = ''
             </motion.div>
           )}
 
+          {hasStreamLinks && (
           <motion.div
             className="cyber-grid p-4"
             initial={{ opacity: 0, x: -10 }}
@@ -262,6 +266,7 @@ export function ReleaseOverlayContent({ data, sectionLabels, mainArtistName = ''
               )}
             </div>
           </motion.div>
+          )}
 
           {showTracks && data.tracks && data.tracks.length > 0 && (
             <motion.div

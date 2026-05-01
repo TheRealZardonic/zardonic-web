@@ -36,6 +36,65 @@ export function ImpressumOverlayContent({ adminSettings, onClose, decorativeText
             {adminSettings.legal.impressumCustom}
           </div>
         </div>
+      ) : adminSettings?.legal?.impressum?.name ? (
+        /* Structured impressum data from admin panel */
+        <div className="space-y-6 text-foreground/90">
+          <motion.div
+            className="cyber-grid p-4"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <div className="data-label mb-2">Angaben gemäß § 5 DDG</div>
+            <div className="space-y-1 font-mono text-sm">
+              <p>{adminSettings.legal.impressum.name}</p>
+              {adminSettings.legal.impressum.careOf && <p>{adminSettings.legal.impressum.careOf}</p>}
+              {adminSettings.legal.impressum.street && <p>{adminSettings.legal.impressum.street}</p>}
+              {adminSettings.legal.impressum.zipCity && <p>{adminSettings.legal.impressum.zipCity}</p>}
+            </div>
+          </motion.div>
+
+          <motion.div
+            className="cyber-grid p-4"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <div className="data-label mb-2">Kontakt / Contact</div>
+            <div className="space-y-1 font-mono text-sm">
+              {adminSettings.legal.impressum.phone && <p>Tel: {adminSettings.legal.impressum.phone}</p>}
+              {adminSettings.legal.impressum.email && <p>E-Mail: {adminSettings.legal.impressum.email}</p>}
+            </div>
+          </motion.div>
+
+          {(adminSettings.legal.impressum.responsibleName || adminSettings.legal.impressum.responsibleAddress) && (
+          <motion.div
+            className="cyber-grid p-4"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <div className="data-label mb-2">Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</div>
+            <div className="space-y-1 font-mono text-sm">
+              {adminSettings.legal.impressum.responsibleName && <p>{adminSettings.legal.impressum.responsibleName}</p>}
+              {adminSettings.legal.impressum.responsibleAddress && <p>{adminSettings.legal.impressum.responsibleAddress}</p>}
+            </div>
+          </motion.div>
+          )}
+
+          <motion.div
+            className="cyber-grid p-4"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.45 }}
+          >
+            <div className="data-label mb-2">Streitschlichtung / Dispute Resolution</div>
+            <div className="space-y-3 font-mono text-sm leading-relaxed">
+              <p>Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.</p>
+              <p>We are not willing or obliged to participate in dispute resolution proceedings before a consumer arbitration board.</p>
+            </div>
+          </motion.div>
+        </div>
       ) : (
         <div className="space-y-6 text-foreground/90">
           <motion.div

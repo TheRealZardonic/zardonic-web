@@ -194,7 +194,11 @@ export function useAppTheme(adminSettings: AdminSettings | undefined): void {
       link.rel = 'icon'
       document.head.appendChild(link)
     }
-    link.href = faviconUrl
+    // Use toDirectImageUrl to handle Google Drive and other external URLs that
+    // browsers cannot fetch directly (e.g. drive.google.com share links).
+    // Request PNG so the favicon works in all browsers (WebP is not supported
+    // as a favicon in older Safari / some Chromium versions).
+    link.href = toDirectImageUrl(faviconUrl, { output: 'png' })
   }, [adminSettings?.design?.faviconUrl])
 
   // Effect 5: Apply effect colors, animation timings, and CRT intensity settings

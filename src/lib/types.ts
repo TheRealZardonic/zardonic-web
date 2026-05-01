@@ -234,6 +234,7 @@ export interface ContactInfo {
 export interface LegalContent {
   impressumCustom?: string
   privacyCustom?: string
+  impressum?: Impressum
 }
 
 export interface ShellMember {

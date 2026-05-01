@@ -623,6 +623,25 @@ export const SECTION_REGISTRY: SectionRegistryEntry[] = [
       { path: 'labels.sponsoringHeadingVisible', label: 'Show Heading', type: 'toggle', disclosure: 'advanced' },
     ],
   },
+  {
+    id: 'impressum',
+    label: 'Impressum / Legal',
+    labelKey: 'impressum',
+    icon: 'Scales',
+    showInNav: false,
+    adminSchemaId: 'impressum',
+    configFields: [
+      { path: 'legal.impressum.name', label: 'Name (required)', type: 'text', placeholder: 'Max Mustermann', disclosure: 'basic' },
+      { path: 'legal.impressum.careOf', label: 'c/o (optional)', type: 'text', placeholder: 'c/o Organisation GmbH', disclosure: 'basic' },
+      { path: 'legal.impressum.street', label: 'Street & Number', type: 'text', placeholder: 'Musterstraße 1', disclosure: 'basic' },
+      { path: 'legal.impressum.zipCity', label: 'ZIP + City', type: 'text', placeholder: '12345 Berlin', disclosure: 'basic' },
+      { path: 'legal.impressum.phone', label: 'Phone', type: 'text', placeholder: '+49 123 456789', disclosure: 'basic' },
+      { path: 'legal.impressum.email', label: 'E-Mail', type: 'text', placeholder: 'info@example.com', disclosure: 'basic' },
+      { path: 'legal.impressum.responsibleName', label: 'Responsible Person Name', type: 'text', placeholder: 'Max Mustermann', disclosure: 'advanced' },
+      { path: 'legal.impressum.responsibleAddress', label: 'Responsible Person Address', type: 'text', placeholder: 'Musterstraße 1, 12345 Berlin', disclosure: 'advanced' },
+      { path: 'legal.impressumCustom', label: 'Custom Free-Text (overrides structured fields above)', type: 'textarea', placeholder: 'Enter full custom impressum text…', disclosure: 'expert' },
+    ],
+  },
 ]
 
 /**

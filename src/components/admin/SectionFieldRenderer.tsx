@@ -348,12 +348,14 @@ export default function SectionFieldRenderer({
   if (!isFieldVisible(effectiveDisclosure, disclosureLevel)) return null
 
   return (
-    <FieldContent
-      field={field}
-      adminSettings={adminSettings}
-      setAdminSettings={setAdminSettings}
-      siteData={siteData}
-      onUpdateSiteData={onUpdateSiteData}
-    />
+    <div data-field-label={field.label}>
+      <FieldContent
+        field={field}
+        adminSettings={adminSettings}
+        setAdminSettings={setAdminSettings}
+        siteData={siteData}
+        onUpdateSiteData={onUpdateSiteData}
+      />
+    </div>
   )
 }

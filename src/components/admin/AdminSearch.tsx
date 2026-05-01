@@ -198,7 +198,7 @@ const SECTION_VISIBILITY_ITEMS: SearchableItem[] = buildSectionVisibilityItems()
 const SECTION_CONFIG_ITEMS: SearchableItem[] = buildSectionConfigItems()
 
 interface AdminSearchProps {
-  onNavigate: (tab: string) => void
+  onNavigate: (tab: string, fieldLabel?: string) => void
 }
 
 export function AdminSearch({ onNavigate }: AdminSearchProps) {
@@ -277,7 +277,7 @@ export function AdminSearch({ onNavigate }: AdminSearchProps) {
                   key={`${item.tab}-${item.label}-${i}`}
                   className="w-full text-left px-3 py-1.5 text-xs font-mono hover:bg-primary/10 transition-colors flex items-center justify-between"
                   onClick={() => {
-                    onNavigate(item.tab)
+                    onNavigate(item.tab, item.label)
                     setQuery('')
                     setIsOpen(false)
                   }}
