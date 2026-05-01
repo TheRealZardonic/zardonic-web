@@ -190,7 +190,7 @@ export default function CreditHighlightsSection({
             </div>
           )}
 
-          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12 opacity-60 hover:opacity-90 transition-opacity duration-500">
+          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12">
             {siteData.creditHighlights.filter(logo => logo.src).map((logo, index) => (
               <div key={`credit-${index}`} className="relative group">
                 <motion.img
@@ -199,10 +199,13 @@ export default function CreditHighlightsSection({
                   className="logo-white h-10 md:h-14 w-auto object-contain"
                   style={{ '--logo-brightness': logoBrightness } as React.CSSProperties}
                   initial={{ opacity: 0, y: 10 }}
-                  whileInView={{ opacity: 0.7, y: 0 }}
+                  whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
-                  whileHover={{ opacity: 1 }}
+                  whileHover={{
+                    filter: 'brightness(0) invert(1) drop-shadow(-2px 0 1.5px var(--chromatic-color-left, rgba(255,50,50,0.85))) drop-shadow(2px 0 1.5px var(--chromatic-color-right, rgba(50,100,255,0.85)))',
+                    transition: { duration: 0.12 },
+                  }}
                   loading="lazy"
                 />
                 {editMode && (

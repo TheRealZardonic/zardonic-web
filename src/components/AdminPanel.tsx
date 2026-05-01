@@ -120,6 +120,8 @@ export default function AdminPanel({
   const [showPasswordDialog, setShowPasswordDialog] = useState(false)
   const importInputRef = useRef<HTMLInputElement>(null)
   const translationImportRef = useRef<HTMLInputElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
+  const scrollToFieldRef = useRef<string | null>(null)
 
   const disclosureLevel: DisclosureLevel = getDisclosureLevel(adminSettings)
 
@@ -147,6 +149,29 @@ export default function AdminPanel({
     setCanUndo(undoStack.current.length > 0)
     toast.success('Undone')
   }, [setAdminSettings])
+
+  // After a search navigation lands on a new page, scroll the content area to
+  // the top first, then try to bring the target field into view.
+  useEffect(() => {
+    const container = contentRef.current
+    if (!container) return
+    container.scrollTop = 0
+    const label = scrollToFieldRef.current
+    if (!label) return
+    // Small delay gives React time to render the new page content.
+    const id = setTimeout(() => {
+      const el = container.querySelector<HTMLElement>(`[data-field-label="${CSS.escape(label)}"]`)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        // Brief highlight flash so the user can spot the field.
+        el.style.transition = 'background 0.15s'
+        el.style.background = 'var(--primary)'
+        setTimeout(() => { el.style.background = '' }, 600)
+      }
+      scrollToFieldRef.current = null
+    }, 80)
+    return () => clearTimeout(id)
+  }, [page, category])
 
   // Section order helpers
   const currentOrder: string[] = useMemo(
@@ -518,7 +543,8 @@ export default function AdminPanel({
                 </span>
               </div>
               <div className="flex items-center gap-1">
-                <AdminSearch onNavigate={(tab) => {
+                <AdminSearch onNavigate={(tab, fieldLabel) => {
+                  if (fieldLabel) scrollToFieldRef.current = fieldLabel
                   const mapped = TAB_NAVIGATION_MAP[tab]
                   if (mapped) { setCategory(mapped.cat); setPage(mapped.pg) }
                   else {
@@ -625,7 +651,7 @@ export default function AdminPanel({
               </nav>
 
               {/* Content area */}
-              <div className="flex-1 overflow-y-auto">
+              <div ref={contentRef} className="flex-1 overflow-y-auto">
                 {renderContent()}
               </div>
             </div>

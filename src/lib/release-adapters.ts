@@ -66,8 +66,16 @@ export function fullReleaseToStored(release: FullRelease): StoredRelease {
 
 /**
  * Merge an updated `types.ts` Release back into an existing stored Release.
- * Existing array entries are used as fallback for platforms not present in the
- * updated release.
+ *
+ * Streaming link strategy:
+ *   - Updated platforms always win.
+ *   - Existing platforms NOT present in the update are preserved, so that
+ *     Odesli-enriched links (deezer, tidal, amazonMusic) survive manual edits.
+ *
+ * Custom link strategy:
+ *   - `undefined`  → field was not included by the editor; preserve existing.
+ *   - `[]`         → user explicitly cleared all links; store as undefined.
+ *   - `[...items]` → user has some links; use them.
  */
 export function mergeFullReleaseIntoStored(
   updated: FullRelease,
@@ -75,11 +83,21 @@ export function mergeFullReleaseIntoStored(
 ): StoredRelease {
   const stored = fullReleaseToStored(updated)
 
-  // Merge streamingLinks: updated platforms win; existing platforms fill the gaps.
+  // Merge streamingLinks: updated platforms win; existing platforms fill gaps.
   const updatedLinks = stored.streamingLinks ?? []
   const updatedPlatforms = new Set(updatedLinks.map(l => l.platform))
   const existingLinks = (existing.streamingLinks ?? []).filter(l => !updatedPlatforms.has(l.platform))
   const mergedLinks = [...updatedLinks, ...existingLinks]
+
+  // Custom links: distinguish "not set" (undefined) from "explicitly cleared" ([]).
+  let mergedCustomLinks: StoredRelease['customLinks']
+  if (updated.customLinks === undefined) {
+    // Not touched by the editor — preserve whatever was stored.
+    mergedCustomLinks = existing.customLinks
+  } else {
+    // User submitted the form — use their value directly (may be [] for "all removed").
+    mergedCustomLinks = updated.customLinks
+  }
 
   return {
     ...existing,
@@ -92,7 +110,7 @@ export function mergeFullReleaseIntoStored(
     featured: stored.featured !== undefined ? stored.featured : existing.featured,
     tracks: stored.tracks ?? existing.tracks,
     streamingLinks: mergedLinks.length > 0 ? mergedLinks : existing.streamingLinks,
-    customLinks: stored.customLinks !== undefined ? stored.customLinks : existing.customLinks,
+    customLinks: mergedCustomLinks,
     manuallyEdited: stored.manuallyEdited ?? existing.manuallyEdited,
   }
 }

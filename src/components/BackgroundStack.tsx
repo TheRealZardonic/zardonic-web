@@ -149,9 +149,10 @@ export function BackgroundStack({
         />
       )}
 
-      {/* Layer 1 (--z-bg-video): Video — independent of background image, has its own z-index.
-          VideoBackground manages its own zIndex via --z-bg-video internally. */}
-      {animatedBackgroundEnabled && backgroundType === 'video' && animSettings?.backgroundVideoUrl && (
+      {/* Layer 1 (--z-bg-video): Video — shown whenever video background type is
+          selected, regardless of the animatedBackgroundEnabled flag (which controls
+          decorative overlay animations, not the primary background type). */}
+      {backgroundType === 'video' && animSettings?.backgroundVideoUrl && (
         <VideoBackground
           videoUrl={animSettings.backgroundVideoUrl}
           mobileVideoUrl={animSettings.backgroundVideoMobileUrl}

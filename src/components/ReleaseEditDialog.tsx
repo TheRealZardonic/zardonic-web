@@ -226,7 +226,10 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
         featured: formData.featured || undefined,
         streamingLinks: Object.keys(streamingLinks).length > 0 ? streamingLinks : undefined,
         tracks: tracks.length > 0 ? tracks : undefined,
-        customLinks: customLinks.length > 0 ? customLinks : undefined,
+        // Always pass the current customLinks array (even when empty) so that
+        // mergeFullReleaseIntoStored can distinguish "user cleared all links"
+        // (empty array) from "links field not touched" (undefined).
+        customLinks,
         manuallyEdited: true,
       })
     } finally {

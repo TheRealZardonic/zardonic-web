@@ -145,6 +145,16 @@ export interface ProgressiveOverlayModes {
   holographicMaterialization?: boolean
 }
 
+export interface NewsletterSettings {
+  enabled?: boolean
+  showSection?: boolean
+  title?: string
+  description?: string
+  placeholder?: string
+  buttonText?: string
+  successMessage?: string
+}
+
 export interface SectionLabels {
   hero?: string
   biography?: string
@@ -160,6 +170,7 @@ export interface SectionLabels {
   tourDates?: string
   shell?: string
   contact?: string
+  newsletter?: string
   headingPrefix?: string
   collabs?: string
   closeButtonText?: string
@@ -192,6 +203,8 @@ export interface SectionLabels {
   sponsoring?: string
   sponsoringPrefix?: string
   sponsoringHeadingVisible?: boolean
+  // Impressum section label
+  impressum?: string
   // Release card visibility toggles
   releaseShowType?: boolean
   releaseShowYear?: boolean
@@ -223,6 +236,7 @@ export interface ContactInfo {
 export interface LegalContent {
   impressumCustom?: string
   privacyCustom?: string
+  impressum?: Impressum
 }
 
 export interface ShellMember {
@@ -422,6 +436,9 @@ export interface AdminSettings {
   // Contact & legal
   contact?: ContactInfo & ContactSettings
   legal?: LegalContent
+
+  // Newsletter
+  newsletter?: NewsletterSettings
 
   // Shell / member
   shell?: ShellMember

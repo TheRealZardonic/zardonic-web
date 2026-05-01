@@ -35,6 +35,7 @@ const AppMusicSection = React.lazy(() => import('@/components/AppMusicSection'))
 const AppGigsSection = React.lazy(() => import('@/components/AppGigsSection'))
 const AppReleasesSection = React.lazy(() => import('@/components/AppReleasesSection'))
 const AppSocialSection = React.lazy(() => import('@/components/AppSocialSection'))
+const NewsletterSection = React.lazy(() => import('@/components/NewsletterSection'))
 const CreditHighlightsSection = React.lazy(() => import('@/components/CreditHighlightsSection'))
 const SponsoringSection = React.lazy(() => import('@/components/SponsoringSection'))
 const AppMediaSection = React.lazy(() => import('@/components/AppMediaSection'))
@@ -490,6 +491,20 @@ function App() {
             size: f.description ?? '',
           })),
         })) : undefined}
+      />
+      </Suspense>
+      </SectionErrorBoundary>
+
+      <SectionErrorBoundary sectionName="Newsletter">
+      <Suspense fallback={null}>
+      <NewsletterSection
+        newsletterSettings={adminSettings?.newsletter}
+        sectionOrder={getSectionOrder('newsletter')}
+        editMode={editMode}
+        sectionLabels={sectionLabels}
+        onLabelChange={editMode ? handleLabelChange : undefined}
+        adminSettings={adminSettings}
+        onUpdate={editMode ? (s) => handleUpdateAdminSettings({ ...adminSettings, newsletter: s }) : undefined}
       />
       </Suspense>
       </SectionErrorBoundary>
