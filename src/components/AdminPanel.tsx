@@ -171,8 +171,6 @@ export default function AdminPanel({
       scrollToFieldRef.current = null
     }, 80)
     return () => clearTimeout(id)
-  // Run whenever the active page changes (which is when a navigation happens).
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, category])
 
   // Section order helpers

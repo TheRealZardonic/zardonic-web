@@ -203,6 +203,8 @@ export interface SectionLabels {
   sponsoring?: string
   sponsoringPrefix?: string
   sponsoringHeadingVisible?: boolean
+  // Impressum section label
+  impressum?: string
   // Release card visibility toggles
   releaseShowType?: boolean
   releaseShowYear?: boolean
