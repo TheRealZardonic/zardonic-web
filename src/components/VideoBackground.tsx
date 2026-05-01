@@ -21,7 +21,9 @@ interface VideoBackgroundProps {
   fit?: 'cover' | 'contain' | 'fill' | 'none'
   /**
    * When true: video currentTime is driven by scroll position instead of autoplay.
-   * Requires the video to be faststart-encoded (moov atom at start).
+   * Requires the video to be faststart-encoded. The component waits for `loadeddata`
+   * before the first scrub, so the correct frame is shown even if the video is still
+   * loading when the first scroll event fires.
    * Default: false
    */
   scrollMode?: boolean
@@ -122,14 +124,21 @@ const VideoBackground = memo(function VideoBackground({
     const video = videoRef.current
     if (!video) return
 
-    // Only scrub when the video is sufficiently loaded (HAVE_CURRENT_DATA)
-    if (video.readyState < 2) return
+    const scrub = () => {
+      requestAnimationFrame(() => {
+        const maxScroll = document.documentElement.scrollHeight - window.innerHeight
+        const progress = maxScroll > 0 ? Math.max(0, Math.min(1, scrollY / maxScroll)) : 0
+        video.currentTime = progress * (video.duration || 0)
+      })
+    }
 
-    requestAnimationFrame(() => {
-      const maxScroll = document.documentElement.scrollHeight - window.innerHeight
-      const progress = maxScroll > 0 ? Math.max(0, Math.min(1, scrollY / maxScroll)) : 0
-      video.currentTime = progress * (video.duration || 0)
-    })
+    // Video noch nicht bereit: warten und danach einmalig scrubben
+    if (video.readyState < 2) {
+      video.addEventListener('loadeddata', scrub, { once: true })
+      return () => video.removeEventListener('loadeddata', scrub)
+    }
+
+    scrub()
   }, [scrollY, scrollMode, useFallback])
 
   // ── Scroll mode: error handler ───────────────────────────────────────────
