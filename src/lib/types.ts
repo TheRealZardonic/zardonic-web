@@ -79,6 +79,9 @@ export interface AnimationSettings {
   chromaticEnabled?: boolean
   crtEnabled?: boolean
   noiseEnabled?: boolean
+  /** Master toggle for all animated backgrounds. Supersedes the legacy circuitBackgroundEnabled field. */
+  animationsEnabled?: boolean
+  /** @deprecated Use animationsEnabled instead. Kept for backwards compatibility with stored settings. */
   circuitBackgroundEnabled?: boolean
   crtOverlayOpacity?: number
   crtVignetteOpacity?: number

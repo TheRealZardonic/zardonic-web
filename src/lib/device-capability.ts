@@ -8,6 +8,8 @@
  * looping video background.
  */
 
+import { useState, useEffect } from 'react'
+
 /** Extended Navigator interface for non-standard connection properties. */
 interface NavigatorWithExtras extends Navigator {
   readonly connection?: {
@@ -32,14 +34,14 @@ export function isSlowConnection(): boolean {
   return type === '2g' || type === 'slow-2g'
 }
 
-/** True when the device has ≤2 CPU cores or <2 GB RAM (likely low-end). */
+/** True when the device has <2 CPU cores or <2 GB RAM (likely low-end). */
 export function isLowEndHardware(): boolean {
   if (typeof navigator === 'undefined') return false
   const nav = navigator as NavigatorWithExtras
   const cores = navigator.hardwareConcurrency
   const memory = nav.deviceMemory
   return (
-    (typeof cores === 'number' && cores <= 2) ||
+    (typeof cores === 'number' && cores < 2) ||
     (typeof memory === 'number' && memory < 2)
   )
 }
@@ -52,4 +54,29 @@ export function isLowEndHardware(): boolean {
  */
 export function shouldUseLiteMode(): boolean {
   return prefersReducedMotion() || isSlowConnection() || isLowEndHardware()
+}
+
+/**
+ * Returns true when video backgrounds should fall back to a static image.
+ * Does NOT include prefers-reduced-motion — a video background is explicit
+ * content, not a decorative animation. Only hardware/connectivity limits apply.
+ */
+export function shouldDisableVideoBackground(): boolean {
+  return isSlowConnection() || isLowEndHardware()
+}
+
+/**
+ * Reactive hook that returns the current `prefers-reduced-motion` value and
+ * re-renders the component when the user changes their OS/browser setting.
+ */
+export function usePrefersReducedMotion(): boolean {
+  const [value, setValue] = useState<boolean>(() => prefersReducedMotion())
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const handler = (e: MediaQueryListEvent) => setValue(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+  return value
 }

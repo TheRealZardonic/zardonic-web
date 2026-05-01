@@ -26,10 +26,12 @@ vi.mock('lenis', () => {
 
 // Mock device-capability — default: capable device (Lenis enabled)
 vi.mock('@/lib/device-capability', () => ({
-  shouldUseLiteMode: vi.fn().mockReturnValue(false),
+  usePrefersReducedMotion: vi.fn().mockReturnValue(false),
+  isSlowConnection: vi.fn().mockReturnValue(false),
+  isLowEndHardware: vi.fn().mockReturnValue(false),
 }))
 
-import { shouldUseLiteMode } from '@/lib/device-capability'
+import { usePrefersReducedMotion, isSlowConnection, isLowEndHardware } from '@/lib/device-capability'
 
 const wrapper = ({ children }: { children: ReactNode }) => (
   <LenisProvider>{children}</LenisProvider>
@@ -37,7 +39,9 @@ const wrapper = ({ children }: { children: ReactNode }) => (
 
 describe('LenisContext — capable device', () => {
   beforeEach(() => {
-    vi.mocked(shouldUseLiteMode).mockReturnValue(false)
+    vi.mocked(usePrefersReducedMotion).mockReturnValue(false)
+    vi.mocked(isSlowConnection).mockReturnValue(false)
+    vi.mocked(isLowEndHardware).mockReturnValue(false)
   })
 
   it('provides isLiteMode = false on capable device', () => {
@@ -63,7 +67,9 @@ describe('LenisContext — capable device', () => {
 
 describe('LenisContext — lite mode device', () => {
   beforeEach(() => {
-    vi.mocked(shouldUseLiteMode).mockReturnValue(true)
+    vi.mocked(usePrefersReducedMotion).mockReturnValue(true)
+    vi.mocked(isSlowConnection).mockReturnValue(false)
+    vi.mocked(isLowEndHardware).mockReturnValue(false)
   })
 
   it('provides isLiteMode = true on low-end device', () => {
@@ -91,5 +97,31 @@ describe('LenisProvider — renders children', () => {
       <LenisProvider><span>hello lenis</span></LenisProvider>
     )
     expect(getByText('hello lenis')).toBeTruthy()
+  })
+})
+
+describe('LenisContext — lite mode native scroll tracking', () => {
+  beforeEach(() => {
+    vi.mocked(usePrefersReducedMotion).mockReturnValue(true)
+    vi.mocked(isSlowConnection).mockReturnValue(false)
+    vi.mocked(isLowEndHardware).mockReturnValue(false)
+  })
+
+  it('registers a native scroll listener in lite mode', () => {
+    const addSpy = vi.spyOn(window, 'addEventListener')
+    renderHook(() => useLenisContext(), { wrapper })
+    const scrollListeners = addSpy.mock.calls.filter(([event]) => event === 'scroll')
+    expect(scrollListeners.length).toBeGreaterThan(0)
+    addSpy.mockRestore()
+  })
+
+  it('scrollY updates when window scroll event fires in lite mode', () => {
+    Object.defineProperty(window, 'scrollY', { value: 200, writable: true, configurable: true })
+    const { result } = renderHook(() => useLenisContext(), { wrapper })
+    act(() => {
+      window.dispatchEvent(new Event('scroll'))
+    })
+    expect(result.current.scrollY).toBe(200)
+    Object.defineProperty(window, 'scrollY', { value: 0, writable: true, configurable: true })
   })
 })

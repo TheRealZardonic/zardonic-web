@@ -1,9 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { renderHook, act } from '@testing-library/react'
 import {
   prefersReducedMotion,
   isSlowConnection,
   isLowEndHardware,
   shouldUseLiteMode,
+  shouldDisableVideoBackground,
+  usePrefersReducedMotion,
 } from '@/lib/device-capability'
 
 // Helper to set up window.matchMedia mock
@@ -75,9 +78,9 @@ describe('isSlowConnection()', () => {
 })
 
 describe('isLowEndHardware()', () => {
-  it('returns true when hardwareConcurrency is 2', () => {
+  it('returns false when hardwareConcurrency is 2', () => {
     setNavigator({ hardwareConcurrency: 2, deviceMemory: undefined })
-    expect(isLowEndHardware()).toBe(true)
+    expect(isLowEndHardware()).toBe(false)
   })
 
   it('returns true when hardwareConcurrency is 1', () => {
@@ -122,7 +125,78 @@ describe('shouldUseLiteMode()', () => {
   })
 
   it('returns true when hardware is low-end', () => {
-    setNavigator({ hardwareConcurrency: 2, connection: { saveData: false, effectiveType: '4g' }, deviceMemory: 8 })
+    setNavigator({ hardwareConcurrency: 1, connection: { saveData: false, effectiveType: '4g' }, deviceMemory: 8 })
     expect(shouldUseLiteMode()).toBe(true)
+  })
+})
+
+describe('shouldDisableVideoBackground()', () => {
+  beforeEach(() => {
+    mockMatchMedia(false)
+    setNavigator({ hardwareConcurrency: 8, connection: { saveData: false, effectiveType: '4g' }, deviceMemory: 8 })
+  })
+
+  it('returns false for a capable device', () => {
+    expect(shouldDisableVideoBackground()).toBe(false)
+  })
+
+  it('returns false even when reduced-motion is preferred (video is explicit content)', () => {
+    mockMatchMedia(true)
+    expect(shouldDisableVideoBackground()).toBe(false)
+  })
+
+  it('returns true when connection is slow', () => {
+    setNavigator({ hardwareConcurrency: 8, connection: { saveData: false, effectiveType: '2g' }, deviceMemory: 8 })
+    expect(shouldDisableVideoBackground()).toBe(true)
+  })
+
+  it('returns true when hardware is low-end', () => {
+    setNavigator({ hardwareConcurrency: 1, connection: { saveData: false, effectiveType: '4g' }, deviceMemory: 8 })
+    expect(shouldDisableVideoBackground()).toBe(true)
+  })
+})
+
+describe('usePrefersReducedMotion()', () => {
+  it('returns false when matchMedia does not match', () => {
+    mockMatchMedia(false)
+    const { result } = renderHook(() => usePrefersReducedMotion())
+    expect(result.current).toBe(false)
+  })
+
+  it('returns true when matchMedia matches prefers-reduced-motion', () => {
+    mockMatchMedia(true)
+    const { result } = renderHook(() => usePrefersReducedMotion())
+    expect(result.current).toBe(true)
+  })
+
+  it('updates reactively when media query fires a change event', () => {
+    // Create a stable MediaQueryList mock that allows triggering change events
+    const listeners: ((e: MediaQueryListEvent) => void)[] = []
+    const stableMq = {
+      matches: false,
+      media: '(prefers-reduced-motion: reduce)',
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn((_event: string, handler: (e: MediaQueryListEvent) => void) => {
+        listeners.push(handler)
+      }),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: vi.fn().mockReturnValue(stableMq),
+    })
+
+    const { result } = renderHook(() => usePrefersReducedMotion())
+    expect(result.current).toBe(false)
+
+    // Simulate the OS toggling reduced-motion on
+    act(() => {
+      listeners.forEach(handler => handler({ matches: true } as MediaQueryListEvent))
+    })
+
+    expect(result.current).toBe(true)
   })
 })
