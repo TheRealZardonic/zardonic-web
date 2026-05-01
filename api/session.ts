@@ -3,7 +3,7 @@
  * Handles admin authentication and session management.
  *
  * Delegates to the unified auth system (api/auth.ts) which provides:
- * - scrypt password hashing (with SHA-256 legacy migration)
+ * - scrypt password hashing
  * - TOTP / 2FA support
  * - HttpOnly session cookies (zd-session)
  * - Session fingerprinting
@@ -15,7 +15,7 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { isRedisConfigured, getRedis } from './_redis.js'
-import { randomBytes, scrypt, createHash, timingSafeEqual as cryptoTimingSafeEqual } from 'crypto'
+import { randomBytes, scrypt, timingSafeEqual as cryptoTimingSafeEqual } from 'crypto'
 import { promisify } from 'util'
 import { applyRateLimit } from './_ratelimit.js'
 import { isHardBlocked } from './_blocklist.js'
@@ -33,22 +33,12 @@ async function hashPasswordScrypt(password: string): Promise<string> {
 }
 
 /**
- * Verify password — supports scrypt (new) and SHA-256 (legacy).
+ * Verify password — scrypt only.
+ * Non-scrypt hashes (e.g. old SHA-256) are rejected; admins must re-setup
+ * their password via PUT /api/session.
  */
 async function verifyPassword(password: string, stored: string): Promise<boolean> {
-  if (!stored.startsWith('scrypt:')) {
-    // Legacy SHA-256 migration path — only reached when an old SHA-256 hash is
-    // still stored in KV. The caller (POST handler, see ~line 125) immediately
-    // rehashes to scrypt on successful verification, so this branch is
-    // self-eliminating. New accounts always use scrypt (hashPasswordScrypt).
-    // This branch exists solely to allow existing users to log in once and have
-    // their password upgraded automatically.
-    const hash = createHash('sha256').update(password).digest('hex')
-    const a = Buffer.from(hash, 'utf8')
-    const b = Buffer.from(stored, 'utf8')
-    if (a.length !== b.length) return false
-    return cryptoTimingSafeEqual(a, b)
-  }
+  if (!stored.startsWith('scrypt:')) return false
   const parts = stored.split(':')
   const salt = parts[1]
   const key = parts[2]
@@ -121,12 +111,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const valid = await verifyPassword(password, storedHash)
       if (!valid) {
         return res.status(401).json({ error: 'Invalid password' })
-      }
-
-      // Migration: rehash SHA-256 to scrypt on successful login
-      if (!storedHash.startsWith('scrypt:')) {
-        const rehashed = await hashPasswordScrypt(password)
-        await kv.set('admin-password-hash', rehashed)
       }
 
       const sessionToken = generateSessionToken()

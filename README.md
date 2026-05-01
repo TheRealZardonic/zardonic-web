@@ -81,7 +81,7 @@ Access via the lock icon in the footer, or navigate to `?admin-setup` for first-
 | UI Primitives | Radix UI, Phosphor Icons, Sonner |
 | Backend | Vercel Serverless Functions (TypeScript) |
 | APIs | iTunes Search, Bandsintown, Discogs, Setlist.fm, Odesli/song.link, Spotify, Resend |
-| Testing | Vitest (1 620+ tests) |
+| Testing | Vitest (1 634+ tests) |
 | Deployment | Vercel |
 
 ---

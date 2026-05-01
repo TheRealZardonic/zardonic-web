@@ -172,12 +172,12 @@ function getOrCreateSessionId(): string {
   try {
     let id = sessionStorage.getItem(SESSION_ID_KEY)
     if (!id) {
-      id = `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
+      id = crypto.randomUUID()
       sessionStorage.setItem(SESSION_ID_KEY, id)
     }
     return id
   } catch {
-    return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
+    return crypto.randomUUID()
   }
 }
 

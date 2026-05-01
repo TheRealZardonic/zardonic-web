@@ -78,9 +78,8 @@ describe('Session API handler', () => {
     })
 
     it('should return session token for valid password', async () => {
-      // We need to hash 'testpassword' with SHA-256
-      // The session handler will hash the input and compare
-      mockKvGet.mockResolvedValue('5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8') // SHA-256 of 'password'
+      // We store a scrypt hash for 'password' (fixed salt for determinism in tests)
+      mockKvGet.mockResolvedValue('scrypt:a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4:343362add2cb49ae3d80800b08d448a71c2815de9f188c3af84cd440ddc1d24a26b7bddfc2e596ba24b5805984901393f5195580116a726e56c5deeefb1dac71') // scrypt hash of 'password'
       
       const res = mockRes()
       await handler({

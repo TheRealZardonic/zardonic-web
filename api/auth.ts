@@ -32,19 +32,13 @@ export async function hashPassword(password: string): Promise<string> {
 }
 
 /**
- * Verify a password against a stored hash.
- * Supports both scrypt (new) and legacy SHA-256 formats.
+ * Verify a password against a stored scrypt hash.
+ * Only `scrypt:<salt>:<derivedKey>` format is accepted.
+ * Non-scrypt hashes (e.g. old SHA-256) are rejected — admins must re-setup
+ * their password via the setup endpoint.
  */
 async function verifyPassword(password: string, stored: string): Promise<boolean> {
-  if (!stored.startsWith('scrypt:')) {
-    // Legacy SHA-256 format (will be migrated automatically on next login)
-    const hash = createHash('sha256').update(password).digest('hex')
-    const a = Buffer.from(hash, 'utf8')
-    const b = Buffer.from(stored, 'utf8')
-    if (a.length !== b.length) return false
-    return cryptoTimingSafeEqual(a, b)
-  }
-
+  if (!stored.startsWith('scrypt:')) return false
   const [, salt, key] = stored.split(':')
   const derived = (await scryptAsync(password, salt, 64)) as Buffer
   const storedKey = Buffer.from(key, 'hex')
@@ -91,13 +85,31 @@ function getClientFingerprint(req: VercelRequest): string {
   return createHash('sha256').update(`${ua}|${ipPrefix}`).digest('hex')
 }
 
-/** Validate that the request has a valid session. Returns true/false. */
+/** Validate that the request has a valid session. Returns true/false.
+ *
+ * Accepts either:
+ *  1. An `nk-session` HttpOnly cookie (primary, issued by POST /api/auth).
+ *  2. An `x-session-token` request header (legacy fallback, issued by POST /api/session).
+ *
+ * Both session types are stored under the same `session:${token}` Redis key so
+ * both can be validated with a single lookup.
+ */
 export async function validateSession(req: VercelRequest): Promise<boolean> {
-  const token = getSessionFromCookie(req)
+  // Primary: cookie-based session (modern path)
+  const cookieToken = getSessionFromCookie(req)
+  // Fallback: header-based token (legacy path — api/session.ts login)
+  const headerToken = typeof req.headers['x-session-token'] === 'string'
+    ? req.headers['x-session-token']
+    : null
+
+  const token = cookieToken ?? headerToken
   if (!token) return false
+
   const sessionData = await kv.get<SessionData>(`session:${token}`)
   if (!sessionData) return false
-  // Validate client binding — reject if User-Agent or IP subnet changed
+  // Validate client binding — reject if User-Agent or IP subnet changed.
+  // Header-based sessions created by api/session.ts do not carry a fingerprint,
+  // so the fingerprint check is skipped when the field is absent.
   if (sessionData.fingerprint) {
     const currentFingerprint = getClientFingerprint(req)
     if (sessionData.fingerprint !== currentFingerprint) return false
@@ -403,12 +415,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
           if (!(await verifyTotpCodeOnce(totpSecret, loginData.totpCode))) {
             return res.status(403).json({ error: 'Invalid TOTP code', totpRequired: true })
           }
-        }
-
-        // Migration: rehash legacy SHA-256 to scrypt on successful login
-        if (!storedHash.startsWith('scrypt:')) {
-          const rehashed = await hashPassword(loginData.password)
-          await kv.set('admin-password-hash', rehashed)
         }
 
         await createSession(req, res)

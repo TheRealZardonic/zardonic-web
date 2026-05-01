@@ -10,8 +10,7 @@ import { ErrorFallback } from './ErrorFallback.tsx'
 import { LenisProvider } from './contexts/LenisContext'
 
 import "./main.css"
-import "./styles/theme.css"
-import "./index.css"
+// styles/theme.css and index.css are already imported by main.css — do not import them again.
 
 // Suppress non-error console output in production to avoid leaking
 // internal structure, variable names, and API endpoint details.
