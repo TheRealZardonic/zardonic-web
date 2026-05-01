@@ -5,6 +5,7 @@ import type { SectionLabels } from '@/lib/types'
 import { formatReleaseDate } from '@/lib/format-release-date'
 import { parseTrackTitle } from '@/lib/track-parser'
 import { displayReleaseType } from '@/lib/release-type'
+import { STREAMING_PLATFORMS } from '@/lib/config'
 
 interface ReleaseOverlayContentProps {
   data: Release
@@ -102,8 +103,7 @@ export function ReleaseOverlayContent({ data, sectionLabels, mainArtistName = ''
   const getLink = (platform: string) =>
     data.streamingLinks?.find(l => l.platform === platform)?.url
 
-  const hasStreamLinks = ['spotify', 'youtube', 'soundcloud', 'bandcamp', 'appleMusic',
-    'beatport', 'deezer', 'tidal', 'amazonMusic'].some(p => getLink(p))
+  const hasStreamLinks = STREAMING_PLATFORMS.some(p => getLink(p))
 
   const releaseArtists = parseReleaseArtists(data.description, mainArtistName)
   const showReleaseArtists = releaseArtists.length > 1

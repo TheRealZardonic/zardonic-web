@@ -306,3 +306,9 @@ export function getString(key: string): string {
   if (key in STRING_DEFAULTS) return STRING_DEFAULTS[key]
   return ''
 }
+
+/** All standard streaming/download platforms supported in the release overlay. */
+export const STREAMING_PLATFORMS = [
+  'spotify', 'youtube', 'soundcloud', 'bandcamp', 'appleMusic',
+  'beatport', 'deezer', 'tidal', 'amazonMusic',
+] as const

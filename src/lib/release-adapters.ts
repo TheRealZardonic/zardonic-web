@@ -96,7 +96,7 @@ export function mergeFullReleaseIntoStored(
     mergedCustomLinks = existing.customLinks
   } else {
     // User submitted the form — use their value directly (may be [] for "all removed").
-    mergedCustomLinks = updated.customLinks.length > 0 ? updated.customLinks : []
+    mergedCustomLinks = updated.customLinks
   }
 
   return {
