@@ -34,6 +34,7 @@ export interface Release {
   streamingLinks?: Array<{ platform: string; url: string }>
   type?: '' | 'album' | 'ep' | 'single' | 'remix' | 'compilation'
   description?: string
+  artists?: string[]
   tracks?: Array<{
     title: string
     duration?: string

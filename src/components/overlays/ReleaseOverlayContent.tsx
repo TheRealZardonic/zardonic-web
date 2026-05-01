@@ -14,16 +14,27 @@ interface ReleaseOverlayContentProps {
 }
 
 /**
- * Parse the release artists from the description field.
- * description = "ft. OtherArtist" means the release involves OtherArtist.
- * Returns an array of artists with mainArtistName always first (if provided).
+ * Parse the release artists from the `artists` field, the release title, or
+ * the legacy `description` field. Returns a deduplicated, non-empty array.
+ * The main artist is always first when present.
  */
-function parseReleaseArtists(description: string | undefined, mainArtistName: string): string[] {
-  if (!mainArtistName) return []
-  if (!description?.startsWith('ft.')) return [mainArtistName]
-  const featured = description.slice(3).trim()
-  if (!featured) return [mainArtistName]
-  return [mainArtistName, featured]
+function parseReleaseArtists(release: { artists?: string[]; description?: string; title: string }, mainArtistName: string): string[] {
+  const { extractedArtists } = parseTrackTitle(release.title)
+
+  // Prefer the explicit artists array; fall back to combining main artist + extracted
+  const baseArtists =
+    release.artists && release.artists.length > 0
+      ? release.artists
+      : [mainArtistName, ...extractedArtists].filter(Boolean)
+
+  // Deduplicate (case-insensitive) while preserving order
+  const seen = new Set<string>()
+  return baseArtists.filter(a => {
+    const key = a.trim().toLowerCase()
+    if (!key || seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
 }
 
 /**
@@ -105,7 +116,8 @@ export function ReleaseOverlayContent({ data, sectionLabels, mainArtistName = ''
 
   const hasStreamLinks = STREAMING_PLATFORMS.some(p => getLink(p))
 
-  const releaseArtists = parseReleaseArtists(data.description, mainArtistName)
+  const releaseArtists = parseReleaseArtists(data, mainArtistName)
+  const { cleanTitle: cleanReleaseTitle } = parseTrackTitle(data.title)
   const showReleaseArtists = releaseArtists.length > 1
 
   return (
@@ -140,8 +152,8 @@ export function ReleaseOverlayContent({ data, sectionLabels, mainArtistName = ''
             transition={{ delay: 0.2 }}
           >
             <div className="data-label mb-2">{infoLabel}</div>
-            <h2 className="text-3xl md:text-4xl font-bold uppercase font-mono mb-2 hover-chromatic crt-flash-in break-words" data-text={data.title}>
-              {data.title}
+            <h2 className="text-3xl md:text-4xl font-bold uppercase font-mono mb-2 hover-chromatic crt-flash-in break-words" data-text={cleanReleaseTitle}>
+              {cleanReleaseTitle}
             </h2>
             {showReleaseArtists && (
               <p className="text-sm font-mono mt-1">

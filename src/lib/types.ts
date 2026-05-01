@@ -741,6 +741,7 @@ export interface Release {
   featured?: boolean
   type?: '' | 'album' | 'ep' | 'single' | 'remix' | 'compilation'
   description?: string
+  artists?: string[]
   tracks?: Array<{
     title: string
     duration?: string
