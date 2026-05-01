@@ -128,9 +128,12 @@ body.no-select a {
   -webkit-user-select: text;
 }
 
-/* Enable GPU acceleration for common transforms */
+/* Enable GPU acceleration for common transforms.
+   NOTE: will-change is intentionally omitted here — applying it to every
+   Framer Motion / Tailwind animate-* element blows Firefox's will-change
+   memory budget (document area × 3).  translateZ(0) already promotes the
+   element to its own compositor layer without the budget penalty. */
 [class*="motion-"], [class*="animate-"] {
-  will-change: transform;
   transform: translateZ(0);
   backface-visibility: hidden;
 }
