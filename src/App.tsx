@@ -163,7 +163,7 @@ function App() {
             backgroundImageParallax={anim.backgroundImageParallax === true}
             backgroundImageOverlay={anim.backgroundImageOverlay === true}
             backgroundType={anim.backgroundType}
-            animatedBackgroundEnabled={anim.circuitBackgroundEnabled !== false}
+            animatedBackgroundEnabled={anim.animationsEnabled !== false && anim.circuitBackgroundEnabled !== false}
             hudTexts={adminSettings?.hud}
             animSettings={anim}
           />

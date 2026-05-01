@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, memo } from 'react'
-import { shouldUseLiteMode } from '@/lib/device-capability'
+import { shouldDisableVideoBackground } from '@/lib/device-capability'
 import { toDirectImageUrl } from '@/lib/image-cache'
 import { useLenisContext } from '@/contexts/LenisContext'
 import { useIsMobile } from '@/hooks/use-mobile'
@@ -73,7 +73,7 @@ const VideoBackground = memo(function VideoBackground({
   fit = 'cover',
   scrollMode = false,
 }: VideoBackgroundProps) {
-  const [useFallback, setUseFallback] = useState<boolean>(() => shouldUseLiteMode())
+  const [useFallback, setUseFallback] = useState<boolean>(() => shouldDisableVideoBackground())
   const videoRef = useRef<HTMLVideoElement>(null)
 
   // Always call hooks unconditionally.

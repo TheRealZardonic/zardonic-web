@@ -148,7 +148,7 @@ const animItems: { key: keyof AnimationSettings; label: string }[] = [
   { key: 'chromaticEnabled', label: 'Chromatic Aberration' },
   { key: 'crtEnabled', label: 'CRT Effect' },
   { key: 'noiseEnabled', label: 'Noise / Grain' },
-  { key: 'circuitBackgroundEnabled', label: 'Animated Background (all types)' },
+  { key: 'animationsEnabled', label: 'Animated Background (all types)' },
   { key: 'blinkingCursor', label: 'Blinking Cursor on Headings' },
 ]
 

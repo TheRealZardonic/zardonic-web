@@ -2,9 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render } from '@testing-library/react'
 import VideoBackground from '@/components/VideoBackground'
 
-// Mock device-capability so we can control lite-mode in tests
+// Mock device-capability so we can control fallback behaviour in tests
 vi.mock('@/lib/device-capability', () => ({
-  shouldUseLiteMode: vi.fn().mockReturnValue(false),
+  shouldDisableVideoBackground: vi.fn().mockReturnValue(false),
 }))
 
 // Mock image-cache to return the URL unchanged
@@ -17,12 +17,12 @@ vi.mock('@/hooks/use-mobile', () => ({
   useIsMobile: vi.fn().mockReturnValue(false),
 }))
 
-import { shouldUseLiteMode } from '@/lib/device-capability'
+import { shouldDisableVideoBackground } from '@/lib/device-capability'
 import { useIsMobile } from '@/hooks/use-mobile'
 
 describe('VideoBackground — capable device', () => {
   beforeEach(() => {
-    vi.mocked(shouldUseLiteMode).mockReturnValue(false)
+    vi.mocked(shouldDisableVideoBackground).mockReturnValue(false)
     vi.mocked(useIsMobile).mockReturnValue(false)
   })
 
@@ -78,7 +78,7 @@ describe('VideoBackground — capable device', () => {
 
 describe('VideoBackground — lite mode device', () => {
   beforeEach(() => {
-    vi.mocked(shouldUseLiteMode).mockReturnValue(true)
+    vi.mocked(shouldDisableVideoBackground).mockReturnValue(true)
     vi.mocked(useIsMobile).mockReturnValue(false)
   })
 
@@ -117,7 +117,7 @@ describe('VideoBackground — lite mode device', () => {
 
 describe('VideoBackground — opacity prop', () => {
   beforeEach(() => {
-    vi.mocked(shouldUseLiteMode).mockReturnValue(false)
+    vi.mocked(shouldDisableVideoBackground).mockReturnValue(false)
     vi.mocked(useIsMobile).mockReturnValue(false)
   })
 
@@ -149,7 +149,7 @@ describe('VideoBackground — opacity prop', () => {
 
 describe('VideoBackground — mobileVideoUrl', () => {
   beforeEach(() => {
-    vi.mocked(shouldUseLiteMode).mockReturnValue(false)
+    vi.mocked(shouldDisableVideoBackground).mockReturnValue(false)
   })
 
   it('uses mobileVideoUrl on mobile viewports', () => {

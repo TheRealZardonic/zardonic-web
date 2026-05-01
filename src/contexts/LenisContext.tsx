@@ -27,7 +27,7 @@ import {
 } from 'react'
 import type { ReactNode } from 'react'
 import Lenis from 'lenis'
-import { shouldUseLiteMode } from '@/lib/device-capability'
+import { usePrefersReducedMotion, isSlowConnection, isLowEndHardware } from '@/lib/device-capability'
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -85,9 +85,10 @@ export function LenisProvider({
   easing = defaultEasing,
   duration = 1.2,
 }: LenisProviderProps) {
-  // Evaluate once on mount — neither reduced-motion nor hardware specs change
-  // at runtime, and re-initialising Lenis on change would be disruptive.
-  const [liteMode] = useState<boolean>(() => shouldUseLiteMode())
+  // Reactive reduced-motion preference — re-computes liteMode when the user
+  // changes their OS/browser setting so Lenis is properly destroyed/created.
+  const prefersReducedMotion = usePrefersReducedMotion()
+  const liteMode = prefersReducedMotion || isSlowConnection() || isLowEndHardware()
 
   const lenisRef = useRef<Lenis | null>(null)
   const [lenisInstance, setLenisInstance] = useState<Lenis | null>(null)
@@ -142,6 +143,18 @@ export function LenisProvider({
       lenisRef.current = null
       setLenisInstance(null)
     }
+  }, [liteMode])
+
+  // Native scroll tracking — runs only in lite mode when Lenis is inactive.
+  // Ensures scrollY stays current so scroll-driven effects (e.g. VideoBackground
+  // scroll mode) work correctly even without Lenis.
+  useEffect(() => {
+    if (!liteMode) return
+    const handleScroll = () => setScrollY(window.scrollY)
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    // Set initial value in case the page loaded already scrolled
+    handleScroll()
+    return () => window.removeEventListener('scroll', handleScroll)
   }, [liteMode])
 
   const scrollTo = useCallback(
