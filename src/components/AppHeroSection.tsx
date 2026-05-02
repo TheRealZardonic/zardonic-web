@@ -4,7 +4,7 @@ import { m, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Upload, Storefront, Plus, Trash, PencilSimple, Check, Images } from '@phosphor-icons/react'
 import type { SiteData, HeroLink } from '@/lib/app-types'
-import type { AdminSettings, SectionVisibility } from '@/lib/types'
+import type { AdminSettings } from '@/lib/types'
 import { toDirectImageUrl } from '@/lib/image-cache'
 import { useState } from 'react'
 
@@ -19,7 +19,7 @@ interface AppHeroSectionProps {
   scrollToSection: (id: string) => void
   artistName: string
   adminSettings?: AdminSettings
-  sectionVisibility?: SectionVisibility
+  sectionVisibility?: Record<string, boolean>
   onUpdateSiteData?: (updater: SiteData | ((current: SiteData) => SiteData)) => void
   siteData?: SiteData
   hasCustomBackground?: boolean
@@ -265,7 +265,7 @@ export default function AppHeroSection({
           {heroLinks.map((link) => {
             // If this link targets a section that is explicitly hidden, don't render it
             if (link.type === 'section' && sectionVisibility) {
-              const key = link.target as keyof SectionVisibility
+              const key = link.target as string
               if (sectionVisibility[key] === false) return null
             }
             const isExternal = link.type === 'url'

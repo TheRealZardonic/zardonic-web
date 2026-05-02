@@ -22,6 +22,7 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
     releaseDate: '',
     description: '',
     featured: false,
+    artists: '',
     spotify: '',
     soundcloud: '',
     bandcamp: '',
@@ -49,6 +50,7 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
         releaseDate: release.releaseDate || '',
         description: release.description || '',
         featured: release.featured || false,
+        artists: release.artists?.join(', ') || '',
         spotify: links.spotify || '',
         soundcloud: links.soundcloud || '',
         bandcamp: links.bandcamp || '',
@@ -224,6 +226,7 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
         releaseDate: formData.releaseDate || undefined,
         description: formData.description || undefined,
         featured: formData.featured || undefined,
+        artists: formData.artists ? formData.artists.split(',').map(a => a.trim()).filter(Boolean) : undefined,
         streamingLinks: Object.keys(streamingLinks).length > 0 ? streamingLinks : undefined,
         tracks: tracks.length > 0 ? tracks : undefined,
         // Always pass the current customLinks array (even when empty) so that
@@ -253,6 +256,17 @@ export default function ReleaseEditDialog({ release, onSave, onClose }: ReleaseE
               required
               className="bg-secondary border-input"
               placeholder="Track/Album Name"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="artists">Release Artists (comma separated)</Label>
+            <Input
+              id="artists"
+              value={formData.artists}
+              onChange={(e) => setFormData({ ...formData, artists: e.target.value })}
+              className="bg-secondary border-input"
+              placeholder="e.g. Zardonic, Freqax"
             />
           </div>
 

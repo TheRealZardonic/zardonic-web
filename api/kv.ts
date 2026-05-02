@@ -281,19 +281,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       // key name intentionally omitted to avoid logging potentially sensitive identifiers
     })
     
-    // Check if it's a KV-specific configuration error from @vercel/kv
-    // Common errors include missing environment variables or connection issues
-    const isKVConfigError = error instanceof Error && (
-      errorMessage.toLowerCase().includes('kv_rest_api_url') ||
-      errorMessage.toLowerCase().includes('kv_rest_api_token') ||
-      errorMessage.toLowerCase().includes('vercel kv') ||
-      errorMessage.toLowerCase().includes('missing credentials')
+    // Check if it's a Redis configuration error from @upstash/redis.
+    // Upstash throws when the required environment variables are absent or invalid.
+    const isRedisConfigError = error instanceof Error && (
+      errorMessage.toLowerCase().includes('upstash_redis_rest_url') ||
+      errorMessage.toLowerCase().includes('upstash_redis_rest_token') ||
+      errorMessage.toLowerCase().includes('unauthorized') ||
+      errorMessage.toLowerCase().includes('fetch failed')
     )
     
-    if (isKVConfigError) {
+    if (isRedisConfigError) {
       return res.status(503).json({ 
         error: 'Service unavailable',
-        message: 'KV storage configuration error. Please check environment variables.'
+        message: 'Redis storage configuration error. Please check environment variables.'
       })
     }
     

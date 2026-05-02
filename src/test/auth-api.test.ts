@@ -78,9 +78,10 @@ function mockRes(): MockRes {
 const { default: handler, hashPassword, getSessionFromCookie } = await import('../../api/auth.ts')
 
 // ---------------------------------------------------------------------------
-// Pre-generate a SHA-256 hash for password 'password' to use in login tests
-// (legacy format — avoids slow scrypt in the happy path)
-const LEGACY_SHA256_OF_PASSWORD = '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8'
+// Pre-generated scrypt hash for password 'password' with a fixed salt.
+// Used in login tests that require a valid stored credential.
+// Generated with: scryptSync('password', 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4', 64)
+const SCRYPT_HASH_OF_PASSWORD = 'scrypt:a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4:343362add2cb49ae3d80800b08d448a71c2815de9f188c3af84cd440ddc1d24a26b7bddfc2e596ba24b5805984901393f5195580116a726e56c5deeefb1dac71'
 
 // ---------------------------------------------------------------------------
 describe('getSessionFromCookie()', () => {
@@ -167,7 +168,7 @@ describe('Auth API handler', () => {
 
     it('returns needsSetup:false when password is stored', async () => {
       // First call: admin-password-hash, second: TOTP key
-      mockGet.mockResolvedValueOnce(LEGACY_SHA256_OF_PASSWORD).mockResolvedValue(null)
+      mockGet.mockResolvedValueOnce(SCRYPT_HASH_OF_PASSWORD).mockResolvedValue(null)
       const res = mockRes()
       await handler({ method: 'GET', headers: { cookie: '' }, body: {} } as any, res as any)
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ needsSetup: false }))
@@ -175,7 +176,7 @@ describe('Auth API handler', () => {
 
     it('returns totpEnabled:true when TOTP secret stored', async () => {
       mockGet.mockResolvedValueOnce(null) // session lookup
-        .mockResolvedValueOnce(LEGACY_SHA256_OF_PASSWORD) // admin-password-hash
+        .mockResolvedValueOnce(SCRYPT_HASH_OF_PASSWORD) // admin-password-hash
         .mockResolvedValueOnce('TOTPSECRET') // TOTP key
       const res = mockRes()
       await handler({ method: 'GET', headers: { cookie: '' }, body: {} } as any, res as any)
@@ -207,7 +208,7 @@ describe('Auth API handler', () => {
     })
 
     it('returns 409 if password already configured', async () => {
-      mockGet.mockResolvedValue(LEGACY_SHA256_OF_PASSWORD)
+      mockGet.mockResolvedValue(SCRYPT_HASH_OF_PASSWORD)
       const res = mockRes()
       await handler({
         method: 'POST',
@@ -242,10 +243,10 @@ describe('Auth API handler', () => {
 
   // -------------------------------------------------------------------------
   describe('POST (login)', () => {
-    it('returns success on valid SHA-256 password', async () => {
-      // Login flow: (1) get TOTP_KEY → null, (2) get admin-password-hash → SHA-256 hash
+    it('returns success on valid scrypt password', async () => {
+      // Login flow: (1) get TOTP_KEY → null, (2) get admin-password-hash → scrypt hash
       mockGet.mockResolvedValueOnce(null)                  // kv.get(TOTP_KEY)
-        .mockResolvedValueOnce(LEGACY_SHA256_OF_PASSWORD)  // kv.get('admin-password-hash')
+        .mockResolvedValueOnce(SCRYPT_HASH_OF_PASSWORD)  // kv.get('admin-password-hash')
       const res = mockRes()
       await handler({
         method: 'POST',
@@ -258,7 +259,7 @@ describe('Auth API handler', () => {
 
     it('returns 401 on invalid password', async () => {
       mockGet.mockResolvedValueOnce(null)                  // kv.get(TOTP_KEY)
-        .mockResolvedValueOnce(LEGACY_SHA256_OF_PASSWORD)  // kv.get('admin-password-hash')
+        .mockResolvedValueOnce(SCRYPT_HASH_OF_PASSWORD)  // kv.get('admin-password-hash')
       const res = mockRes()
       await handler({
         method: 'POST',
@@ -281,9 +282,9 @@ describe('Auth API handler', () => {
     })
 
     it('returns 403 totpRequired when TOTP enabled but no code provided', async () => {
-      // TOTP enabled: (1) get TOTP_KEY → secret, (2) get password hash → SHA-256
+      // TOTP enabled: (1) get TOTP_KEY → secret, (2) get password hash → scrypt
       mockGet.mockResolvedValueOnce('TOTPSECRET')               // kv.get(TOTP_KEY) → TOTP enabled
-        .mockResolvedValueOnce(LEGACY_SHA256_OF_PASSWORD)       // kv.get('admin-password-hash')
+        .mockResolvedValueOnce(SCRYPT_HASH_OF_PASSWORD)       // kv.get('admin-password-hash')
       const res = mockRes()
       await handler({
         method: 'POST',
@@ -296,7 +297,7 @@ describe('Auth API handler', () => {
 
     it('returns 403 on invalid TOTP code', async () => {
       mockGet.mockResolvedValueOnce('TOTPSECRET')               // kv.get(TOTP_KEY)
-        .mockResolvedValueOnce(LEGACY_SHA256_OF_PASSWORD)       // kv.get('admin-password-hash')
+        .mockResolvedValueOnce(SCRYPT_HASH_OF_PASSWORD)       // kv.get('admin-password-hash')
       mockIncr.mockResolvedValue(1) // first failed attempt
       mockExpire.mockResolvedValue(1)
       const res = mockRes()
@@ -310,7 +311,7 @@ describe('Auth API handler', () => {
 
     it('succeeds with correct TOTP code 123456', async () => {
       mockGet.mockResolvedValueOnce('TOTPSECRET')               // kv.get(TOTP_KEY)
-        .mockResolvedValueOnce(LEGACY_SHA256_OF_PASSWORD)       // kv.get('admin-password-hash')
+        .mockResolvedValueOnce(SCRYPT_HASH_OF_PASSWORD)       // kv.get('admin-password-hash')
       const res = mockRes()
       await handler({
         method: 'POST',
@@ -349,7 +350,7 @@ describe('Auth API handler', () => {
     it('returns 403 when currentPassword is wrong', async () => {
       // session valid
       mockGet.mockResolvedValueOnce({ created: Date.now(), fingerprint: '' }) // session data (any)
-        .mockResolvedValueOnce(LEGACY_SHA256_OF_PASSWORD) // stored hash
+        .mockResolvedValueOnce(SCRYPT_HASH_OF_PASSWORD) // stored hash
       const res = mockRes()
       await handler({
         method: 'POST',

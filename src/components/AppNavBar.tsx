@@ -2,7 +2,7 @@ import React from 'react'
 import logoImage from '@/assets/images/meta_eyJzcmNCdWNrZXQiOiJiemdsZmlsZXMifQ==.webp'
 import { m, AnimatePresence } from 'framer-motion'
 import { List, X } from '@phosphor-icons/react'
-import type { SectionLabels, SectionVisibility } from '@/lib/types'
+import type { SectionLabels } from '@/lib/types'
 import { useLocale } from '@/contexts/LocaleContext'
 import { SECTION_REGISTRY } from '@/lib/sections-registry'
 import { isSectionVisible } from '@/lib/admin-settings'
@@ -20,7 +20,7 @@ interface AppNavBarProps {
   scrollToSection: (id: string) => void
   sectionLabels?: SectionLabels
   /** @deprecated Use adminSettings instead */
-  sectionVisibility?: SectionVisibility
+  sectionVisibility?: Record<string, boolean>
   adminSettings?: AdminSettings | null
 }
 

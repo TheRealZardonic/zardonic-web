@@ -49,11 +49,16 @@ function getRedis(): Redis | null {
 
 /**
  * Hash an IP with SHA-256 + salt using the Web Crypto API (Edge-compatible).
+ *
+ * Format MUST match `hashIp()` in `api/_ratelimit.ts` which uses:
+ *   createHash('sha256').update(SALT + ip).digest('hex')
+ * i.e. direct string concatenation without any separator.
+ * Both functions must stay in sync so the middleware can read block entries
+ * written by the serverless API layer (stored under `nk-blocked:<hash>`).
  */
 async function hashIp(ip: string, salt: string): Promise<string> {
-  // Use '|' as separator — pipe never appears in IPv4 or IPv6 addresses, preventing
-  // any theoretical length-extension/collision between salt and IP components.
-  const data = new TextEncoder().encode(`${salt}|${ip}`)
+  // Direct concatenation — matches Node.js `createHash('sha256').update(SALT + ip)`.
+  const data = new TextEncoder().encode(`${salt}${ip}`)
   const buf = await crypto.subtle.digest('SHA-256', data)
   return Array.from(new Uint8Array(buf))
     .map(b => b.toString(16).padStart(2, '0'))
@@ -95,7 +100,7 @@ export default async function middleware(req: Request): Promise<Response | undef
     // ── 2. Hard-Blocked IP Gate ─────────────────────────────────────
     const ip = getClientIp(req)
     const hashedIp = await hashIp(ip, SALT)
-    const isBlocked = await redis.get(`zd-blocked:${hashedIp}`)
+    const isBlocked = await redis.get(`nk-blocked:${hashedIp}`)
     if (isBlocked) {
       return new Response(null, { status: 403 })
     }

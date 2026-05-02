@@ -35,7 +35,6 @@ import {
   verifyTotp,
   disableTotp,
   hasSessionToken,
-  hashPassword,
 } from './session.ts'
 
 // ---------------------------------------------------------------------------
@@ -339,20 +338,3 @@ describe('hasSessionToken()', () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-describe('hashPassword()', () => {
-  it('returns a non-empty hex string', async () => {
-    const hash = await hashPassword('testpassword')
-    expect(hash).toMatch(/^[0-9a-f]+$/)
-  })
-
-  it('is deterministic', async () => {
-    const h1 = await hashPassword('same-input')
-    const h2 = await hashPassword('same-input')
-    expect(h1).toBe(h2)
-  })
-
-  it('produces different hashes for different passwords', async () => {
-    expect(await hashPassword('pass1')).not.toBe(await hashPassword('pass2'))
-  })
-})

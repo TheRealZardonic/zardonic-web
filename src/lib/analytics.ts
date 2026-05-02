@@ -5,8 +5,8 @@
  *  also stored client-side in localStorage as a fallback.
  */
 
-const STORAGE_KEY = 'nk-site-analytics'
-const SESSION_ID_KEY = 'nk-session-id'
+const STORAGE_KEY = 'zd-site-analytics'
+const SESSION_ID_KEY = 'zd-session-id'
 
 export interface AnalyticsEvent {
   type: 'page_view' | 'section_view' | 'interaction' | 'click'
@@ -143,12 +143,12 @@ function getOrCreateSessionId(): string {
   try {
     let id = sessionStorage.getItem(SESSION_ID_KEY)
     if (!id) {
-      id = `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
+      id = crypto.randomUUID()
       sessionStorage.setItem(SESSION_ID_KEY, id)
     }
     return id
   } catch {
-    return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
+    return crypto.randomUUID()
   }
 }
 

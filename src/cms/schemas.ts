@@ -49,6 +49,7 @@ export const releaseSchema = z.object({
     url: z.string().url().max(500),
   })).optional(),
   description: z.string().max(5000).optional(),
+  artists: z.array(z.string().max(200)).optional(),
 })
 
 export const newsArticleSchema = z.object({
@@ -224,6 +225,7 @@ export const FIELD_REGISTRY: Record<string, FieldMeta> = {
     { value: 'compilation', label: 'Appears On' },
   ], group: 'Core', tooltip: 'Release format. Controls the badge shown on the release card.' },
   'release.description':      { label: 'Description', widget: 'textarea', group: 'Core', advanced: true, tooltip: 'Optional notes or liner text shown in the release detail overlay.' },
+  'release.artists':          { label: 'Artists (comma-separated)', widget: 'text', placeholder: 'e.g. Zardonic, Freqax', group: 'Core', advanced: true, tooltip: 'Featured artists for this release. Displayed below the title in the release overlay.' },
 
   // ── Member ───────────────────────────────────────────────────────────────
   'member.name':              { label: 'Name', widget: 'text', group: 'Identity', tooltip: 'Full display name of this band member or entity, shown on the member card.' },

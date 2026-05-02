@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label'
 import { X, ArrowCounterClockwise, Export, ArrowSquareIn, FloppyDisk, Eye, EyeSlash } from '@phosphor-icons/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
-import type { ThemeSettings, SectionVisibility, OverlayEffect } from '@/lib/types'
+import type { ThemeSettings, OverlayEffect } from '@/lib/types'
 import { loadGoogleFont } from '@/lib/font-loader'
 
 /* ─── Theme presets ─── */
@@ -162,7 +162,7 @@ const OVERLAY_LABELS: Record<string, { name: string; description: string }> = {
   movingScanline: { name: 'Moving Scanline', description: 'CRT-Auffrischungslinie die sich bewegt' },
 }
 
-const SECTION_LABELS: Partial<Record<keyof SectionVisibility, string>> = {
+const SECTION_LABELS: Partial<Record<string, string>> = {
   news: 'News Section',
   biography: 'Biography Section',
   gallery: 'Gallery Section',
@@ -182,8 +182,8 @@ interface ThemeCustomizerDialogProps {
   onClose: () => void
   themeSettings: ThemeSettings | undefined
   onSaveTheme: (theme: ThemeSettings) => void
-  sectionVisibility: SectionVisibility | undefined
-  onSaveSectionVisibility: (vis: SectionVisibility) => void
+  sectionVisibility: Record<string, boolean> | undefined
+  onSaveSectionVisibility: (vis: Record<string, boolean>) => void
 }
 
 /** Apply theme CSS variables to <html> element */
@@ -373,7 +373,7 @@ export default function ThemeCustomizerDialog({
   onSaveSectionVisibility,
 }: ThemeCustomizerDialogProps) {
   const [draft, setDraft] = useState<ThemeSettings>(themeSettings || {})
-  const [visDraft, setVisDraft] = useState<SectionVisibility>(sectionVisibility || {})
+  const [visDraft, setVisDraft] = useState<Record<string, boolean>>(sectionVisibility || {})
   const [activeTab, setActiveTab] = useState<'colors' | 'fonts' | 'presets' | 'visibility' | 'effects'>('presets')
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const prevOpenRef = useRef(false)
@@ -481,7 +481,7 @@ export default function ThemeCustomizerDialog({
     e.target.value = ''
   }
 
-  const toggleVisibility = (key: keyof SectionVisibility) => {
+  const toggleVisibility = (key: string) => {
     setVisDraft(prev => {
       const currentlyVisible = prev[key] !== false
       return { ...prev, [key]: !currentlyVisible }
@@ -767,7 +767,7 @@ export default function ThemeCustomizerDialog({
                   <p className="font-mono text-xs text-muted-foreground/60 mb-3">
                     Show or hide individual sections and effects.
                   </p>
-                  {(Object.keys(SECTION_LABELS) as (keyof SectionVisibility)[]).map(key => {
+                  {(Object.keys(SECTION_LABELS) as string[]).map(key => {
                     const visible = visDraft[key] !== false
                     return (
                       <div key={key} className="flex items-center justify-between py-2 border-b border-primary/5">

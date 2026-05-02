@@ -1,6 +1,3 @@
-/** @deprecated Use Record<string, boolean> directly. Kept as alias for backward compat with legacy code. */
-export type SectionVisibility = Record<string, boolean>
-
 export interface ThemeCustomization {
   // Base colors
   primaryColor?: string
@@ -744,6 +741,7 @@ export interface Release {
   featured?: boolean
   type?: '' | 'album' | 'ep' | 'single' | 'remix' | 'compilation'
   description?: string
+  artists?: string[]
   tracks?: Array<{
     title: string
     duration?: string

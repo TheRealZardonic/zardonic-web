@@ -76,7 +76,7 @@ All z-index values in the application are managed through CSS custom properties 
 
 *   **CSS Font Variables**: `--font-heading`, `--font-body`, `--font-mono` are the three live CSS custom properties for font families. They are set dynamically in `src/hooks/use-app-theme.ts` from `adminSettings.design.theme.fontHeading/fontBody/fontMono`.
 *   **Google Fonts Loading**: `use-app-theme.ts` automatically injects a `<link>` to Google Fonts whenever a non-system font is selected. Font names are extracted via `extractGoogleFontName()`. No manual font injection is needed for fonts in the admin dropdowns.
-*   **Biography font**: `AppBioSection.tsx` reads `adminSettings.sections.styleOverrides.bio.textSize` for the Tailwind text-size class. The body font is inherited via CSS from the `body` element (`--font-body`).
+*   **Biography font**: `AppBioSection.tsx` calls `getBioBodyFontSize()` from `src/lib/admin-settings.ts`, which reads `adminSettings.sections.styleOverrides.bio.bodyFontSize` (canonical — used by `SECTION_REGISTRY`) and falls back to the legacy `textSize` field for data stored by older CMS versions. The body font family is inherited via CSS from the `body` element (`--font-body`).
 *   **Font Dropdowns**: Managed in `src/components/admin/AppearanceTab.tsx` via `HEADING_FONTS`, `BODY_FONTS`, `MONO_FONTS` arrays (proper CSS values with stacks). Font size sliders are inline below each dropdown for all disclosure levels.
 *   **Admin UI Typography Shield**: Theme font/size customisations MUST NEVER affect the admin panel or CMS shell. Any admin container MUST carry `data-admin-ui="true"`. The `[data-admin-ui]` CSS rule in `index.css` resets all `--font-*`, `--heading-*`, `--body-*`, `--mono-*` variables to stable system fallbacks. This rule covers: `AdminPanel.tsx` (root motion.div), `CmsApp.tsx` (wrapping div), and every admin `DialogContent` element. When adding new admin dialogs or overlays, always add `data-admin-ui="true"` to their root portaled element.
 
@@ -162,7 +162,7 @@ These rules apply specifically to AI agent runs on this project:
 
 1.  **Update AGENTS.md**: If new conventions, patterns, or architectural decisions were introduced, add or update the relevant section in this file. AGENTS.md is the living specification of this project.
 2.  **Update documentation**: If new public APIs, components, or utilities were added, update the relevant docs in the `docs/` directory or inline JSDoc comments.
-3.  **Update `.ts-errors-remaining.txt`**: After fixing TypeScript errors, update or delete this file to reflect the current state. A clean typecheck means this file should either be empty or deleted.
+3.  **Update `.ts-errors-remaining.txt`**: After fixing TypeScript errors, update or delete this file to reflect the current state. A clean typecheck means this file should either be empty or deleted. Current state: `npm run typecheck` passes with 0 errors — no `.ts-errors-remaining.txt` needed.
 
 ### Test-Driven Development
 
@@ -175,3 +175,20 @@ These rules apply specifically to AI agent runs on this project:
 *   Make the **smallest possible change** that fully addresses the requirement.
 *   Do not refactor unrelated code in the same PR.
 *   Do not add new dependencies unless absolutely necessary — check `npm audit` for any new package.
+
+## 14. Legacy Code & Type Audit Notes
+
+The following decisions were made during a comprehensive legacy cleanup pass:
+
+### Removed
+*   **`SectionVisibility` type alias** (`src/lib/types.ts`) — Was a `@deprecated` alias for `Record<string, boolean>`. All consumer files (`AppNavBar.tsx`, `AppHeroSection.tsx`, `ThemeCustomizerDialog.tsx`) now use `Record<string, boolean>` inline.
+*   **`hashPassword()` in `src/lib/session.ts`** — Was a `@deprecated` client-side SHA-256 helper. No production code in `src/` called it; it existed only in its own test. Removed from `session.ts`; corresponding test describe block removed from `src/lib/session.test.ts`. The server-side `hashPassword` in `api/auth.ts` is unrelated and stays.
+
+### Kept (with rationale)
+*   **`textSize` fallback in `getBioBodyFontSize()`** — The CMS bio schema (`src/cms/section-schemas/bio-schema.ts`) still stores `textSize` as the field key; older KV data may have this field set. The canonical admin path is `bodyFontSize` (used by `SECTION_REGISTRY`). The fallback `bio?.bodyFontSize ?? bio?.textSize ?? 'text-lg'` must be preserved until a KV migration removes all `textSize` data.
+*   **`normalizeStoredRelease()` in `src/lib/release-adapters.ts`** — Legacy KV data may still have `streamingLinks` as a plain object instead of an array. The runtime guard `if (!links || Array.isArray(links)) return r` is a necessary safety net.
+*   **Analytics `AnalyticsData` mapping in `src/hooks/use-analytics.ts`** — `StatsDashboard` consumes `AnalyticsData` (legacy shape). The mapping from `SiteAnalytics` to `AnalyticsData` inside `getAnalyticsData()` is intentional architecture, not dead code.
+*   **`ThemeSettings` interface** — Used by the standalone `ThemeCustomizerDialog.tsx` component and its type-only test (`src/test/theme-overlay-effects.test.ts`). Distinct from `ThemeCustomization` (used in `AdminSettings.design.theme`): `ThemeSettings` carries `overlayEffects` and `activePreset` which `ThemeCustomization` does not.
+
+### Admin Panel Config Paths (verified)
+All paths in `SECTION_REGISTRY` and `DESIGN_REGISTRY` (`src/lib/sections-registry.ts`) resolve to real keys in `AdminSettings` or `SiteData`. No orphaned paths were found.
